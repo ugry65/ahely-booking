@@ -9,10 +9,17 @@ select has_table('public', 'settlement_revisions', 'A settlement_revisions tábl
 
 select has_column('public', 'bookings', 'time_range', 'A foglalási időtartomány tárolt oszlopként létezik');
 
-select has_constraint(
-  'public',
-  'bookings',
-  'bookings_no_room_overlap',
+select ok(
+  exists (
+    select 1
+    from pg_constraint c
+    join pg_class t on t.oid = c.conrelid
+    join pg_namespace n on n.oid = t.relnamespace
+    where n.nspname = 'public'
+      and t.relname = 'bookings'
+      and c.conname = 'bookings_no_room_overlap'
+      and c.contype = 'x'
+  ),
   'A dupla foglalást tiltó exclusion constraint létezik'
 );
 
