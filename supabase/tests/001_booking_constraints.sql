@@ -2,13 +2,21 @@ begin;
 
 select plan(5);
 
-insert into auth.users (id, email) values
-  ('00000000-0000-0000-0000-000000000001', 'admin@example.invalid'),
-  ('00000000-0000-0000-0000-000000000002', 'user@example.invalid');
+insert into auth.users (id, email, raw_user_meta_data) values
+  (
+    '00000000-0000-0000-0000-000000000001',
+    'admin@example.invalid',
+    '{"first_name":"Teszt","last_name":"Admin"}'
+  ),
+  (
+    '00000000-0000-0000-0000-000000000002',
+    'user@example.invalid',
+    '{"first_name":"Teszt","last_name":"User"}'
+  );
 
-insert into public.profiles (id, first_name, last_name, email, role) values
-  ('00000000-0000-0000-0000-000000000001', 'Teszt', 'Admin', 'admin@example.invalid', 'admin'),
-  ('00000000-0000-0000-0000-000000000002', 'Teszt', 'User', 'user@example.invalid', 'user');
+update public.profiles
+set role = 'admin'
+where id = '00000000-0000-0000-0000-000000000001';
 
 insert into public.rooms (id, name, display_order) values
   ('10000000-0000-0000-0000-000000000001', 'Teszt szoba', 1);

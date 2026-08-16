@@ -4,7 +4,7 @@ Az A-Hely saját, magyar nyelvű foglalási és havi elszámolási webalkalmazá
 
 ## Állapot
 
-A projekt az első fejlesztési egységnél tart: a technikai architektúra, az adatmodell és a PostgreSQL-séma alapjai elkészültek. Production használatra még nem alkalmas.
+A technikai architektúra, az adatmodell és a PostgreSQL-séma alapjai elkészültek. Az Auth/RLS mérföldkő fejlesztés alatt áll. Production használatra még nem alkalmas.
 
 ## Kötelező források
 
@@ -29,6 +29,23 @@ Ellentmondás esetén az aktuális FS és projektkontextus az irányadó.
 - Docker
 - Supabase CLI
 
+## Webalkalmazás
+
+```bash
+cp .env.example .env.local
+pnpm install
+pnpm dev
+```
+
+A `.env.local` értékeit a helyi `supabase status` kimenete alapján kell kitölteni. A `SUPABASE_SERVICE_ROLE_KEY` kizárólag szerveroldali admin Auth-művelethez használható; `NEXT_PUBLIC_` előtaggal vagy klienskódban tilos szerepeltetni.
+
+Statikus és production build ellenőrzés:
+
+```bash
+pnpm typecheck
+pnpm build
+```
+
 ## Adatbázis-validálás
 
 A Supabase CLI a helyi PostgreSQL-környezetet Dockerben indítja. A teljes ellenőrzés:
@@ -46,4 +63,4 @@ A parancs:
 
 Ugyanez minden adatbázist érintő pull requestnél automatikusan lefut a GitHub Actions környezetben.
 
-Az alkalmazásváz és a frontend-függőségek az Auth/RLS mérföldkőben készülnek; az első mérföldkő szándékosan az adatbiztonsági alapokra koncentrál.
+Az Auth/RLS ág a Next.js App Router vázat, a Supabase SSR munkamenet-kezelést, az e-mail+jelszó folyamatokat, az adminmeghívást és az adatbázis-szintű deny-by-default jogosultságokat tartalmazza.
