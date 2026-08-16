@@ -1,0 +1,52 @@
+begin;
+
+select plan(10);
+
+select has_table('public', 'profiles', 'A profiles tábla létezik');
+select has_table('public', 'rooms', 'A rooms tábla létezik');
+select has_table('public', 'bookings', 'A bookings tábla létezik');
+select has_table('public', 'settlement_revisions', 'A settlement_revisions tábla létezik');
+
+select has_column('public', 'bookings', 'time_range', 'A foglalási időtartomány tárolt oszlopként létezik');
+
+select has_constraint(
+  'public',
+  'bookings',
+  'bookings_no_room_overlap',
+  'A dupla foglalást tiltó exclusion constraint létezik'
+);
+
+select has_trigger(
+  'public',
+  'audit_logs',
+  'audit_logs_immutable',
+  'Az auditnapló módosítását tiltó trigger létezik'
+);
+
+select is(
+  (
+    select count(*)::bigint
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'public'
+      and c.relkind = 'r'
+      and not c.relrowsecurity
+  ),
+  0::bigint,
+  'Minden public tábla RLS-védett'
+);
+
+select is(
+  (select value from public.app_settings where key = 'timezone'),
+  '"Europe/Budapest"'::jsonb,
+  'Az alkalmazás időzónája Europe/Budapest'
+);
+
+select is(
+  (select count(*)::bigint from public.rooms where is_active),
+  11::bigint,
+  'A seed pontosan 11 aktív induló helyiséget hoz létre'
+);
+
+select * from finish();
+rollback;
