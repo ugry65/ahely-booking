@@ -147,14 +147,14 @@ insert into public.audit_logs (
 select throws_ok(
   $$update public.audit_logs set action = 'tampered' where entity_id = '20000000-0000-0000-0000-000000000001'$$,
   '42501',
-  'audit_logs is append-only',
+  'Ez az archivált rekord nem módosítható és nem törölhető.',
   'Az auditnapló módosítása tiltott'
 );
 
 select throws_ok(
   $$delete from public.audit_logs where entity_id = '20000000-0000-0000-0000-000000000001'$$,
   '42501',
-  'audit_logs is append-only',
+  'Ez az archivált rekord nem módosítható és nem törölhető.',
   'Az auditnapló fizikai törlése tiltott'
 );
 
