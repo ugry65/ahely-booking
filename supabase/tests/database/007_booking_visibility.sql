@@ -16,7 +16,7 @@ select ok(
 );
 select is(
   (
-    select array_agg(argument_name order by ordinal_position)
+    select array_agg(parameter_name order by ordinal_position)
     from information_schema.parameters
     where specific_schema = 'public'
       and specific_name = (
