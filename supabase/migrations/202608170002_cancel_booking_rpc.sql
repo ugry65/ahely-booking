@@ -445,6 +445,13 @@ begin
   -- Acquire room locks before claiming the idempotency row. Foreign-key and
   -- unique-index waits on the ledger must never be held while waiting for a
   -- room lock, otherwise two competing updates can form a lock inversion.
+  v_original_room_lock := hashtextextended(v_original_room_id::text, 0);
+  v_target_room_lock := hashtextextended(p_room_id::text, 0);
+  perform pg_advisory_xact_lock(least(v_original_room_lock, v_target_room_lock));
+  if v_original_room_lock <> v_target_room_lock then
+    perform pg_advisory_xact_lock(greatest(v_original_room_lock, v_target_room_lock));
+  end if;
+
   v_request_payload := jsonb_build_object(
     'operation', 'update',
     'booking_id', p_booking_id,
@@ -479,13 +486,6 @@ begin
 
       raise exception 'Ezt a kérésazonosítót már más műveleti adatokkal használták.' using errcode = 'P0001';
   end;
-
-  v_original_room_lock := hashtextextended(v_original_room_id::text, 0);
-  v_target_room_lock := hashtextextended(p_room_id::text, 0);
-  perform pg_advisory_xact_lock(least(v_original_room_lock, v_target_room_lock));
-  if v_original_room_lock <> v_target_room_lock then
-    perform pg_advisory_xact_lock(greatest(v_original_room_lock, v_target_room_lock));
-  end if;
 
   select * into v_booking
   from public.bookings
