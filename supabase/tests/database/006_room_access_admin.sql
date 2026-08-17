@@ -96,8 +96,11 @@ select lives_ok(
     '16000000-0000-0000-0000-000000000013')$$,
   'Admin közvetlen foglalási és ismétlési jogot adhat'
 );
+reset role;
 select is((select can_repeat from public.user_room_permissions where user_id = '00000000-0000-0000-0000-000000000062' and room_id = '11000000-0000-0000-0000-000000000001'), true, 'A közvetlen jog mentve van');
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select lives_ok(
   $$select public.admin_upsert_access_group('16000000-0000-0000-0000-000000000002', 'Teszt hozzáférési csoport', true,
     '16000000-0000-0000-0000-000000000014')$$,
