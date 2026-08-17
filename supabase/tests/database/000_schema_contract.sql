@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(13);
 
 select has_table('public', 'profiles', 'A profiles tábla létezik');
 select has_table('public', 'rooms', 'A rooms tábla létezik');
@@ -28,6 +28,27 @@ select has_trigger(
   'audit_logs',
   'audit_logs_immutable',
   'Az auditnapló módosítását tiltó trigger létezik'
+);
+
+select has_trigger(
+  'public',
+  'bookings',
+  'bookings_no_physical_delete',
+  'A foglalások fizikai törlését tiltó trigger létezik'
+);
+
+select has_trigger(
+  'public',
+  'payments',
+  'payments_no_physical_delete',
+  'A befizetések fizikai törlését tiltó trigger létezik'
+);
+
+select has_trigger(
+  'public',
+  'settlement_booking_lines',
+  'settlement_booking_lines_no_physical_delete',
+  'Az elszámolási sorok fizikai törlését tiltó trigger létezik'
 );
 
 select is(
