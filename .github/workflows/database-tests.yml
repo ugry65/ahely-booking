@@ -44,6 +44,9 @@ jobs:
       - name: Run pgTAP database tests
         run: supabase test db
 
+      - name: Run concurrent booking integration test
+        run: ./scripts/test-booking-concurrency.sh
+
       - name: Lint database schema
         run: supabase db lint --level warning
 
