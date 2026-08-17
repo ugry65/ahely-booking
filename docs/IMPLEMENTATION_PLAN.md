@@ -58,6 +58,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 6. Ismétlődő foglalás
 
+Állapot: tranzakciós adatbázis-RPC és regressziós/konkurenciatesztek implementálás alatt (Issue #17).
+
 - napi, heti, kétheti, havi;
 - végdátum/darabszám és kivételdátum;
 - `abort_all` és `create_available` konfliktuspolitika;
