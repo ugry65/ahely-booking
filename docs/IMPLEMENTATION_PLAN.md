@@ -34,6 +34,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 4. Tranzakciós egyedi foglalás
 
+Állapot: implementálva, CI-validálás és független review előtt.
+
 - szerveroldali validáció;
 - adatbázis RPC;
 - nyitvatartás és kivételdátum;
