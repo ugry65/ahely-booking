@@ -28,7 +28,7 @@ begin
   join public.rooms room on room.id = booking.room_id
   where booking.user_id = v_actor.id
     and booking.status = 'active'
-    and booking.end_at > now()
+    and booking.start_at > now()
   order by booking.start_at, room.display_order, booking.id;
 end;
 $$;
