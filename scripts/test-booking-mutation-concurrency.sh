@@ -186,13 +186,19 @@ fi
 
 cross_first_updated_at="$(psql "$database_url" -X -Atqc "select updated_at::text from public.bookings where id = '$cross_first_booking_id'")"
 cross_second_updated_at="$(psql "$database_url" -X -Atqc "select updated_at::text from public.bookings where id = '$cross_second_booking_id'")"
+cross_first_start="$(psql "$database_url" -X -Atqc "select start_at::text from public.bookings where id = '$cross_first_booking_id'")"
+cross_first_end="$(psql "$database_url" -X -Atqc "select end_at::text from public.bookings where id = '$cross_first_booking_id'")"
+cross_second_start="$(psql "$database_url" -X -Atqc "select start_at::text from public.bookings where id = '$cross_second_booking_id'")"
+cross_second_end="$(psql "$database_url" -X -Atqc "select end_at::text from public.bookings where id = '$cross_second_booking_id'")"
 
 run_cross_update() {
   local booking_id="$1"
   local expected_updated_at="$2"
   local target_room_id="$3"
-  local idempotency_key="$4"
-  local output_file="$5"
+  local requested_start="$4"
+  local requested_end="$5"
+  local idempotency_key="$6"
+  local output_file="$7"
 
   psql "$database_url" -X -v ON_ERROR_STOP=1 >"$output_file" 2>&1 <<SQL
 begin;
@@ -201,8 +207,8 @@ select set_config('request.jwt.claim.sub', '$actor_id', true);
 select public.update_booking(
   '$booking_id', '$expected_updated_at'::timestamptz,
   '$target_room_id',
-  (select start_at from public.bookings where id = '$booking_id'),
-  (select end_at from public.bookings where id = '$booking_id'),
+  '$requested_start'::timestamptz,
+  '$requested_end'::timestamptz,
   'individual', 'Kereszt-helyiséges módosítás', '$idempotency_key'
 );
 select pg_sleep(2);
@@ -213,12 +219,14 @@ SQL
 set +e
 run_cross_update \
   "$cross_first_booking_id" "$cross_first_updated_at" \
-  "11000000-0000-0000-0000-000000000007" "$cross_first_key" \
+  "11000000-0000-0000-0000-000000000007" \
+  "$cross_first_start" "$cross_first_end" "$cross_first_key" \
   "$test_dir/cross-first.log" &
 first_pid=$!
 run_cross_update \
   "$cross_second_booking_id" "$cross_second_updated_at" \
-  "11000000-0000-0000-0000-000000000006" "$cross_second_key" \
+  "11000000-0000-0000-0000-000000000006" \
+  "$cross_second_start" "$cross_second_end" "$cross_second_key" \
   "$test_dir/cross-second.log" &
 second_pid=$!
 wait "$first_pid"
