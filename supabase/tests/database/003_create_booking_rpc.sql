@@ -1,12 +1,32 @@
 begin;
 
-select plan(23);
+select plan(33);
 
 select has_function(
   'public',
   'create_booking',
   array['uuid', 'uuid', 'timestamp with time zone', 'timestamp with time zone', 'booking_use_type', 'text', 'uuid'],
   'A tranzakciós egyedi foglalási RPC létezik'
+);
+
+select ok(
+  (
+    select prosecdef
+    from pg_proc
+    where oid = 'public.create_booking(uuid,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid)'::regprocedure
+  ),
+  'A foglalási RPC SECURITY DEFINER függvény'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_proc procedure
+    cross join unnest(procedure.proconfig) as config(setting)
+    where procedure.oid = 'public.create_booking(uuid,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid)'::regprocedure
+      and config.setting = 'search_path=""'
+  ),
+  'A foglalási RPC üres, rögzített search_path beállítást használ'
 );
 
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -112,6 +132,22 @@ select throws_ok(
   'P0001',
   'Ezt a kérésazonosítót már más foglalási adatokkal használták.',
   'Az idempotenciakulcs más adatokkal nem használható újra'
+);
+
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000019'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 2) + time '09:30') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 2) + time '10:30') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A helyiség a kiválasztott időpontban már foglalt.',
+  'A GiST-ütközés pontos, magyar üzleti hibaüzenetet ad'
 );
 
 select lives_ok(
@@ -275,6 +311,162 @@ select lives_ok(
   'Az egyedi előrefoglalási override felülírja a default limitet'
 );
 reset role;
+
+update public.profiles set is_active = false
+where id = '00000000-0000-0000-0000-000000000022';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000021'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '08:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '09:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A felhasználói fiók nem aktív.',
+  'Inaktív actor nem foglalhat'
+);
+reset role;
+update public.profiles set is_active = true
+where id = '00000000-0000-0000-0000-000000000022';
+
+update public.profiles set is_active = false
+where id = '00000000-0000-0000-0000-000000000023';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000004',
+      '00000000-0000-0000-0000-000000000023',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000022'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '10:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A foglalás célfelhasználója nem aktív.',
+  'Admin sem foglalhat inaktív cél-user nevében'
+);
+reset role;
+update public.profiles set is_active = true
+where id = '00000000-0000-0000-0000-000000000023';
+
+update public.rooms set is_active = false
+where id = '11000000-0000-0000-0000-000000000006';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000006',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000023'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '10:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '11:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A kiválasztott helyiség nem foglalható.',
+  'Inaktív helyiség nem foglalható'
+);
+reset role;
+update public.rooms set is_active = true
+where id = '11000000-0000-0000-0000-000000000006';
+
+insert into public.user_room_permissions (user_id, room_id, can_book) values
+  ('00000000-0000-0000-0000-000000000022', '11000000-0000-0000-0000-000000000007', false);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000007',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000024'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '11:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '12:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'Nincs foglalási jogosultságod ehhez a helyiséghez.',
+  'A közvetlen can_book=false nem ad foglalási jogot'
+);
+reset role;
+
+insert into public.access_groups (id, name, is_active) values
+  ('13000000-0000-0000-0000-000000000032', 'RPC tiltott szobacsoport', true),
+  ('13000000-0000-0000-0000-000000000033', 'RPC inaktív csoport', false);
+insert into public.access_group_members (group_id, user_id) values
+  ('13000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000022'),
+  ('13000000-0000-0000-0000-000000000033', '00000000-0000-0000-0000-000000000022');
+insert into public.access_group_rooms (group_id, room_id, can_book) values
+  ('13000000-0000-0000-0000-000000000032', '11000000-0000-0000-0000-000000000008', false),
+  ('13000000-0000-0000-0000-000000000033', '11000000-0000-0000-0000-000000000009', true);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000008',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000025'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '12:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '13:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'Nincs foglalási jogosultságod ehhez a helyiséghez.',
+  'A csoportos can_book=false nem ad foglalási jogot'
+);
+
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000009',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000026'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '13:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '14:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'Nincs foglalási jogosultságod ehhez a helyiséghez.',
+  'Az inaktív csoport can_book=true mellett sem ad foglalási jogot'
+);
+reset role;
+
+update public.app_settings set value = '15'::jsonb where key = 'slot_minutes';
+update public.app_settings set value = '45'::jsonb where key = 'minimum_booking_minutes';
+select lives_ok(
+  format(
+    $sql$insert into public.bookings (
+      room_id, user_id, created_by, start_at, end_at, idempotency_key
+    ) values (
+      '11000000-0000-0000-0000-000000000010',
+      '00000000-0000-0000-0000-000000000022',
+      '00000000-0000-0000-0000-000000000021',
+      %L::timestamptz, %L::timestamptz,
+      '14000000-0000-0000-0000-000000000027'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 30) + time '08:15') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 30) + time '09:00') at time zone 'Europe/Budapest'
+  ),
+  'A DB-kényszer a központilag módosított 15/45 perces szabályt érvényesíti'
+);
+update public.app_settings set value = '30'::jsonb where key = 'slot_minutes';
+update public.app_settings set value = '60'::jsonb where key = 'minimum_booking_minutes';
 
 insert into public.calendar_exceptions (service_date, is_closed, reason, created_by) values (
   (clock_timestamp() at time zone 'Europe/Budapest')::date + 3,

@@ -11,6 +11,7 @@ readonly actor_id="00000000-0000-0000-0000-000000000041"
 readonly room_id="11000000-0000-0000-0000-000000000005"
 readonly first_key="15000000-0000-0000-0000-000000000001"
 readonly second_key="15000000-0000-0000-0000-000000000002"
+readonly same_key="15000000-0000-0000-0000-000000000003"
 
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
@@ -28,10 +29,14 @@ SQL
 
 start_at="$(psql "$database_url" -X -Atqc "select ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '16:00') at time zone 'Europe/Budapest')::text")"
 end_at="$(psql "$database_url" -X -Atqc "select ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '17:00') at time zone 'Europe/Budapest')::text")"
+idempotent_start_at="$(psql "$database_url" -X -Atqc "select ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '18:00') at time zone 'Europe/Budapest')::text")"
+idempotent_end_at="$(psql "$database_url" -X -Atqc "select ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 6) + time '19:00') at time zone 'Europe/Budapest')::text")"
 
 run_booking() {
   local idempotency_key="$1"
   local output_file="$2"
+  local requested_start_at="$3"
+  local requested_end_at="$4"
 
   psql "$database_url" -X -v ON_ERROR_STOP=1 >"$output_file" 2>&1 <<SQL
 begin;
@@ -40,8 +45,8 @@ select set_config('request.jwt.claim.sub', '$actor_id', true);
 select public.create_booking(
   '$room_id',
   '$actor_id',
-  '$start_at'::timestamptz,
-  '$end_at'::timestamptz,
+  '$requested_start_at'::timestamptz,
+  '$requested_end_at'::timestamptz,
   'individual',
   'Konkurenciateszt',
   '$idempotency_key'
@@ -52,9 +57,9 @@ SQL
 }
 
 set +e
-run_booking "$first_key" "$test_dir/first.log" &
+run_booking "$first_key" "$test_dir/first.log" "$start_at" "$end_at" &
 first_pid=$!
-run_booking "$second_key" "$test_dir/second.log" &
+run_booking "$second_key" "$test_dir/second.log" "$start_at" "$end_at" &
 second_pid=$!
 wait "$first_pid"
 first_status=$?
@@ -72,6 +77,18 @@ if [[ "$success_count" -ne 1 ]]; then
   sed -n '1,120p' "$test_dir/first.log" >&2
   echo "Második kérés kilépési kódja: $second_status" >&2
   sed -n '1,120p' "$test_dir/second.log" >&2
+  exit 1
+fi
+
+if [[ "$first_status" -ne 0 ]]; then
+  conflict_log="$test_dir/first.log"
+else
+  conflict_log="$test_dir/second.log"
+fi
+
+if ! grep -Fq "A helyiség a kiválasztott időpontban már foglalt." "$conflict_log"; then
+  echo "Hiba: az átfedő kérés nem a várt magyar üzleti hibát adta." >&2
+  sed -n '1,120p' "$conflict_log" >&2
   exit 1
 fi
 
@@ -97,4 +114,44 @@ if [[ "$booking_count $audit_count $outbox_count" != "1 1 1" ]]; then
   exit 1
 fi
 
-echo "Konkurenciateszt sikeres: két átfedő párhuzamos kérésből pontosan egy commitált."
+set +e
+run_booking "$same_key" "$test_dir/idempotent-first.log" "$idempotent_start_at" "$idempotent_end_at" &
+first_pid=$!
+run_booking "$same_key" "$test_dir/idempotent-second.log" "$idempotent_start_at" "$idempotent_end_at" &
+second_pid=$!
+wait "$first_pid"
+first_status=$?
+wait "$second_pid"
+second_status=$?
+set -e
+
+if [[ "$first_status" -ne 0 || "$second_status" -ne 0 ]]; then
+  echo "Hiba: az azonos kulcsú, azonos payloadú konkurens kéréseknek mind sikeresnek kell lenniük." >&2
+  sed -n '1,120p' "$test_dir/idempotent-first.log" >&2
+  sed -n '1,120p' "$test_dir/idempotent-second.log" >&2
+  exit 1
+fi
+
+read -r booking_count audit_count outbox_count <<<"$(
+  psql "$database_url" -X -AtF' ' -v ON_ERROR_STOP=1 -c "
+    select
+      count(distinct booking.id),
+      count(distinct audit.id),
+      count(distinct outbox.id)
+    from public.bookings booking
+    left join public.audit_logs audit
+      on audit.entity_id = booking.id::text and audit.action = 'booking.created'
+    left join public.outbox_events outbox
+      on outbox.aggregate_id = booking.id::text and outbox.event_type = 'booking.created'
+    where booking.created_by = '$actor_id'
+      and booking.idempotency_key = '$same_key';
+  "
+)"
+
+if [[ "$booking_count $audit_count $outbox_count" != "1 1 1" ]]; then
+  echo "Hiba: az azonos idempotenciakulcsú race duplikált vagy részleges eredményt adott." >&2
+  echo "bookings=$booking_count audit_logs=$audit_count outbox_events=$outbox_count" >&2
+  exit 1
+fi
+
+echo "Konkurenciateszt sikeres: az átfedési és az azonos idempotenciakulcsú race is helyes."

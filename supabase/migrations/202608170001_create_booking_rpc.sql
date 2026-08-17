@@ -1,5 +1,75 @@
 begin;
 
+alter table public.bookings
+  drop constraint bookings_minimum_duration,
+  drop constraint bookings_half_hour_duration,
+  drop constraint bookings_start_grid,
+  drop constraint bookings_end_grid;
+
+create or replace function public.validate_booking_time_rules()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_timezone text;
+  v_slot_minutes integer;
+  v_minimum_minutes integer;
+  v_duration_minutes bigint;
+  v_start_local timestamp;
+  v_end_local timestamp;
+begin
+  select value #>> '{}' into v_timezone
+  from public.app_settings
+  where key = 'timezone';
+
+  select (value #>> '{}')::integer into v_slot_minutes
+  from public.app_settings
+  where key = 'slot_minutes';
+
+  select (value #>> '{}')::integer into v_minimum_minutes
+  from public.app_settings
+  where key = 'minimum_booking_minutes';
+
+  if v_timezone is null or v_slot_minutes is null or v_slot_minutes <= 0
+    or v_minimum_minutes is null or v_minimum_minutes <= 0
+  then
+    raise exception 'A foglalási időbeállítások hiányosak vagy hibásak.' using errcode = '23514';
+  end if;
+
+  if not isfinite(new.start_at) or not isfinite(new.end_at) or new.end_at <= new.start_at then
+    raise exception 'A foglalás időpontja nem érvényes.' using errcode = '23514';
+  end if;
+
+  v_duration_minutes := extract(epoch from (new.end_at - new.start_at))::bigint / 60;
+  v_start_local := new.start_at at time zone v_timezone;
+  v_end_local := new.end_at at time zone v_timezone;
+
+  if v_duration_minutes < v_minimum_minutes then
+    raise exception 'A foglalás legalább % perces legyen.', v_minimum_minutes using errcode = '23514';
+  end if;
+
+  -- A helyi faliidő-rács az aktuális 07:00–22:00 nyitvatartás mellett nem
+  -- érinti a DST visszaállás ismétlődő 02:00–03:00 óráját. Ha a nyitvatartás
+  -- erre az időszakra bővül, a DST-eseteket külön üzleti döntéssel kell kezelni.
+  if v_duration_minutes % v_slot_minutes <> 0
+    or extract(epoch from v_start_local::time)::bigint % (v_slot_minutes * 60) <> 0
+    or extract(epoch from v_end_local::time)::bigint % (v_slot_minutes * 60) <> 0
+  then
+    raise exception 'A kezdésnek, befejezésnek és időtartamnak % perces rácshoz kell igazodnia.',
+      v_slot_minutes using errcode = '23514';
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger bookings_validate_time_rules
+before insert or update of start_at, end_at on public.bookings
+for each row execute function public.validate_booking_time_rules();
+
+revoke all on function public.validate_booking_time_rules() from public, anon, authenticated;
+
 create or replace function public.create_booking(
   p_room_id uuid,
   p_user_id uuid,
@@ -281,5 +351,8 @@ to authenticated;
 
 comment on function public.create_booking(uuid, uuid, timestamptz, timestamptz, public.booking_use_type, text, uuid) is
   'Tranzakciós, idempotens egyedi foglalás actor-, jogosultság-, időablak- és ütközésellenőrzéssel; audit- és outbox-mellékhatással.';
+
+comment on function public.validate_booking_time_rules() is
+  'A központi app_settings szerinti minimum és időrács DB-szintű kikényszerítése minden foglalásírásnál.';
 
 commit;
