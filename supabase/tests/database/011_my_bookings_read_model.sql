@@ -29,7 +29,8 @@ select is((select note from public.list_my_bookings()), 'Saját aktív',
   'A saját foglalás szerkesztéséhez szükséges megjegyzés visszatér');
 select ok((select updated_at is not null from public.list_my_bookings()),
   'Az optimista módosításhoz szükséges updated_at visszatér');
-select is((select room_name from public.list_my_bookings()), 'Boróka',
+select is((select room_name from public.list_my_bookings()),
+  (select name from public.rooms where id = '11000000-0000-0000-0000-000000000002'),
   'A helyiség megjelenítési neve visszatér');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000143', true);
 select throws_ok($$select * from public.list_my_bookings()$$, '42501', 'A felhasználói fiók nem aktív.',
