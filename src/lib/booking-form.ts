@@ -1,5 +1,5 @@
 export type BookingUseType = "individual" | "group";
-export type BookingRequest = { roomId: string; date: string; startAt: string; endAt: string; useType: BookingUseType; note: string | null };
+export type BookingRequest = { roomId: string; date: string; startAt: string; endAt: string; useType: BookingUseType; note: string | null; idempotencyKey: string };
 export type BookingFormResult = { ok: true; value: BookingRequest } | { ok: false; error: string; date: string | null };
 
 // PostgreSQL UUID: a seedelt, stabil üzleti azonosítók nem feltétlenül RFC-v4 UUID-k.
@@ -34,14 +34,17 @@ export function parseBookingForm(input: Record<string, string>): BookingFormResu
   const roomId = input.roomId?.trim() ?? ""; const date = input.date?.trim() ?? "";
   const startTime = input.startTime?.trim() ?? ""; const endTime = input.endTime?.trim() ?? "";
   const useType = input.useType?.trim() ?? ""; const note = input.note?.trim() ?? "";
-  if (!UUID_PATTERN.test(roomId) || !isValidDate(date) || !TIME_PATTERN.test(startTime) || !TIME_PATTERN.test(endTime) || (useType !== "individual" && useType !== "group"))
+  const idempotencyKey = input.idempotencyKey?.trim() ?? "";
+  if (!UUID_PATTERN.test(roomId) || !UUID_PATTERN.test(idempotencyKey) || !isValidDate(date) || !TIME_PATTERN.test(startTime) || !TIME_PATTERN.test(endTime) || (useType !== "individual" && useType !== "group"))
     return { ok: false, error: "A foglalási adatok hiányosak vagy érvénytelenek.", date: isValidDate(date) ? date : null };
   if (minutes(startTime) < 420 || minutes(endTime) > 1320)
     return { ok: false, error: "A foglalásnak 07:00 és 22:00 közé kell esnie.", date };
+  if (minutes(endTime) <= minutes(startTime))
+    return { ok: false, error: "A befejezésnek a kezdés után kell lennie.", date };
   if (minutes(endTime) - minutes(startTime) < 60)
     return { ok: false, error: "A foglalás legalább 60 perces legyen.", date };
   if (note.length > 1000) return { ok: false, error: "A megjegyzés legfeljebb 1000 karakteres lehet.", date };
   const startAt = budapestLocalToIso(date, startTime); const endAt = budapestLocalToIso(date, endTime);
   if (!startAt || !endAt) return { ok: false, error: "A kiválasztott helyi időpont nem értelmezhető.", date };
-  return { ok: true, value: { roomId, date, startAt, endAt, useType, note: note || null } };
+  return { ok: true, value: { roomId, date, startAt, endAt, useType, note: note || null, idempotencyKey } };
 }
