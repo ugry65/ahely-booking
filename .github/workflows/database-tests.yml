@@ -7,6 +7,7 @@ on:
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
+      - "scripts/test-recurring-booking-concurrency.sh"
   push:
     branches: [main]
     paths:
@@ -14,6 +15,7 @@ on:
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
+      - "scripts/test-recurring-booking-concurrency.sh"
   workflow_dispatch:
 
 permissions:
@@ -54,6 +56,9 @@ jobs:
 
       - name: Run concurrent room access administration tests
         run: bash ./scripts/test-room-access-concurrency.sh
+
+      - name: Run concurrent recurring booking tests
+        run: bash ./scripts/test-recurring-booking-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning
