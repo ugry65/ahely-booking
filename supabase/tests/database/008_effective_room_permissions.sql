@@ -39,7 +39,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000101', '11000000-0000-0000-0000-000000000001', true, false),
-  ('00000000-0000-0000-0000-000000000101', '11000000-0000-0000-0000-000000000002', false, false);
+  ('00000000-0000-0000-0000-000000000101', '11000000-0000-0000-0000-000000000002', false, false),
+  ('00000000-0000-0000-0000-000000000101', '11000000-0000-0000-0000-000000000003', false, false);
 
 insert into public.access_groups (id, name, is_active) values
   ('26000000-0000-0000-0000-000000000101', 'Aktív effektív jog teszt', true),
@@ -86,7 +87,7 @@ select is(
   (select can_book from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
    where room_id = '11000000-0000-0000-0000-000000000003'),
   true,
-  'Aktív csoport önállóan is adhat effektív foglalási jogot'
+  'A csoportos engedély felülírja a közvetlen can_book=false forrást'
 );
 select is(
   (select count(*) from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
@@ -130,12 +131,38 @@ select ok(
   )) = 0,
   'A calendar read-modelben nem maradt külön jogosultsági lekérdezés'
 );
-select lives_ok(
-  $$explain (format json)
-    select *
-    from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
-    where room_id = '11000000-0000-0000-0000-000000000001'$$,
-  'A helper szűrt lekérdezési terve hiba nélkül előáll'
+create function pg_temp.explain_effective_group_access(p_user_id uuid)
+returns json
+language plpgsql
+as $$
+declare
+  v_plan json;
+begin
+  execute $query$
+    explain (format json)
+    select group_permission.room_id,
+           group_permission.can_book,
+           group_permission.can_repeat
+    from public.access_group_members membership
+    join public.access_groups access_group
+      on access_group.id = membership.group_id
+     and access_group.is_active
+    join public.access_group_rooms group_permission
+      on group_permission.group_id = membership.group_id
+    where membership.user_id = $1
+  $query$ into v_plan using p_user_id;
+  return v_plan;
+end;
+$$;
+set local enable_seqscan = off;
+select ok(
+  position(
+    'access_group_members_user_id_idx'
+    in pg_temp.explain_effective_group_access(
+      '00000000-0000-0000-0000-000000000101'
+    )::text
+  ) > 0,
+  'A csoportos jogosultsági lekérdezési terv képes a célzott user_id indexet használni'
 );
 
 select * from finish();
