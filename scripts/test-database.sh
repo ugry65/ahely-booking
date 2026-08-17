@@ -13,4 +13,5 @@ supabase test db
 ./scripts/test-booking-concurrency.sh
 ./scripts/test-booking-mutation-concurrency.sh
 bash ./scripts/test-room-access-concurrency.sh
+bash ./scripts/test-recurring-booking-concurrency.sh
 supabase db lint --level warning
