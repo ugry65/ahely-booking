@@ -59,7 +59,7 @@ flowchart TD
 7. Kritikus írásoknál az adatbázisfüggvény újra ellenőrzi a szerepkört, a tulajdonost, a helyiségjogot, az időablakot és a speciális szabályokat.
 8. Minden író végpont idempotenciakulcsot fogad; ismételt kérés nem duplikálhat foglalást, befizetést vagy korrekciót.
 
-A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és csoportos hozzáférések későbbi, adatbázis-szintű ellenőrzése után hozhat létre.
+A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és az aktív csoportokból örökölt jogosultságok adatbázis-szintű ellenőrzése után hozhat létre. A közvetlen és csoportos `can_book` / `can_repeat` értékeket a JOIN-barát, `STABLE` `effective_room_permissions(user_id)` segédfüggvény egyesíti; a foglalási write-validátor és a naptár read-model ugyanebből az egyetlen forrásból dolgozik.
 
 A naptár-read model egy kérésben legfeljebb 62 napos időintervallumot szolgál ki. Ez technikai erőforrás-korlát: lefedi a havi és kéthavi naptárnézetet, miközben megakadályozza a teljes foglalási történet egyetlen, korlátlan lekérdezéssel történő kiolvasását. Hosszabb riportok és exportok külön, célzott végpontot kapnak.
 

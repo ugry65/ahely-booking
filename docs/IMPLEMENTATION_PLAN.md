@@ -27,7 +27,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 3. Helyiségek és hozzáférések
 
-Állapot: helyiség- és jogosultság-adminisztráció implementálva; névláthatósági read-model és admin kapcsoló implementálás alatt (Issue #13).
+Állapot: helyiség- és jogosultság-adminisztráció, valamint névláthatósági read-model implementálva; az effektív helyiségjog közös read/write forrásba szervezése folyamatban (Issue #15).
 
 - admin helyiség CRUD deaktiválással;
 - közvetlen és csoportos userjog;
