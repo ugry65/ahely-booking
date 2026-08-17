@@ -83,7 +83,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 9. Naptár és user felület
 
-Állapot: napi többhelyiséges naptár és egyedi foglalási űrlap implementálás alatt (Issue #19); heti nézet és további userműveletek későbbi szeletben.
+Állapot: napi többhelyiséges naptár és egyedi foglalási űrlap implementálva (Issue #19); a saját foglalások módosítási és lemondási felülete implementálás alatt (Issue #21); a heti nézet későbbi szelet.
 
 - magyar napi többhelyiséges nézet;
 - heti nézet;
