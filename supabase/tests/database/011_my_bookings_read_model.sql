@@ -19,12 +19,13 @@ insert into public.bookings (id, room_id, user_id, created_by, start_at, end_at,
   ('31000000-0000-0000-0000-000000000141', '11000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000141', '00000000-0000-0000-0000-000000000141', current_date + interval '2 days 09 hours', current_date + interval '2 days 10 hours', 'individual', 'active', 'Saját aktív', '32000000-0000-0000-0000-000000000141'),
   ('31000000-0000-0000-0000-000000000142', '11000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000142', '00000000-0000-0000-0000-000000000142', current_date + interval '3 days 09 hours', current_date + interval '3 days 10 hours', 'individual', 'active', 'Más foglalása', '32000000-0000-0000-0000-000000000142'),
   ('31000000-0000-0000-0000-000000000143', '11000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000141', '00000000-0000-0000-0000-000000000141', current_date + interval '4 days 09 hours', current_date + interval '4 days 10 hours', 'individual', 'cancelled', 'Lemondott', '32000000-0000-0000-0000-000000000143'),
-  ('31000000-0000-0000-0000-000000000144', '11000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000141', '00000000-0000-0000-0000-000000000141', current_date - interval '1 day' + interval '09 hours', current_date - interval '1 day' + interval '10 hours', 'individual', 'active', 'Lezárult', '32000000-0000-0000-0000-000000000144');
+  ('31000000-0000-0000-0000-000000000144', '11000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000141', '00000000-0000-0000-0000-000000000141', current_date - interval '1 day' + interval '09 hours', current_date - interval '1 day' + interval '10 hours', 'individual', 'active', 'Lezárult', '32000000-0000-0000-0000-000000000144'),
+  ('31000000-0000-0000-0000-000000000145', '11000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000141', '00000000-0000-0000-0000-000000000141', date_trunc('hour', now()), date_trunc('hour', now()) + interval '1 hour', 'individual', 'active', 'Már elkezdődött', '32000000-0000-0000-0000-000000000145');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000141', true);
 select is((select count(*) from public.list_my_bookings()), 1::bigint,
-  'Csak a saját, aktív, még le nem zárult foglalás látszik');
+  'Csak a saját, aktív, még el nem kezdődött foglalás látszik');
 select is((select note from public.list_my_bookings()), 'Saját aktív',
   'A saját foglalás szerkesztéséhez szükséges megjegyzés visszatér');
 select ok((select updated_at is not null from public.list_my_bookings()),
