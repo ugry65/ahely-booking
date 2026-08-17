@@ -13,11 +13,11 @@ main { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 3rem 0; }
 .card { width: min(100%, 30rem); padding: 2rem; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fff; box-shadow: 0 1rem 3rem rgb(31 42 36 / 8%); }
 .stack { display: grid; gap: 1rem; }
 label { display: grid; gap: .4rem; font-weight: 600; }
-input, select, textarea { width: 100%; padding: .8rem; border: 1px solid #a9b3ad; border-radius: .5rem; background: #fff; color: inherit; font: inherit; }
+input, select, textarea { width: 100%; padding: .8rem; border: 1px solid #707b75; border-radius: .5rem; background: #fff; color: inherit; font: inherit; }
 input[type="checkbox"] { width: auto; padding: 0; }
 button { padding: .8rem 1rem; border: 0; border-radius: .5rem; background: #235c43; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .button { display: inline-flex; align-items: center; justify-content: center; padding: .7rem .9rem; border-radius: .5rem; background: #235c43; color: #fff; font-weight: 700; text-decoration: none; }
-.button.secondary { border: 1px solid #b8c2bc; background: #fff; color: #235c43; }
+.button.secondary { border: 1px solid #65716a; background: #fff; color: #235c43; }
 .muted { color: #65716a; }
 .message { padding: .75rem; border-radius: .5rem; background: #f1eee5; }
 nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #d8d4c8; }
