@@ -1,6 +1,6 @@
 begin;
 
-select plan(29);
+select plan(32);
 
 select has_function('public', 'admin_upsert_room', array['uuid','text','integer','boolean','boolean','uuid'], 'A helyiség admin RPC létezik');
 select has_function('public', 'admin_set_user_room_permission', array['uuid','uuid','boolean','boolean','uuid'], 'A közvetlen jogosultság RPC létezik');
@@ -85,6 +85,11 @@ select is((select count(*) from public.audit_logs where entity_id = '16000000-00
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select throws_ok(
+  $$select public.admin_upsert_room(null, 'Átnevezett tesztterem', 99, false, true, gen_random_uuid())$$,
+  'P0001', 'Már létezik helyiség ezzel a névvel.',
+  'A duplikált helyiségnév érthető üzleti hibát ad'
+);
+select throws_ok(
   $$select public.admin_set_user_room_permission(
     '00000000-0000-0000-0000-000000000062', '11000000-0000-0000-0000-000000000001', false, true, gen_random_uuid())$$,
   '22023', 'Ismétlődő foglalási jog csak foglalási jog mellett adható.',
@@ -105,6 +110,11 @@ select lives_ok(
   $$select public.admin_upsert_access_group('16000000-0000-0000-0000-000000000002', 'Teszt hozzáférési csoport', true,
     '16000000-0000-0000-0000-000000000014')$$,
   'Admin csoportot hozhat létre'
+);
+select throws_ok(
+  $$select public.admin_upsert_access_group(null, 'Teszt hozzáférési csoport', true, gen_random_uuid())$$,
+  'P0001', 'Már létezik hozzáférési csoport ezzel a névvel.',
+  'A duplikált csoportnév érthető üzleti hibát ad'
 );
 select lives_ok(
   $$select public.admin_set_group_member(
@@ -140,6 +150,24 @@ select is(
   0::bigint, 'Inaktív csoport nem ad effektív foglalási jogot'
 );
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000062', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000062',
+      %L::timestamptz, %L::timestamptz, 'individual', 'Inaktív csoport teszt',
+      '16000000-0000-0000-0000-000000000020'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '13:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '14:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001', 'Nincs foglalási jogosultságod ehhez a helyiséghez.',
+  'Inaktív csoport valódi foglalási RPC-n keresztül sem ad jogot'
+);
+
+reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select lives_ok(
