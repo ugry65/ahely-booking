@@ -442,6 +442,9 @@ begin
     raise exception 'A foglalás nem található.' using errcode = 'P0001';
   end if;
 
+  -- Acquire room locks before claiming the idempotency row. Foreign-key and
+  -- unique-index waits on the ledger must never be held while waiting for a
+  -- room lock, otherwise two competing updates can form a lock inversion.
   v_request_payload := jsonb_build_object(
     'operation', 'update',
     'booking_id', p_booking_id,
