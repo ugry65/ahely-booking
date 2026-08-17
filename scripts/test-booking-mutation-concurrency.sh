@@ -10,9 +10,13 @@ readonly database_url="${AHELY_TEST_DB_URL:-postgresql://postgres:postgres@127.0
 readonly actor_id="00000000-0000-0000-0000-000000000071"
 readonly cancel_booking_id="20000000-0000-0000-0000-000000000071"
 readonly update_booking_id="20000000-0000-0000-0000-000000000072"
+readonly cross_first_booking_id="20000000-0000-0000-0000-000000000073"
+readonly cross_second_booking_id="20000000-0000-0000-0000-000000000074"
 readonly cancel_key="21000000-0000-0000-0000-000000000071"
 readonly update_first_key="21000000-0000-0000-0000-000000000072"
 readonly update_second_key="21000000-0000-0000-0000-000000000073"
+readonly cross_first_key="21000000-0000-0000-0000-000000000074"
+readonly cross_second_key="21000000-0000-0000-0000-000000000075"
 
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
@@ -43,6 +47,20 @@ insert into public.bookings (
     ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '11:00') at time zone 'Europe/Budapest'),
     ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '12:00') at time zone 'Europe/Budapest'),
     '22000000-0000-0000-0000-000000000072'
+  ),
+  (
+    '$cross_first_booking_id', '11000000-0000-0000-0000-000000000006',
+    '$actor_id', '$actor_id',
+    ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '17:00') at time zone 'Europe/Budapest'),
+    ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '18:00') at time zone 'Europe/Budapest'),
+    '22000000-0000-0000-0000-000000000073'
+  ),
+  (
+    '$cross_second_booking_id', '11000000-0000-0000-0000-000000000007',
+    '$actor_id', '$actor_id',
+    ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '19:00') at time zone 'Europe/Budapest'),
+    ((((clock_timestamp() at time zone 'Europe/Budapest')::date + 7) + time '20:00') at time zone 'Europe/Budapest'),
+    '22000000-0000-0000-0000-000000000074'
   );
 SQL
 
@@ -166,4 +184,85 @@ if [[ "$audit_count $outbox_count $ledger_count" != "1 1 1" ]]; then
   exit 1
 fi
 
-echo "Műveleti konkurenciateszt sikeres: idempotens lemondás és optimista módosítás helyes."
+cross_first_updated_at="$(psql "$database_url" -X -Atqc "select updated_at::text from public.bookings where id = '$cross_first_booking_id'")"
+cross_second_updated_at="$(psql "$database_url" -X -Atqc "select updated_at::text from public.bookings where id = '$cross_second_booking_id'")"
+cross_first_start="$(psql "$database_url" -X -Atqc "select start_at::text from public.bookings where id = '$cross_first_booking_id'")"
+cross_first_end="$(psql "$database_url" -X -Atqc "select end_at::text from public.bookings where id = '$cross_first_booking_id'")"
+cross_second_start="$(psql "$database_url" -X -Atqc "select start_at::text from public.bookings where id = '$cross_second_booking_id'")"
+cross_second_end="$(psql "$database_url" -X -Atqc "select end_at::text from public.bookings where id = '$cross_second_booking_id'")"
+
+run_cross_update() {
+  local booking_id="$1"
+  local expected_updated_at="$2"
+  local target_room_id="$3"
+  local requested_start="$4"
+  local requested_end="$5"
+  local idempotency_key="$6"
+  local output_file="$7"
+
+  psql "$database_url" -X -v ON_ERROR_STOP=1 >"$output_file" 2>&1 <<SQL
+begin;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '$actor_id', true);
+select public.update_booking(
+  '$booking_id', '$expected_updated_at'::timestamptz,
+  '$target_room_id',
+  '$requested_start'::timestamptz,
+  '$requested_end'::timestamptz,
+  'individual', 'Kereszt-helyiséges módosítás', '$idempotency_key'
+);
+select pg_sleep(2);
+commit;
+SQL
+}
+
+set +e
+run_cross_update \
+  "$cross_first_booking_id" "$cross_first_updated_at" \
+  "11000000-0000-0000-0000-000000000007" \
+  "$cross_first_start" "$cross_first_end" "$cross_first_key" \
+  "$test_dir/cross-first.log" &
+first_pid=$!
+run_cross_update \
+  "$cross_second_booking_id" "$cross_second_updated_at" \
+  "11000000-0000-0000-0000-000000000006" \
+  "$cross_second_start" "$cross_second_end" "$cross_second_key" \
+  "$test_dir/cross-second.log" &
+second_pid=$!
+wait "$first_pid"
+first_status=$?
+wait "$second_pid"
+second_status=$?
+set -e
+
+if [[ "$first_status" -ne 0 || "$second_status" -ne 0 ]]; then
+  echo "Hiba: a kereszt-helyiséges módosításoknak deadlock nélkül sikerülniük kell." >&2
+  sed -n '1,120p' "$test_dir/cross-first.log" >&2
+  sed -n '1,120p' "$test_dir/cross-second.log" >&2
+  exit 1
+fi
+
+read -r swapped_count audit_count outbox_count ledger_count <<<"$(
+  psql "$database_url" -X -AtF' ' -v ON_ERROR_STOP=1 -c "
+    select
+      (select count(*) from public.bookings
+       where (id = '$cross_first_booking_id' and room_id = '11000000-0000-0000-0000-000000000007')
+          or (id = '$cross_second_booking_id' and room_id = '11000000-0000-0000-0000-000000000006')),
+      (select count(*) from public.audit_logs
+       where entity_id in ('$cross_first_booking_id', '$cross_second_booking_id')
+         and action = 'booking.updated'),
+      (select count(*) from public.outbox_events
+       where aggregate_id in ('$cross_first_booking_id', '$cross_second_booking_id')
+         and event_type = 'booking.updated'),
+      (select count(*) from public.booking_operation_requests
+       where booking_id in ('$cross_first_booking_id', '$cross_second_booking_id')
+         and operation = 'update');
+  "
+)"
+
+if [[ "$swapped_count $audit_count $outbox_count $ledger_count" != "2 2 2 2" ]]; then
+  echo "Hiba: a kereszt-helyiséges módosítás részleges vagy duplikált eredményt adott." >&2
+  exit 1
+fi
+
+echo "Műveleti konkurenciateszt sikeres: lemondás, optimista módosítás és kereszt-helyiséges lock-sorrend helyes."

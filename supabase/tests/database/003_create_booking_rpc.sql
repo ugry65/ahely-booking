@@ -192,7 +192,7 @@ select throws_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 2) + time '13:00') at time zone 'Europe/Budapest'
   ),
   'P0001',
-  'Más felhasználó nevében csak admin foglalhat.',
+  'Más felhasználó nevében csak admin járhat el.',
   'Normál user más nevében nem foglalhat'
 );
 

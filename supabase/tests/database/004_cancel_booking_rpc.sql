@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(27);
 
 select has_function(
   'public', 'cancel_booking', array['uuid', 'text', 'uuid'],
@@ -50,6 +50,31 @@ select ok(
       and config.setting = 'search_path=""'
   ),
   'A lemondási RPC üres, rögzített search_path beállítást használ'
+);
+select ok(
+  (
+    select prosecdef from pg_proc
+    where oid = 'public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure
+  ),
+  'A közös foglalási validátor SECURITY DEFINER függvény'
+);
+select ok(
+  exists (
+    select 1
+    from pg_proc procedure
+    cross join unnest(procedure.proconfig) as config(setting)
+    where procedure.oid = 'public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure
+      and config.setting = 'search_path=""'
+  ),
+  'A közös foglalási validátor üres, rögzített search_path beállítást használ'
+);
+select ok(
+  position(
+    'assert_booking_request' in pg_get_functiondef(
+      'public.create_booking(uuid,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid)'::regprocedure
+    )
+  ) > 0,
+  'A létrehozási RPC is a közös foglalási validátort használja'
 );
 
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -248,7 +273,7 @@ select throws_ok(
     set reason = 'Tiltott módosítás'
     where booking_id = '20000000-0000-0000-0000-000000000051'$$,
   '42501',
-  'audit_logs is append-only',
+  'Ez az archivált rekord nem módosítható és nem törölhető.',
   'A lemondási snapshot utólag nem módosítható'
 );
 
