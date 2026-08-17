@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(23);
 
 select has_function(
   'public', 'cancel_booking', array['uuid', 'text', 'uuid'],
@@ -18,6 +18,17 @@ select has_trigger(
 select has_trigger(
   'public', 'booking_operation_requests', 'booking_operation_requests_no_physical_delete',
   'Az idempotencia-ledger fizikailag nem törölhető'
+);
+select has_trigger(
+  'public', 'bookings', 'bookings_validate_time_rules',
+  'A dinamikus foglalási időszabály DB-triggerként létezik'
+);
+select ok(
+  (
+    select prosecdef from pg_proc
+    where oid = 'public.validate_booking_time_rules()'::regprocedure
+  ),
+  'A dinamikus időszabály-trigger SECURITY DEFINER jogosultsággal olvassa a beállításokat'
 );
 select ok(
   (

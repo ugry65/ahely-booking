@@ -47,6 +47,9 @@ jobs:
       - name: Run concurrent booking integration test
         run: ./scripts/test-booking-concurrency.sh
 
+      - name: Run concurrent booking mutation tests
+        run: ./scripts/test-booking-mutation-concurrency.sh
+
       - name: Lint database schema
         run: supabase db lint --level warning
 

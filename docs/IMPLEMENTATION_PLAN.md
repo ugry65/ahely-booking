@@ -46,6 +46,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 5. Foglalás módosítása és lemondása
 
+Állapot: implementálva, CI-validálás és független review előtt.
+
 - teljes újraellenőrzés módosításkor;
 - user 24 órás tiltás;
 - admin törlés;
