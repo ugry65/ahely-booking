@@ -112,6 +112,13 @@ begin
     raise exception 'A helyiség nem található.' using errcode = 'P0001';
   end if;
 
+  -- A még nem létező összetett kulcsú sort SELECT ... FOR UPDATE nem tudná
+  -- zárolni. Az advisory lock ugyanarra a user-room párra sorba rendezi az
+  -- első létrehozásokat is, így a before/after audit pontos marad.
+  perform pg_advisory_xact_lock(hashtextextended(
+    'user_room_permission:' || p_user_id::text || ':' || p_room_id::text, 0
+  ));
+
   select to_jsonb(permission) into v_before from public.user_room_permissions permission
   where user_id = p_user_id and room_id = p_room_id for update;
   insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat)
@@ -182,6 +189,9 @@ begin
   if p_correlation_id is null then raise exception 'A korrelációs azonosító kötelező.' using errcode = '22004'; end if;
   if not exists (select 1 from public.access_groups where id = p_group_id) then raise exception 'A csoport nem található.' using errcode = 'P0001'; end if;
   if not exists (select 1 from public.profiles where id = p_user_id) then raise exception 'A felhasználó nem található.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(
+    'access_group_member:' || p_group_id::text || ':' || p_user_id::text, 0
+  ));
   select to_jsonb(member) into v_before from public.access_group_members member
   where group_id = p_group_id and user_id = p_user_id for update;
   if coalesce(p_is_member, false) then
@@ -223,6 +233,9 @@ begin
   end if;
   if not exists (select 1 from public.access_groups where id = p_group_id) then raise exception 'A csoport nem található.' using errcode = 'P0001'; end if;
   if not exists (select 1 from public.rooms where id = p_room_id) then raise exception 'A helyiség nem található.' using errcode = 'P0001'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(
+    'access_group_room_permission:' || p_group_id::text || ':' || p_room_id::text, 0
+  ));
   select to_jsonb(permission) into v_before from public.access_group_rooms permission
   where group_id = p_group_id and room_id = p_room_id for update;
   insert into public.access_group_rooms (group_id, room_id, can_book, can_repeat)
