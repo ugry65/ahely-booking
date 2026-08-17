@@ -2,6 +2,25 @@ begin;
 
 alter function public.validate_booking_time_rules() security definer;
 
+create or replace function public.lock_booking_room_write()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_new_lock bigint := hashtextextended(new.room_id::text, 0);
+begin
+  perform pg_advisory_xact_lock(v_new_lock);
+  return new;
+end;
+$$;
+
+create trigger bookings_lock_room_writes
+before insert on public.bookings
+for each row execute function public.lock_booking_room_write();
+
+revoke all on function public.lock_booking_room_write() from public, anon, authenticated;
+
 create table public.booking_operation_requests (
   actor_user_id uuid not null references public.profiles(id) on delete restrict,
   idempotency_key uuid not null,
@@ -399,6 +418,9 @@ declare
   v_request_payload jsonb;
   v_existing_request public.booking_operation_requests%rowtype;
   v_note text := nullif(trim(p_note), '');
+  v_original_room_id uuid;
+  v_original_room_lock bigint;
+  v_target_room_lock bigint;
 begin
   if v_actor_id is null then
     raise exception 'A módosításhoz bejelentkezés szükséges.' using errcode = 'P0001';
@@ -413,7 +435,9 @@ begin
     raise exception 'A foglalás, a verzió és a kérésazonosító megadása kötelező.' using errcode = 'P0001';
   end if;
 
-  perform 1 from public.bookings where id = p_booking_id;
+  select room_id into v_original_room_id
+  from public.bookings
+  where id = p_booking_id;
   if not found then
     raise exception 'A foglalás nem található.' using errcode = 'P0001';
   end if;
@@ -452,6 +476,13 @@ begin
 
       raise exception 'Ezt a kérésazonosítót már más műveleti adatokkal használták.' using errcode = 'P0001';
   end;
+
+  v_original_room_lock := hashtextextended(v_original_room_id::text, 0);
+  v_target_room_lock := hashtextextended(p_room_id::text, 0);
+  perform pg_advisory_xact_lock(least(v_original_room_lock, v_target_room_lock));
+  if v_original_room_lock <> v_target_room_lock then
+    perform pg_advisory_xact_lock(greatest(v_original_room_lock, v_target_room_lock));
+  end if;
 
   select * into v_booking
   from public.bookings

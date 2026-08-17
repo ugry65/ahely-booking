@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(24);
 
 select has_function(
   'public', 'cancel_booking', array['uuid', 'text', 'uuid'],
@@ -22,6 +22,10 @@ select has_trigger(
 select has_trigger(
   'public', 'bookings', 'bookings_validate_time_rules',
   'A dinamikus foglalási időszabály DB-triggerként létezik'
+);
+select has_trigger(
+  'public', 'bookings', 'bookings_lock_room_writes',
+  'Az azonos helyiség párhuzamos írásai determinisztikusan sorba állnak'
 );
 select ok(
   (
