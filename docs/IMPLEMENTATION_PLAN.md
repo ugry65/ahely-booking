@@ -17,6 +17,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 2. Auth, profil és RLS
 
+Állapot: implementálva, CI-validálásra vár.
+
 - admin által indított meghívás;
 - bejelentkezés, kijelentkezés, jelszó-visszaállítás;
 - profil és adminszerep;

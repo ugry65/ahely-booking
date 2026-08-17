@@ -59,6 +59,8 @@ flowchart TD
 7. Kritikus írásoknál az adatbázisfüggvény újra ellenőrzi a szerepkört, a tulajdonost, a helyiségjogot, az időablakot és a speciális szabályokat.
 8. Minden író végpont idempotenciakulcsot fogad; ismételt kérés nem duplikálhat foglalást, befizetést vagy korrekciót.
 
+A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és csoportos hozzáférések későbbi, adatbázis-szintű ellenőrzése után hozhat létre.
+
 ## 5. Foglalási tranzakció és ütközésvédelem
 
 A `bookings` rekord `start_at` és `end_at` értéke UTC `timestamptz`; a megjelenítés és az ismétlődés számítása `Europe/Budapest` időzónában történik. A foglalási tartomány félig nyitott: `[kezdés, befejezés)`, ezért egy 10:00-kor végződő és egy 10:00-kor kezdődő foglalás nem ütközik.
