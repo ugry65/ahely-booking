@@ -53,7 +53,7 @@ jobs:
         run: ./scripts/test-booking-mutation-concurrency.sh
 
       - name: Run concurrent room access administration tests
-        run: ./scripts/test-room-access-concurrency.sh
+        run: bash ./scripts/test-room-access-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning
