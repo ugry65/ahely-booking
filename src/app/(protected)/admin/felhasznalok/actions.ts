@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import { requireEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 function resultUrl(kind: "hiba" | "uzenet", message: string) {
@@ -21,10 +22,10 @@ export async function inviteUser(formData: FormData) {
   }
 
   const admin = createAdminClient();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = requireEnv("SITE_URL");
   const { error } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { first_name: firstName, last_name: lastName },
-    redirectTo: siteUrl ? `${siteUrl}/auth/callback?next=/jelszo-visszaallitas` : undefined,
+    redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
   });
 
   if (error) {

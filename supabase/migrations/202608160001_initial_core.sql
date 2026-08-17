@@ -109,13 +109,26 @@ create table public.calendar_exceptions (
 create table public.pricing_tiers (
   id uuid primary key default gen_random_uuid(),
   min_minutes integer not null check (min_minutes >= 0),
-  max_minutes integer check (max_minutes is null or max_minutes >= min_minutes),
+  max_minutes integer check (
+    max_minutes is null
+    or (max_minutes >= min_minutes and max_minutes < 2147483647)
+  ),
+  minute_range int4range generated always as (
+    int4range(min_minutes, case when max_minutes is null then null else max_minutes + 1 end, '[)')
+  ) stored,
   hourly_rate_huf bigint not null check (hourly_rate_huf >= 0),
   valid_from date not null,
   valid_to date,
+  valid_period daterange generated always as (
+    daterange(valid_from, coalesce(valid_to + 1, 'infinity'::date), '[)')
+  ) stored,
   created_by uuid references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
-  constraint pricing_tier_dates_valid check (valid_to is null or valid_to >= valid_from)
+  constraint pricing_tier_dates_valid check (valid_to is null or valid_to >= valid_from),
+  constraint pricing_tier_no_overlap exclude using gist (
+    minute_range with &&,
+    valid_period with &&
+  )
 );
 
 create table public.user_price_overrides (
@@ -144,10 +157,18 @@ create table public.special_room_rates (
   hourly_rate_huf bigint not null check (hourly_rate_huf >= 0),
   valid_from date not null,
   valid_to date,
+  valid_period daterange generated always as (
+    daterange(valid_from, coalesce(valid_to + 1, 'infinity'::date), '[)')
+  ) stored,
   created_by uuid references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
   constraint special_room_rate_dates_valid check (valid_to is null or valid_to >= valid_from),
-  constraint special_room_rate_unique unique (room_id, use_type, valid_from)
+  constraint special_room_rate_unique unique (room_id, use_type, valid_from),
+  constraint special_room_rate_no_overlap exclude using gist (
+    room_id with =,
+    use_type with =,
+    valid_period with &&
+  )
 );
 
 create table public.booking_series (
@@ -354,8 +375,8 @@ from generate_series(1, 7) as day_no;
 
 insert into public.pricing_tiers (min_minutes, max_minutes, hourly_rate_huf, valid_from) values
   (60, 900, 2700, date '2026-01-01'),
-  (960, 3600, 1900, date '2026-01-01'),
-  (3660, null, 1700, date '2026-01-01');
+  (901, 3600, 1900, date '2026-01-01'),
+  (3601, null, 1700, date '2026-01-01');
 
 create or replace function public.prevent_audit_mutation()
 returns trigger
@@ -369,6 +390,27 @@ $$;
 create trigger audit_logs_immutable
 before update or delete on public.audit_logs
 for each row execute function public.prevent_audit_mutation();
+
+create or replace function public.prevent_physical_delete()
+returns trigger
+language plpgsql
+as $$
+begin
+  raise exception 'physical delete is forbidden for %', tg_table_name using errcode = '42501';
+end;
+$$;
+
+create trigger bookings_no_physical_delete
+before delete on public.bookings
+for each row execute function public.prevent_physical_delete();
+
+create trigger payments_no_physical_delete
+before delete on public.payments
+for each row execute function public.prevent_physical_delete();
+
+create trigger settlement_booking_lines_no_physical_delete
+before delete on public.settlement_booking_lines
+for each row execute function public.prevent_physical_delete();
 
 alter table public.profiles enable row level security;
 alter table public.rooms enable row level security;

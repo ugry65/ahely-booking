@@ -31,10 +31,11 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
           SUPABASE_SERVICE_ROLE_KEY: ci-server-only-placeholder
-          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          SITE_URL: http://localhost:3000

@@ -13,6 +13,10 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   return (
     <div className="auth-shell"><section className="card stack">
       <h1>Új jelszó</h1>
+      <p>
+        Itt meghívás vagy helyreállítás után állíthatsz be jelszót, illetve
+        bejelentkezve a saját jelszavadat módosíthatod.
+      </p>
       {params.hiba ? <p className="message" role="alert">{params.hiba}</p> : null}
       <form action={updatePassword} className="stack">
         <label>Új jelszó<input name="password" type="password" minLength={12} autoComplete="new-password" required /></label>

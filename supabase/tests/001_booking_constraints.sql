@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(10);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   (
@@ -65,6 +65,17 @@ update public.bookings
 set status = 'cancelled'
 where id = '20000000-0000-0000-0000-000000000001';
 
+select is(
+  (
+    select count(*)
+    from public.bookings
+    where id = '20000000-0000-0000-0000-000000000001'
+      and status = 'cancelled'
+  ),
+  1::bigint,
+  'A lemondott foglalás történeti sora megmarad'
+);
+
 select lives_ok(
   $$insert into public.bookings (
       room_id, user_id, created_by, start_at, end_at, idempotency_key
@@ -93,6 +104,36 @@ select throws_ok(
   'A minimum 60 perces szabály DB-szinten is él'
 );
 
+select throws_ok(
+  $$insert into public.bookings (
+      room_id, user_id, created_by, start_at, end_at, idempotency_key
+    ) values (
+      '10000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000001',
+      '2026-09-03 08:15:00+02', '2026-09-03 09:15:00+02',
+      '30000000-0000-0000-0000-000000000006'
+    )$$,
+  '23514',
+  null,
+  'A nem félórás rácsra eső kezdés elutasított'
+);
+
+select throws_ok(
+  $$insert into public.bookings (
+      room_id, user_id, created_by, start_at, end_at, idempotency_key
+    ) values (
+      '10000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000001',
+      '2026-09-03 10:00:00+02', '2026-09-03 11:15:00+02',
+      '30000000-0000-0000-0000-000000000007'
+    )$$,
+  '23514',
+  null,
+  'A nem félórás rácsra eső befejezés elutasított'
+);
+
 insert into public.audit_logs (
   actor_user_id, action, entity_type, entity_id, correlation_id
 ) values (
@@ -108,6 +149,20 @@ select throws_ok(
   '42501',
   'audit_logs is append-only',
   'Az auditnapló módosítása tiltott'
+);
+
+select throws_ok(
+  $$delete from public.audit_logs where entity_id = '20000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  'audit_logs is append-only',
+  'Az auditnapló fizikai törlése tiltott'
+);
+
+select throws_ok(
+  $$delete from public.bookings where id = '20000000-0000-0000-0000-000000000001'$$,
+  '42501',
+  'physical delete is forbidden for bookings',
+  'A foglalás fizikai törlése tiltott'
 );
 
 select * from finish();
