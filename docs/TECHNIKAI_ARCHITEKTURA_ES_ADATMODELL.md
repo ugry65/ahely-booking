@@ -61,6 +61,8 @@ flowchart TD
 
 A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és csoportos hozzáférések későbbi, adatbázis-szintű ellenőrzése után hozhat létre.
 
+A naptár-read model egy kérésben legfeljebb 62 napos időintervallumot szolgál ki. Ez technikai erőforrás-korlát: lefedi a havi és kéthavi naptárnézetet, miközben megakadályozza a teljes foglalási történet egyetlen, korlátlan lekérdezéssel történő kiolvasását. Hosszabb riportok és exportok külön, célzott végpontot kapnak.
+
 ## 5. Foglalási tranzakció és ütközésvédelem
 
 A `bookings` rekord `start_at` és `end_at` értéke UTC `timestamptz`; a megjelenítés és az ismétlődés számítása `Europe/Budapest` időzónában történik. A foglalási tartomány félig nyitott: `[kezdés, befejezés)`, ezért egy 10:00-kor végződő és egy 10:00-kor kezdődő foglalás nem ütközik.

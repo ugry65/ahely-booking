@@ -4,7 +4,9 @@ import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
 import { requireEnv } from "@/lib/env";
+import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 
 function resultUrl(kind: "hiba" | "uzenet", message: string) {
   return `/admin/felhasznalok?${new URLSearchParams({ [kind]: message }).toString()}`;
@@ -33,4 +35,28 @@ export async function inviteUser(formData: FormData) {
   }
 
   redirect(resultUrl("uzenet", "A meghívó elküldve."));
+}
+
+export async function updateBookingNameVisibility(formData: FormData) {
+  await requireAdmin();
+
+  const userId = String(formData.get("userId") ?? "");
+  const visible = checkboxValue(formData, "visible");
+
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)) {
+    redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító."));
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_other_booker_names_visible", {
+    p_user_id: userId,
+    p_visible: visible,
+    p_correlation_id: crypto.randomUUID(),
+  });
+
+  if (error) {
+    redirect(resultUrl("hiba", "A névláthatósági beállítás mentése nem sikerült."));
+  }
+
+  redirect(resultUrl("uzenet", "A névláthatósági beállítás elmentve."));
 }
