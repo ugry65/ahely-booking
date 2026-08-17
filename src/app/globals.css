@@ -14,7 +14,17 @@ main { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 3rem 0; }
 .stack { display: grid; gap: 1rem; }
 label { display: grid; gap: .4rem; font-weight: 600; }
 input { width: 100%; padding: .8rem; border: 1px solid #a9b3ad; border-radius: .5rem; font: inherit; }
+input[type="checkbox"] { width: auto; padding: 0; }
 button { padding: .8rem 1rem; border: 0; border-radius: .5rem; background: #235c43; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
 .muted { color: #65716a; }
 .message { padding: .75rem; border-radius: .5rem; background: #f1eee5; }
 nav { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-bottom: 1.5rem; border-bottom: 1px solid #d8d4c8; }
+.admin-grid { display: grid; grid-template-columns: minmax(18rem, 30rem) minmax(24rem, 1fr); gap: 1.5rem; align-items: start; }
+.wide-card { width: 100%; }
+.user-settings-list { display: grid; gap: .75rem; }
+.user-setting-row { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(13rem, auto) auto; gap: 1rem; align-items: center; padding: 1rem 0; border-top: 1px solid #e4e0d7; }
+.inline-check { display: flex; grid-auto-flow: column; align-items: center; gap: .5rem; font-weight: 500; }
+@media (max-width: 52rem) {
+  .admin-grid { grid-template-columns: 1fr; }
+  .user-setting-row { grid-template-columns: 1fr; }
+}
