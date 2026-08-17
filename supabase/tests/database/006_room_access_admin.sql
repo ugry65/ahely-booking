@@ -69,14 +69,21 @@ select lives_ok(
   'Admin módosíthat és deaktiválhat helyiséget'
 );
 select is((select is_active from public.rooms where id = '16000000-0000-0000-0000-000000000001'), false, 'A helyiség fizikailag megmarad, de inaktív');
+reset role;
 select is((select count(*) from public.audit_logs where entity_id = '16000000-0000-0000-0000-000000000001'), 2::bigint, 'A létrehozás és módosítás auditált');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select lives_ok(
   $$select public.admin_upsert_room('16000000-0000-0000-0000-000000000001', 'Átnevezett tesztterem', 51, false, false,
     '16000000-0000-0000-0000-000000000019')$$,
   'Azonos helyiségadat idempotensen újraküldhető'
 );
+reset role;
 select is((select count(*) from public.audit_logs where entity_id = '16000000-0000-0000-0000-000000000001'), 2::bigint, 'Az idempotens ismétlés nem duplikálja az auditot');
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select throws_ok(
   $$select public.admin_set_user_room_permission(
     '00000000-0000-0000-0000-000000000062', '11000000-0000-0000-0000-000000000001', false, true, gen_random_uuid())$$,
@@ -108,10 +115,13 @@ select lives_ok(
     '16000000-0000-0000-0000-000000000016')$$,
   'Admin csoportos helyiségjogot adhat'
 );
+reset role;
 select is((select count(*) from public.audit_logs where correlation_id in (
   '16000000-0000-0000-0000-000000000014', '16000000-0000-0000-0000-000000000015', '16000000-0000-0000-0000-000000000016'
 )), 3::bigint, 'A csoport minden változása auditált');
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000061', true);
 select lives_ok(
   $$select public.admin_upsert_access_group('16000000-0000-0000-0000-000000000002', 'Teszt hozzáférési csoport', false,
     '16000000-0000-0000-0000-000000000017')$$,
