@@ -29,4 +29,21 @@ Ellentmondás esetén az aktuális FS és projektkontextus az irányadó.
 - Docker
 - Supabase CLI
 
-Az alkalmazásváz és a függőségek rögzítése a következő commitban történik; az első commit szándékosan az adatbiztonsági alapokra koncentrál.
+## Adatbázis-validálás
+
+A Supabase CLI a helyi PostgreSQL-környezetet Dockerben indítja. A teljes ellenőrzés:
+
+```bash
+./scripts/test-database.sh
+```
+
+A parancs:
+
+1. elindítja a helyi adatbázist;
+2. üres állapotból alkalmazza az összes migrációt és seedet;
+3. lefuttatja a `supabase/tests` pgTAP tesztjeit;
+4. lefuttatja a PostgreSQL schema lintet.
+
+Ugyanez minden adatbázist érintő pull requestnél automatikusan lefut a GitHub Actions környezetben.
+
+Az alkalmazásváz és a frontend-függőségek az Auth/RLS mérföldkőben készülnek; az első mérföldkő szándékosan az adatbiztonsági alapokra koncentrál.

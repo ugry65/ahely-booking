@@ -4,7 +4,7 @@ Az issue-k sorrendje függőségi sorrend. Kritikus issue csak automatikus teszt
 
 ## 1. Adatbázis-alap és ütközéskényszer
 
-Állapot: folyamatban.
+Állapot: implementálva, CI-validálás alatt.
 
 - teljes kezdeti séma migrációja;
 - induló helyiségek és díjak seedje;
