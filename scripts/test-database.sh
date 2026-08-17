@@ -11,4 +11,5 @@ supabase db start
 supabase db reset
 supabase test db
 ./scripts/test-booking-concurrency.sh
+./scripts/test-booking-mutation-concurrency.sh
 supabase db lint --level warning
