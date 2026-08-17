@@ -82,6 +82,8 @@ Foglalás létrehozásának sorrendje egyetlen tranzakcióban:
 
 Ismétlődésnél a rendszer előre kiszámítja az egyedi alkalmakat, és mindegyiket normál `bookings` rekordként tárolja. `abort_all` módban az egész sorozat egy tranzakció és bármely ütközés visszagörgeti; `create_available` módban az ütköző alkalmak dokumentáltan kimaradnak, a létrejött és kimaradt dátumok eredménye visszaadásra kerül.
 
+A napi, heti, kétheti és havi dátumgenerálás az `Europe/Budapest` helyi faliórát tartja meg, ezért a DST-váltás nem tolja el a megszokott kezdési időt. A havi szabály az eredeti naptári napot követi; ha az adott hónap rövidebb, annak utolsó napját használja, majd a következő hosszabb hónapban visszatér az eredeti naphoz. Egy kérés legfeljebb 366 napot és 400 generált alkalmat fedhet le. Minden generált dátumhoz append-only eredményrekord készül: létrejött booking, explicit kivételdátum vagy dokumentáltan elérhetetlen alkalom.
+
 ## 6. Pénzügyi modell
 
 Az aktuális havi dashboard számítható nézet. A pénzügyi visszakövethetőséghez viszont minden alkalmazott díj pillanatképe megőrzendő.
@@ -137,7 +139,8 @@ erDiagram
 
 | Tábla | Szerep |
 | --- | --- |
-| `booking_series` | ismétlődési szabály, időzóna, végfeltétel, konfliktuspolitika |
+| `booking_series` | reprodukálható ismétlődési kérés: helyiség, helyi kezdés, időtartam, időzóna, végfeltétel, konfliktuspolitika és idempotenciakulcs |
+| `booking_series_occurrences` | minden generált alkalom append-only eredménye: létrejött, kivétel vagy elérhetetlen, opcionális booking-hivatkozással |
 | `bookings` | minden konkrét alkalom; aktív vagy lemondott állapot |
 | `booking_cancellations` | törlési pillanatkép, actor, időpont, ok, kezdésig hátralévő percek |
 
