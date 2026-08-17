@@ -83,6 +83,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         <aside className="card booking-form-card stack">
           <div><p className="eyebrow">Új időpont</p><h2>Foglalás létrehozása</h2></div>
           {rooms.length ? <form action={createBooking} className="stack">
+            <input type="hidden" name="idempotencyKey" value={crypto.randomUUID()} />
             <label>Helyiség<select name="roomId" required defaultValue=""><option value="" disabled>Válassz helyiséget</option>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
             <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
             <div className="form-row"><label>Kezdés<select name="startTime" required defaultValue="09:00">{timeOptions().slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label><label>Befejezés<select name="endTime" required defaultValue="10:00">{timeOptions().slice(2).map((time) => <option key={time}>{time}</option>)}</select></label></div>
