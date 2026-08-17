@@ -356,8 +356,21 @@ begin
           v_series_id, v_occurrence_index, v_occurrence_date,
           v_occurrence_start, v_occurrence_end, 'unavailable', v_reason
         );
-      when raise_exception or check_violation then
+      when raise_exception then
         v_reason := sqlerrm;
+        if p_conflict_policy = 'abort_all' then
+          raise exception 'A sorozat nem hozható létre. Hibás alkalom: % (%).',
+            v_occurrence_date, v_reason using errcode = 'P0001';
+        end if;
+        insert into public.booking_series_occurrences (
+          series_id, occurrence_index, service_date, start_at, end_at, status, reason
+        ) values (
+          v_series_id, v_occurrence_index, v_occurrence_date,
+          v_occurrence_start, v_occurrence_end, 'unavailable', v_reason
+        );
+      when check_violation then
+        -- A constraint neve és a nyers PostgreSQL-hiba nem kerülhet a klienshez.
+        v_reason := 'Az alkalom nem felel meg a foglalási szabályoknak.';
         if p_conflict_policy = 'abort_all' then
           raise exception 'A sorozat nem hozható létre. Hibás alkalom: % (%).',
             v_occurrence_date, v_reason using errcode = 'P0001';
