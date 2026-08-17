@@ -227,11 +227,14 @@ A `main` branch védett. Production deploy csak staging ellenőrzés, jóváhagy
 
 Ezek nem blokkolják a séma és a foglalási motor első egységét, de a díjszámítás implementációja előtt jóváhagyás szükséges:
 
-1. A normál user által 24 óránál korábban szabályosan lemondott foglalás biztosan nulla díjú-e? Az FS kifejezetten csak az admin által törölt foglalás kizárását mondja ki.
-2. Lehet-e egy foglalás éjfélen átnyúló? A jelenlegi nyitvatartás alapján a javaslat: nem.
-3. Az `Szja` exportmező pontos képlete és kerekítése külön pénzügyi szabályt igényel.
-4. A számlakérés user-szintű alapérték, havi döntés vagy mindkettő legyen-e?
-5. A production PITR és elkülönített backup elfogadott üzemeltetési költségkerete.
+1. Lehet-e egy foglalás éjfélen átnyúló? A jelenlegi nyitvatartás alapján a javaslat: nem.
+2. Az `Szja` exportmező pontos képlete és kerekítése külön pénzügyi szabályt igényel.
+3. A számlakérés user-szintű alapérték, havi döntés vagy mindkettő legyen-e?
+4. A production PITR és elkülönített backup elfogadott üzemeltetési költségkerete.
+
+### 12.1. Jóváhagyott lemondási döntés
+
+A normál user által legalább 24 órával a kezdés előtt szabályosan lemondott foglalás díja 0 Ft, és teljesen kimarad a havi elszámolásból. Ugyanez az elszámolási kizárás érvényes az admin által lemondott foglalásra. A `bookings` történeti sora, az eredeti állapotot rögzítő lemondási snapshot és az auditnyom minden esetben megmarad.
 
 ## 13. Elfogadási kritérium az első mérföldkőhöz
 
