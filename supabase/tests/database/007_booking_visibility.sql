@@ -16,15 +16,12 @@ select ok(
 );
 select is(
   (
-    select array_agg(parameter_name order by ordinal_position)
-    from information_schema.parameters
-    where specific_schema = 'public'
-      and specific_name = (
-        select routine_name || '_' || oid::text
-        from pg_proc
-        where oid = 'public.list_calendar_bookings(timestamptz,timestamptz)'::regprocedure
-      )
-      and parameter_mode = 'OUT'
+    select array_agg(argument_name order by ordinal_position)
+    from pg_proc procedure
+    cross join unnest(procedure.proargnames)
+      with ordinality arguments(argument_name, ordinal_position)
+    where procedure.oid = 'public.list_calendar_bookings(timestamptz,timestamptz)'::regprocedure
+      and ordinal_position > procedure.pronargs
   ),
   array['booking_id','room_id','room_name','start_at','end_at','use_type','is_own','booker_display_name']::text[],
   'A read model kimenete nem tartalmaz user UUID-t, e-mailt vagy foglalási megjegyzést'
