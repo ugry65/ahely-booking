@@ -1,5 +1,5 @@
 begin;
-select plan(9);
+select plan(10);
 
 select has_function('public', 'admin_room_access_overview', array[]::text[], 'Az admin hozzáférési read-model létezik');
 select ok((select prosecdef and coalesce(proconfig @> array['search_path=""'], false)
@@ -42,6 +42,11 @@ select ok((public.admin_room_access_overview()->'user_room_permissions') @>
 select is((select array_agg(key order by key) from jsonb_object_keys(public.admin_room_access_overview()) key),
   array['group_members','group_room_permissions','groups','rooms','user_room_permissions','users']::text[],
   'A read-model csak a dokumentált adatköröket adja vissza');
+select ok(not exists (
+    select 1 from jsonb_array_elements(public.admin_room_access_overview()->'users') item
+    cross join lateral jsonb_object_keys(item) key
+    where key not in ('id', 'name', 'email', 'is_active')
+  ), 'A user objektumok nem tartalmaznak nem dokumentált vagy érzékeny mezőt');
 
 reset role;
 select * from finish();
