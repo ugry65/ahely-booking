@@ -52,7 +52,7 @@ Létrejövő identitások:
 - `USER-HIDDEN`: `uat-hidden@ahely.invalid`, aktív normál user, maszkolási teszt foglalója;
 - `USER-INACTIVE`: `uat-inactive@ahely.invalid`, inaktív normál user.
 
-A névláthatóság a megtekintő profilbeállítása. Ezért a maszkolási UAT-ban USER-HIDDEN hoz létre foglalást, miközben USER-A `other_booker_names_visible=false` beállítással nézi a naptárt; admin továbbra is teljes nevet lát.
+A névláthatóság a megtekintő profilbeállítása. A bootstrap nem hoz létre foglalást ehhez a teszthez: a **manuális UAT során** USER-HIDDEN hoz létre egy foglalást, miközben USER-A `other_booker_names_visible=false` beállítással nézi a naptárt; admin továbbra is teljes nevet lát.
 
 ## UAT helyiségek és jogok
 
@@ -72,7 +72,7 @@ A bootstrap létrehoz egy, a futás napjához képest kb. 20 nappal későbbi z�
 
 A bootstrap script keményen ellenőrzi a Supabase URL-t. Csak a `fvwapntzhavhgazeflri` staging projekt ellen hajlandó futni; más URL esetén azonnal hibával leáll.
 
-A workflow kizárólag a GitHub `staging` Environmentet használja. Production secret vagy production project ref nincs benne.
+A workflow kizárólag a GitHub `staging` Environmentet használja. Production secret vagy production project ref nincs benne. A `workflow_dispatch` input nem kerül közvetlen `${{ }}` szöveghelyettesítéssel shell-parancsba: a `mode` értéket környezeti változó viszi át a Node scriptnek, amely külön `verify|bootstrap` allowlistet is ellenőriz.
 
 ## Futtatási sorrend
 
@@ -85,6 +85,8 @@ A workflow kizárólag a GitHub `staging` Environmentet használja. Production s
 7. staging weben ADMIN-1 és USER-A login smoke.
 8. USER-A nem láthat admin navigációt.
 9. ezután indulhat a `docs/FUNKCIONALIS_UAT_CHECKLIST.md` teljes manuális futása.
+
+A #36 csak akkor zárható, ha a 4–8. pont végrehajtásáról tényleges bizonyíték rendelkezésre áll; a workflow puszta megléte nem elég.
 
 ## Scope-határ
 
