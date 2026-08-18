@@ -178,6 +178,24 @@ Különösen szigorú review kell a foglalási motorra, ütközésvédelemre, jo
 13. Backup és audit
 14. Automatikus tesztek
 
+## 2026-08-18-i fejlesztési sorrend döntés
+
+A napi foglalási működés a Skedda kiváltásának legfontosabb feltétele. A backup/restore stratégiai baseline elkészült, de a tényleges production backup automatizálás a teljes funkcionális elfogadási teszt után folytatódik.
+
+Aktuális sorrend:
+
+1. teljes funkcionális UAT a jóváhagyott foglalási működésre;
+2. minden P1/P2 funkcionális eltérés javítása és regressziós tesztje;
+3. annak kimondása, hogy a rendszer funkcionálisan alkalmas a Skedda kiváltására;
+4. production backup/off-site mentés implementáció;
+5. sikeres teljes restore-drill;
+6. staging elfogadás;
+7. production élesítés.
+
+A backup és restore követelmény nem enyhül: tényleges backup és sikeres restore-drill nélkül production indulás nem megengedett. A teljes pénzügyi modul továbbra is későbbi fázis.
+
+A funkcionális UAT részletes, verziózott forrása: `docs/FUNKCIONALIS_UAT_CHECKLIST.md`.
+
 ## Nem MVP
 - bankkártyás fizetés
 - SSO/SAML
