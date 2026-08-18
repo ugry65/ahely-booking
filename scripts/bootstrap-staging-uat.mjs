@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import { assertStagingUrl, budapestDatePlusDays } from './lib/staging-uat-bootstrap.mjs';
 
-const EXPECTED_STAGING_URL = 'https://fvwapntzhavhgazeflri.supabase.co';
 const ROOM_IDS = {
   training: '11000000-0000-0000-0000-000000000001',
   room1: '11000000-0000-0000-0000-000000000002',
@@ -13,23 +13,6 @@ function requiredEnv(name) {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`Hiányzó környezeti változó: ${name}`);
   return value;
-}
-
-function assertStagingUrl(url) {
-  const normalized = url.replace(/\/$/, '');
-  if (normalized !== EXPECTED_STAGING_URL) {
-    throw new Error(`Fail-closed: kizárólag a staging projekt engedélyezett (${EXPECTED_STAGING_URL}).`);
-  }
-  return normalized;
-}
-
-function budapestDatePlusDays(days) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Budapest', year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(new Date());
-  const get = (type) => Number(parts.find((part) => part.type === type)?.value);
-  const date = new Date(Date.UTC(get('year'), get('month') - 1, get('day') + days));
-  return date.toISOString().slice(0, 10);
 }
 
 async function listAllUsers(admin) {
@@ -57,7 +40,6 @@ async function ensureAuthUser(admin, users, spec, password) {
   } else {
     const { data, error } = await admin.updateUserById(user.id, {
       password,
-      email_confirm: true,
       user_metadata: { first_name: spec.firstName, last_name: spec.lastName },
     });
     if (error) throw error;
@@ -66,7 +48,7 @@ async function ensureAuthUser(admin, users, spec, password) {
   return user;
 }
 
-async function must(error, context) {
+function must(error, context) {
   if (error) throw new Error(`${context}: ${error.message}`);
 }
 
@@ -91,7 +73,7 @@ async function bootstrap(client, resetEmail, password) {
       is_active: spec.active,
       other_booker_names_visible: spec.namesVisible,
     }).eq('id', user.id);
-    await must(error, `Profil beállítása: ${spec.key}`);
+    must(error, `Profil beállítása: ${spec.key}`);
   }
 
   const rooms = [
@@ -102,7 +84,7 @@ async function bootstrap(client, resetEmail, password) {
     { id: ROOM_IDS.forbidden, name: '4.Szoba', display_order: 5, is_training_room: false, is_active: true },
   ];
   const { error: roomError } = await client.from('rooms').upsert(rooms, { onConflict: 'id' });
-  await must(roomError, 'UAT helyiségek létrehozása');
+  must(roomError, 'UAT helyiségek létrehozása');
 
   const permissions = [
     { user_id: ids.userA, room_id: ROOM_IDS.training, can_book: true, can_repeat: false },
@@ -114,7 +96,7 @@ async function bootstrap(client, resetEmail, password) {
     { user_id: ids.inactive, room_id: ROOM_IDS.room1, can_book: true, can_repeat: false },
   ];
   const { error: permissionError } = await client.from('user_room_permissions').upsert(permissions, { onConflict: 'user_id,room_id' });
-  await must(permissionError, 'UAT helyiségjogok létrehozása');
+  must(permissionError, 'UAT helyiségjogok létrehozása');
 
   const exceptionDate = budapestDatePlusDays(20);
   const { error: exceptionError } = await client.from('calendar_exceptions').upsert({
@@ -125,7 +107,7 @@ async function bootstrap(client, resetEmail, password) {
     reason: 'UAT zárt kivételdátum',
     created_by: ids.admin,
   }, { onConflict: 'service_date' });
-  await must(exceptionError, 'UAT kivételdátum létrehozása');
+  must(exceptionError, 'UAT kivételdátum létrehozása');
 
   console.log(`UAT bootstrap kész. Kivételdátum: ${exceptionDate}.`);
 }
@@ -145,7 +127,7 @@ async function verify(client, resetEmail) {
   const { data: profiles, error: profileError } = await client.from('profiles')
     .select('email,role,is_active,other_booker_names_visible')
     .in('email', expectedEmails);
-  await must(profileError, 'UAT profilok ellenőrzése');
+  must(profileError, 'UAT profilok ellenőrzése');
   if (profiles.length !== 5) throw new Error(`5 UAT profil helyett ${profiles.length} található.`);
   const admin = profiles.find((p) => p.email === 'uat-admin@ahely.invalid');
   const inactive = profiles.find((p) => p.email === 'uat-inactive@ahely.invalid');
@@ -157,7 +139,7 @@ async function verify(client, resetEmail) {
   const { data: rooms, error: roomError } = await client.from('rooms')
     .select('id,name,is_training_room,is_active')
     .in('id', Object.values(ROOM_IDS));
-  await must(roomError, 'UAT helyiségek ellenőrzése');
+  must(roomError, 'UAT helyiségek ellenőrzése');
   if (rooms.length !== 5) throw new Error(`5 UAT helyiség helyett ${rooms.length} található.`);
   if (!rooms.some((room) => room.id === ROOM_IDS.training && room.is_training_room && room.is_active)) {
     throw new Error('A Tréningterem UAT konfigurációja hiányzik.');
@@ -169,7 +151,7 @@ async function verify(client, resetEmail) {
     .eq('user_id', userAId)
     .eq('room_id', ROOM_IDS.forbidden)
     .maybeSingle();
-  await must(forbiddenError, 'Tiltott helyiségjog ellenőrzése');
+  must(forbiddenError, 'Tiltott helyiségjog ellenőrzése');
   if (forbiddenPermission?.can_book) throw new Error('USER-A nem kaphat foglalási jogot a tiltott UAT helyiségre.');
 
   const { data: exceptions, error: exceptionError } = await client.from('calendar_exceptions')
@@ -177,7 +159,7 @@ async function verify(client, resetEmail) {
     .eq('reason', 'UAT zárt kivételdátum')
     .eq('is_closed', true)
     .limit(1);
-  await must(exceptionError, 'UAT kivételdátum ellenőrzése');
+  must(exceptionError, 'UAT kivételdátum ellenőrzése');
   if (!exceptions.length) throw new Error('Hiányzik az UAT zárt kivételdátum.');
 
   console.log('UAT staging konfiguráció ellenőrzése sikeres.');
