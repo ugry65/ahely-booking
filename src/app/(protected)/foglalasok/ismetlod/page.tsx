@@ -31,7 +31,7 @@ export default async function RecurringBookingPage({ searchParams }: { searchPar
     {roomsResult.error ? <p className="message error" role="alert">A jogosult helyiségek betöltése nem sikerült.</p> : null}
     {resultError ? <p className="message error" role="alert">A sorozat eredményének betöltése nem sikerült.</p> : null}
     {result ? <section className="card wide-card stack result-card" aria-labelledby="series-result-title"><div><p className="eyebrow">Sikeres művelet</p><h2 id="series-result-title">A sorozat elkészült</h2><p><strong>{result.created.length}</strong> alkalom létrejött, <strong>{result.skipped.length}</strong> alkalom kimaradt.</p></div>
-      <div className="result-columns"><div><h3>Létrejött alkalmak</h3><ul>{result.created.map((item) => <li key={item.occurrence_index}>{occurrenceLabel(item)}</li>)}</ul></div><div><h3>Kimaradt alkalmak</h3>{result.skipped.length ? <ul>{result.skipped.map((item) => <li key={item.occurrence_index}>{occurrenceLabel(item)} – {item.reason}</li>)}</ul> : <p className="muted">Nincs kimaradt alkalom.</p>}</div></div>
+      <div className="result-columns"><details open><summary>Létrejött alkalmak ({result.created.length})</summary><ul className="result-list">{result.created.map((item) => <li key={item.occurrence_index}>{occurrenceLabel(item)}</li>)}</ul></details><details open><summary>Kimaradt alkalmak ({result.skipped.length})</summary>{result.skipped.length ? <ul className="result-list">{result.skipped.map((item) => <li key={item.occurrence_index}>{occurrenceLabel(item)} – {item.reason}</li>)}</ul> : <p className="muted">Nincs kimaradt alkalom.</p>}</details></div>
       <Link className="button" href="/foglalasaim">Foglalásaim megtekintése</Link>
     </section> : null}
 
