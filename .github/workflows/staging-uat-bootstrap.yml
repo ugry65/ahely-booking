@@ -1,0 +1,62 @@
+name: Staging UAT bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "UAT tesztadat ellenőrzése vagy létrehozása"
+        required: true
+        default: verify
+        type: choice
+        options:
+          - verify
+          - bootstrap
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-uat-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  staging-uat-bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: staging
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://fvwapntzhavhgazeflri.supabase.co
+      SUPABASE_STAGING_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_STAGING_SERVICE_ROLE_KEY }}
+      UAT_RESET_EMAIL: ${{ secrets.UAT_RESET_EMAIL }}
+      UAT_SHARED_PASSWORD: ${{ secrets.UAT_SHARED_PASSWORD }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Require staging-only secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SUPABASE_STAGING_SERVICE_ROLE_KEY UAT_RESET_EMAIL UAT_SHARED_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing staging environment secret: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Verify or bootstrap synthetic UAT data
+        env:
+          UAT_MODE: ${{ inputs.mode }}
+        run: node scripts/bootstrap-staging-uat.mjs "$UAT_MODE"

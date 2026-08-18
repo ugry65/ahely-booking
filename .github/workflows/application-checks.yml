@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "src/**"
+      - "scripts/**"
       - "package.json"
       - "pnpm-lock.yaml"
       - "tsconfig.json"
@@ -11,9 +12,11 @@ on:
       - "proxy.ts"
       - "docs/BACKUP_RESTORE_*.md"
       - "docs/STAGING_ADATBAZIS_DEPLOY.md"
+      - "docs/STAGING_WEB_ES_UAT_BOOTSTRAP.md"
       - "docs/IMPLEMENTATION_PLAN.md"
       - ".github/workflows/application-checks.yml"
       - ".github/workflows/staging-database-deploy.yml"
+      - ".github/workflows/staging-uat-bootstrap.yml"
   push:
     branches: [main]
   workflow_dispatch:
