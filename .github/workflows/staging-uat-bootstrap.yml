@@ -57,4 +57,6 @@ jobs:
           done
 
       - name: Verify or bootstrap synthetic UAT data
-        run: node scripts/bootstrap-staging-uat.mjs "${{ inputs.mode }}"
+        env:
+          UAT_MODE: ${{ inputs.mode }}
+        run: node scripts/bootstrap-staging-uat.mjs "$UAT_MODE"
