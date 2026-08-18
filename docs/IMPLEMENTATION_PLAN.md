@@ -77,7 +77,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 8. Befizetés és korrekció
 
-Állapot: későbbi fázisra halasztva a backup/restore baseline és production adatvédelmi réteg után.
+Állapot: későbbi fázisra halasztva a funkcionális UAT és a production adatvédelmi réteg után.
 
 - részfizetés;
 - fizetési mód és célhely;
@@ -112,9 +112,29 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 - 2 éves jelölés és 30/15/5/1 napos figyelmeztetés;
 - admin jóváhagyás nélküli végleges törlés tiltása.
 
-## 12. Backup/restore és release
+## 12. Teljes funkcionális UAT a Skedda kiváltása előtt
 
-Állapot: a backup/restore technikai baseline és runbook készül. A cél a pénzügyi modul előtt napi, elkülönített logikai backup és bizonyított restore-folyamat kialakítása.
+Állapot: **aktuális fejlesztési fázis** (Issue #32).
+
+A felhasználói döntés alapján a backup/restore stratégiai baseline után, de a tényleges production backup automatizálás előtt teljes funkcionális elfogadási teszt következik. A cél annak bizonyítása, hogy a napi foglalási működés végponttól végpontig alkalmas a Skedda kiváltására.
+
+- `docs/FUNKCIONALIS_UAT_CHECKLIST.md` alapján manuális böngészős UAT;
+- meglévő Vitest/pgTAP/konkurenciatesztek összevetése a checklisttel;
+- belépés és jogosultságok;
+- napi naptár és mobil/tablet használhatóság;
+- egyedi foglalás, módosítás, lemondás;
+- átfedés és konkurencia;
+- Tréningterem szabályok;
+- ismétlődő foglalások;
+- admin user/helyiség/hozzáférés folyamatok;
+- havi óraszám és CSV-export;
+- minden funkcionális eltérés külön issue-ba kerül P1/P2/P3 besorolással.
+
+Kilépési feltétel: nincs nyitott P1/P2 funkcionális hiba, és a kritikus napi folyamatok manuálisan valamint az elérhető automatikus tesztekkel is igazoltak.
+
+## 13. Backup/restore és release
+
+Állapot: a backup/restore technikai baseline elkészült (Issue #29, PR #30). A tényleges production backup automatizálás **a funkcionális UAT után folytatódik**.
 
 - productionhöz menedzselt napi adatbázis-backupot biztosító Supabase csomag;
 - elkülönített, titkosított napi logikai backup;
@@ -124,6 +144,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 - külön staging/restore célkörnyezet;
 - production indulás előtt sikeres teljes restore-drill;
 - PITR opcionális későbbi erősítés külön költség-/kockázatdöntéssel;
-- teljes FS elfogadási teszt;
 - független kritikus review;
 - staging jóváhagyás, majd production.
+
+A production kapu változatlan: tényleges backup és sikeres restore-drill nélkül a rendszer nem élesíthető.
