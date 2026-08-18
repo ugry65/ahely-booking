@@ -1,8 +1,13 @@
 begin;
 
--- A service_role RLS-t megkerülő szerveroldali szerep, de a PostgreSQL
--- táblaszintű jogosultságokat továbbra is explicit meg kell kapnia.
--- Csak a staging UAT bootstrap által közvetlenül olvasott/írt táblák és
+-- A Supabase 2026-os Data API alapértelmezés-változása óta új projekteken
+-- a service_role sem kap automatikus táblaszintű jogot a public séma új tábláira.
+-- Az RLS megkerülése (BYPASSRLS) ettől külön réteg: a PostgreSQL GRANT továbbra
+-- is szükséges. Emiatt minden jövőbeli, service_role kulccsal közvetlenül
+-- (nem SECURITY DEFINER RPC-n keresztül) elért táblához explicit, minimális
+-- jogosultságot kell verziózott migrációban megadni.
+--
+-- Itt csak a staging UAT bootstrap által közvetlenül olvasott/írt táblák és
 -- műveletek kapnak jogot; DELETE és üzleti foglalási/pénzügyi táblák nem.
 grant select, update
 on table public.profiles
