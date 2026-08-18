@@ -66,6 +66,11 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .result-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .result-columns ul { margin: 0; padding-left: 1.3rem; }
 .result-list { max-height: 24rem; overflow: auto; padding-right: .5rem; }
+.admin-record-list { display: grid; gap: .75rem; }
+.admin-editor-row { display: grid; grid-template-columns: minmax(12rem, 1fr) 7rem auto auto auto; gap: .75rem; align-items: end; padding-top: .75rem; border-top: 1px solid #e4e0d7; }
+.admin-editor-row.compact { grid-template-columns: minmax(12rem, 1fr) auto auto; }
+.admin-access-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+.admin-summary-list { max-height: 18rem; overflow: auto; margin: 0; padding-left: 1.25rem; }
 @media (max-width: 52rem) {
   .admin-grid { grid-template-columns: 1fr; }
   .user-setting-row { grid-template-columns: 1fr; }
@@ -75,4 +80,5 @@ legend { padding: 0 .35rem; font-weight: 800; }
   .booking-layout { grid-template-columns: 1fr; }
   .booking-form-card { position: static; order: -1; }
   .result-columns { grid-template-columns: 1fr; }
+  .admin-editor-row, .admin-editor-row.compact, .admin-access-grid { grid-template-columns: 1fr; }
 }
