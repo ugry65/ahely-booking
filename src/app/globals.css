@@ -49,6 +49,15 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 .user-settings-list { display: grid; gap: .75rem; }
 .user-setting-row { display: grid; grid-template-columns: minmax(12rem, 1fr) minmax(13rem, auto) auto; gap: 1rem; align-items: center; padding: 1rem 0; border-top: 1px solid #e4e0d7; }
 .inline-check { display: flex; grid-auto-flow: column; align-items: center; gap: .5rem; font-weight: 500; }
+.my-bookings-list { display: grid; gap: 1rem; }
+.booking-management-card { padding: 1.4rem; }
+.booking-summary h2 { margin: .15rem 0 .35rem; }
+.booking-summary p { margin: .3rem 0; }
+details { border-top: 1px solid #e4e0d7; padding-top: .8rem; }
+summary { width: fit-content; color: #235c43; font-weight: 800; cursor: pointer; }
+.operation-form { margin-top: 1rem; }
+.danger-zone summary { color: #7b271c; }
+.danger-button { background: #7b271c; }
 @media (max-width: 52rem) {
   .admin-grid { grid-template-columns: 1fr; }
   .user-setting-row { grid-template-columns: 1fr; }
