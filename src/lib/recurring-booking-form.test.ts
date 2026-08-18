@@ -10,9 +10,19 @@ describe("recurring booking form", () => {
     expect(parseRecurringBookingForm({ ...valid, endMode: "date", endsOn: "2027-09-12" }).ok).toBe(false);
     expect(parseRecurringBookingForm({ ...valid, occurrenceCount: "401" }).ok).toBe(false);
   });
+  it("pontosan 366 napos sorozatot még elfogad", () => {
+    expect(parseRecurringBookingForm({ ...valid, endMode: "date", endsOn: "2027-09-11" })).toMatchObject({ ok: true, value: { endsOn: "2027-09-11" } });
+  });
   it("elutasítja a sorozaton kívüli vagy hibás kivételdátumot", () => {
     expect(parseRecurringBookingForm({ ...valid, endMode: "date", endsOn: "2026-10-01", exceptionDates: "2026-10-02" }).ok).toBe(false);
+    expect(parseRecurringBookingForm({ ...valid, exceptionDates: "2026-09-09" }).ok).toBe(false);
     expect(parseRecurringBookingForm({ ...valid, exceptionDates: "2026-02-30" }).ok).toBe(false);
+  });
+  it("száznál több különböző kivételdátumot elutasít", () => {
+    const exceptionDates = Array.from({ length: 101 }, (_, index) =>
+      new Date(Date.UTC(2026, 8, 10 + index)).toISOString().slice(0, 10),
+    ).join(",");
+    expect(parseRecurringBookingForm({ ...valid, exceptionDates }).ok).toBe(false);
   });
   it("elutasítja az ismeretlen gyakoriságot és konfliktuspolitikát", () => {
     expect(parseRecurringBookingForm({ ...valid, frequency: "yearly" }).ok).toBe(false);
