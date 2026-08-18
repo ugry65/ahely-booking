@@ -52,7 +52,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   return (
     <section className="booking-page stack">
       <header className="page-heading">
-        <div><p className="eyebrow">Foglalási naptár</p><h1>{dateTitle(selectedDate)}</h1><p className="muted">Üdv, {profile.first_name}! A foglaltságok budapesti idő szerint jelennek meg.</p></div>
+        <div><p className="eyebrow">Foglalási naptár</p><h1>{dateTitle(selectedDate)}</h1><p className="muted">Üdv, {profile.first_name}! A foglaltságok budapesti idő szerint jelennek meg.</p><Link href="/foglalasok/ismetlod">Ismétlődő foglalás létrehozása →</Link></div>
         <nav className="date-nav" aria-label="Naptári nap választása">
           <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, -1)}`}>← Előző</Link>
           <Link className="button secondary" href={`/foglalasok?datum=${today}`}>Ma</Link>
