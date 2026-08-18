@@ -14,7 +14,7 @@ update public.profiles set is_active = false where id = '00000000-0000-0000-0000
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000002', true, true),
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000003', true, false),
-  ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000007', true, true);
+  ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000001', true, true);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000151', true);
