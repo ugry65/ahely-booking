@@ -61,10 +61,11 @@ summary { width: fit-content; color: #235c43; font-weight: 800; cursor: pointer;
 fieldset { display: grid; gap: .75rem; margin: 0; padding: 1rem; border: 1px solid #707b75; border-radius: .5rem; }
 legend { padding: 0 .35rem; font-weight: 800; }
 .recurring-form-card { max-width: 48rem; }
-.result-card { border-color: #a8cbb5; background: #edf8f0; }
+.result-card { border-color: #65716a; background: #edf8f0; }
 .result-card h2 { margin: .15rem 0 .35rem; }
 .result-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
 .result-columns ul { margin: 0; padding-left: 1.3rem; }
+.result-list { max-height: 24rem; overflow: auto; padding-right: .5rem; }
 @media (max-width: 52rem) {
   .admin-grid { grid-template-columns: 1fr; }
   .user-setting-row { grid-template-columns: 1fr; }
