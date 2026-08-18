@@ -9,6 +9,8 @@ on:
       - "tsconfig.json"
       - "next.config.ts"
       - "proxy.ts"
+      - "docs/BACKUP_RESTORE_*.md"
+      - "docs/IMPLEMENTATION_PLAN.md"
       - ".github/workflows/application-checks.yml"
   push:
     branches: [main]
