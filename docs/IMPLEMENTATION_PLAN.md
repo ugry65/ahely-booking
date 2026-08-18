@@ -27,7 +27,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 3. Helyiségek és hozzáférések
 
-Állapot: helyiség- és jogosultság-adminisztráció, névláthatóság és közös effektív helyiségjog implementálva; admin felhasználói felület implementálás alatt (Issue #25).
+Állapot: helyiség- és jogosultság-adminisztráció, névláthatóság, közös effektív helyiségjog és admin felhasználói felület implementálva (Issue #25, PR #26).
 
 - admin helyiség CRUD deaktiválással;
 - közvetlen és csoportos userjog;
@@ -36,7 +36,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 4. Tranzakciós egyedi foglalás
 
-Állapot: implementálva, CI-validálás és független review előtt.
+Állapot: implementálva.
 
 - szerveroldali validáció;
 - adatbázis RPC;
@@ -48,7 +48,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 5. Foglalás módosítása és lemondása
 
-Állapot: implementálva, CI-validálás és független review előtt.
+Állapot: implementálva.
 
 - teljes újraellenőrzés módosításkor;
 - user 24 órás tiltás;
@@ -67,7 +67,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 7. Díjszámítás
 
-Állapot: későbbi fázisra halasztva; előtte kizárólag havi óraszám-kimutatás és CSV-export készül (Issue #27), díj- vagy pénzügyi számítás nélkül.
+Állapot: későbbi fázisra halasztva. Az előtte jóváhagyott havi óraszám-kimutatás és CSV-export implementálva (Issue #27, PR #28), díj- vagy pénzügyi számítás nélkül.
 
 - verziózott sávos és egyedi díjak;
 - teljes havi normál óraszám alapján egységes sáv;
@@ -77,6 +77,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 8. Befizetés és korrekció
 
+Állapot: későbbi fázisra halasztva a backup/restore baseline és production adatvédelmi réteg után.
+
 - részfizetés;
 - fizetési mód és célhely;
 - automatikus egyenlegszámítás;
@@ -85,7 +87,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 9. Naptár és user felület
 
-Állapot: napi többhelyiséges naptár és egyedi foglalási űrlap implementálva (Issue #19); a saját foglalások módosítási és lemondási felülete implementálás alatt (Issue #21); a heti nézet későbbi szelet.
+Állapot: napi többhelyiséges naptár, egyedi foglalási űrlap, saját foglalások módosítása/lemondása és ismétlődő foglalási felület implementálva; a heti nézet későbbi szelet.
 
 - magyar napi többhelyiséges nézet;
 - heti nézet;
@@ -94,6 +96,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 - Foglalásaim és opcionális havi dashboard.
 
 ## 10. Adminfelület és XLSX
+
+Állapot: helyiség- és hozzáférés-adminfelület, valamint havi óraszám-adminnézet és CSV-export implementálva; teljes pénzügyi admin és XLSX későbbre halasztva.
 
 - userek, helyiségek, jogok és beállítások;
 - havi elszámolás és részletek;
@@ -110,10 +114,16 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 12. Backup/restore és release
 
-- production PITR;
-- elkülönített titkosított logikai backup;
-- retention;
+Állapot: a backup/restore technikai baseline és runbook készül. A cél a pénzügyi modul előtt napi, elkülönített logikai backup és bizonyított restore-folyamat kialakítása.
+
+- productionhöz menedzselt napi adatbázis-backupot biztosító Supabase csomag;
+- elkülönített, titkosított napi logikai backup;
+- 35 napos napi és 13 hónapos havi off-site retention;
+- manifest és SHA-256 integritásellenőrzés;
 - restore runbook és próbajegyzőkönyv;
+- külön staging/restore célkörnyezet;
+- production indulás előtt sikeres teljes restore-drill;
+- PITR opcionális későbbi erősítés külön költség-/kockázatdöntéssel;
 - teljes FS elfogadási teszt;
 - független kritikus review;
 - staging jóváhagyás, majd production.
