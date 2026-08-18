@@ -75,6 +75,11 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .permission-matrix-row { display: grid; grid-template-columns: minmax(9rem, 1fr) auto auto auto; gap: .65rem; align-items: center; padding-top: .65rem; border-top: 1px solid #e4e0d7; }
 .permission-matrix-row.member-row { grid-template-columns: minmax(9rem, 1fr) auto auto; }
 .permission-matrix-row small { display: block; color: #65716a; }
+.monthly-filter { display: grid; grid-template-columns: minmax(12rem, 1fr) auto auto; gap: .75rem; align-items: end; }
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .7rem; border-bottom: 1px solid #d8d4c8; text-align: left; white-space: nowrap; }
+tfoot th { font-weight: 800; }
 @media (max-width: 52rem) {
   .admin-grid { grid-template-columns: 1fr; }
   .user-setting-row { grid-template-columns: 1fr; }
@@ -84,5 +89,5 @@ legend { padding: 0 .35rem; font-weight: 800; }
   .booking-layout { grid-template-columns: 1fr; }
   .booking-form-card { position: static; order: -1; }
   .result-columns { grid-template-columns: 1fr; }
-  .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row { grid-template-columns: 1fr; }
+  .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row, .monthly-filter { grid-template-columns: 1fr; }
 }
