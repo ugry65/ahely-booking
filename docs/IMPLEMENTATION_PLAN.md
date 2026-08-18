@@ -67,6 +67,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 7. Díjszámítás
 
+Állapot: későbbi fázisra halasztva; előtte kizárólag havi óraszám-kimutatás és CSV-export készül (Issue #27), díj- vagy pénzügyi számítás nélkül.
+
 - verziózott sávos és egyedi díjak;
 - teljes havi normál óraszám alapján egységes sáv;
 - Tréningterem csoportos külön tétel;
