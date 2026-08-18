@@ -1,0 +1,66 @@
+name: Staging database deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Staging migráció ellenőrzése vagy alkalmazása"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - deploy
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-database-deploy
+  cancel-in-progress: false
+
+jobs:
+  staging-database-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: staging
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+
+      - name: Require staging database URL
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: |
+          if [ -z "$STAGING_DB_URL" ]; then
+            echo "Missing repository/environment secret: SUPABASE_STAGING_DB_URL" >&2
+            exit 1
+          fi
+
+      - name: Show migration status
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: supabase migration list --db-url "$STAGING_DB_URL"
+
+      - name: Preview pending migrations
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: supabase db push --db-url "$STAGING_DB_URL" --include-all --dry-run
+
+      - name: Apply pending migrations to staging
+        if: ${{ inputs.mode == 'deploy' }}
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: supabase db push --db-url "$STAGING_DB_URL" --include-all
+
+      - name: Verify migration status after deploy
+        if: ${{ inputs.mode == 'deploy' }}
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: supabase migration list --db-url "$STAGING_DB_URL"
