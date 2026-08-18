@@ -58,6 +58,13 @@ summary { width: fit-content; color: #235c43; font-weight: 800; cursor: pointer;
 .operation-form { margin-top: 1rem; }
 .danger-zone summary { color: #7b271c; }
 .danger-button { background: #7b271c; }
+fieldset { display: grid; gap: .75rem; margin: 0; padding: 1rem; border: 1px solid #707b75; border-radius: .5rem; }
+legend { padding: 0 .35rem; font-weight: 800; }
+.recurring-form-card { max-width: 48rem; }
+.result-card { border-color: #a8cbb5; background: #edf8f0; }
+.result-card h2 { margin: .15rem 0 .35rem; }
+.result-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.result-columns ul { margin: 0; padding-left: 1.3rem; }
 @media (max-width: 52rem) {
   .admin-grid { grid-template-columns: 1fr; }
   .user-setting-row { grid-template-columns: 1fr; }
@@ -66,4 +73,5 @@ summary { width: fit-content; color: #235c43; font-weight: 800; cursor: pointer;
   .date-nav .button { flex: 1; }
   .booking-layout { grid-template-columns: 1fr; }
   .booking-form-card { position: static; order: -1; }
+  .result-columns { grid-template-columns: 1fr; }
 }
