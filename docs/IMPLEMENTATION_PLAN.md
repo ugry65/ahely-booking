@@ -27,7 +27,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 3. Helyiségek és hozzáférések
 
-Állapot: helyiség- és jogosultság-adminisztráció, valamint névláthatósági read-model implementálva; az effektív helyiségjog közös read/write forrásba szervezése folyamatban (Issue #15).
+Állapot: helyiség- és jogosultság-adminisztráció, névláthatóság és közös effektív helyiségjog implementálva; admin felhasználói felület implementálás alatt (Issue #25).
 
 - admin helyiség CRUD deaktiválással;
 - közvetlen és csoportos userjog;
@@ -58,7 +58,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 6. Ismétlődő foglalás
 
-Állapot: tranzakciós adatbázis-RPC és regressziós/konkurenciatesztek implementálva (Issue #17); normál user felület implementálás alatt (Issue #23).
+Állapot: tranzakciós adatbázis-RPC, regressziós/konkurenciatesztek és normál user felület implementálva (Issue #17, #23).
 
 - napi, heti, kétheti, havi;
 - végdátum/darabszám és kivételdátum;
