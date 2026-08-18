@@ -10,8 +10,10 @@ on:
       - "next.config.ts"
       - "proxy.ts"
       - "docs/BACKUP_RESTORE_*.md"
+      - "docs/STAGING_ADATBAZIS_DEPLOY.md"
       - "docs/IMPLEMENTATION_PLAN.md"
       - ".github/workflows/application-checks.yml"
+      - ".github/workflows/staging-database-deploy.yml"
   push:
     branches: [main]
   workflow_dispatch:
