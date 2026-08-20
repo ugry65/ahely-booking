@@ -34,8 +34,10 @@ type Props = {
   selectedDate: string;
 };
 
-const PIXELS_PER_MINUTE = 1;
+// 15 óra (07:00–22:00) ~600 px magasan: a teljes nap desktopon egyben áttekinthető.
+const PIXELS_PER_MINUTE = 2 / 3;
 const TIMELINE_HEIGHT = (CALENDAR_CLOSE_MINUTE - CALENDAR_OPEN_MINUTE) * PIXELS_PER_MINUTE;
+const minuteToPixel = (minute: number) => minute * PIXELS_PER_MINUTE;
 
 function localMinute(iso: string) {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -118,7 +120,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
             <div className="time-axis" style={{ height: `${TIMELINE_HEIGHT}px` }}>
               {Array.from({ length: 16 }, (_, index) => (
-                <span key={index} style={{ top: `${index * 60}px` }}>{String(index + 7).padStart(2, "0")}:00</span>
+                <span key={index} style={{ top: `${minuteToPixel(index * 60)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>
               ))}
             </div>
 
@@ -140,9 +142,9 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
                       left: ".2rem",
                       right: ".2rem",
                       zIndex: 2,
-                      top: `${selection.startMinute - CALENDAR_OPEN_MINUTE}px`,
-                      height: `${selection.endMinute - selection.startMinute}px`,
-                      padding: ".35rem .45rem",
+                      top: `${minuteToPixel(selection.startMinute - CALENDAR_OPEN_MINUTE)}px`,
+                      height: `${minuteToPixel(selection.endMinute - selection.startMinute)}px`,
+                      padding: ".25rem .4rem",
                       border: "2px solid #235c43",
                       borderRadius: ".35rem",
                       background: "rgb(220 235 226 / 88%)",
@@ -150,7 +152,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
                       pointerEvents: "none",
                       display: "flex",
                       flexDirection: "column",
-                      fontSize: ".78rem",
+                      fontSize: ".72rem",
                     }}
                   >
                     <strong>{calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</strong>
@@ -165,7 +167,10 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
                     <article
                       className={`booking-block ${booking.is_own ? "own" : ""}`}
                       key={booking.booking_id}
-                      style={{ top: `${start - CALENDAR_OPEN_MINUTE}px`, height: `${Math.max(end - start, 30)}px` }}
+                      style={{
+                        top: `${minuteToPixel(start - CALENDAR_OPEN_MINUTE)}px`,
+                        height: `${Math.max(minuteToPixel(end - start), minuteToPixel(30))}px`,
+                      }}
                       onPointerDown={(event) => event.stopPropagation()}
                     >
                       <strong>{timeLabel(booking.start_at)}–{timeLabel(booking.end_at)}</strong>
