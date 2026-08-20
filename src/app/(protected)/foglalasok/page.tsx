@@ -19,7 +19,7 @@ function dateTitle(date: string) {
 }
 
 export default async function BookingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  const profile = await requireActiveProfile();
+  await requireActiveProfile();
   const params = await searchParams;
   const today = budapestToday();
   const selectedDate = params.datum && isValidDate(params.datum) ? params.datum : today;
@@ -36,30 +36,45 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   return (
     <section
       className="booking-page stack"
-      style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)" }}
+      style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}
     >
-      <header className="page-heading" style={{ alignItems: "flex-end" }}>
-        <div>
-          <p className="eyebrow">Foglalási naptár</p>
-          <h1>{dateTitle(selectedDate)}</h1>
-          <p className="muted">Üdv, {profile.first_name}! A foglaltságok budapesti idő szerint jelennek meg.</p>
-          <Link href="/foglalasok/ismetlod">Ismétlődő foglalás létrehozása →</Link>
+      <header
+        aria-label="Naptár vezérlők"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: ".75rem",
+          flexWrap: "wrap",
+          padding: ".35rem 0 .5rem",
+          borderBottom: "1px solid #ddd8cc",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: ".65rem", flexWrap: "wrap" }}>
+          <nav className="date-nav" aria-label="Naptári nap választása" style={{ gap: ".3rem" }}>
+            <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, -1)}`} aria-label="Előző nap">←</Link>
+            <Link className="button secondary" href={`/foglalasok?datum=${today}`}>Ma</Link>
+            <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, 1)}`} aria-label="Következő nap">→</Link>
+          </nav>
+          <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>
+            {dateTitle(selectedDate)}
+          </h1>
         </div>
 
-        <div style={{ display: "flex", alignItems: "end", gap: "1rem" }}>
-          <div style={{ display: "grid", gap: ".7rem", justifyItems: "end" }}>
-            <nav className="date-nav" aria-label="Naptári nap választása">
-              <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, -1)}`}>← Előző</Link>
-              <Link className="button secondary" href={`/foglalasok?datum=${today}`}>Ma</Link>
-              <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, 1)}`}>Következő →</Link>
-            </nav>
-            <form method="get" style={{ display: "flex", alignItems: "end", gap: ".5rem" }}>
-              <label style={{ fontSize: ".82rem" }}>Ugrás dátumra
-                <input type="date" name="datum" defaultValue={selectedDate} />
-              </label>
-              <button type="submit" className="button secondary">Mutasd</button>
-            </form>
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: ".45rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
+            <input
+              type="date"
+              name="datum"
+              defaultValue={selectedDate}
+              aria-label="Ugrás dátumra"
+              style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }}
+            />
+            <button type="submit" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>Mutasd</button>
+          </form>
+          <Link href="/foglalasok/ismetlod" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>
+            Ismétlődő
+          </Link>
           {rooms.length ? <QuickBookingDialog rooms={rooms} selectedDate={selectedDate} today={today} /> : null}
         </div>
       </header>
