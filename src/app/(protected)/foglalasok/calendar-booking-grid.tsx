@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type PointerEvent } from "react";
 import { createBooking } from "./actions";
 import {
   CALENDAR_CLOSE_MINUTE,
@@ -59,22 +59,26 @@ function timeLabel(iso: string) {
 export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
-  const idempotencyKey = useMemo(() => crypto.randomUUID(), [selection?.roomId, selection?.startMinute, selection?.endMinute]);
+  const idempotencyKey = useMemo(
+    () => crypto.randomUUID(),
+    [selection?.roomId, selection?.startMinute, selection?.endMinute],
+  );
 
   function minuteFromPointer(element: HTMLElement, clientY: number) {
     const rect = element.getBoundingClientRect();
     return CALENDAR_OPEN_MINUTE + (clientY - rect.top) / PIXELS_PER_MINUTE;
   }
 
-  function beginSelection(roomId: string, event: React.PointerEvent<HTMLDivElement>) {
+  function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest(".booking-block")) return;
+    event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
     dragState.current = { roomId, anchorMinute };
     setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
   }
 
-  function moveSelection(roomId: string, event: React.PointerEvent<HTMLDivElement>) {
+  function moveSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
     const drag = dragState.current;
     if (!drag || drag.roomId !== roomId) return;
     setSelection(normalizeCalendarSelection(roomId, drag.anchorMinute, minuteFromPointer(event.currentTarget, event.clientY)));
@@ -90,10 +94,16 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
     <div className="calendar-workspace stack">
       <div className="calendar-card" aria-label={`${selectedDate} foglalásai`}>
         <div className="calendar-scroll">
-          <div className="calendar-grid skedda-grid" style={{ gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(8.75rem, 1fr))` }}>
+          <div
+            className="calendar-grid"
+            style={{
+              gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(8.75rem, 1fr))`,
+              width: "max(100%, max-content)",
+            }}
+          >
             <div className="calendar-corner" />
             {rooms.map((room) => (
-              <div className="room-heading" key={room.room_id}>
+              <div className="room-heading" key={room.room_id} style={{ minWidth: "8.75rem" }}>
                 {room.room_name}
                 {room.is_training_room ? <small>Tréningterem</small> : null}
               </div>
@@ -107,9 +117,9 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
             {rooms.map((room) => (
               <div
-                className="room-timeline selectable-timeline"
+                className="room-timeline"
                 key={room.room_id}
-                style={{ height: `${TIMELINE_HEIGHT}px` }}
+                style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "pan-x" }}
                 onPointerDown={(event) => beginSelection(room.room_id, event)}
                 onPointerMove={(event) => moveSelection(room.room_id, event)}
                 onPointerUp={endSelection}
@@ -118,10 +128,22 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
               >
                 {selection?.roomId === room.room_id ? (
                   <div
-                    className="calendar-selection"
                     style={{
+                      position: "absolute",
+                      left: ".2rem",
+                      right: ".2rem",
+                      zIndex: 2,
                       top: `${selection.startMinute - CALENDAR_OPEN_MINUTE}px`,
                       height: `${selection.endMinute - selection.startMinute}px`,
+                      padding: ".35rem .45rem",
+                      border: "2px solid #235c43",
+                      borderRadius: ".35rem",
+                      background: "rgb(220 235 226 / 88%)",
+                      color: "#183c2c",
+                      pointerEvents: "none",
+                      display: "flex",
+                      flexDirection: "column",
+                      fontSize: ".78rem",
                     }}
                   >
                     <strong>{calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</strong>
@@ -152,13 +174,25 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
       </div>
 
       {selection && selectedRoom ? (
-        <section className="selection-panel" aria-live="polite">
+        <section
+          aria-live="polite"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(14rem, 1fr) minmax(22rem, 2fr)",
+            gap: "1rem",
+            alignItems: "end",
+            padding: "1rem 1.25rem",
+            border: "1px solid #a8cbb5",
+            borderRadius: "1rem",
+            background: "#edf8f0",
+          }}
+        >
           <div>
             <p className="eyebrow">Kijelölt időpont</p>
-            <h2>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</h2>
-            <p className="muted">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
+            <h2 style={{ margin: ".15rem 0 .35rem" }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</h2>
+            <p className="muted" style={{ margin: 0 }}>A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
           </div>
-          <form action={createBooking} className="selection-form">
+          <form action={createBooking} style={{ display: "grid", gridTemplateColumns: "minmax(9rem, .8fr) minmax(12rem, 1.5fr) auto", gap: ".75rem", alignItems: "end" }}>
             <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
             <input type="hidden" name="roomId" value={selection.roomId} />
             <input type="hidden" name="date" value={selectedDate} />
@@ -173,14 +207,14 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
             <label>Megjegyzés
               <input name="note" maxLength={1000} placeholder="Opcionális" />
             </label>
-            <div className="selection-actions">
+            <div style={{ display: "flex", gap: ".5rem" }}>
               <button type="button" className="button secondary" onClick={() => setSelection(null)}>Mégse</button>
               <button type="submit">Foglalás mentése</button>
             </div>
           </form>
         </section>
       ) : (
-        <p className="calendar-hint">Foglaláshoz kattints és húzz egy szabad idősávon. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
+        <p className="muted" style={{ margin: 0 }}>Foglaláshoz kattints és húzz egy szabad idősávon. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
       )}
     </div>
   );
