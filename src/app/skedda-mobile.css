@@ -78,6 +78,9 @@
 
   .mobile-week-strip { grid-template-columns: repeat(7, minmax(2.6rem, 1fr)) 3.5rem; }
 
+  /* The room name already identifies Tréningterem; hide the redundant subtype label on mobile. */
+  .room-heading small { display: none; }
+
   /* Skedda-like time scale. The actual visible divider is drawn on the first room column boundary. */
   .time-axis {
     position: relative;
