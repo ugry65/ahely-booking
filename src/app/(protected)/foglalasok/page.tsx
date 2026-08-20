@@ -41,14 +41,13 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
           </nav>
           <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>{dateTitle(selectedDate)}</h1>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: ".45rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
-          <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-            <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }} />
-            <button type="submit" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>Mutasd</button>
-          </form>
-          {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} /> : null}
-        </div>
+        <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
+          <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }} />
+          <button type="submit" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>Mutasd</button>
+        </form>
       </header>
+
+      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} /> : null}
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
       {roomsResult.error || bookingsResult.error || repeatableRoomsResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
       {rooms.length ? <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} /> : <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>}
