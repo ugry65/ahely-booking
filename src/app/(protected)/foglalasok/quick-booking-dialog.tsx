@@ -25,13 +25,17 @@ export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: Book
         title="Új foglalás"
         onClick={() => setOpen(true)}
         style={{
-          width: "3rem",
-          height: "3rem",
+          position: "fixed",
+          right: "2rem",
+          bottom: "2rem",
+          zIndex: 40,
+          width: "3.5rem",
+          height: "3.5rem",
           borderRadius: "999px",
-          fontSize: "1.8rem",
+          fontSize: "2rem",
           lineHeight: 1,
           padding: 0,
-          boxShadow: "0 .4rem 1rem rgb(31 42 36 / 18%)",
+          boxShadow: "0 .5rem 1.25rem rgb(31 42 36 / 24%)",
         }}
       >
         +
