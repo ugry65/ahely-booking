@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, type PointerEvent } from "react";
 import { createBooking } from "./actions";
+import { createRecurringBooking } from "./ismetlod/actions";
 import {
   CALENDAR_CLOSE_MINUTE,
   CALENDAR_OPEN_MINUTE,
@@ -32,6 +33,7 @@ type Props = {
   rooms: BookableRoom[];
   bookings: CalendarBooking[];
   selectedDate: string;
+  repeatableRoomIds: string[];
 };
 
 type TouchGesture = {
@@ -43,6 +45,8 @@ type TouchGesture = {
   active: boolean;
   element: HTMLDivElement;
 };
+
+type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 
 const PIXELS_PER_MINUTE = 2 / 3;
 const TIMELINE_HEIGHT = (CALENDAR_CLOSE_MINUTE - CALENDAR_OPEN_MINUTE) * PIXELS_PER_MINUTE;
@@ -71,22 +75,21 @@ function timeLabel(iso: string) {
 
 function timeOptions() {
   const values: string[] = [];
-  for (let minute = CALENDAR_OPEN_MINUTE; minute <= CALENDAR_CLOSE_MINUTE; minute += 30) {
-    values.push(calendarMinuteToTime(minute));
-  }
+  for (let minute = CALENDAR_OPEN_MINUTE; minute <= CALENDAR_CLOSE_MINUTE; minute += 30) values.push(calendarMinuteToTime(minute));
   return values;
 }
 
-export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
+export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [dialogRoomId, setDialogRoomId] = useState("");
+  const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
   const touchGesture = useRef<TouchGesture | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idempotencyKey = useMemo(
     () => crypto.randomUUID(),
-    [selection?.roomId, selection?.startMinute, selection?.endMinute],
+    [selection?.roomId, selection?.startMinute, selection?.endMinute, repeatFrequency],
   );
 
   function minuteFromPointer(element: HTMLElement, clientY: number) {
@@ -104,6 +107,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   function activateSelection(roomId: string, element: HTMLDivElement, pointerId: number, anchorMinute: number) {
     setBookingDialogOpen(false);
     setDialogRoomId(roomId);
+    setRepeatFrequency("none");
     element.setPointerCapture(pointerId);
     dragState.current = { roomId, anchorMinute };
     setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
@@ -111,7 +115,6 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
   function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest(".booking-block")) return;
-
     const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
 
     if (event.pointerType === "touch") {
@@ -174,24 +177,21 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
     touchGesture.current = null;
     setBookingDialogOpen(false);
     setDialogRoomId("");
+    setRepeatFrequency("none");
     setSelection(null);
   }
 
   const selectedRoom = selection ? rooms.find((room) => room.room_id === selection.roomId) : null;
   const dialogRoom = rooms.find((room) => room.room_id === dialogRoomId) ?? selectedRoom;
   const options = timeOptions();
+  const canRepeat = dialogRoom ? repeatableRoomIds.includes(dialogRoom.room_id) : false;
+  const formAction = repeatFrequency === "none" ? createBooking : createRecurringBooking;
 
   return (
     <div className="calendar-workspace stack">
       <div className="calendar-card" aria-label={`${selectedDate} foglalásai`}>
         <div className="calendar-scroll">
-          <div
-            className="calendar-grid"
-            style={{
-              gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(8.75rem, 1fr))`,
-              width: "max(100%, max-content)",
-            }}
-          >
+          <div className="calendar-grid" style={{ gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(8.75rem, 1fr))`, width: "max(100%, max-content)" }}>
             <div className="calendar-corner" />
             {rooms.map((room) => (
               <div className="room-heading" key={room.room_id} style={{ minWidth: "8.75rem" }}>
@@ -202,7 +202,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
             <div className="time-axis" style={{ height: `${TIMELINE_HEIGHT}px` }}>
               {Array.from({ length: 16 }, (_, index) => (
-                <span key={index} style={{ top: `${minuteToPixel(index * 60)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>
+                <span key={index} className={index === 0 ? "first-time-label" : ""} style={{ top: `${minuteToPixel(index * 60)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>
               ))}
             </div>
 
@@ -219,25 +219,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
                 aria-label={`${room.room_name} szabad időpontjai. Asztali gépen húzással, mobilon hosszan nyomva indítható foglalás.`}
               >
                 {selection?.roomId === room.room_id ? (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: ".2rem",
-                      right: ".2rem",
-                      zIndex: 2,
-                      top: `${minuteToPixel(selection.startMinute - CALENDAR_OPEN_MINUTE)}px`,
-                      height: `${minuteToPixel(selection.endMinute - selection.startMinute)}px`,
-                      padding: ".25rem .4rem",
-                      border: "2px solid #235c43",
-                      borderRadius: ".35rem",
-                      background: "rgb(220 235 226 / 88%)",
-                      color: "#183c2c",
-                      pointerEvents: "none",
-                      display: "flex",
-                      flexDirection: "column",
-                      fontSize: ".72rem",
-                    }}
-                  >
+                  <div className="selection-block" style={{ top: `${minuteToPixel(selection.startMinute - CALENDAR_OPEN_MINUTE)}px`, height: `${minuteToPixel(selection.endMinute - selection.startMinute)}px` }}>
                     <strong>{calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</strong>
                     <span>Új foglalás</span>
                   </div>
@@ -250,10 +232,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
                     <article
                       className={`booking-block ${booking.is_own ? "own" : ""}`}
                       key={booking.booking_id}
-                      style={{
-                        top: `${minuteToPixel(start - CALENDAR_OPEN_MINUTE)}px`,
-                        height: `${Math.max(minuteToPixel(end - start), minuteToPixel(30))}px`,
-                      }}
+                      style={{ top: `${minuteToPixel(start - CALENDAR_OPEN_MINUTE)}px`, height: `${Math.max(minuteToPixel(end - start), minuteToPixel(30))}px` }}
                       onPointerDown={(event) => event.stopPropagation()}
                     >
                       <strong>{timeLabel(booking.start_at)}–{timeLabel(booking.end_at)}</strong>
@@ -270,93 +249,81 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
       {selection && selectedRoom ? (
         <div className="selection-action-bar" aria-live="polite">
-          <span style={{ padding: "0 .45rem", fontWeight: 700 }}>
-            {selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}
-          </span>
+          <span style={{ padding: "0 .45rem", fontWeight: 700 }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</span>
           <button type="button" className="button secondary" onClick={clearSelection}>Mégse</button>
           <button type="button" onClick={() => setBookingDialogOpen(true)}>Foglalás</button>
         </div>
       ) : null}
 
       {selection && selectedRoom && bookingDialogOpen ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="selection-booking-title"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            display: "grid",
-            placeItems: "center",
-            padding: "1rem",
-            background: "rgb(31 42 36 / 42%)",
-          }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setBookingDialogOpen(false);
-          }}
-        >
-          <section className="card stack" style={{ width: "min(100%, 34rem)", maxHeight: "calc(100vh - 2rem)", overflow: "auto" }}>
-            <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: "1rem" }}>
-              <div>
-                <p className="eyebrow">Kijelölt időpont</p>
-                <h2 id="selection-booking-title" style={{ margin: ".15rem 0 .35rem" }}>Új foglalás</h2>
-              </div>
+        <div role="dialog" aria-modal="true" aria-labelledby="selection-booking-title" className="booking-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setBookingDialogOpen(false); }}>
+          <section className="card stack booking-modal-card">
+            <div className="booking-modal-heading">
+              <div><p className="eyebrow">Új időpont</p><h2 id="selection-booking-title">Foglalás</h2></div>
               <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)} aria-label="Bezárás">×</button>
             </div>
 
-            <form action={createBooking} className="stack">
+            <form action={formAction} className="stack">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
               <label>Helyiség
-                <select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => setDialogRoomId(event.target.value)} required>
+                <select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); }} required>
                   {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
                 </select>
               </label>
 
-              <label>Dátum
-                <input name="date" type="date" defaultValue={selectedDate} required />
-              </label>
+              <label>Dátum<input name="date" type="date" defaultValue={selectedDate} required /></label>
 
               <div className="form-row">
-                <label>Kezdés
-                  <select name="startTime" defaultValue={calendarMinuteToTime(selection.startMinute)} required>
-                    {options.slice(0, -2).map((time) => <option key={time} value={time}>{time}</option>)}
-                  </select>
-                </label>
-                <label>Befejezés
-                  <select name="endTime" defaultValue={calendarMinuteToTime(selection.endMinute)} required>
-                    {options.slice(2).map((time) => <option key={time} value={time}>{time}</option>)}
-                  </select>
-                </label>
+                <label>Kezdés<select name="startTime" defaultValue={calendarMinuteToTime(selection.startMinute)} required>{options.slice(0, -2).map((time) => <option key={time} value={time}>{time}</option>)}</select></label>
+                <label>Befejezés<select name="endTime" defaultValue={calendarMinuteToTime(selection.endMinute)} required>{options.slice(2).map((time) => <option key={time} value={time}>{time}</option>)}</select></label>
               </div>
 
+              <label>Ismétlődés
+                <select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}>
+                  <option value="none">Nincs</option>
+                  <option value="daily">Naponta</option>
+                  <option value="weekly">Hetente</option>
+                  <option value="biweekly">Kéthetente</option>
+                  <option value="monthly">Havonta</option>
+                </select>
+                {!canRepeat ? <span className="muted form-help">Ehhez a helyiséghez nincs ismétlődő foglalási jogosultságod.</span> : null}
+              </label>
+
+              {repeatFrequency !== "none" ? (
+                <fieldset className="repeat-options">
+                  <legend>Ismétlődés beállításai</legend>
+                  <input type="hidden" name="endMode" value="count" />
+                  <label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label>
+                  <label>Kivételdátumok<textarea name="exceptionDates" rows={2} placeholder="Például: 2026-12-24, 2026-12-31" /></label>
+                  <label>Ütközés kezelése
+                    <select name="conflictPolicy" defaultValue="abort_all">
+                      <option value="abort_all">Teljes sorozat megszakítása</option>
+                      <option value="create_available">Csak a szabad alkalmak létrehozása</option>
+                    </select>
+                  </label>
+                </fieldset>
+              ) : null}
+
               {dialogRoom?.is_training_room ? (
-                <label>Használat
-                  <select name="useType" defaultValue="individual">
-                    <option value="individual">Egyéni</option>
-                    <option value="group">Csoportos</option>
-                  </select>
-                </label>
+                <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
               ) : (
                 <input type="hidden" name="useType" value="individual" />
               )}
 
-              <label>Megjegyzés
-                <textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" />
-              </label>
+              <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
 
-              <button type="submit">Foglalás mentése</button>
-              <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)}>Mégse</button>
+              <div className="booking-modal-actions">
+                <button type="submit">{repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button>
+                <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)}>Mégse</button>
+              </div>
               <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
             </form>
           </section>
         </div>
       ) : null}
 
-      {!selection ? (
-        <p className="muted" style={{ margin: 0 }}>Asztali gépen húzással, mobilon hosszan nyomva jelölhetsz ki foglalási időszakot. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
-      ) : null}
+      {!selection ? <p className="muted calendar-help">Asztali gépen húzással, mobilon hosszan nyomva jelölhetsz ki foglalási időszakot.</p> : null}
     </div>
   );
 }

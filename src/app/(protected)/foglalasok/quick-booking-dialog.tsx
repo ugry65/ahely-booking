@@ -2,9 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { createBooking } from "./actions";
+import { createRecurringBooking } from "./ismetlod/actions";
 import type { BookableRoom } from "./calendar-booking-grid";
 
 const OPEN_MINUTE = 7 * 60;
+type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 
 function timeOptions() {
   return Array.from({ length: 31 }, (_, index) => {
@@ -13,101 +15,77 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: BookableRoom[]; selectedDate: string; today: string }) {
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string }) {
   const [open, setOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
-  const idempotencyKey = useMemo(() => crypto.randomUUID(), [open]);
+  const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
+  const idempotencyKey = useMemo(() => crypto.randomUUID(), [open, repeatFrequency]);
   const selectedRoom = rooms.find((room) => room.room_id === selectedRoomId);
+  const canRepeat = selectedRoomId ? repeatableRoomIds.includes(selectedRoomId) : false;
+  const formAction = repeatFrequency === "none" ? createBooking : createRecurringBooking;
 
   function closeDialog() {
     setOpen(false);
     setSelectedRoomId("");
+    setRepeatFrequency("none");
   }
 
   return (
     <>
-      <button
-        type="button"
-        aria-label="Új foglalás gyors megadása"
-        title="Új foglalás"
-        onClick={() => setOpen(true)}
-        style={{
-          position: "fixed",
-          right: "2rem",
-          bottom: "2rem",
-          zIndex: 40,
-          width: "3.5rem",
-          height: "3.5rem",
-          borderRadius: "999px",
-          fontSize: "2rem",
-          lineHeight: 1,
-          padding: 0,
-          boxShadow: "0 .5rem 1.25rem rgb(31 42 36 / 24%)",
-        }}
-      >
-        +
-      </button>
+      <button type="button" aria-label="Új foglalás gyors megadása" title="Új foglalás" onClick={() => setOpen(true)} style={{ position: "fixed", right: "2rem", bottom: "2rem", zIndex: 40, width: "3.5rem", height: "3.5rem", borderRadius: "999px", fontSize: "2rem", lineHeight: 1, padding: 0, boxShadow: "0 .5rem 1.25rem rgb(31 42 36 / 24%)" }}>+</button>
 
       {open ? (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="quick-booking-title"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 50,
-            display: "grid",
-            placeItems: "center",
-            padding: "1rem",
-            background: "rgb(31 42 36 / 42%)",
-          }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) closeDialog();
-          }}
-        >
-          <section className="card stack" style={{ width: "min(100%, 34rem)", maxHeight: "calc(100vh - 2rem)", overflow: "auto" }}>
-            <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: "1rem" }}>
-              <div>
-                <p className="eyebrow">Gyorsfoglalás</p>
-                <h2 id="quick-booking-title" style={{ margin: ".15rem 0 .35rem" }}>Új foglalás</h2>
-              </div>
+        <div role="dialog" aria-modal="true" aria-labelledby="quick-booking-title" className="booking-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeDialog(); }}>
+          <section className="card stack booking-modal-card">
+            <div className="booking-modal-heading">
+              <div><p className="eyebrow">Új időpont</p><h2 id="quick-booking-title">Foglalás</h2></div>
               <button type="button" className="button secondary" onClick={closeDialog} aria-label="Bezárás">×</button>
             </div>
 
-            <form action={createBooking} className="stack">
+            <form action={formAction} className="stack">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
               <label>Helyiség
-                <select name="roomId" required value={selectedRoomId} onChange={(event) => setSelectedRoomId(event.target.value)}>
+                <select name="roomId" required value={selectedRoomId} onChange={(event) => { setSelectedRoomId(event.target.value); setRepeatFrequency("none"); }}>
                   <option value="" disabled>Válassz helyiséget</option>
                   {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
                 </select>
               </label>
               <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
               <div className="form-row">
-                <label>Kezdés
-                  <select name="startTime" required defaultValue="09:00">
-                    {timeOptions().slice(0, -2).map((time) => <option key={time}>{time}</option>)}
-                  </select>
-                </label>
-                <label>Befejezés
-                  <select name="endTime" required defaultValue="10:00">
-                    {timeOptions().slice(2).map((time) => <option key={time}>{time}</option>)}
-                  </select>
-                </label>
+                <label>Kezdés<select name="startTime" required defaultValue="09:00">{timeOptions().slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label>
+                <label>Befejezés<select name="endTime" required defaultValue="10:00">{timeOptions().slice(2).map((time) => <option key={time}>{time}</option>)}</select></label>
               </div>
+
+              <label>Ismétlődés
+                <select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}>
+                  <option value="none">Nincs</option>
+                  <option value="daily">Naponta</option>
+                  <option value="weekly">Hetente</option>
+                  <option value="biweekly">Kéthetente</option>
+                  <option value="monthly">Havonta</option>
+                </select>
+                {selectedRoomId && !canRepeat ? <span className="muted form-help">Ehhez a helyiséghez nincs ismétlődő foglalási jogosultságod.</span> : null}
+              </label>
+
+              {repeatFrequency !== "none" ? (
+                <fieldset className="repeat-options">
+                  <legend>Ismétlődés beállításai</legend>
+                  <input type="hidden" name="endMode" value="count" />
+                  <label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label>
+                  <label>Kivételdátumok<textarea name="exceptionDates" rows={2} placeholder="Például: 2026-12-24, 2026-12-31" /></label>
+                  <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label>
+                </fieldset>
+              ) : null}
+
               {selectedRoom?.is_training_room ? (
-                <label>Használat
-                  <select name="useType" defaultValue="individual">
-                    <option value="individual">Egyéni</option>
-                    <option value="group">Csoportos</option>
-                  </select>
-                </label>
-              ) : (
-                <input type="hidden" name="useType" value="individual" />
-              )}
+                <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
+              ) : <input type="hidden" name="useType" value="individual" />}
+
               <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
-              <button type="submit">Foglalás mentése</button>
+              <div className="booking-modal-actions">
+                <button type="submit">{repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button>
+                <button type="button" className="button secondary" onClick={closeDialog}>Mégse</button>
+              </div>
               <p className="muted form-help">A végleges jogosultság-, időrács-, előrefoglalási és ütközésellenőrzést a backend végzi.</p>
             </form>
           </section>
