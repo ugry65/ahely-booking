@@ -58,6 +58,7 @@ function timeLabel(iso: string) {
 
 export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
   const idempotencyKey = useMemo(
     () => crypto.randomUUID(),
@@ -72,6 +73,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest(".booking-block")) return;
     event.preventDefault();
+    setBookingDialogOpen(false);
     event.currentTarget.setPointerCapture(event.pointerId);
     const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
     dragState.current = { roomId, anchorMinute };
@@ -86,6 +88,11 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
   function endSelection() {
     dragState.current = null;
+  }
+
+  function clearSelection() {
+    setBookingDialogOpen(false);
+    setSelection(null);
   }
 
   const selectedRoom = selection ? rooms.find((room) => room.room_id === selection.roomId) : null;
@@ -174,56 +181,86 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
       </div>
 
       {selection && selectedRoom ? (
-        <section
+        <div
           aria-live="polite"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 20rem), 1fr))",
-            gap: "1rem",
-            alignItems: "end",
-            padding: "1rem 1.25rem",
+            position: "fixed",
+            right: "6.5rem",
+            bottom: "2rem",
+            zIndex: 39,
+            display: "flex",
+            alignItems: "center",
+            gap: ".5rem",
+            padding: ".45rem",
             border: "1px solid #a8cbb5",
-            borderRadius: "1rem",
+            borderRadius: ".8rem",
             background: "#edf8f0",
+            boxShadow: "0 .4rem 1rem rgb(31 42 36 / 18%)",
           }}
         >
-          <div>
-            <p className="eyebrow">Kijelölt időpont</p>
-            <h2 style={{ margin: ".15rem 0 .35rem" }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</h2>
-            <p className="muted" style={{ margin: 0 }}>A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
-          </div>
-          <form
-            action={createBooking}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))",
-              gap: ".75rem",
-              alignItems: "end",
-            }}
-          >
-            <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-            <input type="hidden" name="roomId" value={selection.roomId} />
-            <input type="hidden" name="date" value={selectedDate} />
-            <input type="hidden" name="startTime" value={calendarMinuteToTime(selection.startMinute)} />
-            <input type="hidden" name="endTime" value={calendarMinuteToTime(selection.endMinute)} />
-            <label>Használat
-              <select name="useType" defaultValue="individual">
-                <option value="individual">Egyéni</option>
-                <option value="group">Csoportos</option>
-              </select>
-            </label>
-            <label>Megjegyzés
-              <input name="note" maxLength={1000} placeholder="Opcionális" />
-            </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
-              <button type="button" className="button secondary" onClick={() => setSelection(null)}>Mégse</button>
-              <button type="submit">Foglalás mentése</button>
+          <span style={{ padding: "0 .45rem", fontWeight: 700 }}>
+            {selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}
+          </span>
+          <button type="button" className="button secondary" onClick={clearSelection}>Mégse</button>
+          <button type="button" onClick={() => setBookingDialogOpen(true)}>Foglalás</button>
+        </div>
+      ) : null}
+
+      {selection && selectedRoom && bookingDialogOpen ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="selection-booking-title"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 50,
+            display: "grid",
+            placeItems: "center",
+            padding: "1rem",
+            background: "rgb(31 42 36 / 42%)",
+          }}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setBookingDialogOpen(false);
+          }}
+        >
+          <section className="card stack" style={{ width: "min(100%, 34rem)", maxHeight: "calc(100vh - 2rem)", overflow: "auto" }}>
+            <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: "1rem" }}>
+              <div>
+                <p className="eyebrow">Kijelölt időpont</p>
+                <h2 id="selection-booking-title" style={{ margin: ".15rem 0 .35rem" }}>Új foglalás</h2>
+                <p className="muted" style={{ margin: 0 }}>
+                  {selectedRoom.room_name} · {selectedDate} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}
+                </p>
+              </div>
+              <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)} aria-label="Bezárás">×</button>
             </div>
-          </form>
-        </section>
-      ) : (
+
+            <form action={createBooking} className="stack">
+              <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+              <input type="hidden" name="roomId" value={selection.roomId} />
+              <input type="hidden" name="date" value={selectedDate} />
+              <input type="hidden" name="startTime" value={calendarMinuteToTime(selection.startMinute)} />
+              <input type="hidden" name="endTime" value={calendarMinuteToTime(selection.endMinute)} />
+              <label>Használat
+                <select name="useType" defaultValue="individual">
+                  <option value="individual">Egyéni</option>
+                  <option value="group">Csoportos</option>
+                </select>
+              </label>
+              <label>Megjegyzés
+                <textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" />
+              </label>
+              <button type="submit">Foglalás mentése</button>
+              <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
+            </form>
+          </section>
+        </div>
+      ) : null}
+
+      {!selection ? (
         <p className="muted" style={{ margin: 0 }}>Foglaláshoz kattints és húzz egy szabad idősávon. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
-      )}
+      ) : null}
     </div>
   );
 }
