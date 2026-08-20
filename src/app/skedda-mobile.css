@@ -78,11 +78,18 @@
 
   .mobile-week-strip { grid-template-columns: repeat(7, minmax(2.6rem, 1fr)) 3.5rem; }
 
-  /* Skedda-like time scale: every hour label sits at the same offset below its hour line. */
+  /* Skedda-like time scale: labels align to one continuous vertical divider. */
+  .time-axis {
+    border-right: 1px solid #d7ddd9;
+    background: #fff;
+  }
+
   .time-axis span,
   .time-axis span.first-time-label {
-    right: .9rem;
+    right: 1rem;
     translate: 0 .58rem;
+    width: calc(100% - 1rem);
+    text-align: right;
     color: #626d67;
     font-size: .82rem;
     font-weight: 400;
