@@ -44,7 +44,6 @@ type TouchGesture = {
   element: HTMLDivElement;
 };
 
-// 15 óra (07:00–22:00) ~600 px magasan: a teljes nap desktopon egyben áttekinthető.
 const PIXELS_PER_MINUTE = 2 / 3;
 const TIMELINE_HEIGHT = (CALENDAR_CLOSE_MINUTE - CALENDAR_OPEN_MINUTE) * PIXELS_PER_MINUTE;
 const minuteToPixel = (minute: number) => minute * PIXELS_PER_MINUTE;
@@ -70,9 +69,18 @@ function timeLabel(iso: string) {
   }).format(new Date(iso));
 }
 
+function timeOptions() {
+  const values: string[] = [];
+  for (let minute = CALENDAR_OPEN_MINUTE; minute <= CALENDAR_CLOSE_MINUTE; minute += 30) {
+    values.push(calendarMinuteToTime(minute));
+  }
+  return values;
+}
+
 export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
+  const [dialogRoomId, setDialogRoomId] = useState("");
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
   const touchGesture = useRef<TouchGesture | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -95,6 +103,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
   function activateSelection(roomId: string, element: HTMLDivElement, pointerId: number, anchorMinute: number) {
     setBookingDialogOpen(false);
+    setDialogRoomId(roomId);
     element.setPointerCapture(pointerId);
     dragState.current = { roomId, anchorMinute };
     setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
@@ -154,18 +163,23 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
 
   function endSelection(event?: PointerEvent<HTMLDivElement>) {
     cancelLongPress();
+    const completedTouchSelection = event?.pointerType === "touch" && touchGesture.current?.active === true;
     if (event?.pointerType === "touch") touchGesture.current = null;
     dragState.current = null;
+    if (completedTouchSelection) setBookingDialogOpen(true);
   }
 
   function clearSelection() {
     cancelLongPress();
     touchGesture.current = null;
     setBookingDialogOpen(false);
+    setDialogRoomId("");
     setSelection(null);
   }
 
   const selectedRoom = selection ? rooms.find((room) => room.room_id === selection.roomId) : null;
+  const dialogRoom = rooms.find((room) => room.room_id === dialogRoomId) ?? selectedRoom;
+  const options = timeOptions();
 
   return (
     <div className="calendar-workspace stack">
@@ -255,23 +269,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
       </div>
 
       {selection && selectedRoom ? (
-        <div
-          aria-live="polite"
-          style={{
-            position: "fixed",
-            right: "6.5rem",
-            bottom: "2rem",
-            zIndex: 39,
-            display: "flex",
-            alignItems: "center",
-            gap: ".5rem",
-            padding: ".45rem",
-            border: "1px solid #a8cbb5",
-            borderRadius: ".8rem",
-            background: "#edf8f0",
-            boxShadow: "0 .4rem 1rem rgb(31 42 36 / 18%)",
-          }}
-        >
+        <div className="selection-action-bar" aria-live="polite">
           <span style={{ padding: "0 .45rem", fontWeight: 700 }}>
             {selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}
           </span>
@@ -303,20 +301,37 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
               <div>
                 <p className="eyebrow">Kijelölt időpont</p>
                 <h2 id="selection-booking-title" style={{ margin: ".15rem 0 .35rem" }}>Új foglalás</h2>
-                <p className="muted" style={{ margin: 0 }}>
-                  {selectedRoom.room_name} · {selectedDate} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}
-                </p>
               </div>
               <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)} aria-label="Bezárás">×</button>
             </div>
 
             <form action={createBooking} className="stack">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-              <input type="hidden" name="roomId" value={selection.roomId} />
-              <input type="hidden" name="date" value={selectedDate} />
-              <input type="hidden" name="startTime" value={calendarMinuteToTime(selection.startMinute)} />
-              <input type="hidden" name="endTime" value={calendarMinuteToTime(selection.endMinute)} />
-              {selectedRoom.is_training_room ? (
+
+              <label>Helyiség
+                <select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => setDialogRoomId(event.target.value)} required>
+                  {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
+                </select>
+              </label>
+
+              <label>Dátum
+                <input name="date" type="date" defaultValue={selectedDate} required />
+              </label>
+
+              <div className="form-row">
+                <label>Kezdés
+                  <select name="startTime" defaultValue={calendarMinuteToTime(selection.startMinute)} required>
+                    {options.slice(0, -2).map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+                <label>Befejezés
+                  <select name="endTime" defaultValue={calendarMinuteToTime(selection.endMinute)} required>
+                    {options.slice(2).map((time) => <option key={time} value={time}>{time}</option>)}
+                  </select>
+                </label>
+              </div>
+
+              {dialogRoom?.is_training_room ? (
                 <label>Használat
                   <select name="useType" defaultValue="individual">
                     <option value="individual">Egyéni</option>
@@ -326,10 +341,13 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
               ) : (
                 <input type="hidden" name="useType" value="individual" />
               )}
+
               <label>Megjegyzés
                 <textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" />
               </label>
+
               <button type="submit">Foglalás mentése</button>
+              <button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)}>Mégse</button>
               <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
             </form>
           </section>
