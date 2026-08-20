@@ -77,5 +77,17 @@
   .mobile-calendar-today { width: 100%; margin-top: .4rem; padding: .45rem; background: transparent; color: #235c43; }
 
   .mobile-week-strip { grid-template-columns: repeat(7, minmax(2.6rem, 1fr)) 3.5rem; }
-  .time-axis span.first-time-label { translate: 0 .55rem; }
+
+  /* Skedda-like time scale: every hour label sits at the same offset below its hour line. */
+  .time-axis span,
+  .time-axis span.first-time-label {
+    right: .9rem;
+    translate: 0 .58rem;
+    color: #626d67;
+    font-size: .82rem;
+    font-weight: 400;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
 }
