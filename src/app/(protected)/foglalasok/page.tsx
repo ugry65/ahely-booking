@@ -27,18 +27,17 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const dayStart = budapestLocalToIso(selectedDate, "00:00");
   const dayEnd = budapestLocalToIso(shiftDate(selectedDate, 1), "00:00");
   const supabase = await createClient();
-  const [roomsResult, bookingsResult] = await Promise.all([
+  const [roomsResult, bookingsResult, repeatableRoomsResult] = await Promise.all([
     supabase.rpc("list_bookable_rooms").returns<BookableRoom[]>(),
     supabase.rpc("list_calendar_bookings", { p_start_at: dayStart, p_end_at: dayEnd }).returns<CalendarBooking[]>(),
+    supabase.rpc("list_repeatable_rooms").returns<BookableRoom[]>(),
   ]);
   const rooms = (roomsResult.data ?? []) as unknown as BookableRoom[];
   const bookings = (bookingsResult.data ?? []) as unknown as CalendarBooking[];
+  const repeatableRoomIds = ((repeatableRoomsResult.data ?? []) as unknown as BookableRoom[]).map((room) => room.room_id);
 
   return (
-    <section
-      className="booking-page stack"
-      style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}
-    >
+    <section className="booking-page stack" style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}>
       <MobileDateStrip selectedDate={selectedDate} />
 
       <header className="desktop-calendar-header" aria-label="Naptár vezérlők">
@@ -48,9 +47,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
             <Link className="button secondary" href={`/foglalasok?datum=${today}`}>Ma</Link>
             <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, 1)}`} aria-label="Következő nap">→</Link>
           </nav>
-          <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>
-            {dateTitle(selectedDate)}
-          </h1>
+          <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>{dateTitle(selectedDate)}</h1>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: ".45rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
@@ -63,10 +60,10 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       </header>
 
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
-      {roomsResult.error || bookingsResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
+      {roomsResult.error || bookingsResult.error || repeatableRoomsResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
 
       {rooms.length ? (
-        <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} />
+        <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} />
       ) : (
         <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>
       )}
