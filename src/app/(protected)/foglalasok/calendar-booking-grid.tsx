@@ -178,7 +178,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
           aria-live="polite"
           style={{
             display: "grid",
-            gridTemplateColumns: "minmax(14rem, 1fr) minmax(22rem, 2fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 20rem), 1fr))",
             gap: "1rem",
             alignItems: "end",
             padding: "1rem 1.25rem",
@@ -192,7 +192,15 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
             <h2 style={{ margin: ".15rem 0 .35rem" }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</h2>
             <p className="muted" style={{ margin: 0 }}>A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
           </div>
-          <form action={createBooking} style={{ display: "grid", gridTemplateColumns: "minmax(9rem, .8fr) minmax(12rem, 1.5fr) auto", gap: ".75rem", alignItems: "end" }}>
+          <form
+            action={createBooking}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 10rem), 1fr))",
+              gap: ".75rem",
+              alignItems: "end",
+            }}
+          >
             <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
             <input type="hidden" name="roomId" value={selection.roomId} />
             <input type="hidden" name="date" value={selectedDate} />
@@ -207,7 +215,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
             <label>Megjegyzés
               <input name="note" maxLength={1000} placeholder="Opcionális" />
             </label>
-            <div style={{ display: "flex", gap: ".5rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
               <button type="button" className="button secondary" onClick={() => setSelection(null)}>Mégse</button>
               <button type="submit">Foglalás mentése</button>
             </div>
