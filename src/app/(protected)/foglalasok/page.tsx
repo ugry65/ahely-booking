@@ -3,6 +3,7 @@ import { requireActiveProfile } from "@/lib/auth";
 import { budapestLocalToIso, isValidDate } from "@/lib/booking-form";
 import { createClient } from "@/lib/supabase/server";
 import { CalendarBookingGrid, type BookableRoom, type CalendarBooking } from "./calendar-booking-grid";
+import { MobileDateStrip } from "./mobile-date-strip";
 import { QuickBookingDialog } from "./quick-booking-dialog";
 
 function budapestToday() {
@@ -38,18 +39,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       className="booking-page stack"
       style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}
     >
-      <header
-        aria-label="Naptár vezérlők"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: ".75rem",
-          flexWrap: "wrap",
-          padding: ".35rem 0 .5rem",
-          borderBottom: "1px solid #ddd8cc",
-        }}
-      >
+      <MobileDateStrip selectedDate={selectedDate} />
+
+      <header className="desktop-calendar-header" aria-label="Naptár vezérlők">
         <div style={{ display: "flex", alignItems: "center", gap: ".65rem", flexWrap: "wrap" }}>
           <nav className="date-nav" aria-label="Naptári nap választása" style={{ gap: ".3rem" }}>
             <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, -1)}`} aria-label="Előző nap">←</Link>
@@ -63,18 +55,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
         <div style={{ display: "flex", alignItems: "center", gap: ".45rem", flexWrap: "wrap", justifyContent: "flex-end" }}>
           <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-            <input
-              type="date"
-              name="datum"
-              defaultValue={selectedDate}
-              aria-label="Ugrás dátumra"
-              style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }}
-            />
+            <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }} />
             <button type="submit" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>Mutasd</button>
           </form>
-          <Link href="/foglalasok/ismetlod" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>
-            Ismétlődő
-          </Link>
           {rooms.length ? <QuickBookingDialog rooms={rooms} selectedDate={selectedDate} today={today} /> : null}
         </div>
       </header>
