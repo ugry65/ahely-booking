@@ -1,0 +1,24 @@
+@media (max-width: 52rem) {
+  .time-axis {
+    border-right: 1px solid #d7ddd9 !important;
+  }
+
+  .time-axis + .room-timeline {
+    border-left: 1px solid #e4e0d7 !important;
+  }
+
+  .room-timeline {
+    background-image:
+      repeating-linear-gradient(to bottom, transparent 0, transparent 39px, #c9d0cc 40px),
+      repeating-linear-gradient(to bottom, transparent 0, transparent 19px, #ecefed 20px) !important;
+  }
+
+  .time-axis span,
+  .time-axis span.first-time-label {
+    translate: 0 -.48em;
+  }
+
+  .time-axis span.first-time-label {
+    translate: 0 .18rem;
+  }
+}
