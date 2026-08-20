@@ -78,10 +78,24 @@
 
   .mobile-week-strip { grid-template-columns: repeat(7, minmax(2.6rem, 1fr)) 3.5rem; }
 
-  /* Skedda-like time scale: labels align to one continuous vertical divider. */
+  /* Skedda-like time scale: explicit divider stays visible above the room grid. */
   .time-axis {
-    border-right: 1px solid #d7ddd9;
+    position: relative;
+    z-index: 6;
+    border-right: 0;
     background: #fff;
+  }
+
+  .time-axis::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 2px;
+    background: #c6cdca;
+    pointer-events: none;
+    z-index: 7;
   }
 
   .time-axis span,
