@@ -90,4 +90,12 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+
+  /* iOS Safari long press must select a booking slot, not page text. */
+  .calendar-card,
+  .calendar-card * {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
 }
