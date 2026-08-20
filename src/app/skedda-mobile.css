@@ -78,7 +78,7 @@
 
   .mobile-week-strip { grid-template-columns: repeat(7, minmax(2.6rem, 1fr)) 3.5rem; }
 
-  /* Skedda-like time scale: explicit divider stays visible above the room grid. */
+  /* Skedda-like time scale. The actual visible divider is drawn on the first room column boundary. */
   .time-axis {
     position: relative;
     z-index: 6;
@@ -87,15 +87,11 @@
   }
 
   .time-axis::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 2px;
-    background: #c6cdca;
-    pointer-events: none;
-    z-index: 7;
+    content: none;
+  }
+
+  .time-axis + .room-timeline {
+    border-left: 2px solid #9ca6a1 !important;
   }
 
   .time-axis span,
