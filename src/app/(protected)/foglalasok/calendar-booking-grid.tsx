@@ -242,12 +242,16 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
               <input type="hidden" name="date" value={selectedDate} />
               <input type="hidden" name="startTime" value={calendarMinuteToTime(selection.startMinute)} />
               <input type="hidden" name="endTime" value={calendarMinuteToTime(selection.endMinute)} />
-              <label>Használat
-                <select name="useType" defaultValue="individual">
-                  <option value="individual">Egyéni</option>
-                  <option value="group">Csoportos</option>
-                </select>
-              </label>
+              {selectedRoom.is_training_room ? (
+                <label>Használat
+                  <select name="useType" defaultValue="individual">
+                    <option value="individual">Egyéni</option>
+                    <option value="group">Csoportos</option>
+                  </select>
+                </label>
+              ) : (
+                <input type="hidden" name="useType" value="individual" />
+              )}
               <label>Megjegyzés
                 <textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" />
               </label>
