@@ -15,7 +15,14 @@ function timeOptions() {
 
 export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: BookableRoom[]; selectedDate: string; today: string }) {
   const [open, setOpen] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState("");
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [open]);
+  const selectedRoom = rooms.find((room) => room.room_id === selectedRoomId);
+
+  function closeDialog() {
+    setOpen(false);
+    setSelectedRoomId("");
+  }
 
   return (
     <>
@@ -56,7 +63,7 @@ export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: Book
             background: "rgb(31 42 36 / 42%)",
           }}
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setOpen(false);
+            if (event.target === event.currentTarget) closeDialog();
           }}
         >
           <section className="card stack" style={{ width: "min(100%, 34rem)", maxHeight: "calc(100vh - 2rem)", overflow: "auto" }}>
@@ -65,13 +72,13 @@ export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: Book
                 <p className="eyebrow">Gyorsfoglalás</p>
                 <h2 id="quick-booking-title" style={{ margin: ".15rem 0 .35rem" }}>Új foglalás</h2>
               </div>
-              <button type="button" className="button secondary" onClick={() => setOpen(false)} aria-label="Bezárás">×</button>
+              <button type="button" className="button secondary" onClick={closeDialog} aria-label="Bezárás">×</button>
             </div>
 
             <form action={createBooking} className="stack">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
               <label>Helyiség
-                <select name="roomId" required defaultValue="">
+                <select name="roomId" required value={selectedRoomId} onChange={(event) => setSelectedRoomId(event.target.value)}>
                   <option value="" disabled>Válassz helyiséget</option>
                   {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
                 </select>
@@ -89,12 +96,16 @@ export function QuickBookingDialog({ rooms, selectedDate, today }: { rooms: Book
                   </select>
                 </label>
               </div>
-              <label>Használat
-                <select name="useType" defaultValue="individual">
-                  <option value="individual">Egyéni</option>
-                  <option value="group">Csoportos</option>
-                </select>
-              </label>
+              {selectedRoom?.is_training_room ? (
+                <label>Használat
+                  <select name="useType" defaultValue="individual">
+                    <option value="individual">Egyéni</option>
+                    <option value="group">Csoportos</option>
+                  </select>
+                </label>
+              ) : (
+                <input type="hidden" name="useType" value="individual" />
+              )}
               <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
               <button type="submit">Foglalás mentése</button>
               <p className="muted form-help">A végleges jogosultság-, időrács-, előrefoglalási és ütközésellenőrzést a backend végzi.</p>
