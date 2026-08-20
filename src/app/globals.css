@@ -40,6 +40,7 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 .booking-block { position: absolute; left: .3rem; right: .3rem; z-index: 1; display: flex; flex-direction: column; overflow: hidden; padding: .35rem .45rem; border-left: 4px solid #986d25; border-radius: .35rem; background: #f2e7cf; color: #3b321f; font-size: .78rem; line-height: 1.25; }
 .booking-block.own { border-color: #235c43; background: #dcebe2; color: #183c2c; }
 .booking-block strong { font-size: .8rem; }
+.selection-action-bar { position: fixed; right: 6.5rem; bottom: 2rem; z-index: 39; display: flex; align-items: center; gap: .5rem; padding: .45rem; border: 1px solid #a8cbb5; border-radius: .8rem; background: #edf8f0; box-shadow: 0 .4rem 1rem rgb(31 42 36 / 18%); }
 .booking-form-card { position: sticky; top: 1rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 .form-help { margin: 0; font-size: .83rem; }
@@ -90,6 +91,7 @@ tfoot th { font-weight: 800; }
   .date-nav .button { flex: 1; }
   .booking-layout { grid-template-columns: 1fr; }
   .booking-form-card { position: static; order: -1; }
+  .selection-action-bar { display: none; }
   .result-columns { grid-template-columns: 1fr; }
   .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row, .monthly-filter { grid-template-columns: 1fr; }
 }
