@@ -34,10 +34,22 @@ type Props = {
   selectedDate: string;
 };
 
+type TouchGesture = {
+  roomId: string;
+  pointerId: number;
+  startX: number;
+  startY: number;
+  anchorMinute: number;
+  active: boolean;
+  element: HTMLDivElement;
+};
+
 // 15 óra (07:00–22:00) ~600 px magasan: a teljes nap desktopon egyben áttekinthető.
 const PIXELS_PER_MINUTE = 2 / 3;
 const TIMELINE_HEIGHT = (CALENDAR_CLOSE_MINUTE - CALENDAR_OPEN_MINUTE) * PIXELS_PER_MINUTE;
 const minuteToPixel = (minute: number) => minute * PIXELS_PER_MINUTE;
+const LONG_PRESS_MS = 500;
+const TOUCH_MOVE_CANCEL_PX = 10;
 
 function localMinute(iso: string) {
   const parts = new Intl.DateTimeFormat("en-GB", {
@@ -62,6 +74,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
+  const touchGesture = useRef<TouchGesture | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idempotencyKey = useMemo(
     () => crypto.randomUUID(),
     [selection?.roomId, selection?.startMinute, selection?.endMinute],
@@ -72,27 +86,81 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
     return CALENDAR_OPEN_MINUTE + (clientY - rect.top) / PIXELS_PER_MINUTE;
   }
 
-  function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest(".booking-block")) return;
-    event.preventDefault();
+  function cancelLongPress() {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }
+
+  function activateSelection(roomId: string, element: HTMLDivElement, pointerId: number, anchorMinute: number) {
     setBookingDialogOpen(false);
-    event.currentTarget.setPointerCapture(event.pointerId);
-    const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
+    element.setPointerCapture(pointerId);
     dragState.current = { roomId, anchorMinute };
     setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
   }
 
+  function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
+    if ((event.target as HTMLElement).closest(".booking-block")) return;
+
+    const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
+
+    if (event.pointerType === "touch") {
+      cancelLongPress();
+      touchGesture.current = {
+        roomId,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        anchorMinute,
+        active: false,
+        element: event.currentTarget,
+      };
+      longPressTimer.current = setTimeout(() => {
+        const gesture = touchGesture.current;
+        if (!gesture || gesture.pointerId !== event.pointerId) return;
+        gesture.active = true;
+        activateSelection(gesture.roomId, gesture.element, gesture.pointerId, gesture.anchorMinute);
+      }, LONG_PRESS_MS);
+      return;
+    }
+
+    event.preventDefault();
+    activateSelection(roomId, event.currentTarget, event.pointerId, anchorMinute);
+  }
+
   function moveSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType === "touch") {
+      const gesture = touchGesture.current;
+      if (!gesture || gesture.pointerId !== event.pointerId || gesture.roomId !== roomId) return;
+
+      if (!gesture.active) {
+        const dx = event.clientX - gesture.startX;
+        const dy = event.clientY - gesture.startY;
+        if (Math.hypot(dx, dy) > TOUCH_MOVE_CANCEL_PX) {
+          cancelLongPress();
+          touchGesture.current = null;
+        }
+        return;
+      }
+
+      event.preventDefault();
+    }
+
     const drag = dragState.current;
     if (!drag || drag.roomId !== roomId) return;
     setSelection(normalizeCalendarSelection(roomId, drag.anchorMinute, minuteFromPointer(event.currentTarget, event.clientY)));
   }
 
-  function endSelection() {
+  function endSelection(event?: PointerEvent<HTMLDivElement>) {
+    cancelLongPress();
+    if (event?.pointerType === "touch") touchGesture.current = null;
     dragState.current = null;
   }
 
   function clearSelection() {
+    cancelLongPress();
+    touchGesture.current = null;
     setBookingDialogOpen(false);
     setSelection(null);
   }
@@ -128,12 +196,13 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
               <div
                 className="room-timeline"
                 key={room.room_id}
-                style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "pan-x" }}
+                style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "auto" }}
                 onPointerDown={(event) => beginSelection(room.room_id, event)}
                 onPointerMove={(event) => moveSelection(room.room_id, event)}
-                onPointerUp={endSelection}
-                onPointerCancel={endSelection}
-                aria-label={`${room.room_name} szabad időpontjai. Foglaláshoz húzz egy időszakot.`}
+                onPointerUp={(event) => endSelection(event)}
+                onPointerCancel={(event) => endSelection(event)}
+                onContextMenu={(event) => event.preventDefault()}
+                aria-label={`${room.room_name} szabad időpontjai. Asztali gépen húzással, mobilon hosszan nyomva indítható foglalás.`}
               >
                 {selection?.roomId === room.room_id ? (
                   <div
@@ -268,7 +337,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate }: Props) {
       ) : null}
 
       {!selection ? (
-        <p className="muted" style={{ margin: 0 }}>Foglaláshoz kattints és húzz egy szabad idősávon. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
+        <p className="muted" style={{ margin: 0 }}>Asztali gépen húzással, mobilon hosszan nyomva jelölhetsz ki foglalási időszakot. A kijelölés 30 perces rácshoz igazodik, minimum 60 perc.</p>
       ) : null}
     </div>
   );

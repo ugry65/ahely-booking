@@ -27,12 +27,14 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 .date-nav { padding: 0; border: 0; justify-content: flex-end; }
 .booking-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem); gap: 1.5rem; align-items: start; }
 .calendar-card { overflow: hidden; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fff; box-shadow: 0 1rem 3rem rgb(31 42 36 / 6%); }
-.calendar-scroll { overflow-x: auto; }
+.calendar-scroll { overflow-x: auto; overscroll-behavior-x: contain; }
 .calendar-grid { display: grid; min-width: max-content; }
 .calendar-corner, .room-heading { position: sticky; top: 0; z-index: 3; min-height: 4rem; padding: .8rem; border-bottom: 1px solid #d8d4c8; background: #f8f6f1; }
+.calendar-corner { left: 0; z-index: 5; border-right: 1px solid #e4e0d7; }
 .room-heading { display: grid; place-content: center; min-width: 10rem; border-left: 1px solid #e4e0d7; text-align: center; font-weight: 800; }
 .room-heading small { color: #86682c; font-weight: 600; }
 .time-axis, .room-timeline { position: relative; height: 900px; }
+.time-axis { position: sticky; left: 0; z-index: 4; border-right: 1px solid #e4e0d7; background: #fff; }
 .time-axis span { position: absolute; right: .7rem; translate: 0 -.55em; color: #65716a; font-size: .78rem; }
 .room-timeline { border-left: 1px solid #e4e0d7; background: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, #ece8df 30px); }
 .booking-block { position: absolute; left: .3rem; right: .3rem; z-index: 1; display: flex; flex-direction: column; overflow: hidden; padding: .35rem .45rem; border-left: 4px solid #986d25; border-radius: .35rem; background: #f2e7cf; color: #3b321f; font-size: .78rem; line-height: 1.25; }
