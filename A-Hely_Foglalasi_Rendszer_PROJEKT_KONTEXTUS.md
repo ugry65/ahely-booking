@@ -133,7 +133,12 @@ Automatikus végleges törlés helyett admin jóváhagyása szükséges.
 - magyar;
 - napi többoszlopos naptár;
 - saját foglalás külön színnel;
-- admin és user felület elkülönítve.
+- admin és user felület elkülönítve;
+- a normál user foglalási UX a Skedda/AllBooked megszokott használati logikáját kövesse, hogy a váltás minimális újratanulást igényeljen;
+- a stagingen elfogadott részletes UI/UX baseline kötelező referencia: `docs/BOOKING_UI_UX_BASELINE.md`;
+- mobil Skedda-minta részletes leírása: `docs/skedda-mobile-calendar-ux.md`.
+
+A baseline-ban rögzített, már elfogadott UI/UX funkciót vagy gesztust későbbi refaktor nem távolíthat el külön dokumentált döntés nélkül.
 
 ## Javasolt technológiai irány
 Kiindulási javaslat:
@@ -196,6 +201,31 @@ A backup és restore követelmény nem enyhül: tényleges backup és sikeres re
 
 A funkcionális UAT részletes, verziózott forrása: `docs/FUNKCIONALIS_UAT_CHECKLIST.md`.
 
+## 2026-08-20-i foglalási UI/UX baseline döntés
+
+A staging UAT és a Skedda mobil/desktop összehasonlítás alapján a már kialakított foglalási UX **regresszióvédett projektkövetelménnyé** vált.
+
+Kötelezően megőrzendő fő elemek:
+
+- napi többhelyiséges naptár, 07:00–22:00;
+- desktopon tömör, Skedda-szerű napi képernyőkihasználás;
+- mobilon 7 napos felső dátumsáv és külön havi naptárválasztó;
+- mobilon sticky bal órasáv vízszintes görgetésnél;
+- mobilon természetes függőleges scroll a teljes naptárfelületen;
+- mobil foglaláskijelölés long press után, nem azonnali érintésre;
+- kijelölés után ujjfelengedéskor azonnal nyíló foglalási modál;
+- iOS/Safari natív szövegkijelölés tiltása a naptárgesztus közben;
+- jobb alsó fix `+` gyorsfoglalás mobilon és desktopon;
+- ismétlődő foglalás ugyanabban a foglalási ablakban, nem külön főoldali mobil folyamatként;
+- normál szobák használata mindig Egyéni; Egyéni/Csoportos választó csak Tréningteremnél;
+- Tréningterem helyiségnév csak egyszer jelenjen meg;
+- mobil kompakt A-Hely + hamburger navigáció, amely menüpont választásakor bezár;
+- egész órás vízszintes rácsvonal hangsúlyosabb, félórás finomabb; óracímkék az egész órás vonalakhoz igazodnak.
+
+A részletes technikai és regressziós checklist forrása: `docs/BOOKING_UI_UX_BASELINE.md`.
+
+Nyitott, még nem lezárt UX tételek külön vannak jelölve ebben a baseline-ban; ezek fejlesztése nem ad felhatalmazást a már elfogadott elemek eltávolítására.
+
 ## Nem MVP
 - bankkártyás fizetés
 - SSO/SAML
@@ -210,10 +240,10 @@ A funkcionális UAT részletes, verziózott forrása: `docs/FUNKCIONALIS_UAT_CHE
 
 ## Új fejlesztési beszélgetés indítása
 Az új fejlesztési beszélgetés első feladata:
-1. ezt a projektkontextust és az FS-t áttekinteni;
-2. a technikai stacket véglegesíteni;
-3. adatmodellt és adatbiztonsági architektúrát készíteni;
-4. a GitHub repository-t létrehozni/csatlakoztatni;
-5. első fejlesztési branch-et és feladatlistát létrehozni.
+1. ezt a projektkontextust és az aktuális FS-t áttekinteni;
+2. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
+3. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
+4. a GitHub `main` branch aktuális állapotát tekinteni a forráskód hiteles forrásának;
+5. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben.
 
 Ez a fájl legyen a projekt tartós kontextusfájlja, és a fejlesztés során verziózni kell.
