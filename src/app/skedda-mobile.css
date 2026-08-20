@@ -81,12 +81,14 @@
   /* The room name already identifies Tréningterem; hide the redundant subtype label on mobile. */
   .room-heading small { display: none; }
 
-  /* Skedda-like time scale. The actual visible divider is drawn on the first room column boundary. */
+  /* Keep the time scale pinned while the room columns scroll horizontally, Skedda-style. */
   .time-axis {
-    position: relative;
-    z-index: 6;
-    border-right: 0;
+    position: sticky;
+    left: 0;
+    z-index: 16;
+    border-right: 1px solid #cfd4d0;
     background: #fff;
+    box-shadow: .15rem 0 .2rem rgb(31 42 36 / 6%);
   }
 
   .time-axis::after {
@@ -94,7 +96,7 @@
   }
 
   .time-axis + .room-timeline {
-    border-left: 2px solid #9ca6a1 !important;
+    border-left: 1px solid #cfd4d0 !important;
   }
 
   .time-axis span,
