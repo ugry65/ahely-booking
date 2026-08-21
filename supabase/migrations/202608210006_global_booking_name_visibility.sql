@@ -83,12 +83,11 @@ begin
     and booking.start_at < p_end_at and booking.end_at > p_start_at
     and (
       v_actor.role = 'admin'
-      or exists (select 1 from public.user_room_permissions direct_permission
-        where direct_permission.user_id = v_actor.id and direct_permission.room_id = room.id and direct_permission.can_book)
-      or exists (select 1 from public.access_group_members membership
-        join public.access_groups access_group on access_group.id = membership.group_id and access_group.is_active
-        join public.access_group_rooms group_permission on group_permission.group_id = membership.group_id
-        where membership.user_id = v_actor.id and group_permission.room_id = room.id and group_permission.can_book)
+      or exists (
+        select 1
+        from public.effective_room_permissions(v_actor.id) permission
+        where permission.room_id = room.id and permission.can_book
+      )
     )
   order by booking.start_at, room.display_order, booking.id;
 end;
