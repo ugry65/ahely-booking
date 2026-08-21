@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
 import { importUsersCsv, inviteUser, sendPasswordReset, updateUserProfile } from "./actions";
+import { updateGlobalBookingNameVisibility } from "./visibility-actions";
 
 type ManagedProfile = {
   id: string;
@@ -39,18 +40,30 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   await requireAdmin();
   const params = await searchParams;
   const supabase = await createClient();
-  const { data: profiles, error } = await supabase
-    .from("profiles")
-    .select("id,first_name,last_name,email,phone,is_active,customer_type,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number")
-    .order("last_name")
-    .order("first_name")
-    .returns<ManagedProfile[]>();
+  const [profilesResult, visibilityResult] = await Promise.all([
+    supabase.from("profiles")
+      .select("id,first_name,last_name,email,phone,is_active,customer_type,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number")
+      .order("last_name").order("first_name").returns<ManagedProfile[]>(),
+    supabase.from("app_settings").select("value").eq("key", "show_other_booker_names").maybeSingle<{ value: boolean }>(),
+  ]);
+  const profiles = profilesResult.data;
+  const showOtherBookerNames = typeof visibilityResult.data?.value === "boolean" ? visibilityResult.data.value : true;
 
   return (
     <section className="stack">
       <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Felhasználók</h1><p className="muted">Törzsadatok, számlázási adatok, import és jelszó-visszaállítás.</p></div></header>
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
-      {error ? <p className="message error" role="alert">A felhasználók betöltése nem sikerült.</p> : null}
+      {profilesResult.error ? <p className="message error" role="alert">A felhasználók betöltése nem sikerült.</p> : null}
+
+      <section className="card wide-card stack">
+        <h2>Naptári névláthatóság</h2>
+        <p className="muted">Ez globális beállítás. Alapból mindenki látja, ki foglalta az időpontot. Kikapcsolva a normál user másoknál csak a „Foglalt” jelzést látja; a saját foglalását továbbra is felismeri, az admin pedig mindig látja a nevet.</p>
+        <form action={updateGlobalBookingNameVisibility} className="admin-editor-row compact">
+          <input type="hidden" name="visible" value="false" />
+          <label className="inline-check"><input type="checkbox" name="visible" value="true" defaultChecked={showOtherBookerNames} /> Más foglalók neve látható</label>
+          <button type="submit">Mentés</button>
+        </form>
+      </section>
 
       <div className="admin-grid">
         <section className="card stack">
