@@ -12,27 +12,30 @@ type ManagedProfile = {
   phone: string | null;
   is_active: boolean;
   customer_type: "private" | "business";
+  billing_name: string | null;
   billing_postal_code: string | null;
   billing_city: string | null;
   billing_street: string | null;
   billing_house_number: string | null;
   tax_number: string | null;
+  onboarding_completed_at: string | null;
 };
 
-function BillingFields({ profile }: { profile?: ManagedProfile }) {
+function BillingFields({ profile }: { profile: ManagedProfile }) {
   return <>
-    <label>Telefonszám<input name="phone" type="tel" defaultValue={profile?.phone ?? ""} /></label>
+    <label>Telefonszám<input name="phone" type="tel" defaultValue={profile.phone ?? ""} /></label>
     <label>Ügyféltípus
-      <select name="customerType" defaultValue={profile?.customer_type ?? "private"}>
+      <select name="customerType" defaultValue={profile.customer_type ?? "private"}>
         <option value="private">Magánszemély</option>
         <option value="business">Vállalkozó</option>
       </select>
     </label>
-    <label>Számlázási irányítószám<input name="billingPostalCode" defaultValue={profile?.billing_postal_code ?? ""} /></label>
-    <label>Számlázási település<input name="billingCity" defaultValue={profile?.billing_city ?? ""} /></label>
-    <label>Számlázási utca<input name="billingStreet" defaultValue={profile?.billing_street ?? ""} /></label>
-    <label>Számlázási házszám<input name="billingHouseNumber" defaultValue={profile?.billing_house_number ?? ""} /></label>
-    <label>Adószám<input name="taxNumber" defaultValue={profile?.tax_number ?? ""} /><span className="muted form-help">Vállalkozó esetén kötelező.</span></label>
+    <label>Számlázási név<input name="billingName" defaultValue={profile.billing_name ?? ""} /></label>
+    <label>Számlázási irányítószám<input name="billingPostalCode" defaultValue={profile.billing_postal_code ?? ""} /></label>
+    <label>Számlázási település<input name="billingCity" defaultValue={profile.billing_city ?? ""} /></label>
+    <label>Számlázási utca<input name="billingStreet" defaultValue={profile.billing_street ?? ""} /></label>
+    <label>Számlázási házszám<input name="billingHouseNumber" defaultValue={profile.billing_house_number ?? ""} /></label>
+    <label>Adószám<input name="taxNumber" defaultValue={profile.tax_number ?? ""} /><span className="muted form-help">Vállalkozó esetén kötelező.</span></label>
   </>;
 }
 
@@ -42,7 +45,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   const [profilesResult, visibilityResult] = await Promise.all([
     supabase.from("profiles")
-      .select("id,first_name,last_name,email,phone,is_active,customer_type,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number")
+      .select("id,first_name,last_name,email,phone,is_active,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at")
       .order("last_name").order("first_name").returns<ManagedProfile[]>(),
     supabase.from("app_settings").select("value").eq("key", "show_other_booker_names").maybeSingle<{ value: boolean }>(),
   ]);
@@ -51,7 +54,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
 
   return (
     <section className="stack">
-      <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Felhasználók</h1><p className="muted">Törzsadatok, számlázási adatok, import és jelszó-visszaállítás.</p></div></header>
+      <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Felhasználók</h1><p className="muted">Felhasználók létrehozása, aktiválása, törzsadatai és számlázási adatai.</p></div></header>
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
       {profilesResult.error ? <p className="message error" role="alert">A felhasználók betöltése nem sikerült.</p> : null}
 
@@ -67,36 +70,34 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
 
       <div className="admin-grid">
         <section className="card stack">
-          <h2>Új felhasználó meghívása</h2>
+          <h2>Új felhasználó létrehozása</h2>
           <form action={inviteUser} className="stack">
-            <input type="hidden" name="isActive" value="true" />
             <label>Vezetéknév<input name="lastName" required /></label>
             <label>Keresztnév<input name="firstName" required /></label>
             <label>E-mail<input name="email" type="email" autoComplete="email" required /></label>
-            <BillingFields />
-            <button type="submit">Felhasználó létrehozása és meghívó küldése</button>
+            <button type="submit">Felhasználó létrehozása</button>
           </form>
-          <p className="muted">A meghívás szerveroldalon történik. Jelszó nem jelenik meg és nem kerül az alkalmazás adatbázisába.</p>
+          <p className="muted">A létrehozáskor nem küldünk levelet. Ezután a user sorában külön indíthatod az aktiváló/jelszóbeállító linket. A számlázási adatokat a felhasználó az első belépéskor tölti ki.</p>
         </section>
 
         <section className="card stack">
           <h2>Meglévő felhasználók importja</h2>
-          <p className="muted">CSV feltöltés. Az import nem küld automatikusan meghívót vagy jelszó-visszaállító levelet.</p>
+          <p className="muted">CSV feltöltés kizárólag név + e-mail adatokkal. Az import nem küld automatikusan aktiváló levelet.</p>
           <form action={importUsersCsv} className="stack">
             <label>CSV fájl<input name="file" type="file" accept=".csv,text/csv" required /></label>
             <button type="submit">CSV importálása</button>
           </form>
-          <p className="muted form-help">Kötelező oszlopok: <code>last_name, first_name, email</code>. Opcionális: <code>phone, customer_type, billing_postal_code, billing_city, billing_street, billing_house_number, tax_number, is_active</code>.</p>
+          <p className="muted form-help">Kötelező oszlopok: <code>last_name, first_name, email</code>.</p>
         </section>
       </div>
 
       <section className="card wide-card stack">
         <h2>Felhasználói törzsadatok</h2>
-        <p className="muted">A számlázási cím opcionális. Vállalkozó esetén az adószám kötelező. Az e-mail cím ebben a fázisban az Auth-azonosító miatt csak olvasható.</p>
+        <p className="muted">Az első aktiváláskor a user maga adja meg a telefonszámát, számlázási nevét és címét. Vállalkozói számlázásnál az adószám kötelező. Az admin később szükség esetén korrigálhatja az adatokat.</p>
         <div className="admin-permission-list">
           {(profiles ?? []).map((profile) => (
             <details key={profile.id}>
-              <summary>{profile.last_name} {profile.first_name} · {profile.email}{profile.is_active ? "" : " · Inaktív"}</summary>
+              <summary>{profile.last_name} {profile.first_name} · {profile.email}{profile.is_active ? "" : " · Inaktív"}{profile.onboarding_completed_at ? " · Aktivált" : " · Aktiválásra vár"}</summary>
               <div className="stack" style={{ paddingTop: ".8rem" }}>
                 <form action={updateUserProfile} className="admin-editor-row">
                   <input type="hidden" name="userId" value={profile.id} />
@@ -110,7 +111,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
                 </form>
                 <form action={sendPasswordReset}>
                   <input type="hidden" name="userId" value={profile.id} />
-                  <button type="submit" className="button secondary" disabled={!profile.is_active}>Jelszó-visszaállító link küldése</button>
+                  <button type="submit" className="button secondary" disabled={!profile.is_active}>{profile.onboarding_completed_at ? "Jelszó-visszaállító link küldése" : "Aktiváló / jelszóbeállító link küldése"}</button>
                 </form>
               </div>
             </details>
