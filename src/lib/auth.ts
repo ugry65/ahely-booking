@@ -11,6 +11,7 @@ export type ActiveProfile = {
   email: string;
   role: "admin" | "user";
   is_active: boolean;
+  onboarding_completed_at: string | null;
 };
 
 export async function requireActiveProfile(): Promise<ActiveProfile> {
@@ -24,12 +25,16 @@ export async function requireActiveProfile(): Promise<ActiveProfile> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id,first_name,last_name,email,role,is_active")
+    .select("id,first_name,last_name,email,role,is_active,onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle<ActiveProfile>();
 
   if (!profile?.is_active) {
     redirect("/belepes?hiba=inaktiv");
+  }
+
+  if (profile.role !== "admin" && !profile.onboarding_completed_at) {
+    redirect("/adatok-megadasa");
   }
 
   return profile;
