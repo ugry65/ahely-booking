@@ -7,7 +7,7 @@ security definer
 set search_path = ''
 as $$
 declare
-  v_actor_role public.user_role;
+  v_actor_role public.app_role;
   v_is_training boolean;
 begin
   if new.series_id is null then
