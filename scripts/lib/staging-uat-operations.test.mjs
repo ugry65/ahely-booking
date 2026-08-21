@@ -136,7 +136,7 @@ describe('staging UAT mutating and verification operations', () => {
 
     expect(state.users).toHaveLength(5);
     expect(state.profiles.find((item) => item.email === 'uat-admin@ahely.invalid')).toMatchObject({ role: 'admin', is_active: true });
-    expect(state.profiles.find((item) => item.email === resetEmail)).toMatchObject({ role: 'user', is_active: true, other_booker_names_visible: false });
+    expect(state.profiles.find((item) => item.email === resetEmail)).toMatchObject({ role: 'user', is_active: true, other_booker_names_visible: true });
     expect(state.profiles.find((item) => item.email === 'uat-inactive@ahely.invalid')).toMatchObject({ is_active: false });
     expect(state.rooms).toHaveLength(5);
     expect(state.permissions.some((item) => item.user_id === result.ids.userA && item.room_id === ROOM_IDS.forbidden && item.can_book)).toBe(false);
