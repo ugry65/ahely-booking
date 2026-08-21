@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CalendarBookingGrid, type BookableRoom, type CalendarBooking } from "./calendar-booking-grid";
 import { MobileDateStrip } from "./mobile-date-strip";
 import { QuickBookingDialog } from "./quick-booking-dialog";
+import "./calendar-booking-actions.css";
 
 function budapestToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
