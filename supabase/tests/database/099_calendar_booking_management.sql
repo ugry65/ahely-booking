@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(16);
 
 select has_function('public', 'update_booking_scope', array['uuid','text','timestamp with time zone','uuid','timestamp with time zone','timestamp with time zone','booking_use_type','text','uuid'], 'Scoped update RPC exists');
 select has_function('public', 'cancel_booking_scope', array['uuid','text','text','uuid'], 'Scoped cancel RPC exists');
