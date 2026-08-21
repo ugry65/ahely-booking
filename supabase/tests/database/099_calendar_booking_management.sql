@@ -17,7 +17,6 @@ insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat)
   ('00000000-0000-0000-0000-000000000171','11000000-0000-0000-0000-000000000001',true,true),
   ('00000000-0000-0000-0000-000000000172','11000000-0000-0000-0000-000000000002',true,true);
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000171', true);
 select lives_ok(
   format($sql$select public.create_booking_series(
@@ -27,11 +26,9 @@ select lives_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '09:00') at time zone 'Europe/Budapest',
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '10:00') at time zone 'Europe/Budapest'),
   'Test series can be created');
-reset role;
 
 select is((select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171')), 4::bigint, 'Series has four bookings');
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000171', true);
 select lives_ok(
   format($sql$select public.update_booking_scope(
@@ -42,36 +39,29 @@ select lives_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 4) + time '10:00') at time zone 'Europe/Budapest',
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 4) + time '11:00') at time zone 'Europe/Budapest'),
   'Following scope update succeeds');
-reset role;
 
 select is((select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and (start_at at time zone 'Europe/Budapest')::time = time '09:00'), 1::bigint, 'First occurrence stays unchanged');
 select is((select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and (start_at at time zone 'Europe/Budapest')::time = time '10:00'), 3::bigint, 'Selected and following occurrences move together');
 select is((select count(*) from public.audit_logs where correlation_id='29000000-0000-0000-0000-000000000172'), 4::bigint, 'Scoped update writes per-booking plus series audit');
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000172', true);
 select throws_ok(
   format($sql$select public.cancel_booking_scope(%L::uuid,'occurrence',null,'29000000-0000-0000-0000-000000000173')$sql$,
     (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') order by start_at limit 1)),
   'P0001', 'Csak a saját foglalásodat mondhatod le.', 'Other user cannot cancel booking');
-reset role;
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000171', true);
 select lives_ok(
   format($sql$select public.cancel_booking_scope(%L::uuid,'occurrence','egy alkalom','29000000-0000-0000-0000-000000000174')$sql$,
     (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and status='active' order by start_at offset 1 limit 1)),
   'Single occurrence cancel succeeds');
-reset role;
 select is((select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and status='cancelled'), 1::bigint, 'Exactly one occurrence is cancelled');
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000171', true);
 select lives_ok(
   format($sql$select public.cancel_booking_scope(%L::uuid,'series','teljes sorozat','29000000-0000-0000-0000-000000000175')$sql$,
     (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and status='active' order by start_at limit 1)),
   'Full future series cancel succeeds');
-reset role;
 select is((select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='29000000-0000-0000-0000-000000000171') and status='active'), 0::bigint, 'No active future occurrence remains');
 select is((select count(*) from public.booking_scope_operations where actor_user_id='00000000-0000-0000-0000-000000000171'), 3::bigint, 'Series scope operations are persisted');
 
