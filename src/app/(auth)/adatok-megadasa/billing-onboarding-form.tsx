@@ -51,10 +51,14 @@ export function BillingOnboardingForm({ firstName, lastName, email }: Props) {
           {useProfileName ? <span className="muted form-help">A számlázási név automatikusan: {profileName}</span> : null}
         </label>
 
-        <label>Számlázási irányítószám<input name="billingPostalCode" autoComplete="postal-code" required /></label>
-        <label>Számlázási település<input name="billingCity" autoComplete="address-level2" required /></label>
-        <label>Számlázási utca<input name="billingStreet" autoComplete="address-line1" required /></label>
-        <label>Számlázási házszám<input name="billingHouseNumber" required /></label>
+        <fieldset className="repeat-options">
+          <legend>Számlázási cím</legend>
+          <label>Irányítószám<input name="billingPostalCode" autoComplete="postal-code" required /></label>
+          <label>Település<input name="billingCity" autoComplete="address-level2" required /></label>
+          <label>Utca<input name="billingStreet" autoComplete="address-line1" required /></label>
+          <label>Házszám<input name="billingHouseNumber" required /></label>
+        </fieldset>
+
         {customerType === "business" ? <label>Adószám<input name="taxNumber" required /><span className="muted form-help">Vállalkozói számlázás esetén kötelező.</span></label> : <input type="hidden" name="taxNumber" value="" />}
       </fieldset>
 
