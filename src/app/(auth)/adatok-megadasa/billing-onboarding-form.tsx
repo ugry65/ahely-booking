@@ -14,6 +14,12 @@ export function BillingOnboardingForm({ firstName, lastName, email }: Props) {
   const profileName = `${lastName} ${firstName}`.trim();
   const [useProfileName, setUseProfileName] = useState(true);
   const [customerType, setCustomerType] = useState<"private" | "business">("private");
+  const [billingName, setBillingName] = useState(profileName);
+
+  function toggleUseProfileName(checked: boolean) {
+    setUseProfileName(checked);
+    if (checked) setBillingName(profileName);
+  }
 
   return (
     <form action={completeOnboarding} className="stack">
@@ -36,12 +42,12 @@ export function BillingOnboardingForm({ firstName, lastName, email }: Props) {
         </label>
 
         <label className="inline-check">
-          <input type="checkbox" checked={useProfileName} onChange={(event) => setUseProfileName(event.target.checked)} />
+          <input type="checkbox" checked={useProfileName} onChange={(event) => toggleUseProfileName(event.target.checked)} />
           A számlázási név megegyezik a nevemmel
         </label>
 
         <label>Számlázási név
-          <input name="billingName" value={useProfileName ? profileName : undefined} defaultValue={useProfileName ? undefined : ""} readOnly={useProfileName} required={!useProfileName} onChange={() => undefined} />
+          <input name="billingName" value={billingName} onChange={(event) => setBillingName(event.target.value)} readOnly={useProfileName} required />
           {useProfileName ? <span className="muted form-help">A számlázási név automatikusan: {profileName}</span> : null}
         </label>
 
