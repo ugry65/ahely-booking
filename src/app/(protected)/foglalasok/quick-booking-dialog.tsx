@@ -7,6 +7,7 @@ import type { BookableRoom } from "./calendar-booking-grid";
 
 const OPEN_MINUTE = 7 * 60;
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
+export type BookingUser = { id: string; name: string; email: string };
 
 function timeOptions() {
   return Array.from({ length: 31 }, (_, index) => {
@@ -15,7 +16,7 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string }) {
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string }) {
   const [open, setOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
@@ -44,6 +45,14 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
 
             <form action={formAction} className="stack">
               <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+              {bookingUsers.length ? (
+                <label>Felhasználó
+                  <select name="targetUserId" defaultValue={currentUserId ?? bookingUsers[0]?.id} required>
+                    {bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}
+                  </select>
+                  <span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span>
+                </label>
+              ) : null}
               <label>Helyiség
                 <select name="roomId" required value={selectedRoomId} onChange={(event) => { setSelectedRoomId(event.target.value); setRepeatFrequency("none"); }}>
                   <option value="" disabled>Válassz helyiséget</option>
