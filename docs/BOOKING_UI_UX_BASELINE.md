@@ -60,6 +60,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 - Ismétlődési lehetőség csak akkor aktív, ha a backend jogosultság (`list_repeatable_rooms`) ezt engedi.
 - Az ismétlődő foglalás továbbra is a meglévő backend sorozat-létrehozási folyamatot használja; UI nem kerülheti meg a szerveroldali szabályokat.
 - Kivételdátumok kiválasztása későbbi finomításnál naptáras, Skedda-szerű megoldás legyen; szöveges lista nem tekintendő végleges UX-nek.
+- Mentés nélküli bezáráskor az ideiglenes `Új foglalás` kijelölés kötelezően eltűnik; X, Mégse és backdrop bezárás sem hagyhat fantom blokkot a naptárban.
 
 ## 5. Mobil felső navigáció
 
@@ -90,7 +91,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 
 ## 8. UAT során manuálisan igazolt működések
 
-A 2026-08-20-i manuális UAT során sikeresen igazoltuk többek között:
+A 2026-08-20-i és 2026-08-21-i manuális UAT során sikeresen igazoltuk többek között:
 
 - normál foglalás létrehozása;
 - minimum 60 perces foglalási szabály;
@@ -106,7 +107,11 @@ A 2026-08-20-i manuális UAT során sikeresen igazoltuk többek között:
 - 24 órán túli saját foglalás lemondása;
 - előrefoglalási limit érvényesülése;
 - mobil long-press + scroll viselkedés fejlesztési baseline-ja;
-- mobil menü automatikus bezárása navigációkor.
+- mobil menü automatikus bezárása navigációkor;
+- mentetlen naptári kijelölés megszakításkor eltűnik;
+- más felhasználó foglalóneve a névláthatósági beállítás szerint megjelenik;
+- naptárból Szerkesztés / Duplikálás / Törlés műveletek elérhetők;
+- ismétlődő foglalás szerkesztésénél és törlésénél a három Skedda-szerű hatókör megmarad.
 
 A részletes UAT státuszok forrása továbbra is `docs/FUNKCIONALIS_UAT_CHECKLIST.md` és `docs/UAT_FUTASI_JEGYZOKONYV.md`.
 
@@ -134,6 +139,18 @@ Minden, a foglalási naptárt, mobil CSS-t, foglalási modált vagy navigációt
 - Tréningterem neve nincs-e duplázva;
 - mobil hamburger menü navigáció után bezár-e;
 - egész órás vízszintes rácsvonalak és óracímkék igazítása nem romlott-e;
+- mentés nélküli modalbezárás eltávolítja-e az ideiglenes kijelölést;
+- foglaló névláthatósága a profil/admin beállítást követi-e;
+- naptári Szerkesztés / Duplikálás / Törlés megmaradt-e;
+- sorozat szerkesztés/törlés mindhárom hatókört felajánlja-e;
 - a backend foglalási/jogosultsági szabályok változatlanul érvényesülnek-e.
 
 Ha egy új fejlesztés ezen pontok bármelyikét szándékosan megváltoztatná, az **új üzleti/UI döntésnek** minősül, és előbb ezt a dokumentumot és a projektkontextust kell frissíteni.
+
+## 11. Verziózott állapotmentés
+
+A 2026-08-21-én UAT-olt aktuális működés részletes, regresszióvédett pillanatképe:
+
+`docs/STATUS_SNAPSHOT_2026-08-21_CALENDAR_UX_AND_BOOKING_ACTIONS.md`
+
+Új naptár-, mobil-, booking-action- vagy foglalási modal fejlesztés előtt ezt a snapshotot kötelező elolvasni. Ha eltérés van egy régebbi beszélgetési állapot és e dokumentum között, a repositoryban rögzített aktuális baseline/snapshot az irányadó, kivéve új, kifejezett üzleti döntés esetén.
