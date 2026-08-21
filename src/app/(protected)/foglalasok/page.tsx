@@ -4,7 +4,7 @@ import { budapestLocalToIso, isValidDate } from "@/lib/booking-form";
 import { createClient } from "@/lib/supabase/server";
 import { CalendarBookingGrid, type BookableRoom, type CalendarBooking } from "./calendar-booking-grid";
 import { MobileDateStrip } from "./mobile-date-strip";
-import { QuickBookingDialog } from "./quick-booking-dialog";
+import { QuickBookingDialog, type BookingUser } from "./quick-booking-dialog";
 import "./calendar-booking-actions.css";
 
 type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage">;
@@ -17,18 +17,21 @@ function shiftDate(date: string, days: number) { const [year, month, day] = date
 function dateTitle(date: string) { return new Intl.DateTimeFormat("hu-HU", { timeZone: "UTC", weekday: "long", year: "numeric", month: "long", day: "numeric" }).format(new Date(`${date}T12:00:00Z`)); }
 
 export default async function BookingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
-  await requireActiveProfile();
+  const profile = await requireActiveProfile();
   const params = await searchParams;
   const today = budapestToday();
   const selectedDate = params.datum && isValidDate(params.datum) ? params.datum : today;
   const dayStart = budapestLocalToIso(selectedDate, "00:00");
   const dayEnd = budapestLocalToIso(shiftDate(selectedDate, 1), "00:00");
   const supabase = await createClient();
-  const [roomsResult, bookingsResult, managementResult, repeatableRoomsResult] = await Promise.all([
+  const [roomsResult, bookingsResult, managementResult, repeatableRoomsResult, usersResult] = await Promise.all([
     supabase.rpc("list_bookable_rooms").returns<BookableRoom[]>(),
     supabase.rpc("list_calendar_bookings", { p_start_at: dayStart, p_end_at: dayEnd }).returns<BaseCalendarBooking[]>(),
     supabase.rpc("list_calendar_booking_management", { p_start_at: dayStart, p_end_at: dayEnd }).returns<CalendarBookingManagement[]>(),
     supabase.rpc("list_repeatable_rooms").returns<BookableRoom[]>(),
+    profile.role === "admin"
+      ? supabase.from("profiles").select("id,first_name,last_name,email").eq("is_active", true).order("last_name").order("first_name")
+      : Promise.resolve({ data: [], error: null }),
   ]);
   const rooms = (roomsResult.data ?? []) as unknown as BookableRoom[];
   const baseBookings = (bookingsResult.data ?? []) as unknown as BaseCalendarBooking[];
@@ -45,6 +48,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     };
   });
   const repeatableRoomIds = ((repeatableRoomsResult.data ?? []) as unknown as BookableRoom[]).map((room) => room.room_id);
+  const bookingUsers: BookingUser[] = ((usersResult.data ?? []) as Array<{ id: string; first_name: string; last_name: string; email: string }>).map((user) => ({ id: user.id, name: `${user.last_name} ${user.first_name}`.trim(), email: user.email }));
 
   return (
     <section className="booking-page stack" style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}>
@@ -64,9 +68,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         </form>
       </header>
 
-      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} /> : null}
+      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} bookingUsers={bookingUsers} currentUserId={profile.id} /> : null}
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
-      {roomsResult.error || bookingsResult.error || managementResult.error || repeatableRoomsResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
+      {roomsResult.error || bookingsResult.error || managementResult.error || repeatableRoomsResult.error || usersResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
       {rooms.length ? <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} /> : <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>}
     </section>
   );
