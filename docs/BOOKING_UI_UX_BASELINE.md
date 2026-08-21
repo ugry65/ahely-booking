@@ -19,7 +19,10 @@ A cél az, hogy az A-Hely felhasználói a jelenlegi Skedda/AllBooked használat
 - Más felhasználó foglalásának neve a névláthatósági szabály szerint jelenik meg.
 - A foglalás blokkok időarányosan jelennek meg a rácson.
 - Az egész órás vízszintes rácsvonal hangsúlyosabb, a félórás vonal finomabb.
-- Az óracímkék az egész órás vonalakhoz igazodnak.
+- Az óracímkék az adott órasáv belsejében, függőlegesen és vízszintesen középre igazítva jelennek meg.
+- Az egész órás vonal megszakítás nélkül végigfut a bal oldali időoszlopon és pontosan folytatódik a helyiségoszlopokban.
+- Az időoszlop vonalai, a helyiségoldali rács és a foglalási blokkok ugyanabból a percalapú naptárgeometriából számítandók; külön CSS-eltolással vagy címkéhez kötött pszeudo-vonallal nem helyettesíthetők.
+- Ez a 2026-08-21-én UAT-elfogadott megjelenés kötelező baseline mobil portrait, iPad/tablet landscape és laptop/desktop nézetben is.
 
 ## 2. Mobil napi naptár – kötelező viselkedés
 
