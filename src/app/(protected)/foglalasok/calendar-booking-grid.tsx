@@ -180,7 +180,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
             <div className="calendar-corner" />
             {rooms.map((room) => <div className="room-heading" key={room.room_id} style={{ minWidth: "8.75rem" }}>{room.room_name}</div>)}
             <div className="time-axis" style={{ height: `${TIMELINE_HEIGHT}px` }}>
-              {Array.from({ length: 16 }, (_, index) => <span key={index} className={index === 0 ? "first-time-label" : ""} style={{ top: `${minuteToPixel(index * 60)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>)}
+              {Array.from({ length: 16 }, (_, index) => <div aria-hidden="true" className="time-axis-hour-line" key={`line-${index}`} style={{ top: `${minuteToPixel(index * 60)}px` }} />)}
+              {Array.from({ length: 15 }, (_, index) => <span key={`label-${index}`} style={{ top: `${minuteToPixel(index * 60 + 30)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>)}
             </div>
             {rooms.map((room) => (
               <div className="room-timeline" key={room.room_id} style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "auto" }}
