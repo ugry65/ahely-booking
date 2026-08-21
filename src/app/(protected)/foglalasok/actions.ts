@@ -6,6 +6,8 @@ import { parseBookingForm } from "@/lib/booking-form";
 import { parseCancelBookingForm, parseUpdateBookingForm } from "@/lib/booking-operation-form";
 import { createClient } from "@/lib/supabase/server";
 
+const UUID_PATTERN = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+
 function resultUrl(date: string | null, kind: "hiba" | "uzenet", message: string) {
   const params = new URLSearchParams({ [kind]: message }); if (date) params.set("datum", date); return `/foglalasok?${params.toString()}`;
 }
@@ -16,6 +18,10 @@ function parseScope(value: FormDataEntryValue | null) {
   const scope = String(value ?? "occurrence");
   return scope === "following" || scope === "series" ? scope : "occurrence";
 }
+function targetUserId(profile: { id: string; role: "admin" | "user" }, formData: FormData) {
+  const requested = String(formData.get("targetUserId") ?? "");
+  return profile.role === "admin" && UUID_PATTERN.test(requested) ? requested : profile.id;
+}
 
 export async function createBooking(formData: FormData) {
   const profile = await requireActiveProfile();
@@ -23,7 +29,7 @@ export async function createBooking(formData: FormData) {
   const parsed = parseBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(parsed.date, "hiba", parsed.error));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: profile.id, p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey });
+  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey });
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás mentése nem sikerült. Kérlek, próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", "A foglalás sikeresen létrejött."));
