@@ -40,6 +40,22 @@ A naptáras felületnél különösen védeni kell a már elfogadott működést
 - ismétlődő foglalásnál az egy alkalom / ettől kezdve / teljes sorozat műveleti választás;
 - mobil böngésző saját kezelősávjai mellett is használható görgetés és kezelőszervek.
 
+## Elfogadott időoszlop- és órarács-megjelenés
+
+Állapot: **UAT PASS, regresszióvédett – 2026-08-21**.
+
+Mobil portrait, iPad/tablet landscape és laptop/desktop nézetben egységesen megőrzendő:
+
+- az óracímkék az adott órasáv belsejében, középre igazítva jelennek meg;
+- az egész órás vonal erősebb, a félórás vonal finomabb;
+- az egész órás vonal a bal időoszlop szélétől megszakítás nélkül fut, és pontosan folytatódik a helyiségoszlopokban;
+- a bal oldali vonal nem lehet az egész órás helyiségoldali vonalhoz képest függőlegesen elcsúszva;
+- az időoszlop vonalai és a helyiségoldali rács ugyanazt a percalapú koordinátageometriát használják;
+- a bal időoszlop vízszintes görgetésnél sticky marad;
+- érintőképernyőn a naptári kijelölés nem indíthat natív iOS/Safari szövegkijelölést.
+
+Elfogadott implementációs referencia: PR #74, commit `fd87b8e1c4f4304cf9b653dcd73fbdaab7e266f2` és az ezt követő dokumentációs commitok. A megjelenés későbbi verzióból külön dokumentált üzleti/UI döntés nélkül nem távolítható el és nem egyszerűsíthető vissza.
+
 ## Onboarding UI jelenlegi elfogadott szerkezete
 
 Az első belépéskori adatkitöltésnél megőrzendő:
