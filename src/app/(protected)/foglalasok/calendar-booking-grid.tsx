@@ -224,8 +224,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         </section>
       </div> : null}
 
-      {selection && selectedRoom && bookingDialogOpen ? <div role="dialog" aria-modal="true" aria-labelledby="selection-booking-title" className="booking-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setBookingDialogOpen(false); }}>
-        <section className="card stack booking-modal-card"><div className="booking-modal-heading"><div><p className="eyebrow">{dialogMode === "edit" ? "Meglévő időpont" : dialogMode === "duplicate" ? "Másolat" : "Új időpont"}</p><h2 id="selection-booking-title">{modalTitle}</h2></div><button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)} aria-label="Bezárás">×</button></div>
+      {selection && selectedRoom && bookingDialogOpen ? <div role="dialog" aria-modal="true" aria-labelledby="selection-booking-title" className="booking-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) clearSelection(); }}>
+        <section className="card stack booking-modal-card"><div className="booking-modal-heading"><div><p className="eyebrow">{dialogMode === "edit" ? "Meglévő időpont" : dialogMode === "duplicate" ? "Másolat" : "Új időpont"}</p><h2 id="selection-booking-title">{modalTitle}</h2></div><button type="button" className="button secondary" onClick={clearSelection} aria-label="Bezárás">×</button></div>
           <form key={`${dialogMode}-${sourceBooking?.booking_id ?? "new"}-${editScope}`} action={formAction} className="stack">
             <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
             {dialogMode === "edit" && sourceBooking ? <><input type="hidden" name="bookingId" value={sourceBooking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={sourceBooking.updated_at ?? ""} /><input type="hidden" name="scope" value={editScope} /></> : null}
@@ -237,7 +237,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
             {dialogRoom?.is_training_room ? <label>Használat<select name="useType" defaultValue={sourceBooking?.use_type ?? "individual"}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label> : <input type="hidden" name="useType" value="individual" />}
             <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={sourceBooking?.note ?? ""} placeholder="Opcionális" /></label>
             {dialogMode === "edit" && sourceBooking?.series_id ? <p className="message">Hatókör: {editScope === "occurrence" ? "csak ez az alkalom" : editScope === "following" ? "ez és a következő alkalmak" : "teljes jövőbeli sorozat"}.</p> : null}
-            <div className="booking-modal-actions"><button type="submit">{dialogMode === "edit" ? "Módosítás mentése" : repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button><button type="button" className="button secondary" onClick={() => setBookingDialogOpen(false)}>Mégse</button></div>
+            <div className="booking-modal-actions"><button type="submit">{dialogMode === "edit" ? "Módosítás mentése" : repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button></div>
             <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
           </form>
         </section>
