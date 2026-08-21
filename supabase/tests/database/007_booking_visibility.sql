@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(17);
 
 select has_function('public', 'list_calendar_bookings', array['timestamp with time zone','timestamp with time zone'], 'A biztonságos naptár-read RPC létezik');
 select has_function('public', 'admin_set_booking_name_visibility', array['boolean','uuid'], 'A globális névláthatóság admin RPC létezik');
