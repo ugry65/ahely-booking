@@ -3,10 +3,10 @@
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
-import { requireEnv } from "@/lib/env";
 import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { requireEnv } from "@/lib/env";
 
 function resultUrl(kind: "hiba" | "uzenet", message: string) {
   return `/admin/felhasznalok?${new URLSearchParams({ [kind]: message }).toString()}`;
@@ -23,6 +23,7 @@ function profileInput(formData: FormData) {
     lastName: String(formData.get("lastName") ?? "").trim(),
     phone: String(formData.get("phone") ?? "").trim(),
     customerType: String(formData.get("customerType") ?? "private").trim(),
+    billingName: String(formData.get("billingName") ?? "").trim(),
     billingPostalCode: String(formData.get("billingPostalCode") ?? "").trim(),
     billingCity: String(formData.get("billingCity") ?? "").trim(),
     billingStreet: String(formData.get("billingStreet") ?? "").trim(),
@@ -42,6 +43,7 @@ async function updateProfileRpc(userId: string, input: ProfileInput) {
     p_last_name: input.lastName,
     p_phone: input.phone,
     p_customer_type: input.customerType,
+    p_billing_name: input.billingName,
     p_billing_postal_code: input.billingPostalCode,
     p_billing_city: input.billingCity,
     p_billing_street: input.billingStreet,
@@ -63,23 +65,24 @@ export async function inviteUser(formData: FormData) {
   await requireAdmin();
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const input = profileInput(formData);
-  const validation = validateProfile(input);
-  if (!email || validation) redirect(resultUrl("hiba", validation ?? "Az e-mail megadása kötelező."));
+  const firstName = String(formData.get("firstName") ?? "").trim();
+  const lastName = String(formData.get("lastName") ?? "").trim();
+  if (!email || !firstName || !lastName) {
+    redirect(resultUrl("hiba", "A vezetéknév, keresztnév és e-mail megadása kötelező."));
+  }
 
   const admin = createAdminClient();
-  const siteUrl = requireEnv("SITE_URL");
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { first_name: input.firstName, last_name: input.lastName },
-    redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
+  const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+  const { data, error } = await admin.auth.admin.createUser({
+    email,
+    password: temporaryPassword,
+    email_confirm: true,
+    user_metadata: { first_name: firstName, last_name: lastName },
   });
 
-  if (error || !data.user) redirect(resultUrl("hiba", "A meghívó elküldése nem sikerült."));
+  if (error || !data.user) redirect(resultUrl("hiba", "A felhasználó létrehozása nem sikerült. Ellenőrizd, hogy az e-mail cím nem szerepel-e már a rendszerben."));
 
-  const updated = await updateProfileRpc(data.user.id, { ...input, isActive: true });
-  if (updated.error) redirect(resultUrl("hiba", "A felhasználó létrejött, de a törzsadatok mentése nem sikerült."));
-
-  redirect(resultUrl("uzenet", "A felhasználó létrejött és a meghívó elküldve."));
+  redirect(resultUrl("uzenet", "A felhasználó létrejött. Aktiváló/jelszóbeállító linket külön tudsz küldeni neki."));
 }
 
 export async function updateUserProfile(formData: FormData) {
@@ -107,15 +110,15 @@ export async function sendPasswordReset(formData: FormData) {
     p_correlation_id: correlationId,
   });
   if (auditError || typeof email !== "string") {
-    redirect(resultUrl("hiba", auditError?.code === "P0001" ? auditError.message : "A jelszó-visszaállítás nem indítható."));
+    redirect(resultUrl("hiba", auditError?.code === "P0001" ? auditError.message : "Az aktiváló/jelszóbeállító link nem küldhető."));
   }
 
   const siteUrl = requireEnv("SITE_URL");
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
   });
-  if (error) redirect(resultUrl("hiba", "A jelszó-visszaállító e-mail elküldése nem sikerült."));
-  redirect(resultUrl("uzenet", `A jelszó-visszaállító link elküldve: ${email}`));
+  if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült."));
+  redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`));
 }
 
 function parseCsv(text: string) {
@@ -156,28 +159,12 @@ export async function importUsersCsv(formData: FormData) {
   const index = (name: string) => headers.indexOf(name);
   const value = (row: string[], name: string) => index(name) >= 0 ? String(row[index(name)] ?? "").trim() : "";
 
-  const prepared = rows.slice(1).map((row, offset) => {
-    const email = value(row, "email").toLowerCase();
-    const customerTypeRaw = value(row, "customer_type").toLowerCase();
-    const customerType = ['business', 'vallalkozo', 'vállalkozó'].includes(customerTypeRaw) ? 'business' : 'private';
-    const activeRaw = value(row, "is_active").toLowerCase();
-    const input: ProfileInput = {
-      firstName: value(row, "first_name"),
-      lastName: value(row, "last_name"),
-      phone: value(row, "phone"),
-      customerType,
-      billingPostalCode: value(row, "billing_postal_code"),
-      billingCity: value(row, "billing_city"),
-      billingStreet: value(row, "billing_street"),
-      billingHouseNumber: value(row, "billing_house_number"),
-      taxNumber: value(row, "tax_number"),
-      isActive: !['false', '0', 'nem', 'inactive'].includes(activeRaw),
-    };
-    const validation = validateProfile(input);
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) return { line: offset + 2, email, input, error: "Érvénytelen e-mail." };
-    if (validation) return { line: offset + 2, email, input, error: validation };
-    return { line: offset + 2, email, input, error: null as string | null };
-  });
+  const prepared = rows.slice(1).map((row, offset) => ({
+    line: offset + 2,
+    lastName: value(row, "last_name"),
+    firstName: value(row, "first_name"),
+    email: value(row, "email").toLowerCase(),
+  }));
 
   const duplicateInFile = new Set<string>();
   const seen = new Set<string>();
@@ -185,9 +172,9 @@ export async function importUsersCsv(formData: FormData) {
     if (seen.has(item.email)) duplicateInFile.add(item.email);
     seen.add(item.email);
   }
-  const invalid = prepared.filter((item) => item.error || duplicateInFile.has(item.email));
+  const invalid = prepared.filter((item) => !item.lastName || !item.firstName || !/^\S+@\S+\.\S+$/.test(item.email) || duplicateInFile.has(item.email));
   if (invalid.length) {
-    const details = invalid.slice(0, 5).map((item) => `${item.line}. sor: ${item.error ?? "duplikált e-mail a fájlban"}`).join("; ");
+    const details = invalid.slice(0, 5).map((item) => `${item.line}. sor: hibás vagy duplikált név/e-mail`).join("; ");
     redirect(resultUrl("hiba", `Az import nem indult el. ${details}${invalid.length > 5 ? `; további ${invalid.length - 5} hibás sor` : ""}`));
   }
 
@@ -197,32 +184,23 @@ export async function importUsersCsv(formData: FormData) {
   const existing = new Map((existingResult.data ?? []).map((profile) => [String(profile.email), String(profile.id)]));
 
   let created = 0;
-  let updated = 0;
+  let skipped = 0;
   const failures: string[] = [];
   for (const item of prepared) {
-    let userId = existing.get(item.email);
-    if (!userId) {
-      const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
-      const createdUser = await admin.auth.admin.createUser({
-        email: item.email,
-        password: temporaryPassword,
-        email_confirm: true,
-        user_metadata: { first_name: item.input.firstName, last_name: item.input.lastName },
-      });
-      if (createdUser.error || !createdUser.data.user) {
-        failures.push(`${item.line}. sor (${item.email})`);
-        continue;
-      }
-      userId = createdUser.data.user.id;
-      created += 1;
-    } else updated += 1;
-
-    const saved = await updateProfileRpc(userId, item.input);
-    if (saved.error) failures.push(`${item.line}. sor (${item.email})`);
+    if (existing.has(item.email)) { skipped += 1; continue; }
+    const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+    const createdUser = await admin.auth.admin.createUser({
+      email: item.email,
+      password: temporaryPassword,
+      email_confirm: true,
+      user_metadata: { first_name: item.firstName, last_name: item.lastName },
+    });
+    if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`);
+    else created += 1;
   }
 
   if (failures.length) {
-    redirect(resultUrl("hiba", `Az import részben sikerült: ${created} új, ${updated} meglévő feldolgozva; hibás: ${failures.slice(0, 5).join(", ")}. Jelszó e-mail automatikusan nem ment ki.`));
+    redirect(resultUrl("hiba", `Az import részben sikerült: ${created} új, ${skipped} már létező kihagyva; hibás: ${failures.slice(0, 5).join(", ")}. Automatikus e-mail nem ment ki.`));
   }
-  redirect(resultUrl("uzenet", `Import kész: ${created} új felhasználó, ${updated} meglévő frissítve. Automatikus jelszó- vagy meghívó e-mail nem ment ki.`));
+  redirect(resultUrl("uzenet", `Import kész: ${created} új felhasználó, ${skipped} már létező kihagyva. Aktiváló e-mail automatikusan nem ment ki.`));
 }
