@@ -34,10 +34,15 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 .room-heading { display: grid; place-content: center; min-width: 10rem; border-left: 1px solid #e4e0d7; text-align: center; font-weight: 800; }
 .room-heading small { color: #86682c; font-weight: 600; }
 .time-axis, .room-timeline { position: relative; height: 900px; }
-.time-axis { position: sticky; left: 0; z-index: 4; border-right: 1px solid #e4e0d7; background: #fff; }
+.time-axis { position: sticky; left: 0; z-index: 4; border-right: 1px solid #e4e0d7; background-color: #fff; }
+.time-axis, .room-timeline {
+  background-image:
+    repeating-linear-gradient(to bottom, transparent 0, transparent 39px, #d7dcd8 39px, #d7dcd8 40px),
+    repeating-linear-gradient(to bottom, transparent 0, transparent 19px, #ecefeb 19px, #ecefeb 20px);
+}
 .time-axis span { position: absolute; left: 0; right: 0; height: 1.5rem; margin-top: 20px; transform: translateY(-50%); display: flex; align-items: center; justify-content: center; color: #65716a; font-size: .78rem; text-align: center; }
 .time-axis span:last-child { display: none; }
-.room-timeline { border-left: 1px solid #e4e0d7; background: repeating-linear-gradient(to bottom, transparent 0, transparent 29px, #ece8df 30px); }
+.room-timeline { border-left: 1px solid #e4e0d7; background-color: #fff; }
 .booking-block { position: absolute; left: .3rem; right: .3rem; z-index: 1; display: flex; flex-direction: column; overflow: hidden; padding: .35rem .45rem; border-left: 4px solid #986d25; border-radius: .35rem; background: #f2e7cf; color: #3b321f; font-size: .78rem; line-height: 1.25; }
 .booking-block.own { border-color: #235c43; background: #dcebe2; color: #183c2c; }
 .booking-block strong { font-size: .8rem; }
