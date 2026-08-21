@@ -11,7 +11,7 @@ export const ROOM_IDS = {
 export function uatSpecs(resetEmail) {
   return [
     { key: 'admin', email: 'uat-admin@ahely.invalid', firstName: 'UAT', lastName: 'Admin', role: 'admin', active: true, namesVisible: true },
-    { key: 'userA', email: resetEmail.toLowerCase(), firstName: 'UAT', lastName: 'User A', role: 'user', active: true, namesVisible: false },
+    { key: 'userA', email: resetEmail.toLowerCase(), firstName: 'UAT', lastName: 'User A', role: 'user', active: true, namesVisible: true },
     { key: 'userB', email: 'uat-user-b@ahely.invalid', firstName: 'UAT', lastName: 'User B', role: 'user', active: true, namesVisible: true },
     { key: 'hidden', email: 'uat-hidden@ahely.invalid', firstName: 'UAT', lastName: 'Rejtett', role: 'user', active: true, namesVisible: true },
     { key: 'inactive', email: 'uat-inactive@ahely.invalid', firstName: 'UAT', lastName: 'Inaktív', role: 'user', active: false, namesVisible: true },
@@ -128,7 +128,7 @@ export async function verifyUat(client, resetEmail) {
   const userA = profiles.find((p) => p.email === resetEmail.toLowerCase());
   if (admin?.role !== 'admin' || !admin.is_active) throw new Error('ADMIN-1 profil hibás.');
   if (inactive?.is_active !== false) throw new Error('USER-INACTIVE profilnak inaktívnak kell lennie.');
-  if (userA?.other_booker_names_visible !== false) throw new Error('USER-A névláthatósági UAT beállítása hibás.');
+  if (userA?.other_booker_names_visible !== true) throw new Error('USER-A névláthatósági UAT beállítása hibás.');
 
   const { data: rooms, error: roomError } = await client.from('rooms')
     .select('id,name,is_training_room,is_active')
