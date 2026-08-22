@@ -8,15 +8,13 @@ select hasnt_table(
   'A globális zárt napokat tároló tábla megszűnt'
 );
 
-select unlike(
-  pg_get_functiondef('public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure),
-  '%calendar_exceptions%',
+select ok(
+  position('calendar_exceptions' in pg_get_functiondef('public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure)) = 0,
   'A közös validátor nem használ naptári zárva tartási kivételt'
 );
 
-select like(
-  pg_get_functiondef('public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure),
-  '%opening_time%',
+select ok(
+  position('opening_time' in pg_get_functiondef('public.assert_booking_request(uuid,uuid,uuid,timestamptz,timestamptz,public.booking_use_type)'::regprocedure)) > 0,
   'A közös validátor a minden napra érvényes napi idősávot használja'
 );
 
