@@ -8,13 +8,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireEnv } from "@/lib/env";
 
-function resultUrl(kind: "hiba" | "uzenet", message: string) {
-  return `/admin/felhasznalok?${new URLSearchParams({ [kind]: message }).toString()}`;
-}
-
 function uuid(value: FormDataEntryValue | null) {
   const text = String(value ?? "");
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null;
+}
+
+function resultUrl(kind: "hiba" | "uzenet", message: string, formData?: FormData) {
+  const params = new URLSearchParams({ [kind]: message });
+  const selectedUserId = formData ? uuid(formData.get("userId")) : null;
+  if (selectedUserId) params.set("user", selectedUserId);
+  return `/admin/felhasznalok?${params.toString()}`;
 }
 
 function safeRpcMessage(error: { code?: string; message?: string } | null, fallback: string) {
@@ -95,35 +98,35 @@ export async function updateUserProfile(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
   const input = profileInput(formData);
-  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító."));
+  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító.", formData));
   const validation = validateProfile(input);
-  if (validation) redirect(resultUrl("hiba", validation));
+  if (validation) redirect(resultUrl("hiba", validation, formData));
 
   const { error } = await updateProfileRpc(userId, input);
-  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A felhasználói adatok mentése nem sikerült.")));
-  redirect(resultUrl("uzenet", "A felhasználói adatok elmentve."));
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A felhasználói adatok mentése nem sikerült."), formData));
+  redirect(resultUrl("uzenet", "A felhasználói adatok elmentve.", formData));
 }
 
 export async function setUserRole(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
   const role = String(formData.get("role") ?? "");
-  if (!userId || !["admin", "user"].includes(role)) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy szerepkör."));
+  if (!userId || !["admin", "user"].includes(role)) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy szerepkör.", formData));
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_profile_role", {
     p_user_id: userId,
     p_role: role,
     p_correlation_id: crypto.randomUUID(),
   });
-  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A szerepkör mentése nem sikerült.")));
-  redirect(resultUrl("uzenet", "A felhasználó szerepköre elmentve."));
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A szerepkör mentése nem sikerült."), formData));
+  redirect(resultUrl("uzenet", "A felhasználó szerepköre elmentve.", formData));
 }
 
 export async function setUserGroupMembership(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
   const groupId = uuid(formData.get("groupId"));
-  if (!userId || !groupId) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy helyiségcsoport."));
+  if (!userId || !groupId) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy helyiségcsoport.", formData));
   const supabase = await createClient();
   const { error } = await supabase.rpc("admin_set_group_member", {
     p_group_id: groupId,
@@ -131,14 +134,14 @@ export async function setUserGroupMembership(formData: FormData) {
     p_is_member: checkboxValue(formData, "isMember"),
     p_correlation_id: crypto.randomUUID(),
   });
-  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A helyiségcsoport-hozzárendelés mentése nem sikerült.")));
-  redirect(resultUrl("uzenet", "A helyiségcsoport-hozzárendelés elmentve."));
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A helyiségcsoport-hozzárendelés mentése nem sikerült."), formData));
+  redirect(resultUrl("uzenet", "A helyiségcsoport-hozzárendelés elmentve.", formData));
 }
 
 export async function sendPasswordReset(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
-  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító."));
+  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító.", formData));
 
   const supabase = await createClient();
   const correlationId = crypto.randomUUID();
@@ -147,15 +150,15 @@ export async function sendPasswordReset(formData: FormData) {
     p_correlation_id: correlationId,
   });
   if (auditError || typeof email !== "string") {
-    redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető.")));
+    redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető."), formData));
   }
 
   const siteUrl = requireEnv("SITE_URL");
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
   });
-  if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült."));
-  redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`));
+  if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
+  redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
 }
 
 function parseCsv(text: string) {
