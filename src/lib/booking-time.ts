@@ -1,4 +1,4 @@
-const TIME_PATTERN = /^(?:[01]\\d|2[0-3]):[0-5]\\d$/;
+const TIME_PATTERN = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
 
 export function oneHourAfter(startTime: string) {
   if (!TIME_PATTERN.test(startTime)) return startTime;
