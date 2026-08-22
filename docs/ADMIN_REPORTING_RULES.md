@@ -9,12 +9,16 @@ Ez a dokumentum az A-Hely admin riportjainak elfogadott üzleti szabályait rög
 - A havi órák riport kizárólag `active` státuszú, le nem mondott foglalásokat tartalmazhat.
 - `cancelled` foglalás sem az összesített óraszámba, sem a tételes elszámolási listába nem kerülhet.
 - A hónaphatárok és a dátumok `Europe/Budapest` időzónában értendők.
-- Az összesítő admin nézet userenként csak a felhasználó nevét és az összes foglalt órát mutatja.
+- Egy vagy több, egymástól független elszámolási hónap választható ki egyszerre.
+- Több hónap kiválasztásakor az adatok nem olvadhatnak össze: a hónap külön dimenzió/oszlop marad az összesítőben és az exportban.
+- Az összesítő admin nézet hónaponként és userenként a felhasználó nevét és az összes foglalt órát mutatja.
 - A foglalások darabszáma és az összes perc nem része az üzleti összesítőnek.
-- A CSV export ugyanezt a két adatot tartalmazza: `Felhasználó`, `Összes óra`.
+- Az összesítő CSV legalább: `Hónap`, `Felhasználó`, `Összes óra`.
 - Az óraszám CSV-ben magyar decimális vesszővel kerül kiadásra, hogy a magyar Excel ne dátumként értelmezze például a `4.50` értéket.
-- Admin ellenőrzéshez ugyanarra a hónapra tételes aktív foglalási lista kérhető le összes userre vagy egy kiválasztott userre.
-- A tételes aktív lista legalább: user, dátum, helyiség, kezdés, befejezés, óraszám.
+- Admin ellenőrzéshez ugyanazokra a kijelölt hónapokra tételes aktív foglalási lista kérhető le összes userre vagy egy kiválasztott userre.
+- A tételes aktív lista legalább: hónap, user, dátum, helyiség, kezdés, befejezés, óraszám.
+- A tételes aktív foglalási listához külön CSV export kötelező.
+- Ha bármely kiválasztott hónap lekérdezése hibázik, hiányos összesítő vagy részletes CSV nem készülhet; a hiba legyen egyértelmű.
 
 ## Lemondások – külön admin monitoring
 
@@ -29,6 +33,7 @@ A lemondási riport nem része a számlázási / elszámolási havi órák ripor
 - Nem kerül automatikus „jó/rossz” küszöbérték vagy figyelmeztetési határ bevezetésre külön üzleti döntés nélkül.
 - Tételes lemondási lista kérhető le összes userre vagy egy kiválasztott userre.
 - A tételes lista legalább: user, eredeti dátum, helyiség, kezdés, befejezés, lemondott óra, lemondás időpontja, kezdés előtti időtáv, lemondó személy, indok.
+- A lemondási összesítőhöz és a tételes lemondási listához is külön CSV export tartozik.
 
 ## Audit és adatmegőrzés
 
