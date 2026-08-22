@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(11);
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000191','repeat-limit-user@example.invalid','{"first_name":"Limit","last_name":"User"}'),
@@ -117,6 +117,43 @@ select is(
   (select count(*)::bigint from public.bookings where series_id=(select id from public.booking_series where idempotency_key='19100000-0000-0000-0000-000000000004')),
   4::bigint,
   'Az admin 90 napon túli sorozatának minden alkalma létrejön'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000192',true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking_series(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000191',
+      %L::timestamptz,%L::timestamptz,'monthly',null,13,'{}','abort_all','individual',null,
+      '19100000-0000-0000-0000-000000000006')$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 1) + time '07:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 1) + time '08:00') at time zone 'Europe/Budapest'
+  ),
+  'Admin darabszámos havi sorozata létrejön, ha az utolsó alkalom 366 napon belül marad'
+);
+
+select throws_ok(
+  format(
+    $sql$select public.create_booking_series(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000191',
+      %L::timestamptz,%L::timestamptz,'monthly',null,14,'{}','abort_all','individual',null,
+      '19100000-0000-0000-0000-000000000007')$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 1) + time '08:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 1) + time '09:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A sorozat utolsó alkalma legfeljebb 366 nappal lehet az első alkalom után.',
+  'Admin darabszámos sorozata sem nyúlhat 366 napon túl'
+);
+reset role;
+
+select is(
+  (select count(*)::bigint from public.booking_series where idempotency_key='19100000-0000-0000-0000-000000000007'),
+  0::bigint,
+  'A 366 napot túllépő darabszámos sorozatból sem sorozatrekord nem marad'
 );
 
 select * from finish();
