@@ -3,7 +3,6 @@ import Link from "next/link";
 import { requireActiveProfile } from "@/lib/auth";
 import {
   addDays,
-  budapestDateFromIso,
   budapestTimeFromIso,
   budapestToday,
   civilDateLabel,
@@ -98,7 +97,7 @@ export default async function MyBookingsPage({ searchParams }: { searchParams: P
           <strong className={styles.periodLabel}>{monthLabel(selectedDate)}</strong>
           <Link className={styles.navButton} aria-label="Következő hónap" href={myBookingsUrl("month", shiftMonth(selectedDate, 1))}>›</Link>
           <Link className={styles.todayButton} href={myBookingsUrl("month", today)}>Ma</Link>
-        </> : <span className={styles.listDateHint}>Válassz dátumot a Nap nézetre ugráshoz.</span>}
+        </> : view === "list" ? <span className={styles.listDateHint}>Válassz dátumot a Nap nézetre ugráshoz.</span> : null}
 
         <form className={styles.datePicker} action="/foglalasaim" method="get">
           <input type="hidden" name="view" value={view === "list" ? "day" : view} />
