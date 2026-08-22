@@ -18,6 +18,7 @@ export default async function ProtectedLayout({ children }: Readonly<{ children:
         {profile.role === "admin" ? <Link href="/admin/felhasznalok">Felhasználók</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/hozzaferesek">Hozzáférések</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/havi-orak">Havi órák</Link> : null}
+        {profile.role === "admin" ? <Link href="/admin/lemondasok">Lemondások</Link> : null}
         <form action={logout}><button type="submit">Kijelentkezés</button></form>
       </nav>
 
