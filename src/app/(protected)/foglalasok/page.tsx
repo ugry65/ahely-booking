@@ -8,7 +8,7 @@ import { QuickBookingDialog, type BookingUser } from "./quick-booking-dialog";
 import "./calendar-booking-actions.css";
 
 type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage">;
-type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "series_id" | "updated_at" | "can_manage">;
+type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "booking_title" | "series_id" | "updated_at" | "can_manage">;
 
 function budapestToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -41,6 +41,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     const manageable = managementByBookingId.get(booking.booking_id);
     return {
       ...booking,
+      booking_title: manageable?.booking_title ?? booking.booking_title ?? null,
       note: manageable?.note ?? null,
       series_id: manageable?.series_id ?? null,
       updated_at: manageable?.updated_at ?? null,
