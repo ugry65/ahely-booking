@@ -1,8 +1,7 @@
 name: Cloudflare dependency resolution
 
 on:
-  push:
-    branches: [chore/cloudflare-deployment-test]
+  pull_request:
     paths:
       - ".github/workflows/cloudflare-dependency-resolution.yml"
   workflow_dispatch:
