@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-import { importUsersCsv, inviteUser, sendPasswordReset, setUserGroupMembership, setUserRole, updateUserProfile } from "./actions";
+import { importUsersCsv, inviteUser, sendPasswordReset, setUserGroupMembership, setUserRepeatPermission, setUserRole, updateUserProfile } from "./actions";
 import { updateGlobalBookingNameVisibility } from "./visibility-actions";
 
 type ManagedProfile = {
@@ -13,6 +13,7 @@ type ManagedProfile = {
   phone: string | null;
   role: "admin" | "user";
   is_active: boolean;
+  can_repeat_bookings: boolean;
   customer_type: "private" | "business";
   billing_name: string | null;
   billing_postal_code: string | null;
@@ -47,7 +48,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   const [profilesResult, visibilityResult, accessResult] = await Promise.all([
     supabase.from("profiles")
-      .select("id,first_name,last_name,email,phone,role,is_active,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at")
+      .select("id,first_name,last_name,email,phone,role,is_active,can_repeat_bookings,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at")
       .order("last_name").order("first_name").returns<ManagedProfile[]>(),
     supabase.from("app_settings").select("value").eq("key", "show_other_booker_names").maybeSingle<{ value: boolean }>(),
     supabase.rpc("admin_room_access_overview"),
@@ -72,12 +73,12 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
         <div className="page-heading"><div><h2>Felhasználói lista</h2><p className="muted">A helyiségcsoportokból kapott foglalási jogok mellett az egyedi user–szoba kivételek továbbra is megmaradnak.</p></div>
           <form method="get" className="admin-editor-row compact"><label>Keresés<input name="q" defaultValue={params.q ?? ""} placeholder="Név, e-mail vagy telefon" /></label><button type="submit">Keresés</button>{query ? <Link className="button secondary" href="/admin/felhasznalok">Törlés</Link> : null}</form>
         </div>
-        <div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Név</th><th>E-mail</th><th>Telefonszám</th><th>Helyiségcsoport</th><th>Szerepkör</th><th>Állapot</th><th /></tr></thead><tbody>
+        <div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Név</th><th>E-mail</th><th>Telefonszám</th><th>Helyiségcsoport</th><th>Ismétlés</th><th>Szerepkör</th><th>Állapot</th><th /></tr></thead><tbody>
           {filteredProfiles.map((profile) => {
             const profileGroups = groupsForUser(profile.id);
-            return <tr key={profile.id}><td><strong>{fullName(profile)}</strong></td><td>{profile.email}</td><td>{profile.phone || "—"}</td><td>{profileGroups.length ? profileGroups.map((group) => group.name).join(", ") : "—"}</td><td>{profile.role === "admin" ? "Adminisztrátor" : "Normál felhasználó"}</td><td>{profile.is_active ? "Aktív" : "Inaktív"}</td><td><Link className="button secondary" href={`/admin/felhasznalok?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), user: profile.id }).toString()}`}>Szerkesztés</Link></td></tr>;
+            return <tr key={profile.id}><td><strong>{fullName(profile)}</strong></td><td>{profile.email}</td><td>{profile.phone || "—"}</td><td>{profileGroups.length ? profileGroups.map((group) => group.name).join(", ") : "—"}</td><td>{profile.role === "admin" ? "Admin" : profile.can_repeat_bookings ? "Igen" : "Nem"}</td><td>{profile.role === "admin" ? "Adminisztrátor" : "Normál felhasználó"}</td><td>{profile.is_active ? "Aktív" : "Inaktív"}</td><td><Link className="button secondary" href={`/admin/felhasznalok?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), user: profile.id }).toString()}`}>Szerkesztés</Link></td></tr>;
           })}
-          {!filteredProfiles.length ? <tr><td colSpan={7} className="muted">Nincs a keresésnek megfelelő felhasználó.</td></tr> : null}
+          {!filteredProfiles.length ? <tr><td colSpan={8} className="muted">Nincs a keresésnek megfelelő felhasználó.</td></tr> : null}
         </tbody></table></div>
       </section>
 
@@ -86,7 +87,8 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
 
         <div className="admin-grid">
           <section className="stack"><h3>Szerepkör</h3><form action={setUserRole} className="admin-editor-row compact"><input type="hidden" name="userId" value={selectedProfile.id} /><label>Jogosultsági szint<select name="role" defaultValue={selectedProfile.role}><option value="user">Normál felhasználó</option><option value="admin">Adminisztrátor</option></select></label><button type="submit">Szerepkör mentése</button></form><p className="muted form-help">Az utolsó aktív adminisztrátort a backend nem engedi lefokozni.</p></section>
-          <section className="stack"><h3>Helyiségcsoportok</h3>{groups.map((group) => <form action={setUserGroupMembership} className="admin-editor-row compact" key={group.id}><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="groupId" value={group.id} /><input type="hidden" name="isMember" value="false" /><label className="inline-check"><input type="checkbox" name="isMember" value="true" defaultChecked={groupMemberships.has(`${selectedProfile.id}:${group.id}`)} /> {group.name}</label><button type="submit">Mentés</button></form>)}<p className="muted form-help">A csoport foglalási jogot ad. Ismétlődő foglalási jog továbbra is csak közvetlenül adható.</p><Link href="/admin/hozzaferesek" className="button secondary">Egyedi helyiségjogok / ismétlés</Link></section>
+          <section className="stack"><h3>Ismétlődő foglalás</h3><form action={setUserRepeatPermission} className="admin-editor-row compact"><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="canRepeatBookings" value="false" /><label className="inline-check"><input type="checkbox" name="canRepeatBookings" value="true" defaultChecked={selectedProfile.can_repeat_bookings} /> Ismétlődő foglalás engedélyezve</label><button type="submit">Mentés</button></form><p className="muted form-help">User-szintű jogosultság: bekapcsolva minden olyan normál helyiségben ismételhet, amelyet foglalhat. Tréningteremben normál user továbbra sem ismételhet; adminra ez a korlátozás nem vonatkozik.</p></section>
+          <section className="stack"><h3>Helyiségcsoportok</h3>{groups.map((group) => <form action={setUserGroupMembership} className="admin-editor-row compact" key={group.id}><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="groupId" value={group.id} /><input type="hidden" name="isMember" value="false" /><label className="inline-check"><input type="checkbox" name="isMember" value="true" defaultChecked={groupMemberships.has(`${selectedProfile.id}:${group.id}`)} /> {group.name}</label><button type="submit">Mentés</button></form>)}<p className="muted form-help">A csoport foglalási jogot ad; az ismétlődési jog külön, user-szinten kezelendő.</p><Link href="/admin/hozzaferesek" className="button secondary">Egyedi helyiségjogok</Link></section>
         </div>
 
         <section className="stack"><h3>Törzs- és számlázási adatok</h3><form action={updateUserProfile} className="admin-editor-row"><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="isActive" value="false" /><label>Vezetéknév<input name="lastName" defaultValue={selectedProfile.last_name} required /></label><label>Keresztnév<input name="firstName" defaultValue={selectedProfile.first_name} required /></label><label>E-mail<input value={selectedProfile.email} readOnly aria-readonly="true" /></label><BillingFields profile={selectedProfile} /><label className="inline-check"><input type="checkbox" name="isActive" value="true" defaultChecked={selectedProfile.is_active} /> Aktív</label><button type="submit">Adatok mentése</button></form>
