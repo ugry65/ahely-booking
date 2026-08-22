@@ -1,6 +1,6 @@
 begin;
 
-select plan(7);
+select plan(8);
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000191','repeat-limit-user@example.invalid','{"first_name":"Limit","last_name":"User"}'),
