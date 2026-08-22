@@ -122,6 +122,20 @@ export async function setUserRole(formData: FormData) {
   redirect(resultUrl("uzenet", "A felhasználó szerepköre elmentve.", formData));
 }
 
+export async function setUserRepeatPermission(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználó.", formData));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_profile_repeat_permission", {
+    p_user_id: userId,
+    p_can_repeat: checkboxValue(formData, "canRepeatBookings"),
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "Az ismétlődő foglalási jogosultság mentése nem sikerült."), formData));
+  redirect(resultUrl("uzenet", "Az ismétlődő foglalási jogosultság elmentve.", formData));
+}
+
 export async function setUserGroupMembership(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
