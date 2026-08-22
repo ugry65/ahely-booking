@@ -1,0 +1,82 @@
+.page { min-width: 0; }
+.controls { display: grid; gap: .9rem; padding: 1rem; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fff; box-shadow: 0 .6rem 2rem rgb(31 42 36 / 5%); }
+.viewSwitch { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(100%, 24rem); padding: .25rem; border: 1px solid #cfcac0; border-radius: .7rem; background: #f5f3ee; }
+.viewLink { min-height: 2.75rem; display: grid; place-items: center; padding: .55rem .8rem; border-radius: .5rem; color: #235c43; font-weight: 800; text-decoration: none; }
+.viewLinkActive { background: #235c43; color: #fff; box-shadow: 0 .2rem .7rem rgb(31 42 36 / 15%); }
+.dateControls { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.navButton, .todayButton { min-width: 2.75rem; min-height: 2.75rem; display: inline-grid; place-items: center; padding: .45rem .7rem; border: 1px solid #65716a; border-radius: .5rem; background: #fff; color: #235c43; font-weight: 800; text-decoration: none; }
+.navButton { font-size: 1.35rem; line-height: 1; }
+.periodLabel { min-width: min(100%, 17rem); text-align: center; text-transform: capitalize; }
+.datePicker { display: flex; align-items: end; gap: .5rem; margin-left: auto; }
+.datePicker label { width: auto; }
+.datePicker input { min-height: 2.75rem; width: auto; padding: .55rem .7rem; }
+.datePicker button { min-height: 2.75rem; }
+.listDateHint { color: #65716a; }
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.managementPanel { scroll-margin-top: 1rem; }
+
+.monthSection { display: grid; gap: 1rem; }
+.monthGrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); overflow: hidden; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fff; box-shadow: 0 .8rem 2.4rem rgb(31 42 36 / 6%); }
+.weekday { padding: .65rem .35rem; border-bottom: 1px solid #d8d4c8; background: #f8f6f1; color: #65716a; font-size: .82rem; font-weight: 800; text-align: center; }
+.monthCell { position: relative; min-height: 8.1rem; padding: .45rem; border-right: 1px solid #e4e0d7; border-bottom: 1px solid #e4e0d7; background: #fff; }
+.monthCell:nth-child(7n) { border-right: 0; }
+.outOfMonth { background: #faf9f6; color: #8c948f; }
+.today { box-shadow: inset 0 0 0 2px #a8cbb5; }
+.selectedDay { background: #f1f7f3; box-shadow: inset 0 0 0 2px #235c43; }
+.daySelect { display: inline-flex; align-items: center; gap: .3rem; min-width: 2.3rem; min-height: 2.3rem; color: inherit; text-decoration: none; }
+.dayNumber { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50%; font-weight: 800; }
+.today .dayNumber { background: #dcebe2; color: #183c2c; }
+.selectedDay .dayNumber { background: #235c43; color: #fff; }
+.mobileBookingCount { display: none; }
+.desktopBookings { display: grid; gap: .25rem; margin-top: .25rem; }
+.monthBooking, .moreBookings { display: block; overflow: hidden; padding: .3rem .38rem; border-radius: .35rem; background: #dcebe2; color: #183c2c; font-size: .76rem; line-height: 1.2; text-decoration: none; text-overflow: ellipsis; white-space: nowrap; }
+.moreBookings { background: #f1eee5; color: #235c43; font-weight: 800; }
+.mobileSelectedDay { display: none; }
+
+.dayCard { overflow: hidden; border: 1px solid #d8d4c8; border-radius: 1rem; background: #fff; box-shadow: 0 .8rem 2.4rem rgb(31 42 36 / 6%); }
+.dayHeading { margin: 0; padding: 1rem 1.2rem; border-bottom: 1px solid #d8d4c8; text-transform: capitalize; }
+.dayEmpty { margin: 0; padding: .8rem 1.2rem 0; }
+.dayTimelineWrap { display: grid; grid-template-columns: 4.6rem minmax(0, 1fr); }
+.dayAxis, .dayTimeline { position: relative; }
+.dayAxis { border-right: 1px solid #d8d4c8; background: #faf9f6; }
+.dayAxis span { position: absolute; left: .3rem; right: .3rem; transform: translateY(-50%); color: #65716a; font-size: .75rem; text-align: center; }
+.dayAxis span:first-child { transform: translateY(0); }
+.dayAxis span:last-child { transform: translateY(-100%); }
+.dayTimeline { background: #fff; }
+.hourLine, .halfHourLine { position: absolute; left: 0; right: 0; pointer-events: none; }
+.hourLine { border-top: 1px solid #d7dcd8; }
+.halfHourLine { border-top: 1px solid #ecefeb; }
+.dayBooking { position: absolute; left: .45rem; right: .45rem; z-index: 1; display: flex; flex-direction: column; gap: .12rem; overflow: hidden; padding: .35rem .5rem; border-left: 4px solid #235c43; border-radius: .4rem; background: #dcebe2; color: #183c2c; font-size: .78rem; line-height: 1.2; text-decoration: none; }
+.dayBooking strong { font-size: .82rem; }
+
+@media (max-width: 52rem) {
+  .page { padding: 0 1rem 1.5rem; }
+  .controls { border-radius: .75rem; padding: .8rem; }
+  .dateControls { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; }
+  .periodLabel { min-width: 0; font-size: .92rem; }
+  .datePicker { grid-column: 1 / -1; width: 100%; margin-left: 0; }
+  .datePicker label { flex: 1; }
+  .datePicker input { width: 100%; }
+  .datePicker button { min-width: 5.5rem; }
+  .listDateHint { grid-column: 1 / -1; }
+  .monthCell { min-height: 4.1rem; padding: .12rem; }
+  .daySelect { width: 100%; height: 100%; min-height: 3.7rem; display: flex; flex-direction: column; justify-content: center; gap: .05rem; }
+  .dayNumber { width: 1.85rem; height: 1.85rem; font-size: .88rem; }
+  .mobileBookingCount { display: grid; place-items: center; min-width: 1.15rem; height: 1.15rem; padding: 0 .25rem; border-radius: 999px; background: #dcebe2; color: #183c2c; font-size: .65rem; font-weight: 800; }
+  .selectedDay .mobileBookingCount { background: #fff; }
+  .desktopBookings { display: none; }
+  .mobileSelectedDay { display: block; padding: 1rem; border: 1px solid #d8d4c8; border-radius: .75rem; background: #fff; }
+  .mobileSelectedDay h2 { margin: 0 0 .7rem; font-size: 1.05rem; text-transform: capitalize; }
+  .mobileDayList { display: grid; gap: .5rem; }
+  .mobileDayBooking { min-height: 3.2rem; display: grid; gap: .15rem; padding: .65rem .75rem; border: 1px solid #cfded4; border-radius: .55rem; background: #f1f7f3; color: #183c2c; text-decoration: none; }
+  .dayTimelineWrap { grid-template-columns: 4rem minmax(0, 1fr); }
+  .dayBooking { left: .3rem; right: .3rem; min-height: 44px; }
+}
+
+@media (max-width: 30rem) {
+  .viewLink { min-height: 2.8rem; padding-inline: .45rem; }
+  .dateControls { grid-template-columns: 2.75rem minmax(0, 1fr) 2.75rem; }
+  .todayButton { grid-column: 1 / -1; width: 100%; }
+  .weekday { padding-inline: .1rem; font-size: .7rem; }
+  .monthCell { min-height: 3.85rem; }
+}
