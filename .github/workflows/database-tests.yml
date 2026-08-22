@@ -10,6 +10,7 @@ on:
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
+      - "scripts/test-repeat-permission-concurrency.sh"
   push:
     branches: [main]
     paths:
@@ -20,6 +21,7 @@ on:
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
+      - "scripts/test-repeat-permission-concurrency.sh"
   workflow_dispatch:
 
 permissions:
@@ -69,6 +71,9 @@ jobs:
 
       - name: Run concurrent calendar color assignment test
         run: bash ./scripts/test-calendar-color-concurrency.sh
+
+      - name: Run repeat permission compatibility concurrency test
+        run: bash ./scripts/test-repeat-permission-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning
