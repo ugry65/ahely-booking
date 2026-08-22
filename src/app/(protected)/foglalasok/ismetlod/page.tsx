@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireActiveProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createRecurringBooking } from "./actions";
+import { RecurringExceptionCalendar } from "./recurring-exception-calendar";
 
 type RepeatableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 type Occurrence = { occurrence_index: number; service_date: string; start_at: string; end_at: string; booking_id?: string; status?: string; reason?: string };
@@ -42,7 +43,7 @@ export default async function RecurringBookingPage({ searchParams }: { searchPar
         <div className="form-row"><label>Első alkalom dátuma<input name="date" type="date" required min={today} defaultValue={today} /></label><label>Gyakoriság<select name="frequency" defaultValue="weekly"><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select></label></div>
         <div className="form-row"><label>Kezdés<select name="startTime" required defaultValue="09:00">{times.slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label><label>Befejezés<select name="endTime" required defaultValue="10:00">{times.slice(2).map((time) => <option key={time}>{time}</option>)}</select></label></div>
         <fieldset><legend>Sorozat vége</legend><label className="inline-check"><input type="radio" name="endMode" value="count" defaultChecked /> Ismétlésszám alapján</label><label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" /></label><label className="inline-check"><input type="radio" name="endMode" value="date" /> Végdátum alapján</label><label>Végdátum<input name="endsOn" type="date" min={today} max={shiftDate(today, 366)} /></label><p className="muted form-help">A kiválasztott befejezési módhoz tartozó mezőt vesszük figyelembe.</p></fieldset>
-        <label>Kivételdátumok<textarea name="exceptionDates" rows={3} placeholder="Például: 2026-12-24, 2026-12-31" /><span className="muted form-help">Vesszővel, szóközzel vagy új sorral válaszd el a dátumokat.</span></label>
+        <RecurringExceptionCalendar />
         <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select><span className="muted form-help">Megszakításnál egyetlen alkalom sem jön létre. A másik lehetőség a foglalt vagy szabálytalan alkalmakat kihagyja és pontosan felsorolja.</span></label>
         <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
         <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
