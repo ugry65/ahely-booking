@@ -54,7 +54,6 @@ Szükséges tesztkonfiguráció:
 - legalább 2 normál helyiség;
 - Tréningterem;
 - egy user által nem foglalható helyiség;
-- legalább egy naptári kivételdátum;
 - USER-A és USER-B részben eltérő jogosultságai.
 
 ## 4. Belépés és felhasználói életciklus
@@ -173,9 +172,11 @@ Szükséges tesztkonfiguráció:
 
 **Elvárt eredmény:** 07:00 előtti vagy 22:00 utáni idő nem foglalható.
 
-### UAT-BOOK-06 – Naptári kivételdátum
+### UAT-BOOK-06 – Minden naptári nap foglalható
 
-**Elvárt eredmény:** zárt kivételdátumra foglalás nem hozható létre; speciálisan nyitott időablak a beállítás szerint működik.
+**Elvárt eredmény:** nincs globális zárt nap vagy általános naptári kivételdátum. A user a saját jogosultsága, az előrefoglalási limit, a napi 07:00–22:00 idősáv és a többi foglalási szabály keretein belül bármely naptári napon foglalhat.
+
+**Automatikus háttér:** `017_always_open_calendar.sql`.
 
 ### UAT-BOOK-07 – Előrefoglalási limit
 
@@ -350,13 +351,13 @@ Szükséges tesztkonfiguráció:
 
 **Elvárt eredmény:** csoporttagság és csoport-helyiségjog effektív jogosultságként érvényesül.
 
-### UAT-ADMIN-07 – Ismétlési jog külön kezelése
+### UAT-ADMIN-07 – User-szintű ismétlődési jog
 
-**Elvárt eredmény:** `can_book` és `can_repeat` külön érvényesül.
+**Elvárt eredmény:** repeat jog nélkül normál user egyik foglalható normál helyiségben sem indíthat sorozatot; repeat joggal minden effektíven foglalható normál helyiségben indíthat, Tréningteremben viszont normál user továbbra sem. Adminra ez a normál user korlátozás nem vonatkozik.
 
 ### UAT-ADMIN-08 – Névláthatóság kapcsolása
 
-**Elvárt eredmény:** a naptár-read model az új beállítást követi.
+**Elvárt eredmény:** a naptár-read model az új globális beállítást követi; kikapcsolva más user neve és stabil színe sem szivárog ki normál usernek.
 
 ## 12. Havi óraszám és CSV
 
