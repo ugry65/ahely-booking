@@ -13,6 +13,7 @@ export default async function ProtectedLayout({ children }: Readonly<{ children:
       <nav className="desktop-app-nav">
         <Link href="/foglalasok"><strong>Foglalási naptár</strong></Link>
         <Link href="/foglalasaim">Foglalásaim</Link>
+        <Link href="/adataim">Adataim</Link>
         <span>{displayName}</span>
         {profile.role === "admin" ? <Link href="/admin/felhasznalok">Felhasználók</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/hozzaferesek">Hozzáférések</Link> : null}
