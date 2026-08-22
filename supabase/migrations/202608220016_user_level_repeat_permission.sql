@@ -15,6 +15,36 @@ where not profile.can_repeat_bookings
       and legacy.can_repeat
   );
 
+-- Legacy direct writes/API clients may still set user_room_permissions.can_repeat.
+-- Treat that bit only as a compatibility signal that promotes the canonical
+-- USER-level permission. It no longer limits repeat permission to one room.
+create or replace function public.promote_user_repeat_permission_from_legacy()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.can_repeat then
+    update public.profiles
+    set can_repeat_bookings = true,
+        updated_at = now()
+    where id = new.user_id
+      and not can_repeat_bookings;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists promote_user_repeat_permission_from_legacy on public.user_room_permissions;
+create trigger promote_user_repeat_permission_from_legacy
+after insert or update of can_repeat on public.user_room_permissions
+for each row
+when (new.can_repeat)
+execute function public.promote_user_repeat_permission_from_legacy();
+
+revoke all on function public.promote_user_repeat_permission_from_legacy() from public, anon, authenticated;
+
 create or replace function public.effective_room_permissions(p_user_id uuid)
 returns table (
   room_id uuid,
@@ -168,9 +198,9 @@ begin
 end;
 $$;
 
--- Backward-compatible room-permission RPC: the old p_can_repeat argument may still
--- arrive from older clients/tests. A TRUE value promotes the USER-level permission;
--- it never creates a room-specific repeat semantic anymore.
+-- Backward-compatible room-permission RPC. The old p_can_repeat bit is retained
+-- in the legacy row and, when true, promotes the USER-level permission through
+-- the compatibility trigger. Effective repeat semantics are nevertheless user-level.
 create or replace function public.admin_set_user_room_permission(
   p_user_id uuid,
   p_room_id uuid,
@@ -189,6 +219,9 @@ declare
   v_after jsonb;
 begin
   if p_correlation_id is null then raise exception 'A korrelációs azonosító kötelező.' using errcode = '22004'; end if;
+  if coalesce(p_can_repeat, false) and not coalesce(p_can_book, false) then
+    raise exception 'Ismétlődő foglalási jog csak foglalási jog mellett adható.' using errcode = '22023';
+  end if;
   if not exists (select 1 from public.profiles where id = p_user_id) then
     raise exception 'A felhasználó nem található.' using errcode = 'P0001';
   end if;
@@ -206,17 +239,10 @@ begin
   for update;
 
   insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat)
-  values (p_user_id, p_room_id, coalesce(p_can_book, false), false)
+  values (p_user_id, p_room_id, coalesce(p_can_book, false), coalesce(p_can_repeat, false))
   on conflict (user_id, room_id) do update set
-    can_book = excluded.can_book;
-
-  if coalesce(p_can_repeat, false) then
-    update public.profiles
-    set can_repeat_bookings = true,
-        updated_at = now()
-    where id = p_user_id
-      and not can_repeat_bookings;
-  end if;
+    can_book = excluded.can_book,
+    can_repeat = excluded.can_repeat;
 
   select to_jsonb(permission) into v_after
   from public.user_room_permissions permission
