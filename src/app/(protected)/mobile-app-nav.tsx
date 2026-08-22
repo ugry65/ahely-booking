@@ -6,22 +6,13 @@ import { useEffect, useRef } from "react";
 
 import { logout } from "@/app/(auth)/actions";
 
-type Props = {
-  displayName: string;
-  isAdmin: boolean;
-};
+type Props = { displayName: string; isAdmin: boolean };
 
 export function MobileAppNav({ displayName, isAdmin }: Props) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
-
-  function closeMenu() {
-    if (menuRef.current) menuRef.current.open = false;
-  }
-
-  useEffect(() => {
-    closeMenu();
-  }, [pathname]);
+  function closeMenu() { if (menuRef.current) menuRef.current.open = false; }
+  useEffect(() => { closeMenu(); }, [pathname]);
 
   return (
     <nav className="mobile-app-nav" aria-label="Mobil navigáció">
@@ -32,6 +23,7 @@ export function MobileAppNav({ displayName, isAdmin }: Props) {
           <p className="muted">{displayName}</p>
           <Link href="/foglalasok" onClick={closeMenu}>Foglalási naptár</Link>
           <Link href="/foglalasaim" onClick={closeMenu}>Foglalásaim</Link>
+          <Link href="/adataim" onClick={closeMenu}>Adataim</Link>
           {isAdmin ? <Link href="/admin/felhasznalok" onClick={closeMenu}>Felhasználók</Link> : null}
           {isAdmin ? <Link href="/admin/hozzaferesek" onClick={closeMenu}>Hozzáférések</Link> : null}
           {isAdmin ? <Link href="/admin/havi-orak" onClick={closeMenu}>Havi órák</Link> : null}
