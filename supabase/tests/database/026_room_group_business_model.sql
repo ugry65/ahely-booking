@@ -1,6 +1,6 @@
 begin;
 
-select plan(10);
+select plan(11);
 
 select is(
   (select count(*)::bigint from public.access_groups where is_active and name in ('A-Hely','Másik Hely','Tréningterem','Forrás tér')),
@@ -63,6 +63,21 @@ select is(
 
 select set_config('ahely_test.group_id',(select id::text from public.access_groups where name='A-Hely'),true);
 select set_config('ahely_test.room_id',(select id::text from public.rooms where name='Gyerek szoba'),true);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000161',true);
+select throws_ok(
+  format(
+    $sql$select public.admin_set_group_room_permission(%L::uuid,%L::uuid,true,false,'27000000-0000-0000-0000-000000000160'::uuid)$sql$,
+    current_setting('ahely_test.group_id'),
+    current_setting('ahely_test.room_id')
+  ),
+  '42501',
+  'Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.',
+  'Normál user közvetlen RPC-hívással sem módosíthat csoport–szoba jogosultságot'
+);
+reset role;
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000162',true);
 select throws_ok(
