@@ -36,7 +36,7 @@ function safeRpcMessage(error: { code?: string; message: string }, fallback: str
 
 export async function updateOwnBooking(formData: FormData) {
   await requireActiveProfile();
-  const input = Object.fromEntries(["bookingId", "expectedUpdatedAt", "roomId", "date", "startTime", "endTime", "useType", "note", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
+  const input = Object.fromEntries(["bookingId", "expectedUpdatedAt", "roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseUpdateBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(formData, "hiba", parsed.error));
   const value = parsed.value;
@@ -45,6 +45,7 @@ export async function updateOwnBooking(formData: FormData) {
     p_booking_id: value.bookingId, p_expected_updated_at: value.expectedUpdatedAt,
     p_room_id: value.roomId, p_start_at: value.startAt, p_end_at: value.endAt,
     p_use_type: value.useType, p_note: value.note, p_idempotency_key: value.idempotencyKey,
+    p_booking_title: value.bookingTitle,
   });
   if (error) redirect(resultUrl(formData, "hiba", safeRpcMessage(error, "A foglalás módosítása nem sikerült. Kérlek, töltsd újra az oldalt és próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
