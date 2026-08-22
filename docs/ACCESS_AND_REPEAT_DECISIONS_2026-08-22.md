@@ -104,6 +104,14 @@ A review-fixek utáni teljes validáció a `309c37555872dc93c84a4060ac9b581c6f04
 - booking, mutation, room-access, recurring, last-admin, calendar-color és repeat-permission concurrency PASS;
 - DB lint PASS.
 
-## Nyitott külön üzleti kérdés
+## Sorozathossz technikai biztonsági plafon – végleges döntés
 
-A meglévő sorozatmotor technikai maximuma jelenleg 400 alkalom / 366 nap. Az admin 90/10 napos normál-user előrefoglalási limitet már bypassolja. Annak eldöntése, hogy a „tetszőleges hosszúságú admin sorozat” szó szerint jelentse-e a 400/366 technikai plafon eltávolítását vagy emelését is, külön üzleti/terhelési döntés.
+A meglévő sorozatmotor technikai maximuma **megmarad**:
+- legfeljebb **400 alkalom egy ismétlődő sorozatban**;
+- legfeljebb **366 nap** az első alkalomtól számítva.
+
+Ez a 400-as érték **nem userenkénti vagy éves összes foglalási limit**, hanem egyetlen sorozat technikai maximuma. Több külön sorozat ettől függetlenül létrehozható, ezért nagy havi foglalási volumen önmagában nem jelent korlátot.
+
+Az admin továbbra is bypassolja a normál user 90 napos és Tréningterem 10 napos előrefoglalási limitjét, de a 400 alkalom / 366 nap globális sorozatbiztonsági plafon rá is érvényes.
+
+Üzleti döntés: **a plafon most marad**. Ha később tényleges működési korlátként jelentkezik, külön terhelésvizsgálat és regressziós ellenőrzés után emeljük; nem távolítjuk el előre indokolatlanul.
