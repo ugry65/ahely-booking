@@ -246,7 +246,7 @@ select throws_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '19:00') at time zone 'Europe/Budapest',
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '20:00') at time zone 'Europe/Budapest'
   ),
-  'P0001', 'Ismétlődő Tréningterem-foglalást csak admin hozhat létre.',
+  'P0001', 'Nincs ismétlődő foglalási jogosultságod ehhez a helyiséghez.',
   'Normál user nem hozhat létre Tréningterem-sorozatot'
 );
 
