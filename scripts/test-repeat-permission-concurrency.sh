@@ -7,13 +7,13 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 
 readonly database_url="${AHELY_TEST_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
-readonly admin_id="00000000-0000-0000-0000-000000000201"
-readonly user_id="00000000-0000-0000-0000-000000000202"
+readonly admin_id="00000000-0000-0000-0000-000000000221"
+readonly user_id="00000000-0000-0000-0000-000000000222"
 readonly room_id="11000000-0000-0000-0000-000000000002"
-readonly off_key_1="20100000-0000-0000-0000-000000000001"
-readonly grant_key_1="20100000-0000-0000-0000-000000000002"
-readonly grant_key_2="20100000-0000-0000-0000-000000000003"
-readonly off_key_2="20100000-0000-0000-0000-000000000004"
+readonly off_key_1="22100000-0000-0000-0000-000000000001"
+readonly grant_key_1="22100000-0000-0000-0000-000000000002"
+readonly grant_key_2="22100000-0000-0000-0000-000000000003"
+readonly off_key_2="22100000-0000-0000-0000-000000000004"
 
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
