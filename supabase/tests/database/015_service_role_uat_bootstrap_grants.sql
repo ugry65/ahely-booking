@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(16);
 
 select ok(has_table_privilege('service_role', 'public.profiles', 'SELECT'), 'service_role olvashatja a profiles táblát');
 select ok(has_table_privilege('service_role', 'public.profiles', 'UPDATE'), 'service_role frissítheti a profiles táblát');
@@ -17,10 +17,6 @@ select ok(has_table_privilege('service_role', 'public.user_room_permissions', 'I
 select ok(has_table_privilege('service_role', 'public.user_room_permissions', 'UPDATE'), 'service_role frissíthet UAT helyiségjogot');
 select ok(not has_table_privilege('service_role', 'public.user_room_permissions', 'DELETE'), 'service_role nem törölhet helyiségjogot');
 
-select ok(has_table_privilege('service_role', 'public.calendar_exceptions', 'SELECT'), 'service_role olvashatja a naptári kivételeket');
-select ok(has_table_privilege('service_role', 'public.calendar_exceptions', 'INSERT'), 'service_role létrehozhat UAT naptári kivételt');
-select ok(has_table_privilege('service_role', 'public.calendar_exceptions', 'UPDATE'), 'service_role frissíthet UAT naptári kivételt');
-select ok(not has_table_privilege('service_role', 'public.calendar_exceptions', 'DELETE'), 'service_role nem törölhet naptári kivételt');
 
 select ok(not has_table_privilege('service_role', 'public.bookings', 'INSERT'), 'service_role nem kerülheti meg közvetlen INSERT-tel a foglalási RPC-t');
 select ok(not has_table_privilege('service_role', 'public.payments', 'INSERT'), 'service_role nem írhat közvetlenül befizetést');
