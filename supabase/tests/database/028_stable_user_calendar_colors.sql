@@ -15,6 +15,8 @@ select isnt(
  (select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000183'),
  'Két új user külön színt kap, amíg van szabad palettaszín'
 );
+select set_config('test.color_a',(select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),false);
+select set_config('test.color_b',(select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000183'),false);
 
 insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat) values
  ('00000000-0000-0000-0000-000000000182','11000000-0000-0000-0000-000000000002',true,false),
@@ -29,7 +31,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000182',true);
 select is(
  (select booker_color from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where not is_own limit 1),
- (select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000183'),
+ current_setting('test.color_b'),
  'Bekapcsolt névláthatóságnál más user tartós színe látható'
 );
 reset role;
@@ -39,7 +41,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000182',true);
 select is((select booker_color from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where not is_own limit 1),null::text,'Kikapcsolt névláthatóságnál más user színe sem szivárog ki');
 select is((select booker_display_name from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where not is_own limit 1),null::text,'Kikapcsolt névláthatóságnál más user neve sem látszik');
-select is((select booker_color from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where is_own limit 1),(select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),'A saját foglalás színe névláthatóságtól függetlenül látható');
+select is((select booker_color from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where is_own limit 1),current_setting('test.color_a'),'A saját foglalás színe névláthatóságtól függetlenül látható');
 reset role;
 
 set local role authenticated;
@@ -47,7 +49,7 @@ select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181'
 select is((select count(*)::bigint from public.list_calendar_bookings('2026-09-10 00:00+02','2026-09-11 00:00+02') where booker_color is not null),2::bigint,'Admin minden foglalás színét látja');
 reset role;
 
-select is((select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),(select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),'A user színe tartós profiladat');
+select is((select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),current_setting('test.color_a'),'A user színe tartós profiladat');
 
 select * from finish();
 rollback;
