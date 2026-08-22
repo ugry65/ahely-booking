@@ -115,3 +115,13 @@ Ez a 400-as érték **nem userenkénti vagy éves összes foglalási limit**, ha
 Az admin továbbra is bypassolja a normál user 90 napos és Tréningterem 10 napos előrefoglalási limitjét, de a 400 alkalom / 366 nap globális sorozatbiztonsági plafon rá is érvényes.
 
 Üzleti döntés: **a plafon most marad**. Ha később tényleges működési korlátként jelentkezik, külön terhelésvizsgálat és regressziós ellenőrzés után emeljük; nem távolítjuk el előre indokolatlanul.
+
+## PR #77 lezárási kapuk
+
+A technikai implementáció, teljes CI, staging migráció, adatmegőrzési ellenőrzés és független review lezárt. A sorozathossz üzleti döntése is lezárt: 400 alkalom / 366 nap marad.
+
+Merge előtt még szükséges:
+- rövid, célzott végső UI/UAT elfogadás;
+- ezt követően külön, explicit merge-engedély.
+
+A PR merge-je automatikusan nem engedélyezett pusztán az UAT elfogadásával.
