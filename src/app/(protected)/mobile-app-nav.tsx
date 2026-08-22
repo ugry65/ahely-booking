@@ -27,6 +27,7 @@ export function MobileAppNav({ displayName, isAdmin }: Props) {
           {isAdmin ? <Link href="/admin/felhasznalok" onClick={closeMenu}>Felhasználók</Link> : null}
           {isAdmin ? <Link href="/admin/hozzaferesek" onClick={closeMenu}>Hozzáférések</Link> : null}
           {isAdmin ? <Link href="/admin/havi-orak" onClick={closeMenu}>Havi órák</Link> : null}
+          {isAdmin ? <Link href="/admin/lemondasok" onClick={closeMenu}>Lemondások</Link> : null}
           <form action={logout}><button type="submit">Kijelentkezés</button></form>
         </div>
       </details>
