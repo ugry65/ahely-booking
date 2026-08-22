@@ -45,23 +45,10 @@ Meglévő user nem veszíthet repeat jogosultságot.
 
 Ezért:
 - migrációkor bármely legacy direct `can_repeat=true` → `profiles.can_repeat_bookings=true`;
-- a támogatott legacy út az auditált `admin_set_user_room_permission(..., can_repeat=true, ...)` RPC, amely user-szintű repeat jogot kapcsol be;
-- közvetlen authenticated táblaírás a `user_room_permissions` táblára nem támogatott és nincs engedélyezve;
+- régi kompatibilis RPC-n érkező `can_repeat=true` user-szintű repeat jogot kapcsol be;
 - a legacy flag nem szűkítheti az effektív repeat jogot egyetlen szobára;
 - explicit user-szintű repeat KI törli a user legacy `can_repeat=true` jelzőit;
 - a meglévő `can_book`, csoporttagság és egyéb jogosultságok nem változhatnak.
-
-## Belső review során már javított kockázat
-
-A `016` első változata a legacy TRUE profil-promócióhoz table-triggert is létrehozott. Mivel a tábla közvetlen authenticated írása nem támogatott, ez felesleges út volt, és direkt/service-role írás esetén fordított row-lock → profile-lock sorrendet hozhatott volna létre.
-
-A `202608220017_remove_direct_repeat_promotion_trigger.sql` ezért:
-- eltávolítja a direkt promotion triggert és triggerfüggvényt;
-- a legacy TRUE promóciót kizárólag az auditált admin RPC-be helyezi;
-- a legacy RPC és a kanonikus profile repeat RPC azonos, profile-first lock sorrendet használ;
-- a profil-promóciót külön auditálja.
-
-A reviewer ellenőrizze, hogy ez a javítás teljes-e és nem nyitott-e új kompatibilitási vagy lock-order problémát.
 
 ## Kiemelten vizsgálandó fájlok
 
@@ -69,6 +56,7 @@ A reviewer ellenőrizze, hogy ez a javítás teljes-e és nem nyitott-e új komp
 - `supabase/migrations/202608220017_remove_direct_repeat_promotion_trigger.sql`
 - `supabase/tests/database/009_recurring_booking_rpc.sql`
 - `supabase/tests/database/012_recurring_booking_ui_support.sql`
+- `supabase/tests/database/026_room_group_business_model.sql`
 - `supabase/tests/database/029_user_level_repeat_permission.sql`
 - `supabase/tests/database/030_recurring_advance_limits.sql`
 - `supabase/tests/database/031_repeat_legacy_rpc_contract.sql`
@@ -90,17 +78,14 @@ A reviewer ellenőrizze, hogy ez a javítás teljes-e és nem nyitott-e új komp
 
 ### B. Legacy kompatibilitás
 - A backfill biztosítja-e, hogy korábbi `can_repeat=true` user ne veszítsen jogot?
-- Régi `admin_set_user_room_permission(..., can_repeat=true, ...)` hívás biztonságosan és auditáltan promotálja-e a user-szintű jogot?
-- A közvetlen table-trigger valóban eltűnt-e, és közvetlen authenticated táblaírás valóban tiltott-e?
+- Régi `admin_set_user_room_permission(..., can_repeat=true, ...)` hívás biztonságosan promotálja-e a user-szintű jogot?
 - A régi mező megtartása okozhat-e két egymással versengő truth source-ot?
 - Explicit user-szintű KI után maradhat-e stale TRUE flag, amely később váratlanul visszakapcsolja a jogot?
-- Legacy `can_repeat=false` nem kapcsolja-e ki véletlenül a kanonikus profiljogot?
 
 ### C. Concurrency
 Különösen vizsgáld:
 - `admin_set_profile_repeat_permission(... false ...)` és legacy `admin_set_user_room_permission(... true ...)` egyidejű futását;
 - a két RPC ugyanazt a profile-level advisory lockot azonos lock orderben használja-e;
-- a target profile row lock minden room-permission row lock előtt történik-e;
 - lehetséges-e deadlock (profile row ↔ user_room_permissions row fordított lock order miatt);
 - a `scripts/test-repeat-permission-concurrency.sh` valódi külön PostgreSQL-kapcsolatokkal bizonyít-e mindkét sorrendet;
 - a végállapot a commit-sorrenddel konzisztens-e.
@@ -109,9 +94,7 @@ Különösen vizsgáld:
 - minden új SECURITY DEFINER függvénynél `search_path=''` megfelelő-e;
 - `public`/`anon` EXECUTE revoke teljes-e;
 - normál authenticated user közvetlen RPC-val módosíthat-e repeat jogot;
-- authenticated szerepkörnek valóban nincs-e közvetlen táblaírási joga/policy-ja a `user_room_permissions` táblán;
 - audit before/after + correlation ID megfelelő-e;
-- a legacy profil-promóció külön auditbejegyzése helyes-e;
 - nincs-e jogosultság-emelési vagy service-role oldalhatás.
 
 ### E. Előrefoglalási limit
@@ -125,13 +108,53 @@ Különösen vizsgáld:
 - a user-szintű repeat kapcsoló a Felhasználók szerkesztőben egyértelmű-e;
 - a booking calendar / mobil UX regresszióvédett részeihez a PR nem nyúl-e szükségtelenül.
 
-## Kimenet
+## Független review eredménye – 2026-08-22
 
-1. Executive summary: `APPROVE` / `APPROVE WITH FIXES` / `REQUEST CHANGES`.
-2. Findingok: CRITICAL / HIGH / MEDIUM / LOW.
-3. Minden findinghoz fájl/funkció, kockázat, reprodukció vagy érvelés, konkrét javítás, regressziós teszt.
-4. Külön authorization + migration + concurrency assessment.
-5. `NOT VERIFIED` jelölés minden nem bizonyítható pontra.
-6. Végső merge recommendation.
+Külső Claude-review eredménye: **APPROVE**.
 
-CRITICAL/HIGH finding esetén UAT/merge nem folytatható javítás és új teljes regressziós futás nélkül.
+- CRITICAL: nincs
+- HIGH: nincs
+- MEDIUM: nincs
+- LOW: 2 megfigyelés
+
+A két LOW megfigyelés merge előtt lezárva:
+1. explicit direct-only `can_book` → user-szintű repeat regressziós assertion bekerült a `029_user_level_repeat_permission.sql` tesztbe;
+2. a nem használt `service_role` EXECUTE grant lekerült az `admin_set_profile_repeat_permission` RPC-ről, és a `031_repeat_legacy_rpc_contract.sql` ezt külön ellenőrzi.
+
+A review külön megerősítette a profile-first lock sorrendet, a valódi kétkapcsolatos concurrency tesztet, a Tréningterem backend tiltását, az admin 90/10 napos bypassát, a legacy RPC auditját és a `016` + `017` migráció egymás utáni biztonságát.
+
+## Végső validáció a review-fixek után
+
+Head: `309c37555872dc93c84a4060ac9b581c6f04531b`
+
+- Application checks #257: PASS
+- Database tests #231: PASS
+- pgTAP: 31 fájl / 420 teszt PASS
+- booking concurrency PASS
+- booking mutation concurrency PASS
+- room-access concurrency PASS
+- recurring-booking concurrency PASS
+- last-admin concurrency PASS
+- calendar-color concurrency PASS
+- repeat permission / legacy compatibility concurrency PASS
+- DB lint PASS
+
+Staging `017` preservation check:
+- profiles: 5 → 5
+- direct user-room permissions: 7 → 7
+- legacy `can_repeat=true`: 2 → 2
+- profile-level repeat enabled: 2 → 2
+- group memberships: 2 → 2
+- direct permission checksum változatlan: `d0d2eab502eeb2b09827bd0eb08b8372`
+- unsupported promotion trigger: 1 → 0
+- dedicated `service_role` EXECUTE grant: true → false
+
+Rollbackos staging legacy-RPC UAT a `017` után:
+- legacy admin RPC `can_repeat=true` → profile promotion TRUE
+- legacy row flag TRUE
+- 2 auditrekord (profile promotion + room permission)
+- rollback után 0 tesztprofil, 0 teszt-permission, 0 teszt-audit maradt.
+
+## Nyitott üzleti döntés
+
+A meglévő recurring engine technikai maximuma továbbra is 400 alkalom / 366 nap. Az admin 90/10 napos normál-user limitet már bypassolja. Annak eldöntése, hogy a „tetszőleges hosszúságú admin sorozat” szó szerint jelentse-e a 400/366 technikai plafon eltávolítását is, külön üzleti/terhelési döntés.
