@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(9);
 
 select ok(
   to_regprocedure('public.promote_user_repeat_permission_from_legacy()') is null,
@@ -18,6 +18,11 @@ select is(
      and not trigger.tgisinternal),
   0::bigint,
   'A user_room_permissions táblán nincs direkt repeat promotion trigger'
+);
+
+select ok(
+  not has_function_privilege('service_role', 'public.admin_set_profile_repeat_permission(uuid,boolean,uuid)', 'EXECUTE'),
+  'A fókuszált admin repeat RPC nincs feleslegesen service_role-nak grantolva'
 );
 
 insert into auth.users(id,email,raw_user_meta_data) values
