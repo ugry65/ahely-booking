@@ -9,7 +9,7 @@ import { BookingTimeFields } from "./booking-time-fields";
 export type BookableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 export type CalendarBooking = {
   booking_id: string; room_id: string; room_name: string; start_at: string; end_at: string;
-  use_type: "individual" | "group"; is_own: boolean; booker_display_name: string | null;
+  use_type: "individual" | "group"; is_own: boolean; booker_display_name: string | null; booker_color: string | null;
   booking_title: string | null; note: string | null; series_id: string | null; updated_at: string | null; can_manage: boolean;
 };
 type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string };
@@ -107,7 +107,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         {selection?.roomId === room.room_id && !sourceBooking ? <div className="selection-block" style={{ top: `${minuteToPixel(selection.startMinute - CALENDAR_OPEN_MINUTE)}px`, height: `${minuteToPixel(selection.endMinute - selection.startMinute)}px` }}><strong>{calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</strong><span>Új foglalás</span></div> : null}
         {bookings.filter((booking) => booking.room_id === room.room_id).map((booking) => {
           const start = Math.max(localMinute(booking.start_at), CALENDAR_OPEN_MINUTE); const end = Math.min(localMinute(booking.end_at), CALENDAR_CLOSE_MINUTE);
-          return <article role={booking.can_manage ? "button" : undefined} tabIndex={booking.can_manage ? 0 : undefined} className={`booking-block ${booking.is_own ? "own" : ""} ${booking.can_manage ? "manageable" : ""}`} key={booking.booking_id} style={{ top: `${minuteToPixel(start - CALENDAR_OPEN_MINUTE)}px`, height: `${Math.max(minuteToPixel(end - start), minuteToPixel(30))}px` }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); if (booking.can_manage) setMenuBooking(booking); }} onKeyDown={(event) => { if (booking.can_manage && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setMenuBooking(booking); } }}>
+          const colorStyle = booking.booker_color ? { borderLeftColor: booking.booker_color, background: `color-mix(in srgb, ${booking.booker_color} 18%, white)` } : {};
+          return <article role={booking.can_manage ? "button" : undefined} tabIndex={booking.can_manage ? 0 : undefined} className={`booking-block ${booking.is_own ? "own" : ""} ${booking.can_manage ? "manageable" : ""}`} key={booking.booking_id} style={{ top: `${minuteToPixel(start - CALENDAR_OPEN_MINUTE)}px`, height: `${Math.max(minuteToPixel(end - start), minuteToPixel(30))}px`, ...colorStyle }} onPointerDown={(event) => event.stopPropagation()} onClick={(event) => { event.stopPropagation(); if (booking.can_manage) setMenuBooking(booking); }} onKeyDown={(event) => { if (booking.can_manage && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); setMenuBooking(booking); } }}>
             <span><strong>{booking.is_own ? "Saját foglalás" : booking.booker_display_name ?? "Foglalt"}</strong>{booking.booking_title ? <> · {booking.booking_title}</> : null}</span>
             {booking.use_type === "group" ? <small>Csoportos</small> : null}
           </article>;
