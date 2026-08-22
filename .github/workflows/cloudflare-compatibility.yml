@@ -46,6 +46,7 @@ jobs:
       - name: OpenNext / Cloudflare build
         run: pnpm cf:build
       - name: Start local workerd preview
+        if: success()
         run: |
           pnpm exec wrangler dev --local --port 8787 > /tmp/wrangler.log 2>&1 &
           echo $! > /tmp/wrangler.pid
