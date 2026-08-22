@@ -10,6 +10,11 @@ drop trigger if exists promote_user_repeat_permission_from_legacy
 
 drop function if exists public.promote_user_repeat_permission_from_legacy();
 
+-- Least privilege: this focused admin RPC is only needed through authenticated
+-- application sessions. service_role keeps its broader database access, but does
+-- not need a dedicated EXECUTE grant on this authorization-changing entry point.
+revoke execute on function public.admin_set_profile_repeat_permission(uuid,boolean,uuid) from service_role;
+
 create or replace function public.admin_set_user_room_permission(
   p_user_id uuid,
   p_room_id uuid,
