@@ -1,7 +1,15 @@
 begin;
 
-select plan(6);
+select plan(8);
 select has_function('public','update_own_profile_data',array['text','text','text','text','text','text','text','text','uuid'],'A saját profil módosító RPC létezik');
+select ok(
+  not has_function_privilege('anon','public.update_own_profile_data(text,text,text,text,text,text,text,text,uuid)','EXECUTE'),
+  'Anon nem hívhatja a saját profil módosító RPC-t'
+);
+select ok(
+  has_function_privilege('authenticated','public.update_own_profile_data(text,text,text,text,text,text,text,text,uuid)','EXECUTE'),
+  'Bejelentkezett user hívhatja a saját profil módosító RPC-t'
+);
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000131','self-profile@example.invalid','{"first_name":"Edit","last_name":"Owner"}');
