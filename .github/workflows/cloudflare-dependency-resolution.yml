@@ -22,6 +22,14 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - name: Explicitly allow required binary install scripts
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const p = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          p.pnpm = { ...(p.pnpm || {}), onlyBuiltDependencies: ['esbuild', 'workerd'] };
+          fs.writeFileSync('package.json', JSON.stringify(p, null, 2) + '\n');
+          NODE
       - name: Resolve current official Cloudflare packages
         run: |
           pnpm add --save-exact @opennextjs/cloudflare@latest
