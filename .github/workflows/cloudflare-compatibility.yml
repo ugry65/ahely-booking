@@ -1,0 +1,64 @@
+name: Cloudflare compatibility checks
+
+on:
+  pull_request:
+    paths:
+      - "src/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "next.config.ts"
+      - "proxy.ts"
+      - "wrangler.jsonc"
+      - "open-next.config.ts"
+      - ".github/workflows/cloudflare-compatibility.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cloudflare-compatibility:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-server-only-placeholder
+      SITE_URL: http://127.0.0.1:8787
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Existing tests
+        run: pnpm test
+      - name: TypeScript
+        run: pnpm typecheck
+      - name: Standard Next.js build
+        run: pnpm build
+      - name: OpenNext / Cloudflare build
+        run: pnpm cf:build
+      - name: Start local workerd preview
+        run: |
+          pnpm exec wrangler dev --local --port 8787 > /tmp/wrangler.log 2>&1 &
+          echo $! > /tmp/wrangler.pid
+          for i in $(seq 1 30); do
+            if curl --fail --silent --show-error http://127.0.0.1:8787/belepes > /tmp/cloudflare-login.html; then
+              break
+            fi
+            sleep 1
+          done
+          test -s /tmp/cloudflare-login.html
+          grep -qi "Bejelentkez" /tmp/cloudflare-login.html
+      - name: Stop local workerd preview
+        if: always()
+        run: |
+          if [ -f /tmp/wrangler.pid ]; then kill $(cat /tmp/wrangler.pid) || true; fi
+          if [ -f /tmp/wrangler.log ]; then tail -100 /tmp/wrangler.log; fi
