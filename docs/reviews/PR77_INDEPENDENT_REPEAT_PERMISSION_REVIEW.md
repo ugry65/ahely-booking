@@ -45,18 +45,33 @@ Meglévő user nem veszíthet repeat jogosultságot.
 
 Ezért:
 - migrációkor bármely legacy direct `can_repeat=true` → `profiles.can_repeat_bookings=true`;
-- régi kompatibilis RPC-n érkező `can_repeat=true` user-szintű repeat jogot kapcsol be;
+- a támogatott legacy út az auditált `admin_set_user_room_permission(..., can_repeat=true, ...)` RPC, amely user-szintű repeat jogot kapcsol be;
+- közvetlen authenticated táblaírás a `user_room_permissions` táblára nem támogatott és nincs engedélyezve;
 - a legacy flag nem szűkítheti az effektív repeat jogot egyetlen szobára;
 - explicit user-szintű repeat KI törli a user legacy `can_repeat=true` jelzőit;
 - a meglévő `can_book`, csoporttagság és egyéb jogosultságok nem változhatnak.
 
+## Belső review során már javított kockázat
+
+A `016` első változata a legacy TRUE profil-promócióhoz table-triggert is létrehozott. Mivel a tábla közvetlen authenticated írása nem támogatott, ez felesleges út volt, és direkt/service-role írás esetén fordított row-lock → profile-lock sorrendet hozhatott volna létre.
+
+A `202608220017_remove_direct_repeat_promotion_trigger.sql` ezért:
+- eltávolítja a direkt promotion triggert és triggerfüggvényt;
+- a legacy TRUE promóciót kizárólag az auditált admin RPC-be helyezi;
+- a legacy RPC és a kanonikus profile repeat RPC azonos, profile-first lock sorrendet használ;
+- a profil-promóciót külön auditálja.
+
+A reviewer ellenőrizze, hogy ez a javítás teljes-e és nem nyitott-e új kompatibilitási vagy lock-order problémát.
+
 ## Kiemelten vizsgálandó fájlok
 
 - `supabase/migrations/202608220016_user_level_repeat_permission.sql`
+- `supabase/migrations/202608220017_remove_direct_repeat_promotion_trigger.sql`
 - `supabase/tests/database/009_recurring_booking_rpc.sql`
 - `supabase/tests/database/012_recurring_booking_ui_support.sql`
 - `supabase/tests/database/029_user_level_repeat_permission.sql`
 - `supabase/tests/database/030_recurring_advance_limits.sql`
+- `supabase/tests/database/031_repeat_legacy_rpc_contract.sql`
 - `scripts/test-repeat-permission-concurrency.sh`
 - `.github/workflows/database-tests.yml`
 - `src/app/(protected)/admin/felhasznalok/actions.ts`
@@ -75,14 +90,17 @@ Ezért:
 
 ### B. Legacy kompatibilitás
 - A backfill biztosítja-e, hogy korábbi `can_repeat=true` user ne veszítsen jogot?
-- Régi `admin_set_user_room_permission(..., can_repeat=true, ...)` hívás biztonságosan promotálja-e a user-szintű jogot?
+- Régi `admin_set_user_room_permission(..., can_repeat=true, ...)` hívás biztonságosan és auditáltan promotálja-e a user-szintű jogot?
+- A közvetlen table-trigger valóban eltűnt-e, és közvetlen authenticated táblaírás valóban tiltott-e?
 - A régi mező megtartása okozhat-e két egymással versengő truth source-ot?
 - Explicit user-szintű KI után maradhat-e stale TRUE flag, amely később váratlanul visszakapcsolja a jogot?
+- Legacy `can_repeat=false` nem kapcsolja-e ki véletlenül a kanonikus profiljogot?
 
 ### C. Concurrency
 Különösen vizsgáld:
 - `admin_set_profile_repeat_permission(... false ...)` és legacy `admin_set_user_room_permission(... true ...)` egyidejű futását;
 - a két RPC ugyanazt a profile-level advisory lockot azonos lock orderben használja-e;
+- a target profile row lock minden room-permission row lock előtt történik-e;
 - lehetséges-e deadlock (profile row ↔ user_room_permissions row fordított lock order miatt);
 - a `scripts/test-repeat-permission-concurrency.sh` valódi külön PostgreSQL-kapcsolatokkal bizonyít-e mindkét sorrendet;
 - a végállapot a commit-sorrenddel konzisztens-e.
@@ -91,7 +109,9 @@ Különösen vizsgáld:
 - minden új SECURITY DEFINER függvénynél `search_path=''` megfelelő-e;
 - `public`/`anon` EXECUTE revoke teljes-e;
 - normál authenticated user közvetlen RPC-val módosíthat-e repeat jogot;
+- authenticated szerepkörnek valóban nincs-e közvetlen táblaírási joga/policy-ja a `user_room_permissions` táblán;
 - audit before/after + correlation ID megfelelő-e;
+- a legacy profil-promóció külön auditbejegyzése helyes-e;
 - nincs-e jogosultság-emelési vagy service-role oldalhatás.
 
 ### E. Előrefoglalási limit
