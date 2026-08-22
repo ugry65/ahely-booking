@@ -18,8 +18,11 @@ psql "$database_url" -X -v ON_ERROR_STOP=1 <<SQL
 insert into auth.users (id, email, raw_user_meta_data) values
   ('$user_id', 'recurring-concurrency@example.invalid',
    '{"first_name":"Konkurens","last_name":"Sorozat"}');
+update public.profiles
+set can_repeat_bookings = true
+where id = '$user_id';
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat)
-values ('$user_id', '$room_id', true, true);
+values ('$user_id', '$room_id', true, false);
 SQL
 
 run_series() {

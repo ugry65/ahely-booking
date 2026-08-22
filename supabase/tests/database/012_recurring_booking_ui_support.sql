@@ -12,6 +12,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000152', 'repeat-ui-inactive@example.invalid', '{"first_name":"Inaktív","last_name":"User"}'),
   ('00000000-0000-0000-0000-000000000153', 'repeat-ui-other@example.invalid', '{"first_name":"Másik","last_name":"User"}');
 update public.profiles set is_active = false where id = '00000000-0000-0000-0000-000000000152';
+update public.profiles set can_repeat_bookings = true where id = '00000000-0000-0000-0000-000000000151';
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000002', true, true),
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000003', true, false),
@@ -33,8 +34,11 @@ insert into public.booking_series (
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000151', true);
 select is((select array_agg(room_id order by display_order) from public.list_repeatable_rooms()),
-  array['11000000-0000-0000-0000-000000000002'::uuid],
-  'Normál usernek csak can_repeat helyiség látszik, a Tréningterem nem');
+  array[
+    '11000000-0000-0000-0000-000000000002'::uuid,
+    '11000000-0000-0000-0000-000000000003'::uuid
+  ],
+  'User-szintű repeat joggal minden foglalható normál helyiség látszik, a Tréningterem nem');
 select throws_ok($$select public.get_my_booking_series_result('33000000-0000-0000-0000-000000000151')$$,
   '42501', 'A foglalási sorozat nem található.', 'Más user sorozatának eredménye nem olvasható');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000152', true);
