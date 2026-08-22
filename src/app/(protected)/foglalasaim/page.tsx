@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireActiveProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { BookingTimeFields } from "../foglalasok/booking-time-fields";
 import { cancelOwnBooking, updateOwnBooking } from "./actions";
 
 type MyBooking = { booking_id: string; room_id: string; room_name: string; start_at: string; end_at: string; use_type: "individual" | "group"; note: string | null; series_id: string | null; updated_at: string };
@@ -41,7 +42,7 @@ export default async function MyBookingsPage({ searchParams }: { searchParams: P
             <input type="hidden" name="bookingId" value={booking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={booking.updated_at} /><input type="hidden" name="idempotencyKey" value={crypto.randomUUID()} />
             <label>Helyiség<select name="roomId" required defaultValue={booking.room_id}>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
             <label>Dátum<input name="date" type="date" required defaultValue={date} /></label>
-            <div className="form-row"><label>Kezdés<select name="startTime" required defaultValue={start}>{times.slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label><label>Befejezés<select name="endTime" required defaultValue={end}>{times.slice(2).map((time) => <option key={time}>{time}</option>)}</select></label></div>
+            <BookingTimeFields options={times} initialStartTime={start} initialEndTime={end} />
             <label>Használat<select name="useType" defaultValue={booking.use_type}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
             <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={booking.note ?? ""} /></label>
             <button type="submit">Módosítás mentése</button>

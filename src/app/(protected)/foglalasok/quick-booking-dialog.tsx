@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createBooking } from "./actions";
 import { createRecurringBooking } from "./ismetlod/actions";
 import type { BookableRoom } from "./calendar-booking-grid";
+import { BookingTimeFields } from "./booking-time-fields";
 
 const OPEN_MINUTE = 7 * 60;
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
@@ -60,10 +61,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                 </select>
               </label>
               <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
-              <div className="form-row">
-                <label>Kezdés<select name="startTime" required defaultValue="09:00">{timeOptions().slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label>
-                <label>Befejezés<select name="endTime" required defaultValue="10:00">{timeOptions().slice(2).map((time) => <option key={time}>{time}</option>)}</select></label>
-              </div>
+              <BookingTimeFields options={timeOptions()} initialStartTime="09:00" initialEndTime="10:00" />
 
               <label>Ismétlődés
                 <select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}>

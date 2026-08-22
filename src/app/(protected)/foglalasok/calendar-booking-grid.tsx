@@ -10,6 +10,7 @@ import {
   normalizeCalendarSelection,
   type CalendarSelection,
 } from "@/lib/calendar-selection";
+import { BookingTimeFields } from "./booking-time-fields";
 
 export type BookableRoom = {
   room_id: string;
@@ -38,6 +39,8 @@ type Props = {
   bookings: CalendarBooking[];
   selectedDate: string;
   repeatableRoomIds: string[];
+  bookingUsers?: Array<{ id: string; name: string; email: string }>;
+  currentUserId?: string;
 };
 
 type TouchGesture = {
@@ -74,7 +77,7 @@ function timeOptions() {
   return values;
 }
 
-export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds }: Props) {
+export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds, bookingUsers = [], currentUserId }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [dialogRoomId, setDialogRoomId] = useState("");
@@ -230,9 +233,10 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
           <form key={`${dialogMode}-${sourceBooking?.booking_id ?? "new"}-${editScope}`} action={formAction} className="stack">
             <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
             {dialogMode === "edit" && sourceBooking ? <><input type="hidden" name="bookingId" value={sourceBooking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={sourceBooking.updated_at ?? ""} /><input type="hidden" name="scope" value={editScope} /></> : null}
+            {dialogMode !== "edit" && bookingUsers.length ? <label>Felhasználó<select name="targetUserId" defaultValue={currentUserId ?? bookingUsers[0]?.id} required>{bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}</select><span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span></label> : null}
             <label>Helyiség<select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); }} required>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
             <label>Dátum<input name="date" type="date" defaultValue={selectedDate} required /></label>
-            <div className="form-row"><label>Kezdés<select name="startTime" defaultValue={calendarMinuteToTime(selection.startMinute)} required>{options.slice(0, -2).map((time) => <option key={time} value={time}>{time}</option>)}</select></label><label>Befejezés<select name="endTime" defaultValue={calendarMinuteToTime(selection.endMinute)} required>{options.slice(2).map((time) => <option key={time} value={time}>{time}</option>)}</select></label></div>
+            <BookingTimeFields options={options} initialStartTime={calendarMinuteToTime(selection.startMinute)} initialEndTime={calendarMinuteToTime(selection.endMinute)} />
             {dialogMode !== "edit" ? <label>Ismétlődés<select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}><option value="none">Nincs</option><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select>{!canRepeat ? <span className="muted form-help">Ehhez a helyiséghez nincs ismétlődő foglalási jogosultságod.</span> : null}</label> : null}
             {dialogMode !== "edit" && repeatFrequency !== "none" ? <fieldset className="repeat-options"><legend>Ismétlődés beállításai</legend><input type="hidden" name="endMode" value="count" /><label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label><label>Kivételdátumok<textarea name="exceptionDates" rows={2} placeholder="Például: 2026-12-24, 2026-12-31" /></label><label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label></fieldset> : null}
             {dialogRoom?.is_training_room ? <label>Használat<select name="useType" defaultValue={sourceBooking?.use_type ?? "individual"}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label> : <input type="hidden" name="useType" value="individual" />}
