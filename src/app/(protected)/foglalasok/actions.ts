@@ -25,11 +25,11 @@ function targetUserId(profile: { id: string; role: "admin" | "user" }, formData:
 
 export async function createBooking(formData: FormData) {
   const profile = await requireActiveProfile();
-  const input = Object.fromEntries(["roomId", "date", "startTime", "endTime", "useType", "note", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
+  const input = Object.fromEntries(["roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(parsed.date, "hiba", parsed.error));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey });
+  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle });
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás mentése nem sikerült. Kérlek, próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", "A foglalás sikeresen létrejött."));
@@ -37,7 +37,7 @@ export async function createBooking(formData: FormData) {
 
 export async function updateCalendarBooking(formData: FormData) {
   await requireActiveProfile();
-  const input = Object.fromEntries(["bookingId", "expectedUpdatedAt", "roomId", "date", "startTime", "endTime", "useType", "note", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
+  const input = Object.fromEntries(["bookingId", "expectedUpdatedAt", "roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseUpdateBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(String(formData.get("date") ?? "") || null, "hiba", parsed.error));
   const scope = parseScope(formData.get("scope"));
@@ -52,6 +52,7 @@ export async function updateCalendarBooking(formData: FormData) {
     p_use_type: parsed.value.useType,
     p_note: parsed.value.note,
     p_idempotency_key: parsed.value.idempotencyKey,
+    p_booking_title: parsed.value.bookingTitle,
   });
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás módosítása nem sikerült. Frissítsd az oldalt és próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
