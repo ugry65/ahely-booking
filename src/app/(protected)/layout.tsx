@@ -11,7 +11,7 @@ export default async function ProtectedLayout({ children }: Readonly<{ children:
   return (
     <main>
       <nav className="desktop-app-nav">
-        <Link href="/foglalasok"><strong>A-Hely</strong></Link>
+        <Link href="/foglalasok"><strong>Foglalási naptár</strong></Link>
         <Link href="/foglalasaim">Foglalásaim</Link>
         <span>{displayName}</span>
         {profile.role === "admin" ? <Link href="/admin/felhasznalok">Felhasználók</Link> : null}
