@@ -11,6 +11,22 @@ export type RecurringBookingRequest = {
 export type RecurringFormResult = { ok: true; value: RecurringBookingRequest } | { ok: false; error: string };
 
 function dayDistance(from: string, to: string) { return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000; }
+function shiftDate(date: string, days: number) {
+  const [year, month, day] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+function occurrenceDate(firstDate: string, frequency: RecurrenceFrequency, zeroBasedIndex: number) {
+  if (frequency === "daily") return shiftDate(firstDate, zeroBasedIndex);
+  if (frequency === "weekly") return shiftDate(firstDate, zeroBasedIndex * 7);
+  if (frequency === "biweekly") return shiftDate(firstDate, zeroBasedIndex * 14);
+
+  const [year, month, day] = firstDate.split("-").map(Number);
+  const targetMonth = new Date(Date.UTC(year, month - 1 + zeroBasedIndex, 1));
+  const targetYear = targetMonth.getUTCFullYear();
+  const targetMonthIndex = targetMonth.getUTCMonth();
+  const lastDay = new Date(Date.UTC(targetYear, targetMonthIndex + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(targetYear, targetMonthIndex, Math.min(day, lastDay))).toISOString().slice(0, 10);
+}
 
 export function parseRecurringBookingForm(input: Record<string, string>): RecurringFormResult {
   const base = parseBookingForm(input);
@@ -31,6 +47,9 @@ export function parseRecurringBookingForm(input: Record<string, string>): Recurr
     occurrenceCount = Number(rawCount);
     if (!/^\d+$/.test(rawCount) || !Number.isInteger(occurrenceCount) || occurrenceCount < 1 || occurrenceCount > 400)
       return { ok: false, error: "Az ismétlésszám 1 és 400 közötti egész szám legyen." };
+    const lastOccurrence = occurrenceDate(base.value.date, frequency, occurrenceCount - 1);
+    if (dayDistance(base.value.date, lastOccurrence) > 366)
+      return { ok: false, error: "Az ismétlésszám legfeljebb 366 napos sorozatot eredményezhet." };
   }
 
   const rawExceptions = input.exceptionDates?.trim() ?? "";
