@@ -197,3 +197,7 @@ A bundle méretét a proxy-build blokkoló miatt még nem lehetett hitelesen meg
 Nem azért, mert a teljes A-Hely architektúra Cloudflare-alkalmatlan, hanem mert az aktuális hivatalos OpenNext adapter még nem támogatja biztonságosan azt a Next.js 16 `proxy.ts` mechanizmust, amelyre az auth/session rétegünk épül.
 
 A Cloudflare újrapróbálásának triggerfeltétele: OpenNext #1277 javítása megjelenik hivatalos kiadott adapterverzióban. Ekkor újra kell futtatni: dependency install → tests → typecheck → Next build → OpenNext build → workerd smoke → Cloudflare preview → staging Supabase auth/session/foglalás smoke → Vercel regresszióellenőrzés.
+
+## Stop gate
+
+A kísérlet ennél a pontnál szándékosan megáll. Nem végzünk framework-downgrade-ot, auth/proxy átírást vagy OpenNext belső patch-elést felhasználói architekturális döntés nélkül.
