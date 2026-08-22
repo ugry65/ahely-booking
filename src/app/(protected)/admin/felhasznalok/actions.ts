@@ -17,6 +17,13 @@ function uuid(value: FormDataEntryValue | null) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null;
 }
 
+function safeRpcMessage(error: { code?: string; message?: string } | null, fallback: string) {
+  if (!error) return fallback;
+  return ["P0001", "22023", "22004", "42501"].includes(error.code ?? "") && (error.message?.length ?? 0) <= 240
+    ? error.message!
+    : fallback;
+}
+
 function profileInput(formData: FormData) {
   return {
     firstName: String(formData.get("firstName") ?? "").trim(),
@@ -56,7 +63,7 @@ async function updateProfileRpc(userId: string, input: ProfileInput) {
 
 function validateProfile(input: ProfileInput) {
   if (!input.firstName || !input.lastName) return "A vezetéknév és a keresztnév kötelező.";
-  if (!['private', 'business'].includes(input.customerType)) return "Érvénytelen ügyféltípus.";
+  if (!["private", "business"].includes(input.customerType)) return "Érvénytelen ügyféltípus.";
   if (input.customerType === "business" && !input.taxNumber) return "Vállalkozó esetén az adószám megadása kötelező.";
   return null;
 }
@@ -81,7 +88,6 @@ export async function inviteUser(formData: FormData) {
   });
 
   if (error || !data.user) redirect(resultUrl("hiba", "A felhasználó létrehozása nem sikerült. Ellenőrizd, hogy az e-mail cím nem szerepel-e már a rendszerben."));
-
   redirect(resultUrl("uzenet", "A felhasználó létrejött. Aktiváló/jelszóbeállító linket külön tudsz küldeni neki."));
 }
 
@@ -94,8 +100,39 @@ export async function updateUserProfile(formData: FormData) {
   if (validation) redirect(resultUrl("hiba", validation));
 
   const { error } = await updateProfileRpc(userId, input);
-  if (error) redirect(resultUrl("hiba", error.code === "P0001" ? error.message : "A felhasználói adatok mentése nem sikerült."));
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A felhasználói adatok mentése nem sikerült.")));
   redirect(resultUrl("uzenet", "A felhasználói adatok elmentve."));
+}
+
+export async function setUserRole(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  const role = String(formData.get("role") ?? "");
+  if (!userId || !["admin", "user"].includes(role)) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy szerepkör."));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_profile_role", {
+    p_user_id: userId,
+    p_role: role,
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A szerepkör mentése nem sikerült.")));
+  redirect(resultUrl("uzenet", "A felhasználó szerepköre elmentve."));
+}
+
+export async function setUserGroupMembership(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  const groupId = uuid(formData.get("groupId"));
+  if (!userId || !groupId) redirect(resultUrl("hiba", "Érvénytelen felhasználó vagy helyiségcsoport."));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_group_member", {
+    p_group_id: groupId,
+    p_user_id: userId,
+    p_is_member: checkboxValue(formData, "isMember"),
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A helyiségcsoport-hozzárendelés mentése nem sikerült.")));
+  redirect(resultUrl("uzenet", "A helyiségcsoport-hozzárendelés elmentve."));
 }
 
 export async function sendPasswordReset(formData: FormData) {
@@ -110,7 +147,7 @@ export async function sendPasswordReset(formData: FormData) {
     p_correlation_id: correlationId,
   });
   if (auditError || typeof email !== "string") {
-    redirect(resultUrl("hiba", auditError?.code === "P0001" ? auditError.message : "Az aktiváló/jelszóbeállító link nem küldhető."));
+    redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető.")));
   }
 
   const siteUrl = requireEnv("SITE_URL");
@@ -153,9 +190,7 @@ export async function importUsersCsv(formData: FormData) {
 
   const headers = rows[0].map((value) => value.trim().toLowerCase());
   const required = ["last_name", "first_name", "email"];
-  if (required.some((name) => !headers.includes(name))) {
-    redirect(resultUrl("hiba", "A CSV kötelező oszlopai: last_name, first_name, email."));
-  }
+  if (required.some((name) => !headers.includes(name))) redirect(resultUrl("hiba", "A CSV kötelező oszlopai: last_name, first_name, email."));
   const index = (name: string) => headers.indexOf(name);
   const value = (row: string[], name: string) => index(name) >= 0 ? String(row[index(name)] ?? "").trim() : "";
 
@@ -168,10 +203,7 @@ export async function importUsersCsv(formData: FormData) {
 
   const duplicateInFile = new Set<string>();
   const seen = new Set<string>();
-  for (const item of prepared) {
-    if (seen.has(item.email)) duplicateInFile.add(item.email);
-    seen.add(item.email);
-  }
+  for (const item of prepared) { if (seen.has(item.email)) duplicateInFile.add(item.email); seen.add(item.email); }
   const invalid = prepared.filter((item) => !item.lastName || !item.firstName || !/^\S+@\S+\.\S+$/.test(item.email) || duplicateInFile.has(item.email));
   if (invalid.length) {
     const details = invalid.slice(0, 5).map((item) => `${item.line}. sor: hibás vagy duplikált név/e-mail`).join("; ");
@@ -183,24 +215,14 @@ export async function importUsersCsv(formData: FormData) {
   if (existingResult.error) redirect(resultUrl("hiba", "A meglévő felhasználók ellenőrzése nem sikerült."));
   const existing = new Map((existingResult.data ?? []).map((profile) => [String(profile.email), String(profile.id)]));
 
-  let created = 0;
-  let skipped = 0;
-  const failures: string[] = [];
+  let created = 0; let skipped = 0; const failures: string[] = [];
   for (const item of prepared) {
     if (existing.has(item.email)) { skipped += 1; continue; }
     const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
-    const createdUser = await admin.auth.admin.createUser({
-      email: item.email,
-      password: temporaryPassword,
-      email_confirm: true,
-      user_metadata: { first_name: item.firstName, last_name: item.lastName },
-    });
-    if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`);
-    else created += 1;
+    const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName } });
+    if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`); else created += 1;
   }
 
-  if (failures.length) {
-    redirect(resultUrl("hiba", `Az import részben sikerült: ${created} új, ${skipped} már létező kihagyva; hibás: ${failures.slice(0, 5).join(", ")}. Automatikus e-mail nem ment ki.`));
-  }
+  if (failures.length) redirect(resultUrl("hiba", `Az import részben sikerült: ${created} új, ${skipped} már létező kihagyva; hibás: ${failures.slice(0, 5).join(", ")}. Automatikus e-mail nem ment ki.`));
   redirect(resultUrl("uzenet", `Import kész: ${created} új felhasználó, ${skipped} már létező kihagyva. Aktiváló e-mail automatikusan nem ment ki.`));
 }
