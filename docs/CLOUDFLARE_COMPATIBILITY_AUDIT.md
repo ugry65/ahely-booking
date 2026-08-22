@@ -11,12 +11,14 @@ Ez a munka kizárólag párhuzamos Cloudflare Workers teszt. A meglévő Vercel 
 
 ## Hivatalos technikai irány
 
-A 2026-08-22-i Cloudflare Workers Next.js dokumentáció az `@opennextjs/cloudflare` adaptert ajánlja. A jelenlegi OpenNext dokumentáció szerint minden Next.js 16 minor/patch verzió támogatott. A Cloudflare oldali futtatás Workers/workerd runtime-ban történik, `nodejs_compat` flaggel.
+A 2026-08-22-i Cloudflare Workers Next.js dokumentáció az `@opennextjs/cloudflare` adaptert ajánlja. A Cloudflare oldali futtatás Workers/workerd runtime-ban történik `nodejs_compat` flaggel.
 
 Hivatalos források:
 - https://developers.cloudflare.com/workers/framework-guides/web-apps/nextjs/
 - https://opennext.js.org/cloudflare
 - https://opennext.js.org/cloudflare/get-started
+- https://github.com/opennextjs/opennextjs-cloudflare/issues/1277
+- https://github.com/opennextjs/opennextjs-cloudflare/issues/1279
 
 A branch által lockolt verziók:
 - `@opennextjs/cloudflare`: 1.20.2
@@ -29,12 +31,12 @@ A branch által lockolt verziók:
 
 - App Router használatban.
 - Nincs `export const runtime = "edge"` deklaráció.
-- Nincs explicit Node runtime deklaráció.
-- OpenNext Node.js runtime modellje ezért illeszkedik a jelenlegi alkalmazáshoz.
+- Nincs explicit Node runtime deklaráció a route-okban.
+- A szerveroldali alkalmazáskód általánosan kompatibilis a Workers `nodejs_compat` rétegével.
 
-### Proxy / middleware
+### Proxy / middleware — BLOKKOLÓ
 
-A Next.js 16 `proxy.ts` a `src/lib/supabase/proxy.ts` session-frissítő rétegét hívja.
+A Next.js 16 `proxy.ts` a `src/lib/supabase/proxy.ts` session-frissítő és route-védelmi rétegét hívja.
 
 A proxy jelenleg:
 - `NextRequest` / `NextResponse` API-kat használ;
@@ -43,9 +45,48 @@ A proxy jelenleg:
 - `supabase.auth.getClaims()` hívást végez;
 - nem használ `fs`-t vagy explicit `node:` importot.
 
-Kockázat: a Cloudflare dokumentáció szerint a Node.js runtime middleware/proxy még nem támogatott. A jelenlegi proxy kód Web/Next kompatibilis API-kat használ, ezért várhatóan működőképes, de ezt OpenNext build + workerd runtime + valódi auth smoke teszttel kötelező bizonyítani.
+A kompatibilitási build azonban empirikusan elbukik OpenNext 1.20.2 + Next.js 16.3.1 kombinációnál. A normál Next.js build sikeres, majd az OpenNext bundle-generálás ezt a hibát adja:
 
-### Node.js-specifikus API / filesystem
+```text
+Error: This error should only happen for static 404 and 500 page from page router.
+File server/middleware.js does not exist
+```
+
+A hiba a `@opennextjs/aws` `copyTracedFiles` / OpenNext Cloudflare bundle-generálási útvonalán történik, közvetlenül a middleware/proxy bundle készítésekor.
+
+Ez összhangban áll az OpenNext jelenleg nyitott #1277 hibájával: a Next.js 16 `proxy.ts` Node.js middleware/proxy konvenció Cloudflare Workers támogatása még nincs kész. A #1279 ugyanezt a hiányzó támogatást írja le, és #1277 duplikátumaként zárták.
+
+### Miért blokkoló az A-Hely számára?
+
+A `proxy.ts` nem opcionális dekoráció: a Supabase session frissítés és a védett route-ok korai auth kezelése fut benne. A Next.js 16 dokumentációban a Proxy a jelenlegi szabványos mechanizmus az ilyen request-előtti auth/routing logikára.
+
+Ezért nem fogadható el olyan Cloudflare-workaround, amely:
+- egyszerűen eltávolítja a proxyt;
+- kikapcsolja a session-frissítést;
+- gyengíti a védett route-ok auth ellenőrzését;
+- OpenNext belső bundle-fájljait kézzel patch-eli;
+- az alkalmazásba Cloudflare-specifikus auth-elágazást épít.
+
+### Lehetséges utak
+
+1. **Várni az OpenNext hivatalos `proxy.ts` támogatására — AJÁNLOTT.**
+   - nincs alkalmazáskód-változás;
+   - nincs auth regresszió;
+   - minimális vendor lock-in;
+   - később ugyanazon tesztbranch friss adapterrel újrafuttatható.
+
+2. **Next.js 15 Maintenance LTS-re visszalépni és Edge middleware-t használni.**
+   - technikailag lehetséges alternatíva lehet;
+   - de az egész projekt framework-verzióját érintené;
+   - jelen feladat céljához aránytalan és kockázatos;
+   - csak külön architekturális döntéssel lenne elfogadható.
+
+3. **OpenNext saját/PR patch használata.**
+   - magas vendor-lock-in és karbantartási kockázat;
+   - auth/security szempontból érzékeny build-runtime patch;
+   - az A-Hely projekthez nem javasolt.
+
+## Node.js-specifikus API / filesystem
 
 A repository audit során nem találtunk alkalmazáskódban:
 - `node:` importot;
@@ -54,19 +95,21 @@ A repository audit során nem találtunk alkalmazáskódban:
 
 Ez kedvező Workers-kompatibilitási jel.
 
-### Server Actions
+## Server Actions
 
-Az alkalmazás több `"use server"` actiont használ, többek között auth, foglalás és admin funkciókhoz. A Cloudflare/OpenNext jelenlegi dokumentáció szerint Server Actions támogatottak. Ezt runtime smoke tesztben külön ellenőrizni kell.
+Az alkalmazás több `"use server"` actiont használ, többek között auth, foglalás és admin funkciókhoz. A Cloudflare/OpenNext dokumentáció szerint Server Actions támogatottak. A bundle-blokkoló miatt runtime smoke tesztjük még nem volt lehetséges.
 
-### Route Handlers
+## Route Handlers
 
-Auth callback és admin CSV export route handlerek vannak. Ezek szabványos Next.js `Request` / `Response` / `NextRequest` / `NextResponse` API-kat használnak. A Cloudflare/OpenNext Route Handlers támogatottként jelölt funkció.
+Auth callback és admin CSV export route handlerek vannak. Ezek szabványos Next.js `Request` / `Response` / `NextRequest` / `NextResponse` API-kat használnak. A normál Next.js build és az OpenNext belső Next-build fázisa ezeket sikeresen fordította.
 
-### Supabase SSR / Auth / cookie
+## Supabase SSR / Auth / cookie
 
 A `src/lib/supabase/server.ts` a `cookies()` Next API-t és az `@supabase/ssr` cookie adaptert használja. A proxy ugyanezt a session modellt követi request/response cookie-kkal.
 
-Nem találtunk Vercel-specifikus auth API-t. Ezért nincs előzetes vendor-lock-in akadály, de valódi Cloudflare preview alatt kötelező ellenőrizni:
+Nem találtunk Vercel-specifikus auth API-t. Maga a Supabase SSR réteg ezért nem azonosított inkompatibilitási ok; a blokkoló az adapter Next.js 16 Proxy támogatása.
+
+Ha a proxy-support később elérhető, preview alatt kötelező ellenőrizni:
 - login;
 - logout;
 - session fennmaradás;
@@ -74,7 +117,7 @@ Nem találtunk Vercel-specifikus auth API-t. Ezért nincs előzetes vendor-lock-
 - auth callback;
 - password-reset redirect.
 
-### Environment változók
+## Environment változók
 
 Cloudflare build/runtime környezetben szükséges:
 - `NEXT_PUBLIC_SUPABASE_URL` – staging Supabase URL;
@@ -84,37 +127,44 @@ Cloudflare build/runtime környezetben szükséges:
 
 A valódi értékek nem kerülhetnek repositoryba vagy logba.
 
-A `SITE_URL` miatt a Cloudflare preview URL-t a Supabase Auth engedélyezett redirect URL-jeihez hozzá kell adni úgy, hogy a Vercel production redirect továbbra is megmaradjon.
+A `SITE_URL` miatt a Cloudflare preview URL-t a Supabase Auth engedélyezett redirect URL-jeihez hozzá kell majd adni úgy, hogy a Vercel production redirect továbbra is megmaradjon.
 
-### Adatbiztonság
+## Adatbiztonság
 
-A kritikus foglalási üzleti logika és ütközésvédelem PostgreSQL/Supabase oldalon marad. A Cloudflare adapter nem változtatja meg:
+A kritikus foglalási üzleti logika és ütközésvédelem PostgreSQL/Supabase oldalon marad. A Cloudflare adapter teszt nem módosította:
 - az adatbázis-szintű overlap védelmet;
 - az RPC jogosultsági ellenőrzéseket;
 - a tranzakciókat;
 - az auditnaplót;
 - a booking concurrency védelmet.
 
-Ez a hosting-kísérlet ezért nem indokol Supabase migrációt.
+Supabase migráció nem történt.
 
-## Előzetes kompatibilitási kockázatok
+## Automatikus teszteredmények
 
-1. **Proxy / auth cookie runtime** – közepes kockázat, tényleges workerd és preview auth teszt szükséges.
-2. **Worker bundle size** – mérendő; Workers Paid limitet a build/deploy output alapján ellenőrizni kell.
-3. **Cloudflare adapter dependency** – technikai vendor adapter, de az üzleti kód szabványos Next.js marad. Visszafordítható: a Wrangler/OpenNext config eltávolítható.
-4. **Caching** – az első tesztben nem vezetünk be R2/Cloudflare-specifikus cache-t. Ez csökkenti a lock-int és a változókat.
-5. **Environment / Auth redirect** – külön staging konfiguráció szükséges; production Vercel URL nem írható felül.
+Exact compatibility commit előtt lockolt Cloudflare dependency-k:
+- `@opennextjs/cloudflare` 1.20.2;
+- `wrangler` 4.125.0;
+- pnpm 11 `allowBuilds` csak `esbuild` és `workerd` számára.
 
-## Előzetes minősítés
+A Cloudflare compatibility workflow eredménye:
+- frozen dependency install: **PASS**;
+- meglévő Vitest: **PASS** — 13 fájl / 67 teszt;
+- TypeScript typecheck: **PASS**;
+- normál Next.js 16.3.1 production build: **PASS**;
+- OpenNext belső Next.js build: **PASS**;
+- OpenNext Cloudflare bundle generation: **FAIL — proxy.ts adapter blocker**;
+- helyi workerd preview: **NOT RUN**, mert a bundle nem készült el;
+- Cloudflare remote preview: **NOT RUN**, mert a build gate nem teljesült.
 
-**Nincs jelenleg azonosított blokkoló inkompatibilitás.**
+## Vercel-kompatibilitás
 
-A végleges minősítés csak az alábbiak után adható:
-- frozen dependency install;
-- meglévő tesztek;
-- TypeScript typecheck;
-- normál Next.js build;
-- OpenNext build;
-- workerd/Wrangler local smoke;
-- Cloudflare preview deployment;
-- valódi staging Supabase auth/session/foglalási smoke.
+A Cloudflare tesztkonfiguráció mellett a normál `next build` továbbra is sikeres. A Vercel-specifikus konfigurációt és production deploymentet nem módosítottuk.
+
+A branch jelenlegi minimális adapter-fájljai eltávolíthatók anélkül, hogy az alkalmazás üzleti kódját érintenék.
+
+## Jelenlegi minősítés
+
+**Cloudflare Workers jelenleg részben kompatibilis, de a Next.js 16 `proxy.ts` támogatás hiánya blokkolja a biztonságos A-Hely deploymentet.**
+
+A jelenlegi állapotban Cloudflare previewt nem szabad létrehozni auth-proxy workarounddal. A tesztet az OpenNext #1277 hivatalos javítása / kiadása után érdemes ugyanerről a pontról megismételni.
