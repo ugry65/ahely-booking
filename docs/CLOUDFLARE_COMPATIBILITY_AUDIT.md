@@ -19,6 +19,8 @@ Hivatalos források:
 - https://opennext.js.org/cloudflare/get-started
 - https://github.com/opennextjs/opennextjs-cloudflare/issues/1277
 - https://github.com/opennextjs/opennextjs-cloudflare/issues/1279
+- https://developers.cloudflare.com/workers/platform/pricing/
+- https://developers.cloudflare.com/workers/platform/limits/
 
 A branch által lockolt verziók:
 - `@opennextjs/cloudflare`: 1.20.2
@@ -142,7 +144,7 @@ Supabase migráció nem történt.
 
 ## Automatikus teszteredmények
 
-Exact compatibility commit előtt lockolt Cloudflare dependency-k:
+Lockolt Cloudflare dependency-k:
 - `@opennextjs/cloudflare` 1.20.2;
 - `wrangler` 4.125.0;
 - pnpm 11 `allowBuilds` csak `esbuild` és `workerd` számára.
@@ -163,8 +165,33 @@ A Cloudflare tesztkonfiguráció mellett a normál `next build` továbbra is sik
 
 A branch jelenlegi minimális adapter-fájljai eltávolíthatók anélkül, hogy az alkalmazás üzleti kódját érintenék.
 
-## Jelenlegi minősítés
+## Cloudflare Workers költségbecslés
 
-**Cloudflare Workers jelenleg részben kompatibilis, de a Next.js 16 `proxy.ts` támogatás hiánya blokkolja a biztonságos A-Hely deploymentet.**
+A 2026-07-07-én frissített hivatalos Cloudflare pricing szerint a Workers Paid minimum díja **5 USD/hó/account**. Ebben benne van:
+- 10 millió Worker request / hónap;
+- 30 millió CPU-ms / hónap;
+- ezen felül 0,30 USD / további 1 millió request;
+- ezen felül 0,02 USD / további 1 millió CPU-ms;
+- adatforgalomra/egressre nincs külön Workers díj.
 
-A jelenlegi állapotban Cloudflare previewt nem szabad létrehozni auth-proxy workarounddal. A tesztet az OpenNext #1277 hivatalos javítása / kiadása után érdemes ugyanerről a pontról megismételni.
+A Cloudflare saját limit-dokumentációja szerint egy átlagos Worker kb. 2,2 ms CPU-t használ requestenként, SSR/auth jellegű nehezebb workload tipikusan 10–20 ms. Az A-Hely kis, belső foglalási alkalmazásának várható forgalma nagyságrendekkel a havi 10 millió request alatt van; még 20 ms CPU/request mellett is kb. 1,5 millió request férne a 30 millió CPU-ms alapkeretbe.
+
+**Költségkövetkeztetés:** a várható A-Hely forgalom mellett nagyon nagy biztonsággal a kb. **5 USD/hó minimum Paid csomagban** maradnánk, feltéve hogy nem vezetünk be nagy forgalmú publikus funkciót vagy indokolatlanul CPU-intenzív SSR-t. A tényleges CPU/request értéket preview/prod monitoringgal később mérni kell.
+
+Paid plan fontos technikai limitek:
+- Worker gzip bundle: 10 MB;
+- memória: 128 MB/isolate;
+- alap HTTP CPU limit 30 s, konfigurálható max. 5 percre;
+- 10 000 subrequest/request.
+
+A bundle méretét a jelenlegi proxy-build blokkoló miatt még nem lehetett hitelesen megmérni.
+
+## Jelenlegi minősítés és ajánlás
+
+**Cloudflare technológiailag ígéretes és várhatóan költséghatékony, de a jelenlegi OpenNext + Next.js 16 `proxy.ts` támogatási hiány miatt az A-Hely alkalmazáshoz MOST nem tekinthető biztonságosan deployolhatónak.**
+
+Jelen állapotban az ajánlás:
+
+**maradjunk Vercelen, és tartsuk meg a Cloudflare tesztbranchet / issue-t későbbi újrapróbálásra.**
+
+A Cloudflare-t akkor érdemes újraértékelni, amikor az OpenNext #1277 hivatalosan javítva és kiadott verzióban elérhető. Akkor ugyanazt a CI → OpenNext build → workerd → preview → auth/session/foglalási smoke folyamatot kell végigfuttatni.
