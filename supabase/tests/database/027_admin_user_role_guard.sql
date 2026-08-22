@@ -1,6 +1,6 @@
 begin;
 
-select plan(9);
+select plan(10);
 
 select has_function('public','admin_set_profile_role',array['uuid','app_role','uuid'],'A szerepkör-admin RPC létezik');
 
