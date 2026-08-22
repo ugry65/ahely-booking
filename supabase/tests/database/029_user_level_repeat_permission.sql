@@ -1,6 +1,15 @@
 begin;
 
-select plan(13);
+select plan(15);
+
+select ok(
+  has_column_privilege('authenticated','public.profiles','can_repeat_bookings','SELECT'),
+  'Az authenticated szerepkör olvashatja a user-szintű repeat flaget az admin UI-hoz'
+);
+select ok(
+  not has_column_privilege('authenticated','public.profiles','can_repeat_bookings','UPDATE'),
+  'Az authenticated szerepkör közvetlenül nem írhatja a repeat flaget'
+);
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000181','repeat-user@example.invalid','{"first_name":"Repeat","last_name":"User"}'),
