@@ -2,8 +2,14 @@ begin;
 
 -- Restore the pre-title RPC signatures without reintroducing overload ambiguity.
 -- The title-aware signatures remain separate explicit APIs, so remove their defaults.
+-- PostgreSQL cannot remove a parameter default with CREATE OR REPLACE, therefore
+-- rebuild only these four public wrappers. They have no dependent database objects.
+drop function public.create_booking(uuid,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid,text);
+drop function public.update_booking(uuid,timestamptz,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid,text);
+drop function public.update_booking_scope(uuid,text,timestamptz,uuid,timestamptz,timestamptz,public.booking_use_type,text,uuid,text);
+drop function public.create_booking_series(uuid,uuid,timestamptz,timestamptz,public.recurrence_frequency,date,integer,date[],public.conflict_policy,public.booking_use_type,text,uuid,text);
 
-create or replace function public.create_booking(
+create function public.create_booking(
   p_room_id uuid, p_user_id uuid, p_start_at timestamptz, p_end_at timestamptz,
   p_use_type public.booking_use_type, p_note text, p_idempotency_key uuid, p_booking_title text
 ) returns uuid language plpgsql security definer set search_path='' as $$
@@ -20,7 +26,7 @@ begin
   return v_id;
 end; $$;
 
-create or replace function public.update_booking(
+create function public.update_booking(
   p_booking_id uuid, p_expected_updated_at timestamptz, p_room_id uuid, p_start_at timestamptz,
   p_end_at timestamptz, p_use_type public.booking_use_type, p_note text, p_idempotency_key uuid,
   p_booking_title text
@@ -38,7 +44,7 @@ begin
   return v_id;
 end; $$;
 
-create or replace function public.update_booking_scope(
+create function public.update_booking_scope(
   p_booking_id uuid, p_scope text, p_expected_updated_at timestamptz, p_room_id uuid,
   p_start_at timestamptz, p_end_at timestamptz, p_use_type public.booking_use_type,
   p_note text, p_idempotency_key uuid, p_booking_title text
@@ -66,7 +72,7 @@ begin
   return v_count;
 end; $$;
 
-create or replace function public.create_booking_series(
+create function public.create_booking_series(
   p_room_id uuid, p_user_id uuid, p_first_start_at timestamptz, p_first_end_at timestamptz,
   p_frequency public.recurrence_frequency, p_ends_on date, p_occurrence_count integer,
   p_exception_dates date[], p_conflict_policy public.conflict_policy, p_use_type public.booking_use_type,
@@ -84,21 +90,21 @@ begin
   return v_result;
 end; $$;
 
-create or replace function public.create_booking(
+create function public.create_booking(
   p_room_id uuid, p_user_id uuid, p_start_at timestamptz, p_end_at timestamptz,
   p_use_type public.booking_use_type, p_note text, p_idempotency_key uuid
 ) returns uuid language sql security definer set search_path='' as $$
   select public.create_booking(p_room_id,p_user_id,p_start_at,p_end_at,p_use_type,p_note,p_idempotency_key,null::text);
 $$;
 
-create or replace function public.update_booking(
+create function public.update_booking(
   p_booking_id uuid, p_expected_updated_at timestamptz, p_room_id uuid, p_start_at timestamptz,
   p_end_at timestamptz, p_use_type public.booking_use_type, p_note text, p_idempotency_key uuid
 ) returns uuid language sql security definer set search_path='' as $$
   select public.update_booking(p_booking_id,p_expected_updated_at,p_room_id,p_start_at,p_end_at,p_use_type,p_note,p_idempotency_key,null::text);
 $$;
 
-create or replace function public.update_booking_scope(
+create function public.update_booking_scope(
   p_booking_id uuid, p_scope text, p_expected_updated_at timestamptz, p_room_id uuid,
   p_start_at timestamptz, p_end_at timestamptz, p_use_type public.booking_use_type,
   p_note text, p_idempotency_key uuid
@@ -106,7 +112,7 @@ create or replace function public.update_booking_scope(
   select public.update_booking_scope(p_booking_id,p_scope,p_expected_updated_at,p_room_id,p_start_at,p_end_at,p_use_type,p_note,p_idempotency_key,null::text);
 $$;
 
-create or replace function public.create_booking_series(
+create function public.create_booking_series(
   p_room_id uuid, p_user_id uuid, p_first_start_at timestamptz, p_first_end_at timestamptz,
   p_frequency public.recurrence_frequency, p_ends_on date, p_occurrence_count integer,
   p_exception_dates date[], p_conflict_policy public.conflict_policy, p_use_type public.booking_use_type,
