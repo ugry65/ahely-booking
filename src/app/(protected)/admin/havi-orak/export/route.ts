@@ -9,7 +9,7 @@ export async function GET(request: Request) {
   const supabase = await createClient();
   const response = await supabase.rpc("admin_monthly_booking_hours", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
   if (response.error) return new Response("A havi óraszám exportálása nem sikerült.", { status: 500 });
-  const csv = monthlyHoursCsv(month, (response.data ?? []) as unknown as MonthlyHoursRow[]);
+  const csv = monthlyHoursCsv((response.data ?? []) as unknown as MonthlyHoursRow[]);
   return new Response(csv, { headers: {
     "Content-Type": "text/csv; charset=utf-8",
     "Content-Disposition": `attachment; filename="a-hely-havi-orak-${month}.csv"`,
