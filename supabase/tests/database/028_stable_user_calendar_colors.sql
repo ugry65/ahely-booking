@@ -2,14 +2,13 @@ begin;
 
 select plan(8);
 
-select ok((select bool_and(calendar_color ~ '^#[0-9A-Fa-f]{6}$') from public.profiles),'Minden meglévő profil érvényes tartós naptárszínt kap');
-
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000181','color-admin@example.invalid','{"first_name":"Color","last_name":"Admin"}'),
  ('00000000-0000-0000-0000-000000000182','color-a@example.invalid','{"first_name":"Color","last_name":"A"}'),
  ('00000000-0000-0000-0000-000000000183','color-b@example.invalid','{"first_name":"Color","last_name":"B"}');
 update public.profiles set role='admin' where id='00000000-0000-0000-0000-000000000181';
 
+select ok((select bool_and(calendar_color ~ '^#[0-9A-Fa-f]{6}$') from public.profiles),'Minden létrejött profil érvényes tartós naptárszínt kap');
 select isnt(
  (select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000182'),
  (select calendar_color from public.profiles where id='00000000-0000-0000-0000-000000000183'),
