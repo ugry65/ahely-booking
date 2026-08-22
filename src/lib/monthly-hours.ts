@@ -9,6 +9,18 @@ export type MonthlyHoursRow = {
   total_hours: number | string;
 };
 
+export type MonthlyBookingDetail = {
+  booking_id: string;
+  user_id: string;
+  user_name: string;
+  booking_date: string;
+  room_name: string;
+  start_time: string;
+  end_time: string;
+  total_minutes: number;
+  total_hours: number | string;
+};
+
 export function validMonth(value: string): boolean {
   return MONTH_PATTERN.test(value);
 }
@@ -22,14 +34,15 @@ export function csvCell(value: string): string {
   return `"${safe.replaceAll('"', '""')}"`;
 }
 
-export function monthlyHoursCsv(month: string, rows: MonthlyHoursRow[]): string {
-  const header = ["Hónap", "Felhasználó", "E-mail", "Foglalások száma", "Összes perc", "Összes óra"];
-  const lines = [header.map(csvCell).join(";")];
+export function decimalComma(value: number | string): string {
+  const number = Number(value);
+  return Number.isFinite(number) ? number.toFixed(2).replace(".", ",") : "0,00";
+}
+
+export function monthlyHoursCsv(rows: MonthlyHoursRow[]): string {
+  const lines = [`${csvCell("Felhasználó")};${csvCell("Összes óra")}`];
   for (const row of rows) {
-    lines.push([
-      month, row.user_name, row.email, String(row.booking_count),
-      String(row.total_minutes), String(row.total_hours),
-    ].map(csvCell).join(";"));
+    lines.push(`${csvCell(row.user_name)};${decimalComma(row.total_hours)}`);
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
