@@ -178,7 +178,7 @@ select lives_ok(
 );
 reset role;
 select is((select count(*) from public.access_group_members where group_id = '16000000-0000-0000-0000-000000000002'), 0::bigint, 'A tagság eltávolítása megtörtént');
-select is((select count(*) from public.audit_logs where correlation_id = '16000000-0000-0000-000000000018'), 1::bigint, 'A tagság eltávolítása auditált');
+select is((select count(*) from public.audit_logs where correlation_id = '16000000-0000-0000-0000-000000000018'), 1::bigint, 'A tagság eltávolítása auditált');
 
 select * from finish();
 rollback;
