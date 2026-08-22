@@ -1,7 +1,7 @@
 # Admin felhasználókezelés – üzleti és technikai szabályok
 
-Állapot: elfogadott üzleti döntés, 2026-08-21.
-Kapcsolódó issue-k: #72, #73.
+Állapot: elfogadott üzleti döntés; frissítve 2026-08-22.
+Kapcsolódó issue-k: #72, #73, #75.
 
 ## Felhasználó létrehozása
 
@@ -64,13 +64,59 @@ Szabályok:
 - a tényleges jelszóbeállítás a Supabase recovery folyamaton történik;
 - első jelszóbeállítás után a user automatikusan a kötelező adatkitöltésre kerül.
 
-## Admin felület egyszerűsítése
+## Felhasználói lista és szerepkör
 
-A hozzáférési csoportok nem részei a cél üzleti modellnek. A helyiségjogok explicit, userenkénti jogosultságok.
+A `Felhasználók` adminoldal elsődleges nézete áttekinthető lista. Legalább a következők látszanak:
+- név;
+- e-mail;
+- telefonszám;
+- hozzárendelt aktív helyiségcsoportok;
+- szerepkör;
+- aktív/inaktív állapot.
 
-A Tréningterem külön admin-checkboxa megszűnik. Egyetlen Tréningterem van, a speciális üzleti szabályokat stabil rendszerazonosítás kezeli.
+Név, e-mail és telefonszám alapján kereshető. A kiválasztott user külön szerkesztő nézetben módosítható.
 
-A más foglalók nevének láthatósága globális beállítás, nem userenkénti kapcsoló. Alapállapotban a nevek láthatók; kikapcsolva más user foglalásánál csak a foglaltság látható, a saját foglalás felismerhető, admin számára az adminisztrációs név látható marad.
+A szerepkör `Normál felhasználó` vagy `Adminisztrátor`. A szerepkör-változás auditált backend művelet. Az utolsó aktív adminisztrátort sem lefokozni, sem deaktiválni nem lehet; ezt adatbázis/backend oldali védelem kényszeríti ki, nem csak a felület.
+
+## Helyiségcsoportok – 2026-08-22-i felülvizsgált döntés
+
+Ez a rész **felülírja** a korábbi döntést, amely szerint nem használunk hozzáférési csoportokat.
+
+A helyiségcsoport célja az adminisztrációs hibák csökkentése: egy userhez nem kell minden szobát külön bejelölni, ha egy üzleti helyszín teljes szobakészletét használhatja.
+
+Kanonikus induló csoportok:
+- `A-Hely`: Gyerek szoba, Pitypang szoba, Csoport szoba;
+- `Másik Hely`: 1.Szoba-családi, 2.Szoba, 3.Szoba, 4.Szoba, 5.Szoba, 6.Szoba;
+- `Tréningterem`: Tréningterem;
+- `Forrás tér`: Forrás tér.
+
+Egy user több helyiségcsoport tagja is lehet.
+
+Az effektív jogosultság:
+
+`közvetlen user–szoba jog + aktív helyiségcsoportokból kapott foglalási jog`
+
+Fontos korlátozás: **helyiségcsoport csak foglalási (`can_book`) jogot adhat. Ismétlődő foglalási (`can_repeat`) jog kizárólag közvetlen user–szoba jogosultság lehet.** Ezt a backend is kikényszeríti.
+
+A meglévő közvetlen jogosultságokat csoport bevezetésekor nem szabad törölni vagy felülírni. Ezek egyedi kivételként továbbra is érvényesek.
+
+A helyiségek és helyiségcsoportok külön `Helyiségek` admin menüben kezelendők. A közvetlen user–szoba kivételek és repeat jogok mindaddig külön kompatibilitási felületen is megmaradnak, amíg az új user-admin folyamat teljesen át nem veszi őket.
+
+## Stabil user-szín a foglalási naptárban
+
+Minden profil tartós `calendar_color` értéket kap. A szín nem oldalbetöltésenként random, hanem ugyanahhoz a userhez stabilan kapcsolódik.
+
+A rendszer 40 színes palettát használ. Az első 40 user lehetőség szerint külön színt kap; később a legkevésbé használt palettaszín ismétlődhet.
+
+Adatvédelmi szabály:
+- admin minden user színét láthatja;
+- normál user a saját foglalásának színét mindig látja;
+- ha a globális `Más foglalók neve látható` beállítás be van kapcsolva, más userek színe is megjelenhet;
+- ha a névláthatóság ki van kapcsolva, más user neve **és stabil színe sem kerülhet ki a backendből**, mert a szín önmagában is azonosításra használható. Ilyenkor mások foglalása semleges `Foglalt` megjelenést kap.
+
+## Naptári névláthatóság
+
+A más foglalók nevének láthatósága globális beállítás, nem userenkénti kapcsoló. Alapállapotban a nevek láthatók; kikapcsolva más user foglalásánál csak a foglaltság látható, a saját foglalás felismerhető, admin számára az adminisztrációs név látható marad. A stabil user-szín ugyanezt az adatvédelmi szabályt követi.
 
 ## Admin foglalás más user nevében
 
