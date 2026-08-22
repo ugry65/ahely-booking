@@ -38,6 +38,8 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000115', 'series-inactive-group@example.invalid', '{"first_name":"Inaktív","last_name":"Csoport"}');
 update public.profiles set role = 'admin'
 where id = '00000000-0000-0000-0000-000000000111';
+update public.profiles set can_repeat_bookings = true
+where id = '00000000-0000-0000-0000-000000000112';
 
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000112', '11000000-0000-0000-0000-000000000001', true, true),
