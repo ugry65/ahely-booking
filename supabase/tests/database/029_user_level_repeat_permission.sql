@@ -1,6 +1,6 @@
 begin;
 
-select plan(12);
+select plan(13);
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000181','repeat-user@example.invalid','{"first_name":"Repeat","last_name":"User"}'),
@@ -59,10 +59,24 @@ select is(
 );
 reset role;
 
+-- Independent-review L1: prove explicitly that a can_book right coming only
+-- from a direct exception receives the same user-level repeat permission.
+insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat)
+select '00000000-0000-0000-0000-000000000181'::uuid,id,true,false
+from public.rooms where name='Forrás tér';
+select is(
+  (select can_repeat
+   from public.effective_room_permissions('00000000-0000-0000-0000-000000000181') permission
+   join public.rooms room on room.id=permission.room_id
+   where room.name='Forrás tér'),
+  true,
+  'A kizárólag közvetlen can_book kivételjog ugyanúgy megkapja a user-szintű repeat jogot'
+);
+
 select is(
   (select count(*)::bigint from public.effective_room_permissions('00000000-0000-0000-0000-000000000181') where can_book and can_repeat),
-  9::bigint,
-  'Az effektív repeat jog minden foglalható normál szobára kiterjed'
+  10::bigint,
+  'Az effektív repeat jog minden foglalható normál szobára és a közvetlen kivételre kiterjed'
 );
 select is(
   (select can_repeat from public.effective_room_permissions('00000000-0000-0000-0000-000000000181') permission join public.rooms room on room.id=permission.room_id where room.name='Tréningterem'),
