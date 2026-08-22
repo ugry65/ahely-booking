@@ -68,8 +68,8 @@ select is(
 select is(
   (select can_repeat from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
    where room_id = '11000000-0000-0000-0000-000000000001'),
-  true,
-  'A csoportból örökölt ismétlési jog egyesül a közvetlen joggal'
+  false,
+  'A helyiségcsoport nem ad ismétlődő foglalási jogot'
 );
 select is(
   (select can_book from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
@@ -87,7 +87,7 @@ select is(
   (select can_book from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
    where room_id = '11000000-0000-0000-0000-000000000003'),
   true,
-  'A csoportos engedély felülírja a közvetlen can_book=false forrást'
+  'A csoportos engedély can_book jogot ad akkor is, ha a közvetlen forrás nem ad foglalási jogot'
 );
 select is(
   (select count(*) from public.effective_room_permissions('00000000-0000-0000-0000-000000000101')
@@ -142,7 +142,7 @@ begin
     explain (format json)
     select group_permission.room_id,
            group_permission.can_book,
-           group_permission.can_repeat
+           false as can_repeat
     from public.access_group_members membership
     join public.access_groups access_group
       on access_group.id = membership.group_id
