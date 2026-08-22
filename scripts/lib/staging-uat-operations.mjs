@@ -1,5 +1,3 @@
-import { budapestDatePlusDays } from './staging-uat-bootstrap.mjs';
-
 export const ROOM_IDS = {
   training: '11000000-0000-0000-0000-000000000001',
   room1: '11000000-0000-0000-0000-000000000002',
@@ -55,7 +53,7 @@ function must(error, context) {
   if (error) throw new Error(`${context}: ${error.message}`);
 }
 
-export async function bootstrapUat(client, resetEmail, password, now = new Date()) {
+export async function bootstrapUat(client, resetEmail, password) {
   const specs = uatSpecs(resetEmail);
   const existingUsers = await listAllUsers(client.auth.admin);
   const ids = {};
@@ -95,18 +93,7 @@ export async function bootstrapUat(client, resetEmail, password, now = new Date(
   const { error: permissionError } = await client.from('user_room_permissions').upsert(permissions, { onConflict: 'user_id,room_id' });
   must(permissionError, 'UAT helyiségjogok létrehozása');
 
-  const exceptionDate = budapestDatePlusDays(20, now);
-  const { error: exceptionError } = await client.from('calendar_exceptions').upsert({
-    service_date: exceptionDate,
-    opens_at: null,
-    closes_at: null,
-    is_closed: true,
-    reason: 'UAT zárt kivételdátum',
-    created_by: ids.admin,
-  }, { onConflict: 'service_date' });
-  must(exceptionError, 'UAT kivételdátum létrehozása');
-
-  return { ids, exceptionDate };
+  return { ids };
 }
 
 export async function verifyUat(client, resetEmail) {
@@ -148,13 +135,6 @@ export async function verifyUat(client, resetEmail) {
   must(forbiddenError, 'Tiltott helyiségjog ellenőrzése');
   if (forbiddenPermission?.can_book) throw new Error('USER-A nem kaphat foglalási jogot a tiltott UAT helyiségre.');
 
-  const { data: exceptions, error: exceptionError } = await client.from('calendar_exceptions')
-    .select('service_date,is_closed,reason')
-    .eq('reason', 'UAT zárt kivételdátum')
-    .eq('is_closed', true)
-    .limit(1);
-  must(exceptionError, 'UAT kivételdátum ellenőrzése');
-  if (!exceptions.length) throw new Error('Hiányzik az UAT zárt kivételdátum.');
 
   return true;
 }

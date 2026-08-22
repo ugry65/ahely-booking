@@ -27,13 +27,17 @@ export async function login(formData: FormData) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_active")
+    .select("is_active,role,onboarding_completed_at")
     .eq("id", data.user.id)
-    .maybeSingle<{ is_active: boolean }>();
+    .maybeSingle<{ is_active: boolean; role: "admin" | "user"; onboarding_completed_at: string | null }>();
 
   if (!profile?.is_active) {
     await supabase.auth.signOut({ scope: "local" });
     redirect(destination("/belepes", "hiba", "A hozzáférés nem aktív. Kérjük, fordulj az adminisztrátorhoz."));
+  }
+
+  if (profile.role !== "admin" && !profile.onboarding_completed_at) {
+    redirect("/adatok-megadasa");
   }
 
   redirect("/foglalasok");
@@ -67,10 +71,24 @@ export async function updatePassword(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const userId = claims?.claims?.sub;
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
     redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó módosítása nem sikerült."));
+  }
+
+  if (userId) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role,onboarding_completed_at")
+      .eq("id", userId)
+      .maybeSingle<{ role: "admin" | "user"; onboarding_completed_at: string | null }>();
+
+    if (profile?.role !== "admin" && !profile?.onboarding_completed_at) {
+      redirect("/adatok-megadasa");
+    }
   }
 
   redirect(destination("/belepes", "uzenet", "A jelszó frissült, most már bejelentkezhetsz."));

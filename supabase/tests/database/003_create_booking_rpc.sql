@@ -468,16 +468,9 @@ select lives_ok(
 update public.app_settings set value = '30'::jsonb where key = 'slot_minutes';
 update public.app_settings set value = '60'::jsonb where key = 'minimum_booking_minutes';
 
-insert into public.calendar_exceptions (service_date, is_closed, reason, created_by) values (
-  (clock_timestamp() at time zone 'Europe/Budapest')::date + 3,
-  true,
-  'RPC teszt zárva tartás',
-  '00000000-0000-0000-0000-000000000021'
-);
-
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
-select throws_ok(
+select lives_ok(
   format(
     $sql$select public.create_booking(
       '11000000-0000-0000-0000-000000000002',
@@ -488,16 +481,14 @@ select throws_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '14:00') at time zone 'Europe/Budapest',
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '15:00') at time zone 'Europe/Budapest'
   ),
-  'P0001',
-  'A kiválasztott napon az A-Hely zárva tart.',
-  'A kivételdátum szerinti zárva tartás felülírja a heti nyitvatartást'
+  'A hét minden napja foglalható a napi 07:00–22:00 idősávban'
 );
 reset role;
 
 select is(
   (select count(*) from public.audit_logs where correlation_id = '14000000-0000-0000-0000-000000000018'),
-  0::bigint,
-  'Sikertelen foglalás után nincs félkész auditrekord'
+  1::bigint,
+  'A minden napra érvényes foglalás auditrekordja létrejön'
 );
 select is(
   (select count(*) from public.outbox_events where payload ->> 'booking_id' is null),

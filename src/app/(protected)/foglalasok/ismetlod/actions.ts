@@ -11,18 +11,20 @@ function resultUrl(kind: "hiba" | "sorozat", value: string) { return `/foglalaso
 
 export async function createRecurringBooking(formData: FormData) {
   const profile = await requireActiveProfile();
-  const keys = ["roomId", "date", "startTime", "endTime", "useType", "note", "idempotencyKey", "frequency", "endMode", "endsOn", "occurrenceCount", "exceptionDates", "conflictPolicy"];
+  const keys = ["roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey", "frequency", "endMode", "endsOn", "occurrenceCount", "exceptionDates", "conflictPolicy"];
   const parsed = parseRecurringBookingForm(Object.fromEntries(keys.map((key) => [key, String(formData.get(key) ?? "")])));
   if (!parsed.ok) redirect(resultUrl("hiba", parsed.error));
   const value = parsed.value;
+  const requestedTarget = String(formData.get("targetUserId") ?? "");
+  const userId = profile.role === "admin" && UUID_PATTERN.test(requestedTarget) ? requestedTarget : profile.id;
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("create_booking_series", {
-    p_room_id: value.roomId, p_user_id: profile.id,
+    p_room_id: value.roomId, p_user_id: userId,
     p_first_start_at: value.firstStartAt, p_first_end_at: value.firstEndAt,
     p_frequency: value.frequency, p_ends_on: value.endsOn,
     p_occurrence_count: value.occurrenceCount, p_exception_dates: value.exceptionDates,
     p_conflict_policy: value.conflictPolicy, p_use_type: value.useType,
-    p_note: value.note, p_idempotency_key: value.idempotencyKey,
+    p_note: value.note, p_idempotency_key: value.idempotencyKey, p_booking_title: value.bookingTitle,
   });
   if (error) {
     const message = error.code === "P0001" && error.message.length <= 300 ? error.message : "A foglalási sorozat létrehozása nem sikerült. Kérlek, próbáld újra.";

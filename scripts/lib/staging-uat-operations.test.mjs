@@ -7,7 +7,6 @@ function createFakeClient(resetEmail) {
     profiles: [],
     rooms: [],
     permissions: [],
-    exceptions: [],
   };
   let nextId = 1;
 
@@ -96,31 +95,6 @@ function createFakeClient(resetEmail) {
       };
     }
 
-    if (table === 'calendar_exceptions') {
-      return {
-        async upsert(row) {
-          state.exceptions = [row];
-          return { error: null };
-        },
-        select() {
-          const filters = {};
-          const chain = {
-            eq(column, value) {
-              filters[column] = value;
-              return chain;
-            },
-            async limit() {
-              const data = state.exceptions.filter((item) =>
-                Object.entries(filters).every(([key, value]) => item[key] === value),
-              );
-              return { data, error: null };
-            },
-          };
-          return chain;
-        },
-      };
-    }
-
     throw new Error(`Unexpected table: ${table}`);
   }
 
@@ -128,7 +102,7 @@ function createFakeClient(resetEmail) {
 }
 
 describe('staging UAT mutating and verification operations', () => {
-  it('bootstraps the five identities, permissions and closed exception idempotently enough for verify', async () => {
+  it('bootstraps the five identities and permissions idempotently enough for verify', async () => {
     const resetEmail = 'uat-reset@example.test';
     const { client, state } = createFakeClient(resetEmail);
 
@@ -141,7 +115,6 @@ describe('staging UAT mutating and verification operations', () => {
     expect(state.rooms).toHaveLength(5);
     expect(state.permissions.some((item) => item.user_id === result.ids.userA && item.room_id === ROOM_IDS.forbidden && item.can_book)).toBe(false);
     expect(state.permissions.some((item) => item.user_id === result.ids.userA && item.room_id === ROOM_IDS.room1 && item.can_repeat)).toBe(true);
-    expect(state.exceptions).toEqual([expect.objectContaining({ is_closed: true, reason: 'UAT zárt kivételdátum', created_by: result.ids.admin })]);
 
     await expect(verifyUat(client, resetEmail)).resolves.toBe(true);
   });

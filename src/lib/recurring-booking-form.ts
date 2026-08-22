@@ -5,7 +5,7 @@ export type ConflictPolicy = "abort_all" | "create_available";
 export type RecurringBookingRequest = {
   roomId: string; firstStartAt: string; firstEndAt: string; frequency: RecurrenceFrequency;
   endsOn: string | null; occurrenceCount: number | null; exceptionDates: string[];
-  conflictPolicy: ConflictPolicy; useType: BookingUseType; note: string | null;
+  conflictPolicy: ConflictPolicy; useType: BookingUseType; note: string | null; bookingTitle: string | null;
   idempotencyKey: string; date: string;
 };
 export type RecurringFormResult = { ok: true; value: RecurringBookingRequest } | { ok: false; error: string };
@@ -41,7 +41,7 @@ export function parseRecurringBookingForm(input: Record<string, string>): Recurr
   return { ok: true, value: {
     roomId: base.value.roomId, firstStartAt: base.value.startAt, firstEndAt: base.value.endAt,
     frequency, endsOn, occurrenceCount, exceptionDates, conflictPolicy,
-    useType: base.value.useType, note: base.value.note, idempotencyKey: base.value.idempotencyKey,
+    useType: base.value.useType, note: base.value.note, bookingTitle: base.value.bookingTitle, idempotencyKey: base.value.idempotencyKey,
     date: base.value.date,
   } };
 }

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { checkboxValue } from "@/lib/form-values";
-import { parseGroupForm, parsePair, parseRoomForm, validatePermission } from "@/lib/room-access-form";
+import { parsePair, parseRoomForm, validatePermission } from "@/lib/room-access-form";
 import { createClient } from "@/lib/supabase/server";
 
 function resultUrl(kind: "hiba" | "uzenet", message: string) {
@@ -30,24 +30,19 @@ export async function saveRoom(formData: FormData) {
   });
   if (!parsed.ok) redirect(resultUrl("hiba", parsed.error));
   const supabase = await createClient();
+
+  let isTrainingRoom = parsed.value.name.trim().toLocaleLowerCase("hu-HU") === "tréningterem";
+  if (parsed.value.roomId) {
+    const { data: existing } = await supabase.from("rooms").select("is_training_room").eq("id", parsed.value.roomId).maybeSingle<{ is_training_room: boolean }>();
+    if (existing) isTrainingRoom = existing.is_training_room;
+  }
+
   const { error } = await supabase.rpc("admin_upsert_room", {
     p_room_id: parsed.value.roomId, p_name: parsed.value.name, p_display_order: parsed.value.displayOrder,
-    p_is_training_room: checkboxValue(formData, "isTrainingRoom"),
+    p_is_training_room: isTrainingRoom,
     p_is_active: checkboxValue(formData, "isActive"), p_correlation_id: crypto.randomUUID(),
   });
   await finish(error, "A helyiség adatai elmentve.", "A helyiség mentése nem sikerült.");
-}
-
-export async function saveGroup(formData: FormData) {
-  await requireAdmin();
-  const parsed = parseGroupForm({ groupId: String(formData.get("groupId") ?? ""), name: String(formData.get("name") ?? "") });
-  if (!parsed.ok) redirect(resultUrl("hiba", parsed.error));
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("admin_upsert_access_group", {
-    p_group_id: parsed.value.groupId, p_name: parsed.value.name,
-    p_is_active: checkboxValue(formData, "isActive"), p_correlation_id: crypto.randomUUID(),
-  });
-  await finish(error, "A hozzáférési csoport elmentve.", "A csoport mentése nem sikerült.");
 }
 
 export async function saveUserRoomPermission(formData: FormData) {
@@ -63,31 +58,4 @@ export async function saveUserRoomPermission(formData: FormData) {
     p_can_book: canBook, p_can_repeat: canRepeat, p_correlation_id: crypto.randomUUID(),
   });
   await finish(error, "A közvetlen helyiségjog elmentve.", "A közvetlen helyiségjog mentése nem sikerült.");
-}
-
-export async function saveGroupMember(formData: FormData) {
-  await requireAdmin();
-  const pair = parsePair(String(formData.get("groupId") ?? ""), String(formData.get("userId") ?? ""));
-  if (!pair.ok) redirect(resultUrl("hiba", pair.error));
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("admin_set_group_member", {
-    p_group_id: pair.value.firstId, p_user_id: pair.value.secondId,
-    p_is_member: checkboxValue(formData, "isMember"), p_correlation_id: crypto.randomUUID(),
-  });
-  await finish(error, "A csoporttagság elmentve.", "A csoporttagság mentése nem sikerült.");
-}
-
-export async function saveGroupRoomPermission(formData: FormData) {
-  await requireAdmin();
-  const pair = parsePair(String(formData.get("groupId") ?? ""), String(formData.get("roomId") ?? ""));
-  const canBook = checkboxValue(formData, "canBook"); const canRepeat = checkboxValue(formData, "canRepeat");
-  const permission = validatePermission(canBook, canRepeat);
-  if (!pair.ok) redirect(resultUrl("hiba", pair.error));
-  if (!permission.ok) redirect(resultUrl("hiba", permission.error));
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("admin_set_group_room_permission", {
-    p_group_id: pair.value.firstId, p_room_id: pair.value.secondId,
-    p_can_book: canBook, p_can_repeat: canRepeat, p_correlation_id: crypto.randomUUID(),
-  });
-  await finish(error, "A csoport helyiségjoga elmentve.", "A csoport helyiségjogának mentése nem sikerült.");
 }
