@@ -61,13 +61,15 @@ select is(
   'A közvetlen user-szintű repeat jog a csoporttagság mellett is megmarad'
 );
 
+select set_config('ahely_test.group_id',(select id::text from public.access_groups where name='A-Hely'),true);
+select set_config('ahely_test.room_id',(select id::text from public.rooms where name='Gyerek szoba'),true);
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000162',true);
 select throws_ok(
   format(
     $sql$select public.admin_set_group_room_permission(%L::uuid,%L::uuid,true,true,'27000000-0000-0000-0000-000000000161'::uuid)$sql$,
-    (select id from public.access_groups where name='A-Hely'),
-    (select id from public.rooms where name='Gyerek szoba')
+    current_setting('ahely_test.group_id'),
+    current_setting('ahely_test.room_id')
   ),
   '22023',
   'Helyiségcsoport nem adhat ismétlődő foglalási jogosultságot.',
