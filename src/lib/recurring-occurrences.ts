@@ -26,6 +26,10 @@ function addMonthsClamped(value: string, months: number) {
   return isoDate(new Date(Date.UTC(monthStart.getUTCFullYear(), monthStart.getUTCMonth(), Math.min(day, lastDay))));
 }
 
+function dayDistance(from: string, to: string) {
+  return (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000;
+}
+
 export function recurringOccurrenceDate(firstDate: string, frequency: PreviewFrequency, zeroBasedIndex: number) {
   if (!validDate(firstDate) || zeroBasedIndex < 0 || !Number.isInteger(zeroBasedIndex)) return null;
   if (frequency === "daily") return addDays(firstDate, zeroBasedIndex);
@@ -46,10 +50,12 @@ export function buildRecurringOccurrenceDates(input: {
   if (input.endMode === "count") {
     const count = input.occurrenceCount ?? 0;
     if (!Number.isInteger(count) || count < 1 || count > 400) return [];
+    const lastDate = recurringOccurrenceDate(input.firstDate, input.frequency, count - 1);
+    if (!lastDate || dayDistance(input.firstDate, lastDate) > 366) return [];
     return Array.from({ length: count }, (_, index) => recurringOccurrenceDate(input.firstDate, input.frequency, index)).filter((value): value is string => Boolean(value));
   }
 
-  if (!input.endsOn || !validDate(input.endsOn) || input.endsOn < input.firstDate) return [];
+  if (!input.endsOn || !validDate(input.endsOn) || input.endsOn < input.firstDate || dayDistance(input.firstDate, input.endsOn) > 366) return [];
   const dates: string[] = [];
   for (let index = 0; index < 400; index += 1) {
     const date = recurringOccurrenceDate(input.firstDate, input.frequency, index);

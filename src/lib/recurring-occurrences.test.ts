@@ -23,4 +23,12 @@ describe("recurring occurrence preview", () => {
     expect(buildRecurringOccurrenceDates({ firstDate: "2026-08-24", frequency: "weekly", endMode: "count", occurrenceCount: 0 })).toEqual([]);
     expect(buildRecurringOccurrenceDates({ firstDate: "2026-08-24", frequency: "weekly", endMode: "count", occurrenceCount: 401 })).toEqual([]);
   });
+
+  it("enforces the same 366-day cap as the booking backend", () => {
+    expect(buildRecurringOccurrenceDates({ firstDate: "2026-08-24", frequency: "weekly", endMode: "count", occurrenceCount: 53 })).toHaveLength(53);
+    expect(buildRecurringOccurrenceDates({ firstDate: "2026-08-24", frequency: "weekly", endMode: "count", occurrenceCount: 54 })).toEqual([]);
+    expect(buildRecurringOccurrenceDates({ firstDate: "2026-01-31", frequency: "monthly", endMode: "count", occurrenceCount: 13 })).toHaveLength(13);
+    expect(buildRecurringOccurrenceDates({ firstDate: "2026-01-31", frequency: "monthly", endMode: "count", occurrenceCount: 14 })).toEqual([]);
+    expect(buildRecurringOccurrenceDates({ firstDate: "2026-08-24", frequency: "daily", endMode: "date", endsOn: "2027-08-26" })).toEqual([]);
+  });
 });
