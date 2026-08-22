@@ -11,6 +11,7 @@ export type MyBooking = {
   end_at: string;
   use_type: "individual" | "group";
   note: string | null;
+  booking_title: string | null;
   series_id: string | null;
   updated_at: string;
 };
@@ -39,17 +40,7 @@ export function timeOptions() {
   });
 }
 
-export function BookingManagement({
-  booking,
-  rooms,
-  returnTo,
-  closeHref,
-}: {
-  booking: MyBooking;
-  rooms: BookableRoom[];
-  returnTo: string;
-  closeHref?: string;
-}) {
+export function BookingManagement({ booking, rooms, returnTo, closeHref }: { booking: MyBooking; rooms: BookableRoom[]; returnTo: string; closeHref?: string }) {
   const date = budapestDateFromIso(booking.start_at);
   const start = budapestTimeFromIso(booking.start_at);
   const end = budapestTimeFromIso(booking.end_at);
@@ -61,6 +52,7 @@ export function BookingManagement({
         <p className="eyebrow">{booking.series_id ? "Ismétlődő sorozat alkalma" : "Egyedi foglalás"}</p>
         <h2>{booking.room_name}</h2>
         <p><strong>{dateLabel(booking.start_at)}, {start}–{end}</strong> · {booking.use_type === "group" ? "Csoportos" : "Egyéni"}</p>
+        {booking.booking_title ? <p><strong>{booking.booking_title}</strong></p> : null}
         {booking.note ? <p className="muted">{booking.note}</p> : null}
       </div>
       {closeHref ? <Link className="button secondary" href={closeHref}>Bezárás</Link> : null}
@@ -77,6 +69,8 @@ export function BookingManagement({
         <label>Dátum<input name="date" type="date" required defaultValue={date} /></label>
         <BookingTimeFields options={times} initialStartTime={start} initialEndTime={end} />
         <label>Használat<select name="useType" defaultValue={booking.use_type}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
+        <label>Foglalás címe<input name="bookingTitle" maxLength={100} defaultValue={booking.booking_title ?? ""} placeholder="Opcionális" /></label>
+        <span className="muted form-help">A címet csak te és az adminisztrátorok láthatják.</span>
         <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={booking.note ?? ""} /></label>
         <button type="submit">Módosítás mentése</button>
       </form>
