@@ -1,0 +1,38 @@
+name: Cloudflare dependency resolution
+
+on:
+  push:
+    branches: [chore/cloudflare-deployment-test]
+    paths:
+      - ".github/workflows/cloudflare-dependency-resolution.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Resolve current official Cloudflare packages
+        run: |
+          pnpm add --save-exact @opennextjs/cloudflare@latest
+          pnpm add --save-dev --save-exact wrangler@latest
+          node -e "const p=require('./package.json'); console.log('opennext=',p.dependencies['@opennextjs/cloudflare']); console.log('wrangler=',p.devDependencies.wrangler)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-resolved-dependencies
+          path: |
+            package.json
+            pnpm-lock.yaml
+          if-no-files-found: error
+          retention-days: 1
