@@ -54,11 +54,12 @@ select is(
 );
 
 insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat)
-select '00000000-0000-0000-0000-000000000161'::uuid,id,true,true from public.rooms where name='Gyerek szoba';
+select '00000000-0000-0000-0000-000000000161'::uuid,id,true,false from public.rooms where name='Gyerek szoba';
+update public.profiles set can_repeat_bookings=true where id='00000000-0000-0000-0000-000000000161';
 select is(
   (select can_repeat from public.effective_room_permissions('00000000-0000-0000-0000-000000000161') permission join public.rooms room on room.id=permission.room_id where room.name='Gyerek szoba'),
   true,
-  'A közvetlen user-szintű repeat jog a csoporttagság mellett is megmarad'
+  'A user-szintű repeat jog a csoporttagság és közvetlen can_book mellett is megmarad'
 );
 
 select set_config('ahely_test.group_id',(select id::text from public.access_groups where name='A-Hely'),true);
