@@ -40,11 +40,9 @@ A régi `user_room_permissions.can_repeat` mező adatvesztés elkerülése miatt
 
 Migrációkor bármely korábbi `can_repeat=true` közvetlen jog a user `can_repeat_bookings=true` profiljogát kapcsolja be, így meglévő repeat jogosultság nem vész el.
 
-A támogatott régi kompatibilitási út az auditált `admin_set_user_room_permission(...)` RPC. Az ezen az RPC-n érkező `can_repeat=true` jelzés ugyanabban a tranzakcióban user-szintű repeat jogot kapcsol be. Közvetlen `authenticated` kliens-táblaírás a `user_room_permissions` táblára nincs engedélyezve és nem támogatott.
+A támogatott legacy kompatibilitási út az auditált `admin_set_user_room_permission(...)` RPC. Az ezen keresztül érkező `can_repeat=true` a user-szintű repeat jogot bekapcsolja. Közvetlen kliensoldali `user_room_permissions` táblaírás nem támogatott. Explicit user-szintű repeat kikapcsolás a stale legacy `can_repeat=true` értékeket is törli.
 
-Explicit user-szintű repeat kikapcsolás a stale legacy `can_repeat=true` értékeket is törli.
-
-A user-szintű repeat módosítás és a legacy room-permission RPC közös, profile-first determinisztikus tranzakciós zársorrendet használ, és külön concurrency regressziós teszt védi. A legacy RPC által kiváltott profil-repeat bekapcsolás is auditált.
+A user-szintű repeat módosítás és a legacy room-permission RPC közös, determinisztikus, profile-first tranzakciós zársorrendet használ, és külön concurrency regressziós teszt védi.
 
 ## Adat- és jogosultságbiztonsági kapuk
 
@@ -60,13 +58,21 @@ A #65 változtatásnál kötelező:
 
 ## Staging ellenőrzés – 2026-08-22
 
-A `202608220016_user_level_repeat_permission.sql` migráció előtt és után:
+A `202608220016_user_level_repeat_permission.sql` migráció után:
 - 7 közvetlen user–szoba jogosultsági rekord maradt;
 - a közvetlen jogosultságok checksumja változatlan maradt;
 - a 2 korábbi legacy repeat user pontosan ugyanaz a 2 user lett user-szintű repeat jogosult;
 - egyik normál user sem kapott effektív Tréningterem repeat jogot.
 
-A belső review után a `202608220017_remove_direct_repeat_promotion_trigger.sql` külön kiegészítő migráció a nem támogatott direkt table-trigger utat eltávolítja, és a legacy promóciót kizárólag az auditált, profile-first admin RPC-ben tartja meg.
+A `202608220017_remove_direct_repeat_promotion_trigger.sql` staging alkalmazása előtt és után:
+- profiles: 5 → 5;
+- direct user-room permissions: 7 → 7;
+- legacy `can_repeat=true`: 2 → 2;
+- profile-level repeat enabled: 2 → 2;
+- group memberships: 2 → 2;
+- direct permission checksum változatlan: `d0d2eab502eeb2b09827bd0eb08b8372`;
+- nem támogatott promotion trigger: 1 → 0;
+- külön `service_role` EXECUTE grant az admin repeat RPC-n: true → false.
 
 Rollbackos staging backend-UAT PASS:
 - repeat-jogos normál user normál szobában 90 napon belül sorozatot hozhat létre;
@@ -75,8 +81,29 @@ Rollbackos staging backend-UAT PASS:
 - normál user 90 napot túllépő sorozata tiltott és atomian visszagördül;
 - admin 90 napon túl normál szobában sorozatot hozhat létre;
 - admin 10 napon túl Tréningterem-sorozatot hozhat létre;
-- a rollback után nem maradt próba booking, booking_series vagy audit rekord.
+- a `017` után a támogatott legacy admin RPC `can_repeat=true` továbbra is user-szintű repeat jogot kapcsol be és két auditrekordot ír (profil-promóció + room permission);
+- rollback után nem maradt próba booking, booking_series, permission, profil vagy audit rekord.
 
-## Nyitott külön kérdés
+## Független review – PR #77
 
-A meglévő sorozatmotor technikai maximuma jelenleg 400 alkalom / 366 nap. A #65 adminszabály biztosan azt jelenti, hogy az adminra nem vonatkozik a normál user 90/10 napos előrefoglalási limit. A 400/366 technikai korlát teljes eltávolítása külön üzleti/terhelési döntést igényel, ezért ezt a #65 jogosultsági korrekció nem változtatja meg automatikusan.
+A független Claude security/authorization/concurrency review eredménye: **APPROVE**.
+
+- CRITICAL: nincs
+- HIGH: nincs
+- MEDIUM: nincs
+- LOW: 2 megfigyelés, mindkettő merge előtt lezárva
+
+Lezárások:
+1. külön direct-only `can_book` → user-szintű repeat regressziós teszt bekerült;
+2. a felesleges `service_role` EXECUTE grant lekerült az admin repeat RPC-ről, és ezt külön regressziós teszt védi.
+
+A review-fixek utáni teljes validáció a `309c37555872dc93c84a4060ac9b581c6f04531b` kód/test headen:
+- Application checks #257 PASS;
+- Database tests #231 PASS;
+- 31 pgTAP fájl / 420 teszt PASS;
+- booking, mutation, room-access, recurring, last-admin, calendar-color és repeat-permission concurrency PASS;
+- DB lint PASS.
+
+## Nyitott külön üzleti kérdés
+
+A meglévő sorozatmotor technikai maximuma jelenleg 400 alkalom / 366 nap. Az admin 90/10 napos normál-user előrefoglalási limitet már bypassolja. Annak eldöntése, hogy a „tetszőleges hosszúságú admin sorozat” szó szerint jelentse-e a 400/366 technikai plafon eltávolítását vagy emelését is, külön üzleti/terhelési döntés.
