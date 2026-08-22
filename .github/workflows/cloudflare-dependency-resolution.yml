@@ -25,9 +25,9 @@ jobs:
       - name: Explicitly allow required binary install scripts
         run: |
           cat > pnpm-workspace.yaml <<'YAML'
-          onlyBuiltDependencies:
-            - esbuild
-            - workerd
+          allowBuilds:
+            esbuild: true
+            workerd: true
           YAML
       - name: Resolve current official Cloudflare packages
         run: |
