@@ -59,7 +59,7 @@ export function RecurringExceptionCalendar() {
   }, [occurrenceDates]);
 
   const selectedDates = [...selected].sort();
-  const createdCount = Math.max(0, occurrenceDates.length - selectedDates.length);
+  const remainingCount = Math.max(0, occurrenceDates.length - selectedDates.length);
 
   function toggle(date: string) {
     setSelected((current) => {
@@ -77,7 +77,7 @@ export function RecurringExceptionCalendar() {
     </div>
 
     {occurrenceDates.length ? <>
-      <p className={styles.summary}><strong>{createdCount}</strong> alkalom létrejön, <strong>{selectedDates.length}</strong> alkalom kimarad.</p>
+      <p className={styles.summary}><strong>{remainingCount}</strong> alkalom marad a sorozatban, <strong>{selectedDates.length}</strong> alkalom kivételként kimarad.</p>
       <div className={styles.months}>
         {months.map((group) => {
           const blanks = mondayIndex(group.year, group.month);
