@@ -12,6 +12,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000152', 'repeat-ui-inactive@example.invalid', '{"first_name":"Inaktív","last_name":"User"}'),
   ('00000000-0000-0000-0000-000000000153', 'repeat-ui-other@example.invalid', '{"first_name":"Másik","last_name":"User"}');
 update public.profiles set is_active = false where id = '00000000-0000-0000-0000-000000000152';
+update public.profiles set can_repeat_bookings = true where id = '00000000-0000-0000-0000-000000000151';
 insert into public.user_room_permissions (user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000002', true, true),
   ('00000000-0000-0000-0000-000000000151', '11000000-0000-0000-0000-000000000003', true, false),
