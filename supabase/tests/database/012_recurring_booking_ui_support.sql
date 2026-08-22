@@ -33,8 +33,11 @@ insert into public.booking_series (
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000151', true);
 select is((select array_agg(room_id order by display_order) from public.list_repeatable_rooms()),
-  array['11000000-0000-0000-0000-000000000002'::uuid],
-  'Normál usernek csak can_repeat helyiség látszik, a Tréningterem nem');
+  array[
+    '11000000-0000-0000-0000-000000000002'::uuid,
+    '11000000-0000-0000-0000-000000000003'::uuid
+  ],
+  'User-szintű repeat joggal minden foglalható normál helyiség látszik, a Tréningterem nem');
 select throws_ok($$select public.get_my_booking_series_result('33000000-0000-0000-0000-000000000151')$$,
   '42501', 'A foglalási sorozat nem található.', 'Más user sorozatának eredménye nem olvasható');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000152', true);
