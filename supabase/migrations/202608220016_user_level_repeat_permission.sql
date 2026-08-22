@@ -229,6 +229,11 @@ begin
     raise exception 'A helyiség nem található.' using errcode = 'P0001';
   end if;
 
+  -- Keep a single lock order for the canonical user-level repeat switch and
+  -- legacy room-level compatibility writes: profile first, room second.
+  perform pg_advisory_xact_lock(hashtextextended(
+    'profile_repeat_permission:' || p_user_id::text, 0
+  ));
   perform pg_advisory_xact_lock(hashtextextended(
     'user_room_permission:' || p_user_id::text || ':' || p_room_id::text, 0
   ));
