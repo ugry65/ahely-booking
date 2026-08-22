@@ -12,6 +12,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-000000000172', 'calendar-other-user@example.invalid', '{"first_name":"Calendar","last_name":"Other"}'),
   ('00000000-0000-0000-0000-000000000173', 'calendar-admin@example.invalid', '{"first_name":"Calendar","last_name":"Admin"}');
 update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000173';
+update public.profiles set can_repeat_bookings = true where id = '00000000-0000-0000-0000-000000000171';
 insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat) values
   ('00000000-0000-0000-0000-000000000171','11000000-0000-0000-0000-000000000002',true,true),
   ('00000000-0000-0000-0000-000000000171','11000000-0000-0000-0000-000000000001',true,true),
