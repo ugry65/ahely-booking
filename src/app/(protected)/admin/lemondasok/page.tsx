@@ -32,6 +32,8 @@ export default async function CancellationsPage({ searchParams }: { searchParams
     p_end_month: monthStart(endMonth)!, p_months: period, p_user_id: selectedUserId,
   }).returns<CancellationDetailRow[]>();
   const details = (detailsResponse.data ?? []) as unknown as CancellationDetailRow[];
+  const detailExportQuery = new URLSearchParams({ honap: endMonth, idoszak: String(period) });
+  if (selectedUserId) detailExportQuery.set("user", selectedUserId);
 
   return <section className="stack">
     <header className="page-heading">
@@ -43,6 +45,7 @@ export default async function CancellationsPage({ searchParams }: { searchParams
       <label>Záró hónap<input type="month" name="honap" defaultValue={endMonth} required /></label>
       <label>Időszak<select name="idoszak" defaultValue={String(period)}>{CANCELLATION_PERIODS.map((months) => <option key={months} value={months}>{months} hónap</option>)}</select></label>
       <button>Megjelenítés</button>
+      <a className="button secondary" href={`/admin/lemondasok/export?honap=${endMonth}&idoszak=${period}`}>Összesítő CSV</a>
     </form>
 
     {summaryResponse.error ? <p className="message error" role="alert">A lemondási statisztika betöltése nem sikerült.</p> : null}
@@ -62,6 +65,7 @@ export default async function CancellationsPage({ searchParams }: { searchParams
         <input type="hidden" name="idoszak" value={period} />
         <label>Felhasználó<select name="user" defaultValue={selectedUserId ?? ""}><option value="">Összes felhasználó</option>{rows.map((row) => <option key={row.user_id} value={row.user_id}>{row.user_name}</option>)}</select></label>
         <button>Részletek</button>
+        <a className="button secondary" href={`/admin/lemondasok/reszletek-export?${detailExportQuery.toString()}`}>Részletes CSV</a>
       </form>
       {detailsResponse.error ? <p className="message error" role="alert">A tételes lemondások betöltése nem sikerült.</p> : null}
       <div className="table-scroll"><table>
