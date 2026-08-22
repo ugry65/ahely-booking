@@ -40,9 +40,11 @@ A régi `user_room_permissions.can_repeat` mező adatvesztés elkerülése miatt
 
 Migrációkor bármely korábbi `can_repeat=true` közvetlen jog a user `can_repeat_bookings=true` profiljogát kapcsolja be, így meglévő repeat jogosultság nem vész el.
 
-Régi kliens/API `can_repeat=true` írása a user-szintű repeat jogot bekapcsolja. Explicit user-szintű repeat kikapcsolás a stale legacy `can_repeat=true` értékeket is törli.
+A támogatott régi kompatibilitási út az auditált `admin_set_user_room_permission(...)` RPC. Az ezen az RPC-n érkező `can_repeat=true` jelzés ugyanabban a tranzakcióban user-szintű repeat jogot kapcsol be. Közvetlen `authenticated` kliens-táblaírás a `user_room_permissions` táblára nincs engedélyezve és nem támogatott.
 
-A user-szintű repeat módosítás és a legacy room-permission írás közös, determinisztikus tranzakciós zársorrendet használ, és külön concurrency regressziós teszt védi.
+Explicit user-szintű repeat kikapcsolás a stale legacy `can_repeat=true` értékeket is törli.
+
+A user-szintű repeat módosítás és a legacy room-permission RPC közös, profile-first determinisztikus tranzakciós zársorrendet használ, és külön concurrency regressziós teszt védi. A legacy RPC által kiváltott profil-repeat bekapcsolás is auditált.
 
 ## Adat- és jogosultságbiztonsági kapuk
 
@@ -63,6 +65,8 @@ A `202608220016_user_level_repeat_permission.sql` migráció előtt és után:
 - a közvetlen jogosultságok checksumja változatlan maradt;
 - a 2 korábbi legacy repeat user pontosan ugyanaz a 2 user lett user-szintű repeat jogosult;
 - egyik normál user sem kapott effektív Tréningterem repeat jogot.
+
+A belső review után a `202608220017_remove_direct_repeat_promotion_trigger.sql` külön kiegészítő migráció a nem támogatott direkt table-trigger utat eltávolítja, és a legacy promóciót kizárólag az auditált, profile-first admin RPC-ben tartja meg.
 
 Rollbackos staging backend-UAT PASS:
 - repeat-jogos normál user normál szobában 90 napon belül sorozatot hozhat létre;
