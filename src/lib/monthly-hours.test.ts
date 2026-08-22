@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csvCell, monthStart, monthlyHoursCsv, validMonth } from "./monthly-hours";
+import { csvCell, decimalComma, monthStart, monthlyHoursCsv, validMonth } from "./monthly-hours";
 
 describe("monthly hours export", () => {
   it("csak érvényes YYYY-MM hónapot fogad el", () => {
@@ -15,9 +15,15 @@ describe("monthly hours export", () => {
     expect(csvCell("=1+1")).toBe("\"'=1+1\"");
     expect(csvCell("  -2+3")).toBe("\"'  -2+3\"");
   });
-  it("BOM-mal és stabil oszlopsorrenddel készít CSV-t", () => {
-    const csv = monthlyHoursCsv("2026-08", [{ user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 2, total_minutes: 150, total_hours: "2.50" }]);
-    expect(csv.startsWith("\uFEFF\"Hónap\";\"Felhasználó\"")).toBe(true);
-    expect(csv).toContain('"2026-08";"Teszt User";"teszt@example.invalid";"2";"150";"2.50"');
+  it("magyar decimális vesszővel adja ki az órát, hogy Excel ne dátumként értelmezze", () => {
+    expect(decimalComma("4.50")).toBe("4,50");
+    expect(decimalComma(24)).toBe("24,00");
+  });
+  it("a CSV csak a felhasználó nevét és az összes órát tartalmazza", () => {
+    const csv = monthlyHoursCsv([{ user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 2, total_minutes: 270, total_hours: "4.50" }]);
+    expect(csv.startsWith("\uFEFF\"Felhasználó\";\"Összes óra\"")).toBe(true);
+    expect(csv).toContain('"Teszt User";4,50');
+    expect(csv).not.toContain("E-mail");
+    expect(csv).not.toContain("Foglalások száma");
   });
 });
