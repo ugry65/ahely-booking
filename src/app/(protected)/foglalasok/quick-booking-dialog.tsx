@@ -88,6 +88,8 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                 <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
               ) : <input type="hidden" name="useType" value="individual" />}
 
+              <label>Foglalás címe<input name="bookingTitle" maxLength={100} placeholder="Opcionális" /></label>
+              <span className="muted form-help">A címet csak te és az adminisztrátorok láthatják.</span>
               <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
               <div className="booking-modal-actions">
                 <button type="submit">{repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button>
