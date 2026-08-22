@@ -8,6 +8,8 @@ on:
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
+      - "scripts/test-admin-role-guard-concurrency.sh"
+      - "scripts/test-calendar-color-concurrency.sh"
   push:
     branches: [main]
     paths:
@@ -16,6 +18,8 @@ on:
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
+      - "scripts/test-admin-role-guard-concurrency.sh"
+      - "scripts/test-calendar-color-concurrency.sh"
   workflow_dispatch:
 
 permissions:
@@ -59,6 +63,12 @@ jobs:
 
       - name: Run concurrent recurring booking tests
         run: bash ./scripts/test-recurring-booking-concurrency.sh
+
+      - name: Run concurrent last-admin guard test
+        run: bash ./scripts/test-admin-role-guard-concurrency.sh
+
+      - name: Run concurrent calendar color assignment test
+        run: bash ./scripts/test-calendar-color-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning
