@@ -7,16 +7,26 @@ insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000192','repeat-limit-admin@example.invalid','{"first_name":"Limit","last_name":"Admin"}');
 update public.profiles set role='admin' where id='00000000-0000-0000-0000-000000000192';
 
--- Legacy TRUE intentionally exercises the compatibility path: it promotes the
--- canonical user-level repeat permission while preserving old-client behavior.
-insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat) values
- ('00000000-0000-0000-0000-000000000191','11000000-0000-0000-0000-000000000002',true,true),
- ('00000000-0000-0000-0000-000000000191','11000000-0000-0000-0000-000000000001',true,true);
+-- Legacy TRUE intentionally exercises the supported compatibility RPC. Direct
+-- authenticated writes to user_room_permissions are not part of the API contract.
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000192',true);
+select public.admin_set_user_room_permission(
+  '00000000-0000-0000-0000-000000000191',
+  '11000000-0000-0000-0000-000000000002',
+  true, true, '19100000-0000-0000-0000-000000000011'
+);
+select public.admin_set_user_room_permission(
+  '00000000-0000-0000-0000-000000000191',
+  '11000000-0000-0000-0000-000000000001',
+  true, true, '19100000-0000-0000-0000-000000000012'
+);
+reset role;
 
 select is(
   (select can_repeat_bookings from public.profiles where id='00000000-0000-0000-0000-000000000191'),
   true,
-  'A legacy repeat grant a user-szintű repeat jogot bekapcsolja'
+  'A legacy repeat grant RPC a user-szintű repeat jogot bekapcsolja'
 );
 
 set local role authenticated;
