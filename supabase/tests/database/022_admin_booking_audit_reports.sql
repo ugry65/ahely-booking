@@ -1,5 +1,5 @@
 begin;
-select plan(12);
+select plan(14);
 
 select has_function('public','admin_monthly_active_booking_details',array['date','uuid'],'A tételes aktív elszámolási riport létezik');
 select has_function('public','admin_cancellation_summary',array['date','integer'],'A lemondási összesítő riport létezik');
