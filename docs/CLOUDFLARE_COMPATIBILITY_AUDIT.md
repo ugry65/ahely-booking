@@ -5,9 +5,13 @@ Branch: `chore/cloudflare-deployment-test`
 Issue: #85
 PR: #86
 
-## Cél és hatókör
+## Összefoglaló
 
-Ez a munka kizárólag párhuzamos Cloudflare Workers teszt. A meglévő Vercel production, domain és Supabase backend változatlan marad. Cloudflare-specifikus üzleti logika és adatbázis-módosítás nem része ennek a kísérletnek.
+A Cloudflare Workers/OpenNext kísérletet a meglévő Vercel production és Supabase backend érintése nélkül végeztük. A standard Next.js alkalmazás buildelhető maradt, de a Cloudflare/OpenNext bundle a Next.js 16 `proxy.ts` adaptertámogatási hiányán blokkolódik. Emiatt remote Cloudflare previewt és auth/session smoke tesztet biztonságosan nem indítunk.
+
+**Jelenlegi minősítés: részben kompatibilis, de jelenleg nem deployolható biztonságosan Cloudflare Workersre.**
+
+**Ajánlás: most maradjunk Vercelen; a Cloudflare tesztet az OpenNext #1277 hivatalos javítása után ismételjük meg.**
 
 ## Hivatalos technikai irány
 
@@ -22,7 +26,7 @@ Hivatalos források:
 - https://developers.cloudflare.com/workers/platform/pricing/
 - https://developers.cloudflare.com/workers/platform/limits/
 
-A branch által lockolt verziók:
+Lockolt verziók:
 - `@opennextjs/cloudflare`: 1.20.2
 - `wrangler`: 4.125.0
 - Next.js: 16.3.1
@@ -47,7 +51,7 @@ A proxy jelenleg:
 - `supabase.auth.getClaims()` hívást végez;
 - nem használ `fs`-t vagy explicit `node:` importot.
 
-A kompatibilitási build azonban empirikusan elbukik OpenNext 1.20.2 + Next.js 16.3.1 kombinációnál. A normál Next.js build sikeres, majd az OpenNext bundle-generálás ezt a hibát adja:
+A kompatibilitási build OpenNext 1.20.2 + Next.js 16.3.1 kombinációnál elbukik. A normál Next.js build sikeres, majd az OpenNext bundle-generálás ezt a hibát adja:
 
 ```text
 Error: This error should only happen for static 404 and 500 page from page router.
@@ -60,33 +64,32 @@ Ez összhangban áll az OpenNext jelenleg nyitott #1277 hibájával: a Next.js 1
 
 ### Miért blokkoló az A-Hely számára?
 
-A `proxy.ts` nem opcionális dekoráció: a Supabase session frissítés és a védett route-ok korai auth kezelése fut benne. A Next.js 16 dokumentációban a Proxy a jelenlegi szabványos mechanizmus az ilyen request-előtti auth/routing logikára.
+A `proxy.ts` a Supabase session frissítés és a védett route-ok korai auth kezelésének része. A Next.js 16 dokumentációban a Proxy a jelenlegi szabványos mechanizmus az ilyen request-előtti auth/routing logikára.
 
-Ezért nem fogadható el olyan Cloudflare-workaround, amely:
-- egyszerűen eltávolítja a proxyt;
+Nem fogadható el olyan workaround, amely:
+- eltávolítja a proxyt;
 - kikapcsolja a session-frissítést;
 - gyengíti a védett route-ok auth ellenőrzését;
-- OpenNext belső bundle-fájljait kézzel patch-eli;
-- az alkalmazásba Cloudflare-specifikus auth-elágazást épít.
+- OpenNext belső bundle-fájljait saját patch-csel módosítja;
+- Cloudflare-specifikus auth-elágazást épít az alkalmazásba.
 
 ### Lehetséges utak
 
-1. **Várni az OpenNext hivatalos `proxy.ts` támogatására — AJÁNLOTT.**
+1. **Várni az OpenNext hivatalos `proxy.ts` támogatására — ajánlott.**
    - nincs alkalmazáskód-változás;
    - nincs auth regresszió;
    - minimális vendor lock-in;
-   - később ugyanazon tesztbranch friss adapterrel újrafuttatható.
+   - később ugyanazon kísérlet friss adapterrel megismételhető.
 
-2. **Next.js 15 Maintenance LTS-re visszalépni és Edge middleware-t használni.**
-   - technikailag lehetséges alternatíva lehet;
-   - de az egész projekt framework-verzióját érintené;
-   - jelen feladat céljához aránytalan és kockázatos;
-   - csak külön architekturális döntéssel lenne elfogadható.
+2. **Next.js 15 Maintenance LTS-re visszalépni és régi middleware-modellt használni.**
+   - lehetséges alternatíva;
+   - framework-szintű visszalépés;
+   - jelen kísérlethez aránytalan és külön architekturális döntést igényelne.
 
 3. **OpenNext saját/PR patch használata.**
    - magas vendor-lock-in és karbantartási kockázat;
    - auth/security szempontból érzékeny build-runtime patch;
-   - az A-Hely projekthez nem javasolt.
+   - nem javasolt.
 
 ## Node.js-specifikus API / filesystem
 
@@ -95,21 +98,15 @@ A repository audit során nem találtunk alkalmazáskódban:
 - `fs` filesystem használatot;
 - lokális tartós fájlrendszerre támaszkodó üzleti logikát.
 
-Ez kedvező Workers-kompatibilitási jel.
+## Server Actions és Route Handlers
 
-## Server Actions
-
-Az alkalmazás több `"use server"` actiont használ, többek között auth, foglalás és admin funkciókhoz. A Cloudflare/OpenNext dokumentáció szerint Server Actions támogatottak. A bundle-blokkoló miatt runtime smoke tesztjük még nem volt lehetséges.
-
-## Route Handlers
-
-Auth callback és admin CSV export route handlerek vannak. Ezek szabványos Next.js `Request` / `Response` / `NextRequest` / `NextResponse` API-kat használnak. A normál Next.js build és az OpenNext belső Next-build fázisa ezeket sikeresen fordította.
+Az alkalmazás több `"use server"` actiont használ. Auth callback és admin CSV route handlerek is vannak. A normál Next.js build és az OpenNext belső Next-build fázisa ezeket sikeresen fordította. Runtime smoke a proxy bundle-blokkoló miatt még nem volt lehetséges.
 
 ## Supabase SSR / Auth / cookie
 
 A `src/lib/supabase/server.ts` a `cookies()` Next API-t és az `@supabase/ssr` cookie adaptert használja. A proxy ugyanezt a session modellt követi request/response cookie-kkal.
 
-Nem találtunk Vercel-specifikus auth API-t. Maga a Supabase SSR réteg ezért nem azonosított inkompatibilitási ok; a blokkoló az adapter Next.js 16 Proxy támogatása.
+Nem találtunk Vercel-specifikus auth API-t. Maga a Supabase SSR réteg nem azonosított inkompatibilitási ok; a blokkoló az adapter Next.js 16 Proxy támogatása.
 
 Ha a proxy-support később elérhető, preview alatt kötelező ellenőrizni:
 - login;
@@ -127,29 +124,37 @@ Cloudflare build/runtime környezetben szükséges:
 - `SUPABASE_SERVICE_ROLE_KEY` – **secret**, kizárólag Worker/server runtime-ban;
 - `SITE_URL` – a Cloudflare preview Worker URL-je.
 
-A valódi értékek nem kerülhetnek repositoryba vagy logba.
+Valódi érték nem került repositoryba vagy logba.
 
-A `SITE_URL` miatt a Cloudflare preview URL-t a Supabase Auth engedélyezett redirect URL-jeihez hozzá kell majd adni úgy, hogy a Vercel production redirect továbbra is megmaradjon.
+A későbbi Cloudflare preview URL-t a Supabase Auth engedélyezett redirect URL-jeihez hozzá kell adni úgy, hogy a Vercel production redirect továbbra is megmaradjon.
 
 ## Adatbiztonság
 
-A kritikus foglalási üzleti logika és ütközésvédelem PostgreSQL/Supabase oldalon marad. A Cloudflare adapter teszt nem módosította:
-- az adatbázis-szintű overlap védelmet;
-- az RPC jogosultsági ellenőrzéseket;
-- a tranzakciókat;
-- az auditnaplót;
-- a booking concurrency védelmet.
+A hosting-kísérlet nem módosította a Supabase adatmodellt vagy üzleti logikát. Változatlan maradt:
+- adatbázis-szintű overlap védelem;
+- RPC jogosultsági ellenőrzés;
+- tranzakcióbiztonság;
+- auditnapló;
+- booking concurrency védelem.
 
 Supabase migráció nem történt.
 
+## Kódmódosítások
+
+Csak a tesztbranchben:
+- `package.json` – OpenNext/Wrangler dependency és Cloudflare build/preview/deploy scriptek;
+- `pnpm-lock.yaml` – lockolt dependency-k;
+- `pnpm-workspace.yaml` – pnpm 11 explicit build allowlist csak `esbuild` és `workerd` számára;
+- `wrangler.jsonc` – minimális Workers konfiguráció `nodejs_compat` flaggel;
+- `open-next.config.ts` – alap `defineCloudflareConfig()` adapter config;
+- `.gitignore` – `.open-next`, `.wrangler`, `.dev.vars` kizárása;
+- `.github/workflows/cloudflare-compatibility.yml` – reprodukálható kompatibilitási pipeline;
+- jelen audit dokumentum.
+
+Alkalmazás üzleti kód nem változott.
+
 ## Automatikus teszteredmények
 
-Lockolt Cloudflare dependency-k:
-- `@opennextjs/cloudflare` 1.20.2;
-- `wrangler` 4.125.0;
-- pnpm 11 `allowBuilds` csak `esbuild` és `workerd` számára.
-
-A Cloudflare compatibility workflow eredménye:
 - frozen dependency install: **PASS**;
 - meglévő Vitest: **PASS** — 13 fájl / 67 teszt;
 - TypeScript typecheck: **PASS**;
@@ -157,41 +162,38 @@ A Cloudflare compatibility workflow eredménye:
 - OpenNext belső Next.js build: **PASS**;
 - OpenNext Cloudflare bundle generation: **FAIL — proxy.ts adapter blocker**;
 - helyi workerd preview: **NOT RUN**, mert a bundle nem készült el;
-- Cloudflare remote preview: **NOT RUN**, mert a build gate nem teljesült.
+- Cloudflare remote preview: **NOT RUN**, mert a build gate nem teljesült;
+- funkcionális Cloudflare auth/booking smoke: **NOT RUN**, mert nincs biztonságos deployolható bundle.
 
 ## Vercel-kompatibilitás
 
-A Cloudflare tesztkonfiguráció mellett a normál `next build` továbbra is sikeres. A Vercel-specifikus konfigurációt és production deploymentet nem módosítottuk.
-
-A branch jelenlegi minimális adapter-fájljai eltávolíthatók anélkül, hogy az alkalmazás üzleti kódját érintenék.
+A Cloudflare tesztkonfiguráció mellett a normál `next build` sikeres. A Vercel production konfigurációt/deploymentet nem módosítottuk. A Cloudflare adapterfájlok eltávolíthatók az alkalmazás üzleti kódjának érintése nélkül.
 
 ## Cloudflare Workers költségbecslés
 
-A 2026-07-07-én frissített hivatalos Cloudflare pricing szerint a Workers Paid minimum díja **5 USD/hó/account**. Ebben benne van:
+A 2026-07-07-én frissített hivatalos Cloudflare pricing szerint a Workers Paid minimum díja **5 USD/hó/account**. Tartalmaz:
 - 10 millió Worker request / hónap;
 - 30 millió CPU-ms / hónap;
-- ezen felül 0,30 USD / további 1 millió request;
-- ezen felül 0,02 USD / további 1 millió CPU-ms;
-- adatforgalomra/egressre nincs külön Workers díj.
+- többlet: 0,30 USD / további 1 millió request;
+- többlet: 0,02 USD / további 1 millió CPU-ms;
+- Workers egress/bandwidth külön díj nélkül.
 
-A Cloudflare saját limit-dokumentációja szerint egy átlagos Worker kb. 2,2 ms CPU-t használ requestenként, SSR/auth jellegű nehezebb workload tipikusan 10–20 ms. Az A-Hely kis, belső foglalási alkalmazásának várható forgalma nagyságrendekkel a havi 10 millió request alatt van; még 20 ms CPU/request mellett is kb. 1,5 millió request férne a 30 millió CPU-ms alapkeretbe.
+A hivatalos limit-dokumentáció szerint az átlagos Worker kb. 2,2 ms CPU/request, SSR/auth jellegű nehezebb workload tipikusan 10–20 ms. Az A-Hely várható belső forgalma nagyságrendekkel a havi 10 millió request alatt van. Még 20 ms CPU/request mellett is kb. 1,5 millió request fér a 30 millió CPU-ms alapkeretbe.
 
-**Költségkövetkeztetés:** a várható A-Hely forgalom mellett nagyon nagy biztonsággal a kb. **5 USD/hó minimum Paid csomagban** maradnánk, feltéve hogy nem vezetünk be nagy forgalmú publikus funkciót vagy indokolatlanul CPU-intenzív SSR-t. A tényleges CPU/request értéket preview/prod monitoringgal később mérni kell.
+**Költségkövetkeztetés:** a várható A-Hely forgalom mellett nagy biztonsággal a kb. **5 USD/hó minimum Paid csomagban** maradnánk. Ezt tényleges CPU/request mérésnek kell majd megerősítenie, amikor működő preview elérhető.
 
-Paid plan fontos technikai limitek:
+Paid plan releváns technikai limitek:
 - Worker gzip bundle: 10 MB;
 - memória: 128 MB/isolate;
-- alap HTTP CPU limit 30 s, konfigurálható max. 5 percre;
+- alap HTTP CPU limit 30 s, max. 5 percre emelhető;
 - 10 000 subrequest/request.
 
-A bundle méretét a jelenlegi proxy-build blokkoló miatt még nem lehetett hitelesen megmérni.
+A bundle méretét a proxy-build blokkoló miatt még nem lehetett hitelesen megmérni.
 
-## Jelenlegi minősítés és ajánlás
+## Végső jelenlegi ajánlás
 
-**Cloudflare technológiailag ígéretes és várhatóan költséghatékony, de a jelenlegi OpenNext + Next.js 16 `proxy.ts` támogatási hiány miatt az A-Hely alkalmazáshoz MOST nem tekinthető biztonságosan deployolhatónak.**
+**maradjunk Vercelen** — jelenleg.
 
-Jelen állapotban az ajánlás:
+Nem azért, mert a teljes A-Hely architektúra Cloudflare-alkalmatlan, hanem mert az aktuális hivatalos OpenNext adapter még nem támogatja biztonságosan azt a Next.js 16 `proxy.ts` mechanizmust, amelyre az auth/session rétegünk épül.
 
-**maradjunk Vercelen, és tartsuk meg a Cloudflare tesztbranchet / issue-t későbbi újrapróbálásra.**
-
-A Cloudflare-t akkor érdemes újraértékelni, amikor az OpenNext #1277 hivatalosan javítva és kiadott verzióban elérhető. Akkor ugyanazt a CI → OpenNext build → workerd → preview → auth/session/foglalási smoke folyamatot kell végigfuttatni.
+A Cloudflare újrapróbálásának triggerfeltétele: OpenNext #1277 javítása megjelenik hivatalos kiadott adapterverzióban. Ekkor újra kell futtatni: dependency install → tests → typecheck → Next build → OpenNext build → workerd smoke → Cloudflare preview → staging Supabase auth/session/foglalás smoke → Vercel regresszióellenőrzés.
