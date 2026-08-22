@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   resolve:
@@ -15,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: pnpm/action-setup@v4
         with:
           version: 11.19.0
@@ -34,12 +36,11 @@ jobs:
           pnpm add --save-exact @opennextjs/cloudflare@latest
           pnpm add --save-dev --save-exact wrangler@latest
           node -e "const p=require('./package.json'); console.log('opennext=',p.dependencies['@opennextjs/cloudflare']); console.log('wrangler=',p.devDependencies.wrangler)"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: cloudflare-resolved-dependencies
-          path: |
-            package.json
-            pnpm-lock.yaml
-            pnpm-workspace.yaml
-          if-no-files-found: error
-          retention-days: 1
+      - name: Commit resolved dependencies to test branch
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add package.json pnpm-lock.yaml pnpm-workspace.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "chore: lock Cloudflare adapter dependencies"
+          git push origin HEAD:${{ github.head_ref }}
