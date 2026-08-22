@@ -5,10 +5,8 @@ select has_column('public','bookings','booking_title','A foglalás opcionális c
 select has_column('public','booking_series','booking_title','A sorozat címe is tárolható');
 select ok(position('char_length(booking_title) <= 100' in pg_get_constraintdef((select oid from pg_constraint where conname='bookings_title_length'))) > 0,'A booking title adatbázisban is legfeljebb 100 karakter');
 select ok(
-  position('v_actor.role = ''admin''' in pg_get_functiondef('public.list_calendar_bookings(timestamp with time zone,timestamp with time zone)'::regprocedure)) > 0
-  and position('b.user_id = v_actor.id' in pg_get_functiondef('public.list_calendar_bookings(timestamp with time zone,timestamp with time zone)'::regprocedure)) > 0
-  and position('b.booking_title' in pg_get_functiondef('public.list_calendar_bookings(timestamp with time zone,timestamp with time zone)'::regprocedure)) > 0,
-  'A publikus naptár címmezője tulajdonos/admin feltételhez kötött'
+  position('booking_title' in pg_get_functiondef('public.list_calendar_bookings(timestamp with time zone,timestamp with time zone)'::regprocedure)) > 0,
+  'A publikus naptár read model tartalmazza a privacy-szűrt címmezőt; a tulajdonos/admin viselkedést a 020_booking_title_visibility.sql ellenőrzi'
 );
 select ok(position('booking_title' in pg_get_functiondef('public.list_my_bookings()'::regprocedure)) > 0,'A saját foglalások read model tartalmazza a címet');
 select ok(position('booking_title' in pg_get_functiondef('public.list_calendar_booking_management(timestamp with time zone,timestamp with time zone)'::regprocedure)) > 0,'A jogosultságszűrt management read model tartalmazza a címet');

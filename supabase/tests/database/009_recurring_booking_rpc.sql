@@ -203,7 +203,7 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000114', true);
-select lives_ok(
+select throws_ok(
   format(
     $sql$select public.create_booking_series(
       '11000000-0000-0000-0000-000000000008',
@@ -214,7 +214,8 @@ select lives_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '17:00') at time zone 'Europe/Budapest',
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 3) + time '18:00') at time zone 'Europe/Budapest'
   ),
-  'Aktív csoportból örökölt can_repeat jog működik'
+  'P0001', 'Nincs ismétlődő foglalási jogosultságod ehhez a helyiséghez.',
+  'Aktív csoport sem ad ismétlődési jogot'
 );
 
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000115', true);
