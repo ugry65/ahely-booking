@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 
+import { adminSettingsRedirectUrl } from "@/lib/admin-settings-redirect";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -17,7 +18,7 @@ export async function saveAdvanceBookingLimits(formData: FormData) {
   const defaultDays = parseDays(formData.get("defaultDays"));
   const trainingDays = parseDays(formData.get("trainingDays"));
   if (defaultDays === null || trainingDays === null) {
-    redirect("/admin/beallitasok?hiba=Az+előrefoglalási+limitek+csak+nemnegatív+egész+napértékek+lehetnek.");
+    redirect(adminSettingsRedirectUrl("hiba", "Az előrefoglalási limitek csak nemnegatív egész napértékek lehetnek."));
   }
 
   const supabase = await createClient();
@@ -31,8 +32,8 @@ export async function saveAdvanceBookingLimits(formData: FormData) {
     const message = ["P0001", "22023", "22004", "42501"].includes(error.code ?? "") && (error.message?.length ?? 0) <= 240
       ? error.message
       : "Az előrefoglalási limitek mentése nem sikerült.";
-    redirect(`/admin/beallitasok?hiba=${encodeURIComponent(message ?? "Az előrefoglalási limitek mentése nem sikerült.")}`);
+    redirect(adminSettingsRedirectUrl("hiba", message ?? "Az előrefoglalási limitek mentése nem sikerült."));
   }
 
-  redirect("/admin/beallitasok?uzenet=Az+előrefoglalási+limitek+elmentve.");
+  redirect(adminSettingsRedirectUrl("uzenet", "Az előrefoglalási limitek elmentve."));
 }
