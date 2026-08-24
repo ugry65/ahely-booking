@@ -1,3 +1,25 @@
+.booking-page {
+  width: min(calc(100vw - 2rem), 100rem);
+  margin-left: calc((100% - min(calc(100vw - 2rem), 100rem)) / 2);
+  gap: .65rem;
+}
+
+.desktop-calendar-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: .5rem 0;
+  background: #f5f3ee;
+  box-shadow: 0 .35rem .7rem rgb(31 42 36 / 7%);
+}
+
+.selection-action-bar {
+  top: 4.15rem;
+  right: 2rem;
+  bottom: auto;
+  z-index: 39;
+}
+
 .booking-block.manageable { cursor: pointer; }
 .booking-block.manageable:focus-visible { outline: 3px solid #235c43; outline-offset: 2px; }
 
@@ -41,6 +63,15 @@
 .scope-choice { width: 100%; min-height: 3.2rem; justify-content: center; }
 
 @media (max-width: 52rem) {
+  .booking-page {
+    width: 100%;
+    margin-left: 0;
+  }
+  .mobile-date-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
   .booking-action-backdrop { background: rgb(31 42 36 / 18%); }
   .booking-action-popover {
     left: 1rem;
