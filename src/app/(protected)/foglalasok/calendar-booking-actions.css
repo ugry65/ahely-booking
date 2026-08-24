@@ -9,13 +9,15 @@
   top: 0;
   z-index: 45;
   padding-top: .55rem;
+  padding-bottom: 1rem;
   background: #f5f3ee;
 }
 
 .desktop-calendar-header {
   position: sticky;
-  top: 4.65rem;
+  top: 5.35rem;
   z-index: 30;
+  margin-top: .55rem;
   padding: .5rem 0;
   background: #f5f3ee;
   box-shadow: 0 .35rem .7rem rgb(31 42 36 / 7%);
@@ -23,7 +25,7 @@
 
 body:has(.selection-action-bar) .desktop-calendar-header {
   position: fixed;
-  top: 4.65rem;
+  top: 5.35rem;
   left: .375rem;
   right: .375rem;
   z-index: 38;
@@ -40,8 +42,9 @@ body:has(.selection-action-bar) .calendar-workspace {
 }
 
 .selection-action-bar {
-  top: 5.03rem;
-  right: .75rem;
+  top: 5.73rem;
+  left: clamp(25rem, 32vw, 34rem);
+  right: auto;
   bottom: auto;
   z-index: 39;
   padding: .15rem 0;
@@ -101,6 +104,7 @@ body:has(.selection-action-bar) .calendar-workspace {
   .desktop-app-nav {
     position: static;
     padding-top: 0;
+    padding-bottom: .7rem;
   }
   .mobile-date-toolbar {
     position: sticky;
