@@ -4,9 +4,17 @@
   gap: .65rem;
 }
 
-.desktop-calendar-header {
+.desktop-app-nav {
   position: sticky;
   top: 0;
+  z-index: 45;
+  padding-top: .55rem;
+  background: #f5f3ee;
+}
+
+.desktop-calendar-header {
+  position: sticky;
+  top: 4.65rem;
   z-index: 30;
   padding: .5rem 0;
   background: #f5f3ee;
@@ -15,7 +23,7 @@
 
 body:has(.selection-action-bar) .desktop-calendar-header {
   position: fixed;
-  top: 0;
+  top: 4.65rem;
   left: .375rem;
   right: .375rem;
   z-index: 38;
@@ -32,7 +40,7 @@ body:has(.selection-action-bar) .calendar-workspace {
 }
 
 .selection-action-bar {
-  top: .38rem;
+  top: 5.03rem;
   right: .75rem;
   bottom: auto;
   z-index: 39;
@@ -89,6 +97,10 @@ body:has(.selection-action-bar) .calendar-workspace {
   .booking-page {
     width: 100%;
     margin-left: 0;
+  }
+  .desktop-app-nav {
+    position: static;
+    padding-top: 0;
   }
   .mobile-date-toolbar {
     position: sticky;
