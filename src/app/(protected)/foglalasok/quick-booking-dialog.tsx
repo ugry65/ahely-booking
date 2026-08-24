@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { createBooking } from "./actions";
 import { createRecurringBooking } from "./ismetlod/actions";
+import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import type { BookableRoom } from "./calendar-booking-grid";
 import { BookingTimeFields } from "./booking-time-fields";
 
@@ -79,7 +80,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                   <legend>Ismétlődés beállításai</legend>
                   <input type="hidden" name="endMode" value="count" />
                   <label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label>
-                  <label>Kivételdátumok<textarea name="exceptionDates" rows={2} placeholder="Például: 2026-12-24, 2026-12-31" /></label>
+                  <RecurringExceptionCalendar />
                   <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label>
                 </fieldset>
               ) : null}
