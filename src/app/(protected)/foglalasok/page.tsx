@@ -52,7 +52,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
   const bookingUsers: BookingUser[] = ((usersResult.data ?? []) as Array<{ id: string; first_name: string; last_name: string; email: string }>).map((user) => ({ id: user.id, name: `${user.last_name} ${user.first_name}`.trim(), email: user.email }));
 
   return (
-    <section className="booking-page stack" style={{ width: "min(calc(100vw - 2rem), 100rem)", marginLeft: "50%", transform: "translateX(-50%)", gap: ".65rem" }}>
+    <section className="booking-page stack">
       <MobileDateStrip selectedDate={selectedDate} />
       <header className="desktop-calendar-header" aria-label="Naptár vezérlők">
         <div style={{ display: "flex", alignItems: "center", gap: ".65rem", flexWrap: "wrap" }}>
