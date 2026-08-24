@@ -1,6 +1,6 @@
 .booking-page {
-  width: min(calc(100vw - 2rem), 100rem);
-  margin-left: calc((100% - min(calc(100vw - 2rem), 100rem)) / 2);
+  width: calc(100vw - .75rem);
+  margin-left: calc((100% - 100vw) / 2 + .375rem);
   gap: .65rem;
 }
 
@@ -13,11 +13,34 @@
   box-shadow: 0 .35rem .7rem rgb(31 42 36 / 7%);
 }
 
+body:has(.selection-action-bar) .desktop-calendar-header {
+  position: fixed;
+  top: 0;
+  left: .375rem;
+  right: .375rem;
+  z-index: 38;
+  padding-left: .35rem;
+  padding-right: .35rem;
+}
+
+body:has(.selection-action-bar) .desktop-calendar-header > form {
+  visibility: hidden;
+}
+
+body:has(.selection-action-bar) .calendar-workspace {
+  padding-top: 3.6rem;
+}
+
 .selection-action-bar {
-  top: 4.15rem;
-  right: 2rem;
+  top: .38rem;
+  right: .75rem;
   bottom: auto;
   z-index: 39;
+  padding: .15rem 0;
+  border: 0;
+  border-radius: 0;
+  background: #f5f3ee;
+  box-shadow: none;
 }
 
 .booking-block.manageable { cursor: pointer; }
@@ -71,6 +94,12 @@
     position: sticky;
     top: 0;
     z-index: 30;
+  }
+  body:has(.selection-action-bar) .desktop-calendar-header {
+    position: static;
+  }
+  body:has(.selection-action-bar) .calendar-workspace {
+    padding-top: 0;
   }
   .booking-action-backdrop { background: rgb(31 42 36 / 18%); }
   .booking-action-popover {
