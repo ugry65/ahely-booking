@@ -27,6 +27,7 @@
   display: flex;
   align-items: center;
   min-height: 2.75rem;
+  margin-left: clamp(1.25rem, 2vw, 2rem);
 }
 
 body:has(.selection-action-bar) .desktop-calendar-header > form {
