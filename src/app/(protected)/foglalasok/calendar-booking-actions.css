@@ -42,12 +42,15 @@ body:has(.selection-action-bar) .calendar-workspace {
 }
 
 .selection-action-bar {
-  top: 7.42rem;
+  top: 7rem;
   left: clamp(26rem, 34vw, 36rem);
   right: auto;
   bottom: auto;
   z-index: 39;
-  padding: .15rem 0;
+  min-height: 3.05rem;
+  display: flex;
+  align-items: center;
+  padding: .55rem 0;
   border: 0;
   border-radius: 0;
   background: #f5f3ee;
