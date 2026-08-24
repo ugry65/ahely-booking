@@ -47,12 +47,12 @@ A többi Auth user `.invalid` végződésű szintetikus címet kap, ezért való
 Létrejövő identitások:
 
 - `ADMIN-1`: `uat-admin@ahely.invalid`, aktív admin;
-- `USER-A`: `UAT_RESET_EMAIL`, aktív normál user, más foglalók neveinek megjelenítése kikapcsolva;
+- `USER-A`: `UAT_RESET_EMAIL`, aktív normál user;
 - `USER-B`: `uat-user-b@ahely.invalid`, aktív normál user;
 - `USER-HIDDEN`: `uat-hidden@ahely.invalid`, aktív normál user, maszkolási teszt foglalója;
 - `USER-INACTIVE`: `uat-inactive@ahely.invalid`, inaktív normál user.
 
-A névláthatóság a megtekintő profilbeállítása. A bootstrap nem hoz létre foglalást ehhez a teszthez: a **manuális UAT során** USER-HIDDEN hoz létre egy foglalást, miközben USER-A `other_booker_names_visible=false` beállítással nézi a naptárt; admin továbbra is teljes nevet lát.
+A névláthatóság jelenlegi kanonikus szabálya globális adminbeállítás. A manuális UAT során a `Más foglalók neve látható` beállítást külön BE/KI állapotban kell ellenőrizni: kikapcsolva normál user másoknál csak semleges `Foglalt` megjelenítést kap, admin továbbra is látja a foglaló nevét és stabil színét.
 
 ## UAT helyiségek és jogok
 
@@ -64,9 +64,9 @@ A bootstrap legalább az alábbi helyiségeket biztosítja:
 - 3.Szoba;
 - 4.Szoba — USER-A számára tiltott kontrollhelyiség.
 
-USER-A több normál helyiséghez és a Tréningteremhez kap foglalási jogot, de ismétlési joga csak kijelölt normál helyiségre van. USER-B eltérő jogkombinációt kap. USER-INACTIVE kap szintetikus helyiségjogot is, hogy az inaktív profil backend tiltása önállóan bizonyítható legyen.
+USER-A több normál helyiséghez és a Tréningteremhez kap foglalási jogot. Az ismétlődő foglalási jogosultság kanonikus forrása user-szintű (`profiles.can_repeat_bookings`), nem helyiségenkénti `can_repeat` flag. A csoporttagság és a közvetlen user–szoba kivételjog csak az effektív `can_book` jogot adja; normál user Tréningteremben repeat joggal sem ismételhet. USER-B eltérő jogkombinációt kap. USER-INACTIVE kap szintetikus helyiségjogot is, hogy az inaktív profil backend tiltása önállóan bizonyítható legyen.
 
-A bootstrap létrehoz egy, a futás napjához képest kb. 20 nappal későbbi zárt kivételdátumot `UAT zárt kivételdátum` indokkal.
+Az A-Hely üzleti szabálya szerint nincs globális zárt nap vagy általános naptári kivételdátum. A bootstrap ezért nem hoz létre `calendar_exceptions` tesztadatot. Ez nem érinti az ismétlődő sorozat user által választott kihagyott/kivétel alkalmait.
 
 ## Fail-closed védelem
 
