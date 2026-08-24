@@ -1,0 +1,81 @@
+name: Production database deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Production migráció ellenőrzése vagy alkalmazása"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - deploy
+      confirmation:
+        description: "Deploy módnál írd be: PRODUCTION"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-database-deploy
+  cancel-in-progress: false
+
+jobs:
+  production-database-deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+
+      - name: Require production database URL
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+        run: |
+          if [ -z "$PRODUCTION_DB_URL" ]; then
+            echo "Missing repository/environment secret: SUPABASE_PRODUCTION_DB_URL" >&2
+            exit 1
+          fi
+
+      - name: Require explicit production confirmation
+        if: ${{ inputs.mode == 'deploy' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "PRODUCTION" ]; then
+            echo "Production deploy requires confirmation input: PRODUCTION" >&2
+            exit 1
+          fi
+
+      - name: Show migration status
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+        run: supabase migration list --db-url "$PRODUCTION_DB_URL"
+
+      - name: Preview pending migrations
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+        run: supabase db push --db-url "$PRODUCTION_DB_URL" --include-all --dry-run
+
+      - name: Apply pending migrations to production
+        if: ${{ inputs.mode == 'deploy' }}
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+        run: supabase db push --db-url "$PRODUCTION_DB_URL" --include-all
+
+      - name: Verify migration status after deploy
+        if: ${{ inputs.mode == 'deploy' }}
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+        run: supabase migration list --db-url "$PRODUCTION_DB_URL"
