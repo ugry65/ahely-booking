@@ -62,6 +62,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
             <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, 1)}`} aria-label="Következő nap">→</Link>
           </nav>
           <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>{dateTitle(selectedDate)}</h1>
+          <div id="calendar-selection-actions-slot" className="calendar-selection-actions-slot" />
         </div>
         <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
           <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }} />
