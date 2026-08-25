@@ -30,7 +30,7 @@ select set_config('request.jwt.claim.sub', '87000000-0000-0000-0000-000000000002
 select throws_ok(
   $$select * from public.admin_monthly_active_booking_details(date '2026-11-01', null)$$,
   '42501',
-  'Admin jogosultság szükséges.',
+  'Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.',
   'Normál user nem olvashatja az admin tételes havi lekérdezést'
 );
 
