@@ -27,30 +27,31 @@ export async function createRecurringBooking(formData: FormData) {
   const requestedTarget = String(formData.get("targetUserId") ?? "");
   const userId = profile.role === "admin" && UUID_PATTERN.test(requestedTarget) ? requestedTarget : profile.id;
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_booking_series", {
-    p_room_id: value.roomId, p_user_id: userId,
-    p_first_start_at: value.firstStartAt, p_first_end_at: value.firstEndAt,
-    p_frequency: value.frequency, p_ends_on: value.endsOn,
-    p_occurrence_count: value.occurrenceCount, p_exception_dates: value.exceptionDates,
-    p_conflict_policy: value.conflictPolicy, p_use_type: value.useType,
-    p_note: value.note, p_idempotency_key: value.idempotencyKey, p_booking_title: value.bookingTitle,
-  });
+  const baseArgs = {
+    p_room_id: value.roomId,
+    p_user_id: userId,
+    p_first_start_at: value.firstStartAt,
+    p_first_end_at: value.firstEndAt,
+    p_frequency: value.frequency,
+    p_ends_on: value.endsOn,
+    p_occurrence_count: value.occurrenceCount,
+    p_exception_dates: value.exceptionDates,
+    p_conflict_policy: value.conflictPolicy,
+    p_use_type: value.useType,
+    p_note: value.note,
+    p_idempotency_key: value.idempotencyKey,
+    p_booking_title: value.bookingTitle,
+  };
+  const useAtomicGroupRate = profile.role === "admin" && value.useType === "group" && requestedRate !== null;
+  const { data, error } = useAtomicGroupRate
+    ? await supabase.rpc("admin_create_booking_series_with_group_rate", { ...baseArgs, p_group_hourly_rate_huf: requestedRate })
+    : await supabase.rpc("create_booking_series", baseArgs);
   if (error) {
     const message = error.code === "P0001" && error.message.length <= 300 ? error.message : "A foglalási sorozat létrehozása nem sikerült. Kérlek, próbáld újra.";
     redirect(resultUrl("hiba", message));
   }
   const seriesId = typeof data === "object" && data !== null && "series_id" in data ? String(data.series_id) : "";
   if (!UUID_PATTERN.test(seriesId)) redirect(resultUrl("hiba", "A sorozat létrejött, de az eredmény megjelenítése nem sikerült. Ellenőrizd a Foglalásaim oldalt."));
-
-  if (profile.role === "admin" && value.useType === "group" && requestedRate !== null) {
-    const { error: rateError } = await supabase.rpc("admin_set_booking_series_group_rate", {
-      p_series_id: seriesId,
-      p_hourly_rate_huf: requestedRate,
-      p_correlation_id: crypto.randomUUID(),
-    });
-    if (rateError) redirect(resultUrl("hiba", "A sorozat létrejött az alapértelmezett 5 000 Ft/óra díjjal, de az egyedi csoportos díj mentése nem sikerült. Ellenőrizd a sorozatot."));
-  }
-
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl("sorozat", seriesId));
 }
