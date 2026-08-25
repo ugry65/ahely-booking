@@ -128,7 +128,7 @@ select is(
 
 select is(
   (
-    select sum(sbl.amount_huf)
+    select sum(sbl.amount_huf)::bigint
     from public.monthly_settlements ms
     join public.settlement_booking_lines sbl on sbl.settlement_revision_id = ms.closed_revision_id
     where ms.user_id = '84000000-0000-0000-0000-000000000002'
