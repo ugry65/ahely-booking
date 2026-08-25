@@ -97,7 +97,6 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   }
 
   const statusByKey = new Map(settlementStatuses.map((row) => [`${row.month}:${row.user_id}`, row]));
-  const liveByKey = new Map(pricingRows.map((row) => [`${row.month}:${row.user_id}`, row]));
   const displayByKey = new Map<string, DisplayPricingRow>();
 
   for (const row of pricingRows) {
