@@ -14,7 +14,7 @@ export type CalendarBooking = {
   use_type: "individual" | "group"; is_own: boolean; booker_display_name: string | null; booker_color: string | null;
   booking_title: string | null; note: string | null; series_id: string | null; updated_at: string | null; can_manage: boolean;
 };
-type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string };
+type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string; isAdmin?: boolean };
 type TouchGesture = { roomId: string; pointerId: number; startX: number; startY: number; anchorMinute: number; active: boolean; element: HTMLDivElement };
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 type BookingScope = "occurrence" | "following" | "series";
@@ -37,11 +37,12 @@ function timeOptions() {
   return values;
 }
 
-export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds, bookingUsers = [], currentUserId }: Props) {
+export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds, bookingUsers = [], currentUserId, isAdmin = false }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [dialogRoomId, setDialogRoomId] = useState("");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
+  const [useType, setUseType] = useState<"individual" | "group">("individual");
   const [dialogMode, setDialogMode] = useState<DialogMode>("create");
   const [sourceBooking, setSourceBooking] = useState<CalendarBooking | null>(null);
   const [editScope, setEditScope] = useState<BookingScope>("occurrence");
@@ -61,7 +62,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   function minuteFromPointer(element: HTMLElement, clientY: number) { const rect = element.getBoundingClientRect(); return CALENDAR_OPEN_MINUTE + (clientY - rect.top) / PIXELS_PER_MINUTE; }
   function cancelLongPress() { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } }
   function activateSelection(roomId: string, element: HTMLDivElement, pointerId: number, anchorMinute: number) {
-    setMenuBooking(null); setSourceBooking(null); setDialogMode("create"); setBookingDialogOpen(false); setDialogRoomId(roomId); setRepeatFrequency("none");
+    setMenuBooking(null); setSourceBooking(null); setDialogMode("create"); setBookingDialogOpen(false); setDialogRoomId(roomId); setRepeatFrequency("none"); setUseType("individual");
     element.setPointerCapture(pointerId); dragState.current = { roomId, anchorMinute }; setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
   }
   function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
@@ -86,8 +87,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
     cancelLongPress(); const completedTouchSelection = event?.pointerType === "touch" && touchGesture.current?.active === true;
     if (event?.pointerType === "touch") touchGesture.current = null; dragState.current = null; if (completedTouchSelection) setBookingDialogOpen(true);
   }
-  function clearSelection() { cancelLongPress(); touchGesture.current = null; setBookingDialogOpen(false); setDialogRoomId(""); setRepeatFrequency("none"); setSelection(null); setSourceBooking(null); setDialogMode("create"); }
-  function setSelectionFromBooking(booking: CalendarBooking) { setSelection(normalizeCalendarSelection(booking.room_id, localMinute(booking.start_at), localMinute(booking.end_at))); setDialogRoomId(booking.room_id); setRepeatFrequency("none"); setSourceBooking(booking); }
+  function clearSelection() { cancelLongPress(); touchGesture.current = null; setBookingDialogOpen(false); setDialogRoomId(""); setRepeatFrequency("none"); setUseType("individual"); setSelection(null); setSourceBooking(null); setDialogMode("create"); }
+  function setSelectionFromBooking(booking: CalendarBooking) { setSelection(normalizeCalendarSelection(booking.room_id, localMinute(booking.start_at), localMinute(booking.end_at))); setDialogRoomId(booking.room_id); setRepeatFrequency("none"); setUseType(booking.use_type); setSourceBooking(booking); }
   function duplicateBooking(booking: CalendarBooking) { setMenuBooking(null); setSelectionFromBooking(booking); setDialogMode("duplicate"); setBookingDialogOpen(true); }
   function editBooking(booking: CalendarBooking, scope: BookingScope) { setMenuBooking(null); setScopePrompt(null); setSelectionFromBooking(booking); setEditScope(scope); setDialogMode("edit"); setBookingDialogOpen(true); }
   function requestEdit(booking: CalendarBooking) { setMenuBooking(null); if (booking.series_id) setScopePrompt({ kind: "edit", booking }); else editBooking(booking, "occurrence"); }
@@ -101,6 +102,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   const formAction = dialogMode === "edit" ? updateCalendarBooking : repeatFrequency === "none" ? createBooking : createRecurringBooking;
   const modalTitle = dialogMode === "edit" ? "Foglalás szerkesztése" : dialogMode === "duplicate" ? "Foglalás duplikálása" : "Foglalás";
   const roomMinWidth = rooms.length >= 11 ? "8rem" : "8.75rem";
+  const showGroupRate = isAdmin && dialogMode !== "edit" && dialogRoom?.is_training_room && useType === "group";
 
   return <div className="calendar-workspace stack">
     <div className="calendar-card" aria-label={`${selectedDate} foglalásai`}><div className="calendar-scroll"><div className="calendar-grid" style={{ gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(${roomMinWidth}, 1fr))`, width: "max(100%, max-content)" }}>
@@ -134,12 +136,13 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
         {dialogMode === "edit" && sourceBooking ? <><input type="hidden" name="bookingId" value={sourceBooking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={sourceBooking.updated_at ?? ""} /><input type="hidden" name="scope" value={editScope} /></> : null}
         {dialogMode !== "edit" && bookingUsers.length ? <label>Felhasználó<select name="targetUserId" defaultValue={currentUserId ?? bookingUsers[0]?.id} required>{bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}</select><span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span></label> : null}
-        <label>Helyiség<select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); }} required>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
+        <label>Helyiség<select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); setUseType("individual"); }} required>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
         <label>Dátum<input name="date" type="date" defaultValue={selectedDate} required /></label>
         <BookingTimeFields options={options} initialStartTime={calendarMinuteToTime(selection.startMinute)} initialEndTime={calendarMinuteToTime(selection.endMinute)} />
         {dialogMode !== "edit" ? <label>Ismétlődés<select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}><option value="none">Nincs</option><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select>{!canRepeat ? <span className="muted form-help">Ehhez a helyiséghez nincs ismétlődő foglalási jogosultságod.</span> : null}</label> : null}
         {dialogMode !== "edit" && repeatFrequency !== "none" ? <fieldset className="repeat-options"><legend>Ismétlődés beállításai</legend><input type="hidden" name="endMode" value="count" /><label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label><RecurringExceptionCalendar /><label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label></fieldset> : null}
-        {dialogRoom?.is_training_room ? <label>Használat<select name="useType" defaultValue={sourceBooking?.use_type ?? "individual"}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label> : <input type="hidden" name="useType" value="individual" />}
+        {dialogRoom?.is_training_room ? <label>Használat<select name="useType" value={useType} onChange={(event) => setUseType(event.target.value as "individual" | "group")}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label> : <input type="hidden" name="useType" value="individual" />}
+        {showGroupRate ? <label>Csoportos óradíj<input name="groupHourlyRateHuf" type="number" min="0" step="1" defaultValue="5000" required /><span className="muted form-help">Alapértelmezett díj: 5 000 Ft/óra. Adminisztrátorként ennél a foglalásnál vagy sorozatnál felülírhatod.</span></label> : null}
         <label>Foglalás címe<input name="bookingTitle" maxLength={100} defaultValue={sourceBooking?.booking_title ?? ""} placeholder="Opcionális" /></label>
         <span className="muted form-help">A címet csak a foglalás tulajdonosa és az adminisztrátorok láthatják.</span>
         <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={sourceBooking?.note ?? ""} placeholder="Opcionális" /></label>
