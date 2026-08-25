@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(20);
 
 select has_function('public','admin_record_payment',array['uuid','date','bigint','date','payment_method','money_destination','text','uuid'],'Admin befizetés RPC létezik');
 select has_function('public','admin_monthly_payment_summary',array['date'],'Admin havi befizetés összesítő RPC létezik');
