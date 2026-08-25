@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { cancelCalendarBooking, createBooking, updateCalendarBooking } from "./actions";
 import { createRecurringBooking } from "./ismetlod/actions";
 import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, normalizeCalendarSelection, type CalendarSelection } from "@/lib/calendar-selection";
@@ -47,10 +48,15 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   const [menuBooking, setMenuBooking] = useState<CalendarBooking | null>(null);
   const [scopePrompt, setScopePrompt] = useState<{ kind: "edit" | "cancel"; booking: CalendarBooking } | null>(null);
   const [cancelTarget, setCancelTarget] = useState<{ booking: CalendarBooking; scope: BookingScope } | null>(null);
+  const [selectionActionHost, setSelectionActionHost] = useState<HTMLElement | null>(null);
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
   const touchGesture = useRef<TouchGesture | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [selection?.roomId, selection?.startMinute, selection?.endMinute, repeatFrequency, dialogMode, editScope, cancelTarget?.booking.booking_id, cancelTarget?.scope]);
+
+  useEffect(() => {
+    setSelectionActionHost(document.getElementById("calendar-selection-actions-slot"));
+  }, []);
 
   function minuteFromPointer(element: HTMLElement, clientY: number) { const rect = element.getBoundingClientRect(); return CALENDAR_OPEN_MINUTE + (clientY - rect.top) / PIXELS_PER_MINUTE; }
   function cancelLongPress() { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } }
@@ -117,7 +123,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
       </div>)}
     </div></div></div>
 
-    {selection && selectedRoom && !sourceBooking ? <div className="selection-action-bar" aria-live="polite"><span style={{ padding: "0 .45rem", fontWeight: 700 }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</span><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button><button type="button" onClick={() => setBookingDialogOpen(true)}>Foglalás</button></div> : null}
+    {selection && selectedRoom && !sourceBooking && selectionActionHost ? createPortal(<div className="selection-action-bar" aria-live="polite"><span style={{ fontWeight: 700 }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</span><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button><button type="button" onClick={() => setBookingDialogOpen(true)}>Foglalás</button></div>, selectionActionHost) : null}
 
     {menuBooking ? <div className="booking-action-backdrop" onClick={() => setMenuBooking(null)}><div className="booking-action-popover" role="menu" aria-label="Foglalási műveletek" onClick={(event) => event.stopPropagation()}><button type="button" className="booking-action-item" onClick={() => requestEdit(menuBooking)}>✎ Szerkesztés</button><button type="button" className="booking-action-item" onClick={() => duplicateBooking(menuBooking)}>⧉ Duplikálás</button><button type="button" className="booking-action-item danger-action" onClick={() => requestCancel(menuBooking)}>⌫ Törlés</button></div></div> : null}
 
