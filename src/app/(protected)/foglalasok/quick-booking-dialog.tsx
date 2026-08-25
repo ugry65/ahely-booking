@@ -18,7 +18,7 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string }) {
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId, isAdmin = false }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
@@ -27,7 +27,6 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
   const selectedRoom = rooms.find((room) => room.room_id === selectedRoomId);
   const canRepeat = selectedRoomId ? repeatableRoomIds.includes(selectedRoomId) : false;
   const formAction = repeatFrequency === "none" ? createBooking : createRecurringBooking;
-  const isAdmin = bookingUsers.length > 0;
   const showGroupRate = isAdmin && selectedRoom?.is_training_room && useType === "group";
 
   function closeDialog() {
