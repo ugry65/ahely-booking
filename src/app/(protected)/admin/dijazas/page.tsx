@@ -69,11 +69,11 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
     supabase.from("profiles")
       .select("id,first_name,last_name,email,is_active")
       .order("last_name").order("first_name").returns<Profile[]>(),
-    supabase.rpc("admin_list_user_pricing_policies").returns<PricingPolicy[]>(),
+    supabase.rpc("admin_list_user_pricing_policies"),
   ]);
 
   const profiles = profilesResult.data ?? [];
-  const policies = policiesResult.data ?? [];
+  const policies = (policiesResult.data ?? []) as unknown as PricingPolicy[];
   const today = budapestToday();
   const currentMonth = monthStart(today);
   const defaultValidMonth = nextMonth(today);
