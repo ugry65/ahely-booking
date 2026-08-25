@@ -1,3 +1,56 @@
+.booking-page {
+  width: calc(100vw - .75rem);
+  margin-left: calc((100% - 100vw) / 2 + .375rem);
+  gap: .65rem;
+}
+
+.desktop-app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 45;
+  padding-top: .55rem;
+  padding-bottom: 1.4rem;
+  background: #f5f3ee;
+}
+
+.desktop-calendar-header {
+  position: sticky;
+  top: 7rem;
+  z-index: 30;
+  margin-top: 1rem;
+  padding: .55rem 0;
+  background: #f5f3ee;
+  box-shadow: 0 .35rem .7rem rgb(31 42 36 / 7%);
+}
+
+.calendar-selection-actions-slot {
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  margin-left: clamp(1.25rem, 2vw, 2rem);
+}
+
+body:has(.selection-action-bar) .desktop-calendar-header > form {
+  display: none;
+}
+
+.selection-action-bar {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.selection-action-bar > span {
+  white-space: nowrap;
+}
+
 .booking-block.manageable { cursor: pointer; }
 .booking-block.manageable:focus-visible { outline: 3px solid #235c43; outline-offset: 2px; }
 
@@ -41,6 +94,23 @@
 .scope-choice { width: 100%; min-height: 3.2rem; justify-content: center; }
 
 @media (max-width: 52rem) {
+  .booking-page {
+    width: 100%;
+    margin-left: 0;
+  }
+  .desktop-app-nav {
+    position: static;
+    padding-top: 0;
+    padding-bottom: .7rem;
+  }
+  .mobile-date-toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .calendar-selection-actions-slot {
+    display: none;
+  }
   .booking-action-backdrop { background: rgb(31 42 36 / 18%); }
   .booking-action-popover {
     left: 1rem;
