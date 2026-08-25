@@ -9,7 +9,7 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 update public.profiles set role = 'admin' where id = '87000000-0000-0000-0000-000000000001';
 
-insert into public.bookings (room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key,title)
+insert into public.bookings (room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key,booking_title)
 values (
   '11000000-0000-0000-0000-000000000001',
   '87000000-0000-0000-0000-000000000002',
