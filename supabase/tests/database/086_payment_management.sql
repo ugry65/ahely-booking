@@ -56,6 +56,8 @@ select throws_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,1,current_date,'cash','cash_register',null,extensions.gen_random_uuid())$$,(date_trunc('month',current_date)-interval '1 month')::date),
   'P0001','A rögzített befizetés meghaladná a fennmaradó tartozást.','Túlfizetés nem rögzíthető véletlenül'
 );
+
+reset role;
 select is((select count(*) from public.audit_logs where action='payment.created' and after_data->>'user_id'='86000000-0000-0000-0000-000000000002'),2::bigint,'Mindkét befizetés auditált');
 
 select * from finish();
