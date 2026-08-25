@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(17);
 
 select has_function('public', 'admin_set_user_pricing_policy', array['uuid','user_pricing_scheme','date','uuid'], 'A user díjazási mód admin RPC létezik');
 select has_function('public', 'admin_list_user_pricing_policies', array[]::text[], 'A user díjazási mód lista RPC létezik');
