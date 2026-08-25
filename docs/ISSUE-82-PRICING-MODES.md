@@ -59,7 +59,11 @@ A lezáráskor:
 7. a lezárt revision és booking snapshot sorok utólag nem módosíthatók;
 8. a lezárás auditnaplóba kerül.
 
-A `Havi órák és fizetendő` admin képernyő nyitott hónapnál élő kalkulációt, lezárt hónapnál viszont a történeti settlement snapshotot jeleníti meg.
+A `Havi órák és fizetendő` admin képernyő nyitott hónapnál élő kalkulációt, lezárt hónapnál a történeti settlement snapshotot jeleníti meg. A lezárt sor akkor is megmarad a pénzügyi nézetben, ha a későbbi élő foglalási állapot már eltér tőle.
+
+### Admin lezárási művelet
+
+A `Havi órák és fizetendő` oldalon a már befejeződött, még nyitott user/hónap sor lezárható. Aktuális vagy jövőbeli hónap nem zárható le. A lezárt sor revision számmal és lezárási időponttal jelenik meg, és újabb lezárás nem indítható rá.
 
 ## Kötelező regressziós tesztek
 
@@ -76,6 +80,7 @@ A branch automatikus DB tesztjei lefedik többek között:
 - aktuális hónap idő előtti lezárásának tiltása;
 - progresszív sávhatárt átlépő foglalás több snapshot-sorra bontása;
 - snapshot összeg- és időtartam-konzisztencia;
+- admin settlement státusz read model jogosultsága és snapshot-összege;
 - dupla lezárás tiltása;
 - snapshot immutabilitás;
 - auditnapló.
