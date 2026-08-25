@@ -215,7 +215,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     </section>
 
     <section className="card wide-card stack">
-      <div><p className="eyebrow">Ellenőrzés</p><h2>Tételes aktív foglalások</h2><p className="muted">Minden jelenleg aktív foglalás visszaellenőrizhető. Lezárt hónap pénzügyi alapja azonban már a fenti immutable snapshot.</p></div>
+      <div><p className="eyebrow">Ellenőrzés</p><h2>Tételes aktív foglalások</h2><p className="muted">Minden jelenleg aktív foglalás visszaellenőrizhető. A foglalás címe különösen a Tréningterem admin foglalásainál azonosítja, kinek vagy milyen csoportnak történt a foglalás. Lezárt hónap pénzügyi alapja azonban már a fenti immutable snapshot.</p></div>
       <form method="get" className="monthly-filter">
         <input type="hidden" name="honapok" value={monthQuery} />
         <label>Felhasználó<select name="user" defaultValue={selectedUserId ?? ""}><option value="">Összes felhasználó</option>{users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}</select></label>
@@ -224,8 +224,8 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       </form>
       {detailsError ? <p className="message error" role="alert">A tételes foglalások betöltése nem sikerült teljes körűen. Az adatokat ne használd ellenőrzésre, amíg a hiba fennáll.</p> : null}
       <div className="table-scroll"><table>
-        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Mettől</th><th>Meddig</th><th>Óra</th></tr></thead>
-        <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.total_hours)}</td></tr>)}</tbody>
+        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Foglalás címe</th><th>Mettől</th><th>Meddig</th><th>Óra</th></tr></thead>
+        <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{row.booking_title || "—"}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.total_hours)}</td></tr>)}</tbody>
       </table></div>
       {!details.length && !detailsError ? <p className="muted">A kiválasztott feltételekkel nincs aktív foglalás.</p> : null}
     </section>
