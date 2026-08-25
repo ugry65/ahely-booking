@@ -4,13 +4,37 @@ import { monthStart, selectedMonths, type MonthlyBookingDetail, type MonthlyBook
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 
+type PricingScheme = "tiered" | "progressive" | "free";
+type MonthlyPricingRow = {
+  user_id: string;
+  user_name: string;
+  settlement_month: string;
+  pricing_scheme: PricingScheme;
+  normal_minutes: number;
+  special_minutes: number;
+  total_minutes: number;
+  normal_due_huf: number | string;
+  special_due_huf: number | string;
+  calculated_due_huf: number | string;
+  pricing_breakdown: unknown;
+  calculation_input_hash: string;
+};
+type MonthlyPricingWithMonth = MonthlyPricingRow & { month: string };
+
 function currentBudapestMonth() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit" }).format(new Date());
 }
 function hours(value: number | string) {
   return Number(value).toLocaleString("hu-HU", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
+function minutesToHours(value: number) { return hours(value / 60); }
+function huf(value: number | string) { return `${Number(value).toLocaleString("hu-HU")} Ft`; }
 function time(value: string) { return value.slice(0, 5); }
+function schemeLabel(value: PricingScheme) {
+  if (value === "progressive") return "Progresszív";
+  if (value === "free") return "Free – 0 Ft";
+  return "Sávos";
+}
 
 export default async function MonthlyHoursPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireAdmin();
@@ -24,6 +48,14 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     const response = await supabase.rpc("admin_monthly_booking_hours", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
     if (response.error) summaryError = true;
     for (const row of (response.data ?? []) as unknown as MonthlyHoursRow[]) rows.push({ ...row, month });
+  }
+
+  const pricingRows: MonthlyPricingWithMonth[] = [];
+  let pricingError = false;
+  for (const month of months) {
+    const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyPricingRow[]>();
+    if (response.error) pricingError = true;
+    for (const row of (response.data ?? []) as unknown as MonthlyPricingRow[]) pricingRows.push({ ...row, month });
   }
 
   const users = Array.from(new Map(rows.map((row) => [row.user_id, row.user_name])).entries())
@@ -41,12 +73,13 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   }
 
   const totalHours = rows.reduce((sum, row) => sum + Number(row.total_hours), 0);
+  const totalDue = pricingRows.reduce((sum, row) => sum + Number(row.calculated_due_huf), 0);
   const monthQuery = months.join(",");
   const detailExportQuery = new URLSearchParams({ honapok: monthQuery });
   if (selectedUserId) detailExportQuery.set("user", selectedUserId);
 
   return <section className="stack">
-    <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Havi órák</h1><p className="muted">Számlázási és elszámolási alap. Kizárólag az aktív, le nem mondott foglalások szerepelnek benne.</p></div><Link className="button secondary" href="/admin/lemondasok">Lemondások</Link></header>
+    <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Havi órák és fizetendő</h1><p className="muted">Számlázási és elszámolási alap. Kizárólag az aktív, le nem mondott foglalások szerepelnek benne; a fizetendőt a központi backend díjszámítás adja.</p></div><Link className="button secondary" href="/admin/lemondasok">Lemondások</Link></header>
 
     <form className="card stack" method="get">
       <MonthMultiSelect initialMonths={months} />
@@ -54,8 +87,20 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     </form>
 
     {summaryError ? <p className="message error" role="alert">A havi óraszám betöltése nem sikerült teljes körűen. Az adatokat ne használd elszámolásra, amíg a hiba fennáll.</p> : null}
+    {pricingError ? <p className="message error" role="alert">A havi díjszámítás betöltése nem sikerült teljes körűen. A fizetendő összegeket ne használd elszámolásra, amíg a hiba fennáll.</p> : null}
+
     <section className="card wide-card stack">
-      <h2>Elszámolási összesítés</h2>
+      <div><p className="eyebrow">Pénzügyi összesítés</p><h2>Havi fizetendő</h2><p className="muted">A Sávos, Progresszív és Free beállítás, az egyedi user-díj és a Tréningterem speciális díja ugyanabból a központi számításból érkezik. A felület nem számol külön üzleti logikával.</p></div>
+      <div className="table-scroll"><table>
+        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Normál óra</th><th>Tréningterem csoportos</th><th>Díjazás</th><th>Normál díj</th><th>Tréningterem díj</th><th>Fizetendő</th></tr></thead>
+        <tbody>{pricingRows.map((row) => <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{minutesToHours(row.normal_minutes)}</td><td>{minutesToHours(row.special_minutes)}</td><td>{schemeLabel(row.pricing_scheme)}</td><td>{huf(row.normal_due_huf)}</td><td>{huf(row.special_due_huf)}</td><td><strong>{huf(row.calculated_due_huf)}</strong></td></tr>)}</tbody>
+        <tfoot><tr><th colSpan={7}>Kijelölt hónapok kalkulált fizetendője</th><th>{huf(totalDue)}</th></tr></tfoot>
+      </table></div>
+      {pricingRows.length || pricingError ? null : <p className="muted">A kijelölt hónapokban nincs elszámolható aktív foglalás.</p>}
+    </section>
+
+    <section className="card wide-card stack">
+      <h2>Óra-összesítés</h2>
       <p className="muted">A hónap külön oszlop, ezért több kijelölt hónap adatai sem keverednek össze. Lemondott foglalás nem szerepelhet.</p>
       <div className="table-scroll"><table>
         <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Összes óra</th></tr></thead>
