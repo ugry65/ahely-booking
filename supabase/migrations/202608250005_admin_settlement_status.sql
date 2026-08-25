@@ -3,6 +3,7 @@ begin;
 create or replace function public.admin_monthly_settlement_status(p_month date)
 returns table (
   user_id uuid,
+  user_name text,
   settlement_month date,
   is_closed boolean,
   closed_at timestamptz,
@@ -31,6 +32,7 @@ begin
   return query
   select
     ms.user_id,
+    trim(concat_ws(' ', p.last_name, p.first_name))::text,
     ms.settlement_month,
     ms.is_closed,
     ms.closed_at,
@@ -44,6 +46,7 @@ begin
     sr.calculated_due_huf,
     sr.calculation_input_hash
   from public.monthly_settlements ms
+  join public.profiles p on p.id = ms.user_id
   left join public.settlement_revisions sr on sr.id = ms.closed_revision_id
   left join lateral (
     select
@@ -53,7 +56,7 @@ begin
     where sbl.settlement_revision_id = sr.id
   ) lines on true
   where ms.settlement_month = p_month
-  order by ms.user_id;
+  order by p.last_name, p.first_name, ms.user_id;
 end;
 $$;
 
