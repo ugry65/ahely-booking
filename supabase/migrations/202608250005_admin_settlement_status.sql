@@ -11,6 +11,8 @@ returns table (
   pricing_scheme public.user_pricing_scheme,
   normal_minutes integer,
   special_minutes integer,
+  normal_due_huf bigint,
+  special_due_huf bigint,
   calculated_due_huf bigint,
   calculation_input_hash text
 )
@@ -37,10 +39,19 @@ begin
     sr.pricing_scheme,
     sr.normal_minutes,
     sr.special_minutes,
+    coalesce(lines.normal_due_huf, 0)::bigint,
+    coalesce(lines.special_due_huf, 0)::bigint,
     sr.calculated_due_huf,
     sr.calculation_input_hash
   from public.monthly_settlements ms
   left join public.settlement_revisions sr on sr.id = ms.closed_revision_id
+  left join lateral (
+    select
+      coalesce(sum(sbl.amount_huf) filter (where sbl.line_kind = 'normal'), 0)::bigint as normal_due_huf,
+      coalesce(sum(sbl.amount_huf) filter (where sbl.line_kind = 'special_room'), 0)::bigint as special_due_huf
+    from public.settlement_booking_lines sbl
+    where sbl.settlement_revision_id = sr.id
+  ) lines on true
   where ms.settlement_month = p_month
   order by ms.user_id;
 end;
