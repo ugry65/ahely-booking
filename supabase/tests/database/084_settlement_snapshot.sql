@@ -1,12 +1,18 @@
 begin;
 
-select plan(14);
+select plan(16);
 
 select has_function(
   'public',
   'admin_close_monthly_settlement',
   array['uuid','date'],
   'A havi elszámolás lezáró admin RPC létezik'
+);
+select has_function(
+  'public',
+  'admin_monthly_settlement_status',
+  array['date'],
+  'A havi settlement státusz admin RPC létezik'
 );
 
 insert into auth.users (id, email, raw_user_meta_data) values
@@ -24,7 +30,6 @@ insert into public.user_pricing_policies (
   '84000000-0000-0000-0000-000000000001'
 );
 
--- 10 × 2 óra = 20 normál óra az előző, már lezárható hónapban.
 insert into public.bookings (
   room_id, user_id, created_by, start_at, end_at, use_type, status, idempotency_key
 )
@@ -51,6 +56,15 @@ select throws_ok(
   '42501',
   'Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.',
   'Normál user nem zárhat havi elszámolást'
+);
+select throws_ok(
+  format(
+    $$select * from public.admin_monthly_settlement_status(%L::date)$$,
+    (date_trunc('month', current_date) - interval '1 month')::date
+  ),
+  '42501',
+  'Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.',
+  'Normál user nem olvashat admin settlement státuszt'
 );
 
 select set_config('request.jwt.claim.sub', '84000000-0000-0000-0000-000000000001', true);
@@ -166,6 +180,15 @@ select ok(
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '84000000-0000-0000-0000-000000000001', true);
+select is(
+  (
+    select calculated_due_huf
+    from public.admin_monthly_settlement_status((date_trunc('month', current_date) - interval '1 month')::date)
+    where user_id = '84000000-0000-0000-0000-000000000002'
+  ),
+  50000::bigint,
+  'Az admin státusz read model a lezárt snapshot összegét adja vissza'
+);
 select throws_ok(
   format(
     $$select * from public.admin_close_monthly_settlement(
