@@ -1,9 +1,10 @@
 begin;
 
-select plan(13);
+select plan(16);
 
 select has_function('public','admin_record_payment',array['uuid','date','bigint','date','payment_method','money_destination','text','uuid'],'Admin befizetés RPC létezik');
 select has_function('public','admin_monthly_payment_summary',array['date'],'Admin havi befizetés összesítő RPC létezik');
+select has_function('public','admin_payment_history',array['date'],'Admin tételes befizetési előzmény RPC létezik');
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('86000000-0000-0000-0000-000000000001','payment-admin@example.invalid','{"first_name":"Payment","last_name":"Admin"}'),
@@ -26,6 +27,10 @@ select throws_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2000,current_date,'cash','cash_register',null,extensions.gen_random_uuid())$$,(date_trunc('month',current_date)-interval '1 month')::date),
   '42501','Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.','Normál user nem rögzíthet befizetést'
 );
+select throws_ok(
+  format($$select * from public.admin_payment_history(%L::date)$$,(date_trunc('month',current_date)-interval '1 month')::date),
+  '42501','Ehhez a művelethez aktív adminisztrátori jogosultság szükséges.','Normál user nem olvashat tételes befizetéseket'
+);
 
 select set_config('request.jwt.claim.sub','86000000-0000-0000-0000-000000000001',true);
 select lives_ok(
@@ -44,6 +49,8 @@ select lives_ok(
 select is((select paid_huf from public.admin_monthly_payment_summary((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),5400::bigint,'Teljes befizetés 5400 Ft');
 select is((select remaining_huf from public.admin_monthly_payment_summary((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),0::bigint,'Kintlévőség nulla');
 select is((select payment_status from public.admin_monthly_payment_summary((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),'paid'::public.payment_status,'Teljes fizetés státusz Fizetve');
+select is((select count(*) from public.admin_payment_history((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),2::bigint,'A tételes előzmény mindkét részfizetést mutatja');
+select is((select sum(amount_huf)::bigint from public.admin_payment_history((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),5400::bigint,'A tételes előzmény összege egyezik a befizetett összeggel');
 
 select throws_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,1,current_date,'cash','cash_register',null,extensions.gen_random_uuid())$$,(date_trunc('month',current_date)-interval '1 month')::date),
