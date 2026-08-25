@@ -33,8 +33,9 @@ describe("monthly hours export", () => {
     expect(csv).not.toContain("E-mail");
     expect(csv).not.toContain("Foglalások száma");
   });
-  it("a részletes CSV-ben hónap, dátum, helyiség és időintervallum is szerepel", () => {
-    const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "2.Szoba", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50" }]);
-    expect(csv).toContain('"2026-08";"Teszt User";"2026-08-22";"2.Szoba";"09:00";"10:30";"1,50"');
+  it("a részletes CSV-ben a foglalás címe is szerepel", () => {
+    const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "Tréningterem", booking_title: "Kovács csoport", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50" }]);
+    expect(csv).toContain('"Helyiség";"Foglalás címe";"Mettől"');
+    expect(csv).toContain('"2026-08";"Teszt User";"2026-08-22";"Tréningterem";"Kovács csoport";"09:00";"10:30";"1,50"');
   });
 });
