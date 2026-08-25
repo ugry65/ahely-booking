@@ -22,15 +22,34 @@ function targetUserId(profile: { id: string; role: "admin" | "user" }, formData:
   const requested = String(formData.get("targetUserId") ?? "");
   return profile.role === "admin" && UUID_PATTERN.test(requested) ? requested : profile.id;
 }
+function adminGroupRate(profile: { role: "admin" | "user" }, formData: FormData) {
+  if (profile.role !== "admin") return null;
+  const raw = String(formData.get("groupHourlyRateHuf") ?? "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : NaN;
+}
 
 export async function createBooking(formData: FormData) {
   const profile = await requireActiveProfile();
   const input = Object.fromEntries(["roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(parsed.date, "hiba", parsed.error));
+  const requestedRate = adminGroupRate(profile, formData);
+  if (Number.isNaN(requestedRate)) redirect(resultUrl(parsed.value.date, "hiba", "A csoportos óradíj csak 0 vagy pozitív egész forint lehet."));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle });
+  const { data, error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle });
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás mentése nem sikerült. Kérlek, próbáld újra.")));
+
+  if (profile.role === "admin" && parsed.value.useType === "group" && requestedRate !== null && typeof data === "string" && UUID_PATTERN.test(data)) {
+    const { error: rateError } = await supabase.rpc("admin_set_booking_group_rate", {
+      p_booking_id: data,
+      p_hourly_rate_huf: requestedRate,
+      p_correlation_id: crypto.randomUUID(),
+    });
+    if (rateError) redirect(resultUrl(parsed.value.date, "hiba", "A foglalás létrejött az alapértelmezett 5 000 Ft/óra díjjal, de az egyedi csoportos díj mentése nem sikerült. Ellenőrizd a foglalást."));
+  }
+
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", "A foglalás sikeresen létrejött."));
 }
