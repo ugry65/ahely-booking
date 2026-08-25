@@ -38,18 +38,21 @@ export async function createBooking(formData: FormData) {
   const requestedRate = adminGroupRate(profile, formData);
   if (Number.isNaN(requestedRate)) redirect(resultUrl(parsed.value.date, "hiba", "A csoportos óradíj csak 0 vagy pozitív egész forint lehet."));
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle });
+  const baseArgs = {
+    p_room_id: parsed.value.roomId,
+    p_user_id: targetUserId(profile, formData),
+    p_start_at: parsed.value.startAt,
+    p_end_at: parsed.value.endAt,
+    p_use_type: parsed.value.useType,
+    p_note: parsed.value.note,
+    p_idempotency_key: parsed.value.idempotencyKey,
+    p_booking_title: parsed.value.bookingTitle,
+  };
+  const useAtomicGroupRate = profile.role === "admin" && parsed.value.useType === "group" && requestedRate !== null;
+  const { error } = useAtomicGroupRate
+    ? await supabase.rpc("admin_create_booking_with_group_rate", { ...baseArgs, p_group_hourly_rate_huf: requestedRate })
+    : await supabase.rpc("create_booking", baseArgs);
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás mentése nem sikerült. Kérlek, próbáld újra.")));
-
-  if (profile.role === "admin" && parsed.value.useType === "group" && requestedRate !== null && typeof data === "string" && UUID_PATTERN.test(data)) {
-    const { error: rateError } = await supabase.rpc("admin_set_booking_group_rate", {
-      p_booking_id: data,
-      p_hourly_rate_huf: requestedRate,
-      p_correlation_id: crypto.randomUUID(),
-    });
-    if (rateError) redirect(resultUrl(parsed.value.date, "hiba", "A foglalás létrejött az alapértelmezett 5 000 Ft/óra díjjal, de az egyedi csoportos díj mentése nem sikerült. Ellenőrizd a foglalást."));
-  }
-
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", "A foglalás sikeresen létrejött."));
 }
