@@ -41,7 +41,11 @@ select lives_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2000,current_date,'cash','cash_register','első részlet','86000000-0000-0000-0000-000000000010')$$,(date_trunc('month',current_date)-interval '1 month')::date),
   'Azonos idempotens kérés biztonságosan újraküldhető'
 );
-select is((select count(*) from public.payments where idempotency_key='86000000-0000-0000-0000-000000000010'),1::bigint,'Idempotens újraküldés nem dupláz befizetést');
+select is(
+  (select count(*) from public.admin_payment_history((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),
+  1::bigint,
+  'Idempotens újraküldés nem dupláz befizetést'
+);
 select throws_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2001,current_date,'cash','cash_register','első részlet','86000000-0000-0000-0000-000000000010')$$,(date_trunc('month',current_date)-interval '1 month')::date),
   'P0001','Az idempotencia kulcs már egy másik befizetési kéréshez tartozik.','Eltérő kérés nem használhat újra idempotencia kulcsot'
