@@ -8,6 +8,13 @@ import { createClient } from "@/lib/supabase/server";
 
 const UUID_PATTERN = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 function resultUrl(kind: "hiba" | "sorozat", value: string) { return `/foglalasok/ismetlod?${new URLSearchParams({ [kind]: value }).toString()}`; }
+function parseAdminGroupRate(role: "admin" | "user", formData: FormData) {
+  if (role !== "admin") return null;
+  const raw = String(formData.get("groupHourlyRateHuf") ?? "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : NaN;
+}
 
 export async function createRecurringBooking(formData: FormData) {
   const profile = await requireActiveProfile();
@@ -15,6 +22,8 @@ export async function createRecurringBooking(formData: FormData) {
   const parsed = parseRecurringBookingForm(Object.fromEntries(keys.map((key) => [key, String(formData.get(key) ?? "")])));
   if (!parsed.ok) redirect(resultUrl("hiba", parsed.error));
   const value = parsed.value;
+  const requestedRate = parseAdminGroupRate(profile.role, formData);
+  if (Number.isNaN(requestedRate)) redirect(resultUrl("hiba", "A csoportos óradíj csak 0 vagy pozitív egész forint lehet."));
   const requestedTarget = String(formData.get("targetUserId") ?? "");
   const userId = profile.role === "admin" && UUID_PATTERN.test(requestedTarget) ? requestedTarget : profile.id;
   const supabase = await createClient();
@@ -32,6 +41,16 @@ export async function createRecurringBooking(formData: FormData) {
   }
   const seriesId = typeof data === "object" && data !== null && "series_id" in data ? String(data.series_id) : "";
   if (!UUID_PATTERN.test(seriesId)) redirect(resultUrl("hiba", "A sorozat létrejött, de az eredmény megjelenítése nem sikerült. Ellenőrizd a Foglalásaim oldalt."));
+
+  if (profile.role === "admin" && value.useType === "group" && requestedRate !== null) {
+    const { error: rateError } = await supabase.rpc("admin_set_booking_series_group_rate", {
+      p_series_id: seriesId,
+      p_hourly_rate_huf: requestedRate,
+      p_correlation_id: crypto.randomUUID(),
+    });
+    if (rateError) redirect(resultUrl("hiba", "A sorozat létrejött az alapértelmezett 5 000 Ft/óra díjjal, de az egyedi csoportos díj mentése nem sikerült. Ellenőrizd a sorozatot."));
+  }
+
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl("sorozat", seriesId));
 }
