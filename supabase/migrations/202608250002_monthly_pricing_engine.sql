@@ -110,10 +110,6 @@ begin
         ));
       end if;
     else
-      -- A pricing_tiers min/max mezői a teljes havi óraszám kvalifikációs
-      -- határai. Progresszív díjnál ezért a kumulatív max határig tartó
-      -- szeletet kell elszámolni (0..900, 901..3600, 3601..), nem a
-      -- min/max inkluzív tartomány matematikai szélességét.
       v_remaining := v_normal_minutes;
       v_consumed := 0;
       for v_tier in
@@ -175,7 +171,7 @@ begin
     v_special_due,
     v_normal_due + v_special_due,
     v_breakdown,
-    encode(digest(
+    encode(extensions.digest(
       p_user_id::text || '|' || p_settlement_month::text || '|' || v_scheme::text || '|' ||
       coalesce(v_fixed_rate::text, '') || '|' || v_normal_minutes::text || '|' || v_special_minutes::text || '|' ||
       coalesce(v_booking_digest, '') || '|' || v_breakdown::text,
@@ -184,8 +180,6 @@ begin
 end;
 $$;
 
--- A központi számító belső építőelem. Közvetlen klienshívás tiltott;
--- a jogosultságot az alábbi szűk wrapper RPC-k ellenőrzik.
 revoke execute on function public.calculate_monthly_pricing(uuid,date) from public, anon, authenticated;
 
 create or replace function public.admin_calculate_monthly_pricing(
