@@ -35,6 +35,7 @@ declare
   v_tier record;
   v_remaining integer;
   v_slice integer;
+  v_consumed integer := 0;
   v_breakdown jsonb := '[]'::jsonb;
   v_booking_digest text;
 begin
@@ -109,7 +110,12 @@ begin
         ));
       end if;
     else
+      -- A pricing_tiers min/max mezői a teljes havi óraszám kvalifikációs
+      -- határai. Progresszív díjnál ezért a kumulatív max határig tartó
+      -- szeletet kell elszámolni (0..900, 901..3600, 3601..), nem a
+      -- min/max inkluzív tartomány matematikai szélességét.
       v_remaining := v_normal_minutes;
+      v_consumed := 0;
       for v_tier in
         select t.id, t.min_minutes, t.max_minutes, t.hourly_rate_huf
         from public.pricing_tiers t
@@ -117,7 +123,11 @@ begin
         order by t.min_minutes
       loop
         exit when v_remaining <= 0;
-        v_slice := least(v_remaining, coalesce(v_tier.max_minutes - v_tier.min_minutes + 1, v_remaining));
+        if v_tier.max_minutes is null then
+          v_slice := v_remaining;
+        else
+          v_slice := least(v_remaining, greatest(v_tier.max_minutes - v_consumed, 0));
+        end if;
         if v_slice > 0 then
           v_normal_due := v_normal_due + round(v_slice::numeric * v_tier.hourly_rate_huf / 60)::bigint;
           v_breakdown := v_breakdown || jsonb_build_array(jsonb_build_object(
@@ -126,6 +136,7 @@ begin
             'amount_huf', round(v_slice::numeric * v_tier.hourly_rate_huf / 60)::bigint
           ));
           v_remaining := v_remaining - v_slice;
+          v_consumed := v_consumed + v_slice;
         end if;
       end loop;
       if v_remaining > 0 then
@@ -173,7 +184,73 @@ begin
 end;
 $$;
 
-revoke execute on function public.calculate_monthly_pricing(uuid,date) from public, anon;
-grant execute on function public.calculate_monthly_pricing(uuid,date) to authenticated;
+-- A központi számító belső építőelem. Közvetlen klienshívás tiltott;
+-- a jogosultságot az alábbi szűk wrapper RPC-k ellenőrzik.
+revoke execute on function public.calculate_monthly_pricing(uuid,date) from public, anon, authenticated;
+
+create or replace function public.admin_calculate_monthly_pricing(
+  p_user_id uuid,
+  p_settlement_month date
+)
+returns table (
+  user_id uuid,
+  settlement_month date,
+  pricing_scheme public.user_pricing_scheme,
+  normal_minutes integer,
+  special_minutes integer,
+  normal_due_huf bigint,
+  special_due_huf bigint,
+  calculated_due_huf bigint,
+  pricing_breakdown jsonb,
+  calculation_input_hash text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  perform public.require_active_admin();
+  return query select * from public.calculate_monthly_pricing(p_user_id, p_settlement_month);
+end;
+$$;
+
+create or replace function public.get_my_monthly_pricing(
+  p_settlement_month date
+)
+returns table (
+  user_id uuid,
+  settlement_month date,
+  pricing_scheme public.user_pricing_scheme,
+  normal_minutes integer,
+  special_minutes integer,
+  normal_due_huf bigint,
+  special_due_huf bigint,
+  calculated_due_huf bigint,
+  pricing_breakdown jsonb,
+  calculation_input_hash text
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_user_id uuid := auth.uid();
+begin
+  if v_user_id is null or not exists (
+    select 1 from public.profiles p
+    where p.id = v_user_id and p.is_active and p.dashboard_enabled
+  ) then
+    raise exception 'A havi elszámolási dashboard nem érhető el.' using errcode = '42501';
+  end if;
+  return query select * from public.calculate_monthly_pricing(v_user_id, p_settlement_month);
+end;
+$$;
+
+revoke execute on function public.admin_calculate_monthly_pricing(uuid,date) from public, anon;
+revoke execute on function public.get_my_monthly_pricing(date) from public, anon;
+grant execute on function public.admin_calculate_monthly_pricing(uuid,date) to authenticated;
+grant execute on function public.get_my_monthly_pricing(date) to authenticated;
 
 commit;
