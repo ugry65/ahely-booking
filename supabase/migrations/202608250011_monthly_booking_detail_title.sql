@@ -39,7 +39,7 @@ begin
     profile.last_name || ' ' || profile.first_name,
     (booking.start_at at time zone 'Europe/Budapest')::date,
     room.name,
-    booking.title,
+    booking.booking_title,
     (booking.start_at at time zone 'Europe/Budapest')::time,
     (booking.end_at at time zone 'Europe/Budapest')::time,
     (extract(epoch from (booking.end_at - booking.start_at)) / 60)::bigint,
