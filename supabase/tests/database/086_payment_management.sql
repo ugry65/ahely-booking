@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(19);
 
 select has_function('public','admin_record_payment',array['uuid','date','bigint','date','payment_method','money_destination','text','uuid'],'Admin befizetés RPC létezik');
 select has_function('public','admin_monthly_payment_summary',array['date'],'Admin havi befizetés összesítő RPC létezik');
@@ -36,6 +36,15 @@ select set_config('request.jwt.claim.sub','86000000-0000-0000-0000-000000000001'
 select lives_ok(
   format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2000,current_date,'cash','cash_register','első részlet','86000000-0000-0000-0000-000000000010')$$,(date_trunc('month',current_date)-interval '1 month')::date),
   'Admin részfizetést rögzíthet'
+);
+select lives_ok(
+  format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2000,current_date,'cash','cash_register','első részlet','86000000-0000-0000-0000-000000000010')$$,(date_trunc('month',current_date)-interval '1 month')::date),
+  'Azonos idempotens kérés biztonságosan újraküldhető'
+);
+select is((select count(*) from public.payments where idempotency_key='86000000-0000-0000-0000-000000000010'),1::bigint,'Idempotens újraküldés nem dupláz befizetést');
+select throws_ok(
+  format($$select * from public.admin_record_payment('86000000-0000-0000-0000-000000000002',%L::date,2001,current_date,'cash','cash_register','első részlet','86000000-0000-0000-0000-000000000010')$$,(date_trunc('month',current_date)-interval '1 month')::date),
+  'P0001','Az idempotencia kulcs már egy másik befizetési kéréshez tartozik.','Eltérő kérés nem használhat újra idempotencia kulcsot'
 );
 
 select is((select paid_huf from public.admin_monthly_payment_summary((date_trunc('month',current_date)-interval '1 month')::date) where user_id='86000000-0000-0000-0000-000000000002'),2000::bigint,'Részfizetés összege 2000 Ft');
