@@ -2,8 +2,8 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { monthStart, selectedMonths, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
-import { closeMonthlySettlement } from "./actions";
 import { MonthMultiSelect } from "./month-multi-select";
+import { SettlementCloseForm } from "./settlement-close-form";
 
 type PricingScheme = "tiered" | "progressive" | "free";
 type MonthlyPricingRow = {
@@ -195,7 +195,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
           return <tr key={`${row.month}-${row.user_id}`}>
             <td>{row.month}</td><td>{row.user_name}</td><td>{minutesToHours(row.normal_minutes)}</td><td>{minutesToHours(row.special_minutes)}</td><td>{schemeLabel(row.pricing_scheme)}</td><td>{huf(row.normal_due_huf)}</td><td>{huf(row.special_due_huf)}</td><td><strong>{huf(row.calculated_due_huf)}</strong></td>
             <td>{row.is_closed ? <><strong>Lezárva</strong><br /><span className="muted">rev. {row.revision_number ?? "—"}{row.closed_at ? ` · ${closedAt(row.closed_at)}` : ""}</span></> : row.month < currentMonth ? "Lezárható" : "Folyamatban"}</td>
-            <td>{canClose ? <form action={closeMonthlySettlement}><input type="hidden" name="userId" value={row.user_id} /><input type="hidden" name="month" value={row.month} /><input type="hidden" name="returnMonths" value={monthQuery} /><button type="submit">Hónap lezárása</button></form> : "—"}</td>
+            <td>{canClose ? <SettlementCloseForm userId={row.user_id} userName={row.user_name} month={row.month} returnMonths={monthQuery} /> : "—"}</td>
           </tr>;
         })}</tbody>
         <tfoot><tr><th colSpan={7}>Kijelölt hónapok fizetendője</th><th>{huf(totalDue)}</th><th colSpan={2} /></tr></tfoot>
