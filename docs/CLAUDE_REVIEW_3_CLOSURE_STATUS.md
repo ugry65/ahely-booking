@@ -17,7 +17,12 @@ PR: #91
 
 ## Teszt-hardening
 
-A security hardening után elavult tesztek az új publikus API-szerződéshez igazítva. A scope regressziós tesztnek közvetlen booking/sorozat segédlekérdezésre van szüksége authenticated szerepkörben; ehhez a teszt saját `BEGIN ... ROLLBACK` tranzakciójában kap ideiglenes SELECT jogot. A rollback ezeket a GRANT-okat is visszavonja, ezért production jogosultság nem változik.
+A security hardening után elavult tesztek az új publikus API-szerződéshez lettek igazítva. A sorozat-scope regressziós teszt az **üzleti szemantikát** vizsgálja privilegizált teszt-sessionből, miközben az RPC actorát továbbra is a `request.jwt.claim.sub` határozza meg. Így a teszt a target bookingok és sorozatok állapotát közvetlenül tudja ellenőrizni anélkül, hogy a production RLS/GRANT modellt lazítanánk. A publikus EXECUTE-, admin-only és RLS-jogosultsági határokat külön security/DB tesztek bizonyítják.
+
+A pricing hardening után:
+- a régi pricing helper közvetlen authenticated EXECUTE joga tesztelten tiltott;
+- a Fix → Sávos/Progresszív/Free átmenetek, a múltbeli hónap tiltása, a jövőbeli pricing idővonal és a Fix/Tréningterem precedencia célzott regressziós tesztekkel lefedett;
+- a scope semantics teszt TAP terve a tényleges 19 assertionnel szinkronban van.
 
 ## Következő kapu
 
