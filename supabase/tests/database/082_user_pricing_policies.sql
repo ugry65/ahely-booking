@@ -2,7 +2,7 @@ begin;
 
 select plan(17);
 
-select has_function('public', 'admin_set_user_pricing_policy', array['uuid','user_pricing_scheme','date','uuid'], 'A user díjazási mód admin RPC létezik');
+select has_function('public', 'admin_set_user_pricing_policy', array['uuid','user_pricing_scheme','date','uuid'], 'A belső user díjazási policy helper létezik');
 select has_function('public', 'admin_list_user_pricing_policies', array[]::text[], 'A user díjazási mód lista RPC létezik');
 select ok(
   not has_function_privilege('authenticated', 'public.effective_user_pricing_scheme(uuid,date)', 'EXECUTE'),
@@ -36,8 +36,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000822', true);
 select throws_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'progressive', %L::date, gen_random_uuid())$$,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'progressive', null, %L::date, gen_random_uuid())$$,
     date_trunc('month', current_date)::date
   ),
   '42501',
@@ -48,29 +48,29 @@ select throws_ok(
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000821', true);
 select throws_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'progressive', %L::date, gen_random_uuid())$$,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'progressive', null, %L::date, gen_random_uuid())$$,
     (date_trunc('month', current_date)::date + 1)
   ),
   '22023',
-  'A díjazási mód érvényessége csak hónap első napján kezdődhet.',
+  'A díjazás érvényessége csak hónap első napján kezdődhet.',
   'Hónap közepi díjazási mód nem hozható létre'
 );
 select throws_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'progressive', %L::date, gen_random_uuid())$$,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'progressive', null, %L::date, gen_random_uuid())$$,
     (date_trunc('month', current_date)::date - interval '1 month')::date
   ),
   '22023',
-  'Korábbi lezárt hónap díjazási módja nem módosítható.',
+  'Korábbi lezárt hónap díjazása nem módosítható.',
   'Korábbi hónapra nem lehet visszadátumozni'
 );
 
 select lives_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'progressive', %L::date,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'progressive', null, %L::date,
       '82000000-0000-0000-0000-000000000001')$$,
     date_trunc('month', current_date)::date
   ),
@@ -78,8 +78,8 @@ select lives_ok(
 );
 select lives_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'free', %L::date,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'free', null, %L::date,
       '82000000-0000-0000-0000-000000000002')$$,
     (date_trunc('month', current_date) + interval '1 month')::date
   ),
@@ -117,8 +117,8 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000821', true);
 select lives_ok(
   format(
-    $$select public.admin_set_user_pricing_policy(
-      '00000000-0000-0000-0000-000000000822', 'tiered', %L::date,
+    $$select public.admin_set_user_pricing_configuration(
+      '00000000-0000-0000-0000-000000000822', 'tiered', null, %L::date,
       '82000000-0000-0000-0000-000000000003')$$,
     (date_trunc('month', current_date) + interval '1 month')::date
   ),
