@@ -1,6 +1,6 @@
 begin;
 
-select plan(17);
+select plan(19);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('a0000000-0000-0000-0000-000000000001', 'scope-admin@example.invalid', '{"first_name":"Scope","last_name":"Admin"}'),
