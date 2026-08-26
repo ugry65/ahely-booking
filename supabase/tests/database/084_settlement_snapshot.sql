@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(20);
 
 select has_function(
   'public',
@@ -227,7 +227,20 @@ select throws_ok(
     )$$,
   '42501',
   'A lezárt elszámolási snapshot nem módosítható.',
-  'A lezárt booking snapshot sorok immutable-ek'
+  'A lezárt booking snapshot sorok UPDATE ellen immutable-ek'
+);
+
+select throws_ok(
+  $$delete from public.settlement_booking_lines
+    where settlement_revision_id = (
+      select closed_revision_id
+      from public.monthly_settlements
+      where user_id = '84000000-0000-0000-0000-000000000002'
+        and settlement_month = (date_trunc('month', current_date) - interval '1 month')::date
+    )$$,
+  '42501',
+  'A lezárt elszámolási snapshot nem módosítható.',
+  'A lezárt booking snapshot sorok DELETE ellen is immutable-ek'
 );
 
 select is(
