@@ -1,23 +1,32 @@
 # A-Hely foglalási rendszer – Teljes funkcionális és újraimplementálási baseline
 
-Verzió: 1.0
-Dátum: 2026-08-25
-Állapot: **stagingen elfogadott funkcionális rendszer – kanonikus as-built specifikáció**
+Verzió: 1.1
+Dátum: 2026-08-26
+Állapot: **kanonikus funkcionális és újraimplementálási specifikáció; stagingen elfogadott rendszer, a külön jelölt production gap-ekkel**
 
 ## 0. A dokumentum célja és használata
 
-Ez a dokumentum nem fejlesztési ötletlista és nem csupán UAT-checklist. A célja, hogy az A-Hely foglalási rendszer jelenlegi, stagingen elfogadott működését technológiától és konkrét forráskódtól függetlenül olyan részletességgel rögzítse, hogy a rendszer szükség esetén **nulláról újraimplementálható legyen más forráskóddal, más frameworkkel vagy más szolgáltatói infrastruktúrán**, miközben az üzleti működés, jogosultságok, adatbiztonsági invariánsok és felhasználói élmény megmaradnak.
+Ez a dokumentum nem fejlesztési ötletlista és nem csupán UAT-checklist. A célja, hogy az A-Hely foglalási rendszer jelenlegi, stagingen elfogadott működését és a már véglegesen elfogadott production-követelményeket technológiától és konkrét forráskódtól függetlenül olyan részletességgel rögzítse, hogy a rendszer szükség esetén **nulláról újraimplementálható legyen más forráskóddal, más frameworkkel vagy más szolgáltatói infrastruktúrán**, miközben az üzleti működés, jogosultságok, adatbiztonsági invariánsok és felhasználói élmény megmaradnak.
 
-Ha ez a dokumentum és egy régebbi beszélgetés eltér, ez a dokumentum és az aktuális projektkontextus az irányadó, kivéve új, explicit üzleti döntést.
+Ha ez a dokumentum és egy régebbi beszélgetés eltér, ez a dokumentum és az aktuális projektkontextus az irányadó, kivéve új, explicit, későbbi üzleti döntést.
+
+### Forrásprioritás
+
+1. `docs/CURRENT_FUNCTIONAL_BASELINE.md` – **elsődleges, kanonikus as-built/újraimplementálási specifikáció**;
+2. `A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md` és az ott hivatkozott aktuális döntési dokumentumok;
+3. a részletes UI/UX, admin, riport, pricing, production-readiness dokumentumok;
+4. az `A-Hely_Foglalasi_Rendszer_Funkcionalis_Specifikacio_v1.0.docx` kizárólag **TÖRTÉNETI / SUPERSEDED** forrás. Nem használható önálló vagy elsődleges implementációs specifikációként, mert több pontját későbbi explicit üzleti döntések felülírták.
 
 Kapcsolódó kötelező források:
 - `A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md`;
-- aktuális Funkcionális Specifikáció;
 - `docs/BOOKING_UI_UX_BASELINE.md`;
 - `docs/FUNKCIONALIS_UAT_CHECKLIST.md`;
 - `docs/ADMIN_USER_MANAGEMENT.md`;
 - `docs/ADMIN_REPORTING_RULES.md`;
 - `docs/PRICING_MODES.md`;
+- `docs/DECISION_2026-08-25_FINANCIAL_SCOPE_AND_TRAINING_GROUP_RATE.md`;
+- `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`;
+- `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`;
 - `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md`;
 - `docs/PRODUCTION_READINESS_CHECKLIST.md`.
 
@@ -38,13 +47,14 @@ A rendszer fő feladatai:
 6. dupla foglalás adatbázis-szintű megakadályozása;
 7. Tréningterem speciális működés;
 8. havi órák és fizetendő összeg számítása;
-9. userenkénti sávos/progresszív/Free díjazás;
+9. userenkénti **Sávos / Progresszív / Fix óradíj / Free** díjazás, időbeli érvényességgel;
 10. admin riportok és exportok;
 11. auditálhatóság és történeti konzisztencia.
 
 Nem része az aktuális aktív scope-nak:
 - bankkártyás fizetés;
 - befizetések kézi könyvelésének UI-ja;
+- automatikus booking confirmation e-mail mint go-live feltétel;
 - közvetlen számlázó-integráció;
 - komplex pénzügyi dashboard;
 - natív mobilapp;
@@ -94,6 +104,8 @@ Ezt backend/DB szinten kell kikényszeríteni.
 ## 3.4 Admin más user nevében
 
 Admin foglalhat más aktív user nevében. A foglalás tulajdonosa a kiválasztott user; az auditban az actor a műveletet végrehajtó admin. Normál user más `user_id` értékét kliensmanipulációval sem adhatja meg.
+
+A pénzügyi elszámolás mindig a **foglalás tulajdonosának** pricing policy-ját használja, nem a foglalást végrehajtó adminét.
 
 ---
 
@@ -234,6 +246,18 @@ Normál helyiségnél használat automatikusan `Egyéni`; Egyéni/Csoportos vál
 
 Mentés nélküli bezárás (X, Mégse, backdrop) nem hagyhat fantom `Új foglalás` blokkot.
 
+## 7.1 Foglalási siker-visszajelzés és e-mail
+
+Az automatikus foglalási visszaigazoló e-mail **nem go-live blocker és nem része az első production verzió kötelező funkcióinak**.
+
+Kötelező viszont:
+- sikeres mentés után a UI egyértelműen jelezze a sikert;
+- a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;
+- sikertelen vagy visszagördített foglalás nem jelenhet meg sikeresként;
+- technikai hiba esetén érthető hibaüzenet jelenjen meg, félkész foglalás nélkül.
+
+Booking confirmation e-mail későbbi opcionális fejlesztés.
+
 ---
 
 # 8. Egyedi foglalás üzleti szabályai
@@ -323,7 +347,7 @@ A helyi kezdési időt DST-váltás mellett is meg kell őrizni.
 
 Sorozat létrehozása ugyanabból a foglalási modalból indul, nem külön főoldali workflowból.
 
-Sorozat szerkesztése/törlése Skedda-szerű hatóköröket kínáljon a jóváhagyott implementáció szerint (aktuális alkalom / ettől kezdve / teljes sorozat jellegű scope-ok).
+A sorozat szerkesztési/törlési hatóköreit az aktuális implementációval azonosan, külön dokumentált és tesztelt szemantikával kell kezelni. A három user-facing scope: **aktuális alkalom / ettől kezdve / teljes sorozat**. A részletes rekord-szintű hatás és a Tréningterem egyedi díj öröklésének pontosítása production-dokumentációs teendő; új implementációban nem szabad ezt pusztán a „Skedda-szerű” kifejezésből kitalálni.
 
 ---
 
@@ -383,6 +407,8 @@ Más foglalók nevének láthatósága globális admin beállítás.
 
 # 15. Díjazási modell
 
+Az admin üzleti szinten négy díjazási lehetőség közül választ: **Sávos / Progresszív / Fix óradíj / Free**. A jelenlegi adatmodell ezt technikailag úgy valósítja meg, hogy a `tiered/progressive/free` policy mellett külön `user_price_overrides` réteg tárolja a Fix óradíjat. Egy másik technológiában ez megvalósítható egyetlen négyértékű policy-modellel is, feltéve hogy a lent rögzített precedencia és történeti jelentés változatlan marad.
+
 ## 15.1 Elszámolandó foglalás
 
 Csak `active` foglalás számlázódik. Törölt/lemondott foglalás nem.
@@ -406,17 +432,34 @@ A sávok csak saját tartományukra vonatkoznak.
 
 Példa: 20 óra → `15 × 2700 + 5 × 1900 = 50 000 Ft`.
 
-## 15.4 Free (`free`)
+## 15.4 Fix óradíj (`fixed_user` üzleti mód)
+
+Admin userenként fix normál óradíjat állíthat be, havi érvényességgel. Például 2200 Ft/óra esetén a user adott havi normál órái `óraszám × 2200 Ft` szerint számolódnak, függetlenül attól, hogy a háttér-policy korábban sávos vagy progresszív volt.
+
+A Fix óradíj csak a **normál** órákra vonatkozik. A Tréningterem csoportos használata külön speciális díjszabály szerint számítódik, kivéve Free usert.
+
+**Jelenlegi production gap:** a DB számítás támogatja a `user_price_overrides` réteget, de a Fix óradíj adminból történő biztonságos beállításához szükséges dedikált admin RPC/UI még nincs teljesen kialakítva. Ez production előtt lezárandó implementációs feladat.
+
+## 15.5 Free (`free`)
 
 Minden foglalás 0 Ft, Tréningterem csoportos is. Óraszám és foglalások riportálási célból megmaradnak.
 
-## 15.5 Érvényesség
+## 15.6 Pricing precedencia
 
-A pricing policy userenként időben verziózott. Kezdete hónap első napja. Jövőbeli policy előre rögzíthető. Explicit policy hiányában sávos.
+Egy adott user és hónap fizetendő összegének kötelező precedenciája:
 
-Történeti hónap elszámolását a későbbi policy-módosítás nem írhatja át kontrollálatlanul.
+1. ha az effektív pricing policy `Free`, minden foglalás 0 Ft;
+2. egyébként, ha a userhez az adott hónapra érvényes Fix óradíj tartozik, a normál órák ezt használják;
+3. Fix óradíj hiányában a normál órák a `Sávos` vagy `Progresszív` policy szerint számítódnak;
+4. Tréningterem Csoportos használat külön speciális/foglalás-specifikus óradíjon számítódik, **kivéve Free usert**, akinél ez is 0 Ft.
 
-Minden admin policy-változás auditált; közvetlen Data API írás tiltott.
+## 15.7 Érvényesség és történet
+
+A pricing policy és a Fix óradíj userenként időben verziózott. Az admin számára a díjazás effektív kezdete elszámolási hónaphoz kötött; új policy/override kezdete hónap első napja. Jövőbeli beállítás előre rögzíthető. Explicit policy hiányában Sávos.
+
+Történeti hónap elszámolását a későbbi policy- vagy fixdíj-módosítás nem írhatja át kontrollálatlanul.
+
+Minden admin pricing-változás auditált; közvetlen, jogosultságot megkerülő Data API írás tiltott.
 
 ---
 
@@ -427,7 +470,7 @@ A havi számítás Europe/Budapest hónaphatárokkal történik.
 Admin havi nézetben userenként látható legalább:
 - user;
 - összes aktív elszámolandó óra;
-- alkalmazott pricing mód;
+- alkalmazott pricing mód / effektív Fix óradíj;
 - számított fizetendő összeg;
 - releváns Tréningterem speciális díjak.
 
@@ -501,7 +544,7 @@ Kritikus invariánsok:
 - Tréningterem foglalásonként eltérő 5000/7500/stb. díja külön történeti sorban megőrizhető;
 - Free szabály a teljes fizetendőt nullázza, de a foglalási történetet nem törli.
 
-A Befizetések UI jelenleg ki van véve az aktív foglaló rendszerből. Befizetés könyvelése a külön pénzügyi elszámolási folyamatban történik. A korábban létrehozott payment DB struktúra nem tekintendő aktív user-facing feature-nek.
+A Befizetések UI jelenleg ki van véve az aktív foglaló rendszerből. Befizetés könyvelése a külön pénzügyi elszámolási folyamatban történik. A már létrejött payment backend/adatmodell **parkoltatott/befagyasztott**: nem törlendő vissza, de ebben a fejlesztési fázisban nem fejlesztendő tovább és nem tekintendő aktív user-facing feature-nek. Későbbi visszaemelése külön üzleti/technikai döntést és saját baseline-t igényel.
 
 ---
 
@@ -521,6 +564,8 @@ Admin számára elérhető kezelési területek:
 
 `Befizetések` menüpont **nem** része az aktuális aktív navigációnak. Közvetlen régi URL sem adhat használható payment UI-t.
 
+A Fix óradíj admin kezelése elfogadott production-funkció, de a jelenlegi staging implementációban még production gap; ennek lezárásáig a rendszer production GO-t nem kaphat.
+
 ---
 
 # 21. Auditálás
@@ -531,6 +576,7 @@ Kritikus admin és üzleti műveletek auditálandók, legalább:
 - onboarding befejezés;
 - jogosultság/csoport módosítás;
 - pricing policy módosítás;
+- Fix óradíj létrehozása/módosítása/megszüntetése;
 - Tréningterem egyedi díj módosítása;
 - admin más user nevében foglalása;
 - foglalás törlés/lemondás;
@@ -557,8 +603,8 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 9. **BookingSeries** – recurrence definíció, owner, room, szabály, scope.
 10. **BookingCancellation** – booking, actor, timestamp, reason, eredeti időadatok.
 11. **PricingTier** – órasávok és árak.
-12. **UserPricingPolicy** – tiered/progressive/free + effective month.
-13. **UserPriceOverride** – ha a rendszerben egyedi fix user-díj továbbra is támogatott/történetileg szükséges.
+12. **UserPricingPolicy** – `tiered/progressive/free` + effective month; a jelenlegi technikai modellben ez választja a számítás fő sémáját.
+13. **UserPriceOverride** – **aktív, megtartott Fix óradíj üzleti feature**; userenként és időben érvényes fix normál óradíj. A `Free` policy ezt is felülírja.
 14. **SpecialRoomRate / BookingSpecialRate** – Tréningterem default és foglalás-specifikus csoportos díj.
 15. **MonthlySettlement** – user+hónap logikai settlement.
 16. **SettlementRevision** – verziózott snapshot.
@@ -583,7 +629,8 @@ A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelent�
 - audit append-only jelleg;
 - idempotencia foglaláslétrehozásnál;
 - optimistic concurrency módosításnál;
-- atomi foglalás + egyedi Tréningterem-díj.
+- atomi foglalás + egyedi Tréningterem-díj;
+- Fix óradíj admin módosítása kizárólag kontrollált, auditált backend műveleten keresztül.
 
 ---
 
@@ -649,7 +696,10 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - foglalás+díj tranzakció rollback hibánál;
 - tiered 20 óra = 20×1900;
 - progressive 20 óra = 15×2700 + 5×1900;
-- Free = 0 minden foglalásra;
+- Fix óradíj felülírja a tiered/progressive normál díjat;
+- Free felülírja a Fix óradíjat és a Tréningterem speciális díjat is;
+- Fix óradíj nem írja felül a nem-Free Tréningterem csoportos speciális díjat;
+- Fix óradíj admin-only módosítása, érvényességi hónapja és auditja;
 - cancelled booking kizárása;
 - pricing policy effective month;
 - havi összesítés;
@@ -668,7 +718,7 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 
 # 27. Kötelező manuális UAT / UX ekvivalencia
 
-Automatikus teszt mellett manuálisan is igazolandó:
+Automatikus teszt mellett manuálisan is igazolandó legalább:
 - desktop napi naptár használhatóság;
 - mobil 7 napos sáv;
 - havi dátumválasztó;
@@ -683,13 +733,23 @@ Automatikus teszt mellett manuálisan is igazolandó:
 - admin csoportos díjmező default 5000 és módosítható;
 - mentetlen modal bezárásakor nincs fantom blokk;
 - mobil hamburger bezár route-váltáskor;
-- foglaló neve/privacy;
+- foglaló neve/privacy/stabil szín;
 - Szerkesztés/Duplikálás/Törlés;
 - sorozat scope műveletek;
+- onboarding blokkolás és kötelező számlázási adatok;
+- CSV user import;
+- utolsó admin védelme;
+- room group can_book és közvetlen can_repeat különválasztása;
+- Sávos/Progresszív/Free admin policy és effective month;
+- **Fix óradíj admin beállítása, effective month, módosítás/megszüntetés**;
+- Free precedencia Fix óradíj és Tréningterem felett;
+- Tréningterem egyedi csoportos díj;
 - Havi órák;
 - tételes aktív foglalások Foglalás címe oszloppal;
 - részletes CSV;
-- lemondási riport.
+- lemondási riport;
+- payment UI közvetlen régi URL-je nem használható és a Havi órákra/aktív admin oldalra irányít;
+- sikeres foglalás UI-visszajelzés és azonnali megjelenés; e-mail hiánya nem hiba.
 
 ---
 
@@ -698,7 +758,8 @@ Automatikus teszt mellett manuálisan is igazolandó:
 Nem szabad kész feature-ként értelmezni:
 - saját foglalások teljes naptárnézetének további fejlesztése;
 - ismétlődő kivételdátum Skedda-szerű naptárválasztójának UX finomítása;
-- mobil scroll esetleges 18:00 körüli időszakos megakadásának további vizsgálata, ha reprodukálható;
+- mobil scroll esetleges 18:00 körüli időszakos megakadásának további vizsgálata, ha reprodukálható; **ez nem kívánt működés és egy új implementációban nem reprodukálandó**;
+- automatikus booking confirmation e-mail;
 - közvetlen számlázó-integráció;
 - befizetések aktív UI-ja;
 - teljes statisztikai/vezetői dashboard.
@@ -714,14 +775,15 @@ Ha a rendszert más kóddal vagy más platformon újraépítjük, akkor csak akk
 1. a jelen dokumentum minden `kötelező`, `kell`, `nem lehet`, `tiltott` jellegű szabálya teljesül;
 2. a jogosultságok backend/DB oldalon is érvényesek;
 3. a dupla foglalás konkurens terhelés mellett sem lehetséges;
-4. a díjszámítás ugyanazokat az eredményeket adja;
+4. a díjszámítás ugyanazokat az eredményeket adja, beleértve a Sávos/Progresszív/Fix/Free precedenciát és a Tréningterem szabályait;
 5. a történeti settlement/audit adatok nem írhatók át kontrollálatlanul;
 6. a mobil és desktop foglalási UX a BOOKING_UI_UX_BASELINE elfogadott működésével ekvivalens;
 7. a kötelező automatikus tesztkészlet zöld;
 8. a funkcionális UAT zöld, nincs P1/P2 eltérés;
 9. backup és tényleges restore-drill bizonyított;
-10. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
-11. production csak explicit üzleti GO jóváhagyással indul.
+10. production monitoring/heartbeat és riasztás kontrollált teszttel bizonyított;
+11. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
+12. production csak explicit üzleti GO jóváhagyással indul.
 
 ---
 
