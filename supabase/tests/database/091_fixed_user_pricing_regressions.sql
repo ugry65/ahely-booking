@@ -1,6 +1,6 @@
 begin;
 
-select plan(16);
+select plan(17);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('91000000-0000-0000-0000-000000000001', 'pricing-reg-admin@example.invalid', '{"first_name":"Pricing","last_name":"Admin"}'),
