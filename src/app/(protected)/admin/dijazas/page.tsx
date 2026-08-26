@@ -33,6 +33,15 @@ type PriceOverride = {
 
 type EffectiveMode = "tiered" | "progressive" | "fixed" | "free";
 
+type EffectivePricing = {
+  mode: EffectiveMode;
+  rate: number | null;
+};
+
+type ScheduledPricing = EffectivePricing & {
+  date: string;
+};
+
 const LABELS: Record<EffectiveMode, string> = {
   tiered: "Sávos",
   progressive: "Progresszív",
@@ -74,22 +83,30 @@ function activeOverride(overrides: PriceOverride[], userId: string, onDate: stri
     .sort((a, b) => b.valid_from.localeCompare(a.valid_from))[0] ?? null;
 }
 
-function effectiveMode(policies: PricingPolicy[], overrides: PriceOverride[], userId: string, onDate: string) {
+function effectiveMode(policies: PricingPolicy[], overrides: PriceOverride[], userId: string, onDate: string): EffectivePricing {
   const policy = activePolicy(policies, userId, onDate);
-  if (policy?.pricing_scheme === "free") return { mode: "free" as const, rate: null };
+  if (policy?.pricing_scheme === "free") return { mode: "free", rate: null };
   const override = activeOverride(overrides, userId, onDate);
-  if (override) return { mode: "fixed" as const, rate: override.hourly_rate_huf };
+  if (override) return { mode: "fixed", rate: override.hourly_rate_huf };
   return { mode: (policy?.pricing_scheme ?? "tiered") as "tiered" | "progressive", rate: null };
 }
 
-function nextEffectiveChange(policies: PricingPolicy[], overrides: PriceOverride[], userId: string, onDate: string) {
-  const dates = [
+function scheduledEffectiveChanges(
+  policies: PricingPolicy[],
+  overrides: PriceOverride[],
+  userId: string,
+  onDate: string,
+): ScheduledPricing[] {
+  const dates = Array.from(new Set([
     ...policies.filter((p) => p.user_id === userId && p.valid_from > onDate).map((p) => p.valid_from),
     ...overrides.filter((o) => o.user_id === userId && o.valid_from > onDate).map((o) => o.valid_from),
-  ].sort();
-  const nextDate = dates[0];
-  if (!nextDate) return null;
-  return { date: nextDate, ...effectiveMode(policies, overrides, userId, nextDate) };
+  ])).sort();
+
+  return dates.map((date) => ({ date, ...effectiveMode(policies, overrides, userId, date) }));
+}
+
+function pricingLabel(item: EffectivePricing) {
+  return `${LABELS[item.mode]}${item.mode === "fixed" ? ` · ${item.rate!.toLocaleString("hu-HU")} Ft/óra` : ""}`;
 }
 
 export default async function PricingAdminPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -117,6 +134,9 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
   const selectedOverrides = selectedProfile
     ? overrides.filter((item) => item.user_id === selectedProfile.id).sort((a, b) => b.valid_from.localeCompare(a.valid_from))
     : [];
+  const selectedSchedule = selectedProfile
+    ? scheduledEffectiveChanges(policies, overrides, selectedProfile.id, today)
+    : [];
 
   return (
     <section className="stack">
@@ -135,18 +155,25 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
       <section className="card wide-card stack">
         <h2>Díjazási módok</h2>
         <p className="muted">A mód teljes elszámolási hónaptól érvényes. Precedencia: Free → Fix → Sávos/Progresszív. A Fix óradíj a normál órákra vonatkozik; a nem-Free Tréningterem Csoportos használata külön díjszabás szerint számolódik.</p>
+        <p className="message" role="note"><strong>Fontos:</strong> egy új beállítás az adott kezdőhónaphoz tartozó díjazást módosítja. A későbbi hónapokra korábban beütemezett változások megmaradnak, ezért mentés előtt mindig ellenőrizd az <strong>Ütemezett változások</strong> oszlopot.</p>
         <div style={{ overflowX: "auto" }}>
           <table className="admin-table">
-            <thead><tr><th>Kliens</th><th>Aktuális mód</th><th>Következő változás</th><th>Új mód</th><th>Érvényes ettől</th><th /></tr></thead>
+            <thead><tr><th>Kliens</th><th>Aktuális mód</th><th>Ütemezett változások</th><th>Új mód</th><th>Érvényes ettől</th><th /></tr></thead>
             <tbody>
               {profiles.map((profile) => {
                 const current = effectiveMode(policies, overrides, profile.id, today);
-                const upcoming = nextEffectiveChange(policies, overrides, profile.id, today);
+                const scheduled = scheduledEffectiveChanges(policies, overrides, profile.id, today);
                 return (
                   <tr key={profile.id}>
                     <td><strong>{fullName(profile)}</strong><br /><span className="muted">{profile.email}{profile.is_active ? "" : " · inaktív"}</span></td>
-                    <td>{LABELS[current.mode]}{current.mode === "fixed" ? ` · ${current.rate!.toLocaleString("hu-HU")} Ft/óra` : ""}</td>
-                    <td>{upcoming ? `${upcoming.date.slice(0, 7)} · ${LABELS[upcoming.mode]}${upcoming.mode === "fixed" ? ` · ${upcoming.rate!.toLocaleString("hu-HU")} Ft/óra` : ""}` : "—"}</td>
+                    <td>{pricingLabel(current)}</td>
+                    <td>
+                      {scheduled.length ? (
+                        <div className="stack" style={{ gap: "0.25rem" }}>
+                          {scheduled.map((item) => <span key={`${profile.id}-${item.date}`}>{item.date.slice(0, 7)} · {pricingLabel(item)}</span>)}
+                        </div>
+                      ) : "—"}
+                    </td>
                     <td colSpan={3}>
                       <form action={setUserPricingPolicy} className="admin-editor-row compact">
                         <input type="hidden" name="userId" value={profile.id} />
@@ -168,6 +195,13 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
 
       {selectedProfile ? <section className="card wide-card stack">
         <div className="page-heading"><div><p className="eyebrow">Díjazási előzmények</p><h2>{fullName(selectedProfile)}</h2><p className="muted">{selectedProfile.email}</p></div><Link className="button secondary" href="/admin/dijazas">Bezárás</Link></div>
+
+        <h3>Jövőbeli díjazási idővonal</h3>
+        {selectedSchedule.length ? (
+          <div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Érvényes ettől</th><th>Effektív mód</th></tr></thead><tbody>
+            {selectedSchedule.map((item) => <tr key={item.date}><td>{item.date}</td><td>{pricingLabel(item)}</td></tr>)}
+          </tbody></table></div>
+        ) : <p className="muted">Nincs későbbre ütemezett díjazási változás.</p>}
 
         <h3>Pricing policy</h3>
         <div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Mód</th><th>Érvényes ettől</th><th>Érvényes eddig</th><th>Rögzítve</th></tr></thead><tbody>
