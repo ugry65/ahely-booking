@@ -1,8 +1,8 @@
 # A-Hely foglalási rendszer – Teljes funkcionális és újraimplementálási baseline
 
-Verzió: 1.1
+Verzió: 1.2
 Dátum: 2026-08-26
-Állapot: **kanonikus funkcionális és újraimplementálási specifikáció; stagingen elfogadott rendszer, a külön jelölt production gap-ekkel**
+Állapot: **kanonikus funkcionális és újraimplementálási specifikáció; staging baseline, a külön production-readiness kapukkal**
 
 ## 0. A dokumentum célja és használata
 
@@ -14,7 +14,7 @@ Ha ez a dokumentum és egy régebbi beszélgetés eltér, ez a dokumentum és az
 
 1. `docs/CURRENT_FUNCTIONAL_BASELINE.md` – **elsődleges, kanonikus as-built/újraimplementálási specifikáció**;
 2. `A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md` és az ott hivatkozott aktuális döntési dokumentumok;
-3. a részletes UI/UX, admin, riport, pricing, production-readiness dokumentumok;
+3. a részletes UI/UX, admin, riport, pricing, sorozat-scope és production-readiness dokumentumok;
 4. az `A-Hely_Foglalasi_Rendszer_Funkcionalis_Specifikacio_v1.0.docx` kizárólag **TÖRTÉNETI / SUPERSEDED** forrás. Nem használható önálló vagy elsődleges implementációs specifikációként, mert több pontját későbbi explicit üzleti döntések felülírták.
 
 Kapcsolódó kötelező források:
@@ -24,6 +24,7 @@ Kapcsolódó kötelező források:
 - `docs/ADMIN_USER_MANAGEMENT.md`;
 - `docs/ADMIN_REPORTING_RULES.md`;
 - `docs/PRICING_MODES.md`;
+- `docs/SERIES_SCOPE_SEMANTICS.md`;
 - `docs/DECISION_2026-08-25_FINANCIAL_SCOPE_AND_TRAINING_GROUP_RATE.md`;
 - `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`;
 - `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`;
@@ -347,7 +348,46 @@ A helyi kezdési időt DST-váltás mellett is meg kell őrizni.
 
 Sorozat létrehozása ugyanabból a foglalási modalból indul, nem külön főoldali workflowból.
 
-A sorozat szerkesztési/törlési hatóköreit az aktuális implementációval azonosan, külön dokumentált és tesztelt szemantikával kell kezelni. A három user-facing scope: **aktuális alkalom / ettől kezdve / teljes sorozat**. A részletes rekord-szintű hatás és a Tréningterem egyedi díj öröklésének pontosítása production-dokumentációs teendő; új implementációban nem szabad ezt pusztán a „Skedda-szerű” kifejezésből kitalálni.
+## 11.1 Sorozat-scope definíció
+
+A három user-facing scope pontos, kötelező jelentése:
+- **Aktuális alkalom (`occurrence`)**: csak a kiválasztott konkrét aktív jövőbeli booking;
+- **Ettől kezdve (`following`)**: a kiválasztott booking és minden, ugyanazon sorozathoz tartozó, nála később kezdődő aktív jövőbeli booking;
+- **Teljes sorozat (`series`)**: a sorozat összes aktív, a művelet időpontjában még jövőbeli bookingja, függetlenül attól, melyik alkalomról indult a művelet.
+
+Már lezajlott vagy korábban cancelled alkalmat egyik sorozat-scope sem ír át visszamenőleg.
+
+## 11.2 Sorozat szerkesztése
+
+A kiválasztott booking új kezdési ideje és eredeti kezdési ideje közötti időeltolás minden érintett booking saját eredeti kezdésére azonosan alkalmazandó. Az új kezdés/befejezés különbsége adja az új, minden érintett bookingra alkalmazott durationt. Ugyanígy minden target az új helyiséget, használattípust és megjegyzést kapja.
+
+A rendszer az összes target célállapotát előre validálja. Ha egyetlen célbooking jogosulatlan, időszabályt sért vagy ütközik, a teljes scope-update visszagördül; részleges módosítás nem maradhat.
+
+A kiválasztott booking optimista konkurenciaverzióját ellenőrizni kell; stale állapotból scope-update nem indulhat.
+
+A `booking_title` nem része a tömeges scope-update mezőinek, ezért a már meglévő cím bookingonként megmarad.
+
+## 11.3 Tréningterem díj öröklése scope-update során
+
+A foglalásspecifikus csoportos óradíj nem teríthető szét implicit módon a sorozatra.
+- ha egy booking Tréningterem + Csoportos marad, a rajta tárolt saját 5000/7500/stb. csoportdíj megmarad;
+- ha már nem Tréningterem + Csoportos, a speciális csoportdíj nullázódik;
+- ha korábban nem volt Tréningterem + Csoportos, de a módosítás azzá teszi, és nincs booking-specifikus díj, a default **5000 Ft/óra** lép életbe;
+- új egyedi csoportdíj tömeges beállítása csak külön explicit admin díjművelet lehet.
+
+Normál user ismétlődő Tréningterem-sorozatot nem kezelhet sorozatként.
+
+## 11.4 Sorozat lemondása
+
+A `occurrence/following/series` célhalmaz ugyanaz, mint szerkesztésnél. Az érintett bookingok `cancelled` állapotba kerülnek, nem számítódnak el, az idősáv felszabadul, de a booking fizikailag megmarad és cancellation snapshot + audit keletkezik.
+
+Normál usernél a teljes célhalmazt a 24 órás/cancellation cutoff ellen a módosítás előtt ellenőrizni kell. Ha akár egyetlen érintett booking cutoffon belül van, a teljes scope-cancel sikertelen; részleges lemondás nem történhet. Admin a normál user cutoffot megkerülheti.
+
+## 11.5 Történet, idempotencia
+
+A scope-művelet nem új recurrence-generálás. Az eredeti `booking_series`/occurrence generálási adatok auditforrások; az aktuális élő állapotot a bookingok adják. A scope-műveletek actorhoz és idempotenciakulcshoz kötve auditálandók, azonos request ismétlése nem duplikálhatja a hatást.
+
+A teljes rekord-szintű szemantika kötelező részletspecifikációja: `docs/SERIES_SCOPE_SEMANTICS.md`.
 
 ---
 
@@ -438,7 +478,9 @@ Admin userenként fix normál óradíjat állíthat be, havi érvényességgel. 
 
 A Fix óradíj csak a **normál** órákra vonatkozik. A Tréningterem csoportos használata külön speciális díjszabály szerint számítódik, kivéve Free usert.
 
-**Jelenlegi production gap:** a DB számítás támogatja a `user_price_overrides` réteget, de a Fix óradíj adminból történő biztonságos beállításához szükséges dedikált admin RPC/UI még nincs teljesen kialakítva. Ez production előtt lezárandó implementációs feladat.
+A dedikált, auditált admin RPC/UI implementálva van. Az admin a Díjazás felületen kiválaszthatja a Fix módot, megadhatja a Ft/óra értéket és a kezdő hónapot. A kliensoldal kizárólag az egységes pricing-konfigurációs backend műveleten keresztül módosíthat; a belső policy-helper közvetlen authenticated végrehajtása tiltott.
+
+A Fix admin funkció kódoldali production gapje lezárt; staging manuális UAT-ja továbbra is production-readiness kapu.
 
 ## 15.5 Free (`free`)
 
@@ -453,13 +495,19 @@ Egy adott user és hónap fizetendő összegének kötelező precedenciája:
 3. Fix óradíj hiányában a normál órák a `Sávos` vagy `Progresszív` policy szerint számítódnak;
 4. Tréningterem Csoportos használat külön speciális/foglalás-specifikus óradíjon számítódik, **kivéve Free usert**, akinél ez is 0 Ft.
 
-## 15.7 Érvényesség és történet
+## 15.7 Érvényesség, jövőbeli ütemezés és történet
 
-A pricing policy és a Fix óradíj userenként időben verziózott. Az admin számára a díjazás effektív kezdete elszámolási hónaphoz kötött; új policy/override kezdete hónap első napja. Jövőbeli beállítás előre rögzíthető. Explicit policy hiányában Sávos.
+A pricing policy és a Fix óradíj userenként időben verziózott. Az admin számára a díjazás effektív kezdete elszámolási hónaphoz kötött; új policy/override kezdete hónap első napja. Explicit policy hiányában Sávos.
+
+Jövőbeli mód/díj előre rögzíthető, és egy userhez több egymást követő jövőbeli változás is ütemezhető.
+
+**Egy korábbi kezdőhónapra rögzített új beállítás nem törli automatikusan a már későbbi hónapokra korábban beütemezett változásokat.** A későbbi terv a saját kezdőhónapjától életbe lép, hacsak az admin azt külön nem módosítja. Az admin Díjazás felület ezért minden usernél az összes jövőbeli effektív változást időrendben mutatja, és külön figyelmeztet a későbbi tervek megmaradására.
+
+Azonos kezdőhónaphoz tartozó terv módosítható. Minden tényleges pricing-változás auditált.
 
 Történeti hónap elszámolását a későbbi policy- vagy fixdíj-módosítás nem írhatja át kontrollálatlanul.
 
-Minden admin pricing-változás auditált; közvetlen, jogosultságot megkerülő Data API írás tiltott.
+Közvetlen, jogosultságot megkerülő Data API/RPC írás tiltott.
 
 ---
 
@@ -556,7 +604,7 @@ Admin számára elérhető kezelési területek:
 - Felhasználók;
 - Helyiségek és helyiségcsoportok;
 - közvetlen user–room jogosultságok/repeat kivételek;
-- díjazási policyk és érvényesség;
+- **Díjazás: Sávos / Progresszív / Fix óradíj / Free, effective month és jövőbeli idővonal**;
 - havi órák/fizetendő;
 - tételes aktív foglalások;
 - lemondási riport;
@@ -564,7 +612,7 @@ Admin számára elérhető kezelési területek:
 
 `Befizetések` menüpont **nem** része az aktuális aktív navigációnak. Közvetlen régi URL sem adhat használható payment UI-t.
 
-A Fix óradíj admin kezelése elfogadott production-funkció, de a jelenlegi staging implementációban még production gap; ennek lezárásáig a rendszer production GO-t nem kaphat.
+A Fix óradíj admin RPC/UI az implementált staging baseline része. Production GO előtt a manuális UAT és az általános production-readiness kapuk teljesítése szükséges; maga az admin RPC/UI hiánya már nem blocker.
 
 ---
 
@@ -611,6 +659,7 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 17. **SettlementBookingLine** – foglalásszintű történeti pénzügyi sor.
 18. **AuditLog** – append-only kritikus eseménytörténet.
 19. **SystemSettings** – globális paraméterek (pl. névláthatóság, default limitek).
+20. **BookingScopeOperation** – ismétlődő sorozatok update/cancel műveleti idempotencia- és auditrekordja (actor, scope, selected booking, series, request/result).
 
 A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelentés nem veszhet el.
 
@@ -627,10 +676,12 @@ A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelent�
 - SECURITY DEFINER vagy megfelelő alternatíva esetén explicit, biztonságos search path/context;
 - fizikai törlés korlátozása történeti/audit/pénzügyi adatokon;
 - audit append-only jelleg;
-- idempotencia foglaláslétrehozásnál;
+- idempotencia foglaláslétrehozásnál és sorozat-scope műveleteknél;
 - optimistic concurrency módosításnál;
 - atomi foglalás + egyedi Tréningterem-díj;
-- Fix óradíj admin módosítása kizárólag kontrollált, auditált backend műveleten keresztül.
+- scope update/cancel teljes célhalmazának atomi validálása és rollbackje;
+- Fix óradíj admin módosítása kizárólag kontrollált, auditált backend műveleten keresztül;
+- a belső pricing-policy helper ne legyen közvetlenül végrehajtható authenticated kliensből.
 
 ---
 
@@ -689,6 +740,14 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - kivételdátum;
 - ütközésnél all-or-nothing és skip-conflicts mód;
 - DST/helyi idő megőrzés;
+- occurrence/following/series update pontos célhalmaza;
+- sorozat-update egyetlen hibás/ütköző targetnél teljes rollback;
+- sorozat-scope stale optimistic version elutasítása;
+- occurrence/following/series cancel pontos célhalmaza;
+- scope-cancel egyetlen cutoffon belüli targetnél normál usernek teljes rollback;
+- scope-művelet idempotencia;
+- scope-update booking_title megőrzés;
+- scope-update Tréningterem booking-specifikus csoportdíj megőrzés/nullázás/default 5000 szabályai;
 - Tréningterem 10 napos user limit;
 - Tréningterem repeat user tiltás/admin engedély;
 - Tréningterem csoportos default 5000;
@@ -700,6 +759,10 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - Free felülírja a Fix óradíjat és a Tréningterem speciális díjat is;
 - Fix óradíj nem írja felül a nem-Free Tréningterem csoportos speciális díjat;
 - Fix óradíj admin-only módosítása, érvényességi hónapja és auditja;
+- Fixed→Progresszív és Fixed→Sávos lezárás;
+- múltbeli Fix módosítás tiltása;
+- belső legacy pricing helper közvetlen authenticated EXECUTE tiltása;
+- jövőbeli pricing tervek effektív idővonala;
 - cancelled booking kizárása;
 - pricing policy effective month;
 - havi összesítés;
@@ -735,13 +798,15 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 - mobil hamburger bezár route-váltáskor;
 - foglaló neve/privacy/stabil szín;
 - Szerkesztés/Duplikálás/Törlés;
-- sorozat scope műveletek;
+- occurrence/following/series scope műveletek a §11 és `SERIES_SCOPE_SEMANTICS.md` szerint;
 - onboarding blokkolás és kötelező számlázási adatok;
 - CSV user import;
 - utolsó admin védelme;
 - room group can_book és közvetlen can_repeat különválasztása;
 - Sávos/Progresszív/Free admin policy és effective month;
 - **Fix óradíj admin beállítása, effective month, módosítás/megszüntetés**;
+- minden későbbi beütemezett pricing-változás látható az admin idővonalon;
+- korábbi hónap módosítása mellett a későbbi már beütemezett terv megmarad és a UI ezt egyértelműen jelzi;
 - Free precedencia Fix óradíj és Tréningterem felett;
 - Tréningterem egyedi csoportos díj;
 - Havi órák;
@@ -775,15 +840,16 @@ Ha a rendszert más kóddal vagy más platformon újraépítjük, akkor csak akk
 1. a jelen dokumentum minden `kötelező`, `kell`, `nem lehet`, `tiltott` jellegű szabálya teljesül;
 2. a jogosultságok backend/DB oldalon is érvényesek;
 3. a dupla foglalás konkurens terhelés mellett sem lehetséges;
-4. a díjszámítás ugyanazokat az eredményeket adja, beleértve a Sávos/Progresszív/Fix/Free precedenciát és a Tréningterem szabályait;
-5. a történeti settlement/audit adatok nem írhatók át kontrollálatlanul;
-6. a mobil és desktop foglalási UX a BOOKING_UI_UX_BASELINE elfogadott működésével ekvivalens;
-7. a kötelező automatikus tesztkészlet zöld;
-8. a funkcionális UAT zöld, nincs P1/P2 eltérés;
-9. backup és tényleges restore-drill bizonyított;
-10. production monitoring/heartbeat és riasztás kontrollált teszttel bizonyított;
-11. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
-12. production csak explicit üzleti GO jóváhagyással indul.
+4. a díjszámítás ugyanazokat az eredményeket adja, beleértve a Sávos/Progresszív/Fix/Free precedenciát, a jövőbeli pricing-idővonalat és a Tréningterem szabályait;
+5. az ismétlődő sorozatok occurrence/following/series scope-ja, atomi működése és Tréningterem-díjmegőrzése a §11 szerint ekvivalens;
+6. a történeti settlement/audit adatok nem írhatók át kontrollálatlanul;
+7. a mobil és desktop foglalási UX a BOOKING_UI_UX_BASELINE elfogadott működésével ekvivalens;
+8. a kötelező automatikus tesztkészlet zöld;
+9. a funkcionális UAT zöld, nincs P1/P2 eltérés;
+10. backup és tényleges restore-drill bizonyított;
+11. production monitoring/heartbeat és riasztás kontrollált teszttel bizonyított;
+12. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
+13. production csak explicit üzleti GO jóváhagyással indul.
 
 ---
 
