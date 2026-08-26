@@ -1,8 +1,8 @@
 # A-Hely foglalási rendszer – UAT futási jegyzőkönyv
 
-Checklist verzió: 1.1
+Checklist verzió: 1.2
 Kapcsolódó checklist: `docs/FUNKCIONALIS_UAT_CHECKLIST.md`
-Kanonikus baseline: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
+Kanonikus baseline: `docs/CURRENT_FUNCTIONAL_BASELINE.md` v1.2
 Kapcsolódó issue-k: #32, #82
 
 ## Futás adatai
@@ -53,7 +53,7 @@ Kapcsolódó issue-k: #32, #82
 | UAT-BOOK-07 | NEM FUTOTT | | |
 | UAT-BOOK-08 | NEM FUTOTT | | |
 | UAT-BOOK-09 | NEM FUTOTT | | |
-| UAT-BOOK-10 | NEM FUTOTT | automatizált konkurenciabizonyíték kötelező | |
+| UAT-BOOK-10 | NEM FUTOTT | automatizált konkurenciabizonyíték zöld | |
 | UAT-BOOK-11 | NEM FUTOTT | | |
 | UAT-BOOK-12 | NEM FUTOTT | sikeres/sikertelen UI feedback; e-mail nem követelmény | |
 | UAT-BOOK-13 | NEM FUTOTT | booking title | |
@@ -62,7 +62,7 @@ Kapcsolódó issue-k: #32, #82
 | UAT-TRAIN-03 | NEM FUTOTT | | |
 | UAT-TRAIN-04 | NEM FUTOTT | | |
 | UAT-TRAIN-05 | NEM FUTOTT | default 5000 + admin override | |
-| UAT-TRAIN-06 | NEM FUTOTT | automatizált atomi rollback bizonyíték | |
+| UAT-TRAIN-06 | NEM FUTOTT | automatizált atomi rollback bizonyíték zöld | |
 | UAT-EDIT-01 | NEM FUTOTT | | |
 | UAT-EDIT-02 | NEM FUTOTT | | |
 | UAT-EDIT-03 | NEM FUTOTT | | |
@@ -73,6 +73,9 @@ Kapcsolódó issue-k: #32, #82
 | UAT-CANCEL-02 | NEM FUTOTT | | |
 | UAT-CANCEL-03 | NEM FUTOTT | | |
 | UAT-CANCEL-04 | NEM FUTOTT | | |
+| UAT-CANCEL-05 | NEM FUTOTT | following scope | |
+| UAT-CANCEL-06 | NEM FUTOTT | teljes jövőbeli sorozat | |
+| UAT-CANCEL-07 | NEM FUTOTT | cutoff miatti teljes rollback | |
 | UAT-REC-01 | NEM FUTOTT | | |
 | UAT-REC-02 | NEM FUTOTT | | |
 | UAT-REC-03 | NEM FUTOTT | | |
@@ -82,7 +85,11 @@ Kapcsolódó issue-k: #32, #82
 | UAT-REC-07 | NEM FUTOTT | | |
 | UAT-REC-08 | NEM FUTOTT | | |
 | UAT-REC-09 | NEM FUTOTT | automatizált DST bizonyíték + célzott UAT | |
-| UAT-REC-10 | NEM FUTOTT | három scope | |
+| UAT-REC-10 | NEM FUTOTT | occurrence scope update | |
+| UAT-REC-11 | NEM FUTOTT | following scope update | |
+| UAT-REC-12 | NEM FUTOTT | series scope update | |
+| UAT-REC-13 | NEM FUTOTT | atomi scope-update rollback | |
+| UAT-REC-14 | NEM FUTOTT | booking_title + Tréningterem rate szemantika | |
 | UAT-ADMIN-01 | NEM FUTOTT | | |
 | UAT-ADMIN-02 | NEM FUTOTT | | |
 | UAT-ADMIN-03 | NEM FUTOTT | | |
@@ -98,6 +105,7 @@ Kapcsolódó issue-k: #32, #82
 | UAT-PRICING-04 | NEM FUTOTT | effective month | |
 | UAT-PRICING-05 | NEM FUTOTT | Fix óradíj admin RPC/UI elkészült; manuális staging UAT szükséges | #82 |
 | UAT-PRICING-06 | NEM FUTOTT | Fix/Free/Tréningterem precedencia DB-regresszióval lefedett; E2E staging UAT szükséges | #82 |
+| UAT-PRICING-07 | NEM FUTOTT | teljes jövőbeli pricing-idővonal és későbbi terv megmaradása | #82 |
 | UAT-MONTH-01 | NEM FUTOTT | | |
 | UAT-MONTH-02 | NEM FUTOTT | | |
 | UAT-MONTH-03 | NEM FUTOTT | | |
@@ -124,6 +132,7 @@ Kapcsolódó issue-k: #32, #82
 | --- | --- | --- |
 | Fix user óradíj | MEGTARTVA; admin RPC/UI és regressziós tesztek elkészültek, staging UAT még szükséges | `DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`, `PRICING_MODES.md` |
 | Jövőbeli pricing tervek | Több jövőbeli változás ütemezhető; egy korábbi kezdőhónap módosítása a későbbi terveket nem törli automatikusan; admin UI teljes idővonalat mutat | `PRICING_MODES.md` |
+| Sorozat-scope | occurrence/following/series célhalmaz, atomi update/cancel, cutoff és Tréningterem rate szemantika rögzítve | `SERIES_SCOPE_SEMANTICS.md`, `CURRENT_FUNCTIONAL_BASELINE.md` v1.2 |
 | Régi FS v1.0 | TÖRTÉNETI / SUPERSEDED | `DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` |
 | Booking confirmation e-mail | NEM go-live blocker, későbbi fejlesztés | ugyanott |
 | Payment backend/UI | backend parkoltatott; aktív UI nincs | ugyanott |
@@ -131,11 +140,10 @@ Kapcsolódó issue-k: #32, #82
 
 ## Aktuális production blockerek
 
-- [ ] Fix óradíj manuális staging UAT-ja és teljes pricing idővonal ellenőrzése.
+- [ ] Teljes manuális staging UAT, benne Fix óradíj/pricing idővonal és sorozat-scope ellenőrzés, dokumentált eredménnyel.
 - [ ] Production backup automatizálás és off-site példány.
 - [ ] Sikeres restore-drill.
 - [ ] Production monitoring/heartbeat és alert drill.
-- [ ] Teljes manuális UAT a baseline v1.1 ellen.
 - [ ] Kritikus független review végleges lezárása.
 
 ## Elfogadási döntés
