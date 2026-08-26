@@ -5,111 +5,139 @@ Vizsgált baseline: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
 Független reviewer: Claude
 Feldolgozás: ChatGPT/Work a repository tényleges kódjával és projektforrásaival összevetve.
 
-## Összegzés
+## Aktuális összegzés
 
-Claude végkövetkeztetése: `IGEN, DE HIÁNYOSSÁGOKKAL`, 82%-os dokumentációs újraimplementálhatósági értékeléssel.
+Az első Claude-review 82%-os, a második 84%-os, a harmadik 91%-os újraimplementálhatósági értékelést adott. A findingokat nem automatikusan fogadtuk el; minden lényegi pontot a repository tényleges kódjával és a projektforrásokkal ellenőriztünk.
 
-A review lényegi pozitív megállapítása elfogadva: a kritikus foglalási, konkurencia-, jogosultsági, tiered/progressive/free, Tréningterem, audit- és settlement invariánsok nagy része egyezik a tényleges implementációval és tesztekkel.
+A harmadik review után a két új P1 finding is rendezve:
+- a jövőbeli pricing változások teljes idővonala látható és dokumentált;
+- a legacy `admin_set_user_pricing_policy` RPC authenticated közvetlen végrehajtási joga visszavonva.
 
-A review megállapításait nem automatikusan fogadtuk el; az alábbi státuszok repository-ellenőrzésen alapulnak.
+Részletes legutóbbi lezárás: `docs/CLAUDE_REVIEW_3_RESOLUTION_2026-08-26.md`.
 
-## P0-1 – `user_price_overrides` fix user óradíj
+## P0-1 – Fix user óradíj
 
-**Státusz: IGAZOLT, üzleti döntés szükséges.**
+**Státusz: CLOSED.**
 
-A `calculate_monthly_pricing` jelenlegi implementációja ténylegesen lekérdezi a `user_price_overrides` táblát. Érvényes override esetén:
-- normál órák díja fix user óradíj alapján számolódik;
-- ez felülírja a `tiered` és `progressive` számítást;
-- `free` pricing policy esetén továbbra is 0 Ft az eredmény.
+Tulajdonosi döntés: a Fix óradíj megmarad aktív üzleti funkcióként.
 
-A `user_price_overrides` már az induló core adatmodell része volt, tehát nem véletlen új tábla.
+Aktuális működés:
+- az admin négy user-facing mód közül választhat: Sávos / Progresszív / Fix óradíj / Free;
+- a Fix óradíj userenként, havi érvényességgel kezelhető;
+- a DB pricing engine `user_price_overrides` rétegen alkalmazza;
+- Free minden díjazási réteget nulláz;
+- nem-Free Tréningterem Csoportos használat külön speciális díjszabály szerint számolódik;
+- az admin RPC/UI elkészült;
+- a kapcsolódó DB-regressziós tesztek elkészültek.
 
-Ugyanakkor a jelenlegi feature branchben nincs kész, elfogadott admin UI/RPC ennek napi kezelésére. Ezért nem lehet sem eltávolítható legacy maradványnak, sem teljesen kész aktív feature-nek tekinteni üzleti döntés nélkül.
+A korábbi olyan megfogalmazások, amelyek a Fix admin RPC/UI-t még production gapként jelölik, **történeti/stale állapotnak tekintendők**; az aktuális implementációs állapotot a `docs/PRICING_MODES.md`, a `docs/UAT_FUTASI_JEGYZOKONYV.md` és a jelen dokumentum írja le.
 
-A `docs/PRICING_MODES.md` dokumentumot frissítettük, hogy ezt nyitott, de aktívan számításba vett rétegként rögzítse.
+## P0-2 – Funkcionális Specifikáció v1.0
 
-**Döntendő:** megtartjuk és adminból kezelhető fix user-díjként teljesen visszaemeljük, vagy megszüntetjük/migráljuk.
+**Státusz: CLOSED.**
 
-## P0-2 – Funkcionális Specifikáció v1.0 és aktuális baseline eltérései
+Az FS v1.0 formálisan **TÖRTÉNETI / SUPERSEDED**. Nem elsődleges implementációs specifikáció.
 
-**Státusz: IGAZOLT, dokumentum-hierarchia döntés szükséges.**
+Elsődleges forrás a `docs/CURRENT_FUNCTIONAL_BASELINE.md`, az aktuális projektkontextus és az azokban hivatkozott döntési dokumentumok.
 
-A régi FS több olyan korábbi követelményt tartalmaz, amelyet későbbi explicit döntések módosítottak vagy elhalasztottak, például:
-- userenkénti vs globális névláthatóság;
-- XLSX vs jelenlegi CSV riport/export scope;
-- foglalási e-mail-visszaigazolás;
-- befizetések aktív UI-ja;
-- heti nézet prioritása.
+## P0-3 – UAT dokumentáció
 
-Az új baseline elején van precedenciaszabály, de egy nulláról induló csapat számára biztonságosabb egyértelműen megjelölni a régi FS státuszát.
+**Státusz: CLOSED dokumentációs szinten; manuális futtatás még production kapu.**
 
-**Ajánlás:** az FS v1.0 maradjon történeti/specifikációs forrás, de kapjon explicit `SUPERSEDED / történeti` státuszt; a `CURRENT_FUNCTIONAL_BASELINE.md` legyen az aktuális as-built funkcionális referencia, és az eltéréseket külön changelog dokumentálja.
-
-## P0-3 – UAT dokumentáció lemaradása
-
-**Státusz: IGAZOLT. Dokumentációs feladat + részben új manuális bizonyítás szükséges.**
-
-A korábbi UAT checklist a 2026-08-22–25 között beépített funkciók jelentős részét még nem tartalmazza önálló UAT-esetként.
-
-Kiegészítendő legalább:
-- onboarding és számlázási/adószám szabály;
+A checklist v1.1 tartalmazza többek között:
+- onboarding;
 - CSV user import;
-- room group `can_book` vs `can_repeat` védelem;
-- stabil calendar color + privacy;
-- Foglalás címe;
-- tiered/progressive/free admin beállítás és érvényesség;
-- Tréningterem egyedi csoportos díj;
-- foglalás+díj atomi rollback;
+- room-group can_book/can_repeat;
+- stabil calendar color/privacy;
+- booking title;
+- Sávos/Progresszív/Fix/Free;
+- pricing effective month;
+- Tréningterem default és admin egyedi díj;
+- atomi booking+rate rollback;
 - settlement immutabilitás;
 - last-admin guard;
-- Befizetések URL/UI eltávolítás.
+- payment UI parkoltatás;
+- duplikálás;
+- production backup/restore/monitoring kapuk.
 
-Automatikusan igazolt tételeket a bizonyítékmátrixba kell kötni. A valóban böngészős viselkedést igénylő tételekre külön manuális UAT szükséges; korábbi chatbeli megfigyelés nem helyettesíthet formális futási jegyzőkönyvet production GO előtt.
+A `UAT_FUTASI_JEGYZOKONYV.md` szinkronban van. A Fix óradíj tesztek már nem blokkoltak, hanem `NEM FUTOTT` státuszúak, mert az RPC/UI elkészült.
 
 ## P1-1 – Sorozat scope pontos szemantikája
 
-**Státusz: ELFOGADVA dokumentációs hiányként.**
+**Státusz: PARTIALLY CLOSED / dokumentációs teendő.**
 
-A `Skedda-szerű` megfogalmazás önmagában nem elég egy technológiafüggetlen újraimplementáláshoz. A jelenlegi kód tényleges scope szemantikáját külön dokumentálni kell booking/series/occurrence és Tréningterem díj viselkedéssel.
+A három user-facing scope rögzített: aktuális alkalom / ettől kezdve / teljes sorozat. A pontos rekord-szintű booking/series/occurrence és Tréningterem egyedi díj öröklési szemantika még külön technológiafüggetlen dokumentálást igényel production dokumentációs lezárás előtt.
 
 ## P1-2 – Foglalási e-mail-visszaigazolás
 
-**Státusz: IGAZOLT üzleti scope-eltérés; döntés szükséges.**
+**Státusz: CLOSED.**
 
-Korábbi FS/architektúra dokumentum említi, a jelenlegi elfogadott baseline nem tekinti kész feature-nek. Explicit döntés kell: kötelező go-live feature vagy későbbi fázis.
+Tulajdonosi döntés: nem go-live blocker és nem kötelező az első production verzióban. Kötelező az egyértelmű sikeres/sikertelen UI-visszajelzés és a sikeres foglalás azonnali megjelenése.
 
-## P1-3 – Payment backend állapota
+## P1-3 – Payment backend
 
-**Státusz: ELFOGADVA pontosításként.**
+**Státusz: CLOSED.**
 
-A payment backend 2026-08-25-én aktívan fejlesztett migrációkat tartalmaz, de az admin UI tudatosan ki lett véve az aktuális foglaló scope-ból. Újraimplementálás szempontjából a jelenlegi aktív rendszerhez nem kötelező user-facing payment funkcióként reprodukálni; a meglévő backend történeti/parkoltatott képességként dokumentálandó.
+A backend megmarad, de parkoltatott. Aktív Befizetések UI nincs, és ebben a fejlesztési fázisban nem fejlesztjük tovább. A befizetések könyvelése külön pénzügyi elszámolási folyamat része.
 
-## P1-4 – `PRICING_MODES.md` elavult következő lépés
+## P1-4 – `PRICING_MODES.md`
 
-**Státusz: JAVÍTVA.**
+**Státusz: CLOSED.**
 
-A dokumentum frissítve: a havi díjszámító motor elkészültként szerepel, és a fix override nyitott státusza is rögzítve.
+A dokumentum az aktuális kódállapotot és a Fix óradíj admin kezelést is rögzíti.
 
-## P2 – Admin riport Foglalás címe
+## Harmadik review – P1-NEW-1: jövőbeli pricing terv
 
-**Státusz: JAVÍTVA.**
+**Státusz: CLOSED.**
 
-A `docs/ADMIN_REPORTING_RULES.md` tételes aktív foglalás mezői és CSV-követelménye most már explicit tartalmazza a `Foglalás címe` mezőt.
+A több jövőbeli díjazási változás támogatott idővonal-funkció. Egy korábbi kezdőhónap új beállítása nem törli automatikusan a későbbi, más kezdőhónapra korábban rögzített tervet.
 
-## További P2 feladatok
+A korábbi probléma az volt, hogy az admin UI csak a legközelebbi változást mutatta. Javítás után:
+- minden jövőbeli effektív változás látható;
+- külön figyelmeztetés jelzi a későbbi tervek megmaradását;
+- kiválasztott usernél külön jövőbeli díjazási idővonal jelenik meg;
+- a viselkedést `092_pricing_future_timeline.sql` teszt rögzíti.
 
-Nyitott, de döntést nem feltétlenül igénylő dokumentációs feladatok:
-- Duplikálás külön UAT-eset;
-- payment logikai entitások inaktív/parkoltatott jelöléssel;
-- admin proxy-foglalásnál pricing/advance-limit szemantika explicit leírása;
-- ismert mobil scroll probléma/nyitott UX pont baseline-ba történő konzisztens átvezetése.
+## Harmadik review – P1-NEW-2: legacy pricing RPC
 
-## Production dokumentációs kapu
+**Státusz: CLOSED.**
 
-A `CURRENT_FUNCTIONAL_BASELINE.md` csak akkor emelhető 100%-os újraimplementálási referenciává, ha:
-1. a fix user óradíj üzleti státusza eldőlt;
-2. a régi FS dokumentumhierarchia eldőlt;
-3. az e-mail-visszaigazolás go-live státusza eldőlt;
-4. a payment backend jövőbeni scope-ja egyértelműen meg van jelölve;
-5. a friss funkciók UAT checklistje és futási jegyzőkönyve elkészült;
-6. a sorozat scope szemantika önállóan, kódhivatkozás nélkül reprodukálható módon dokumentált.
+A `202608250015_harden_pricing_configuration_api.sql` visszavonja az authenticated szerepkör közvetlen EXECUTE jogát a legacy `admin_set_user_pricing_policy` függvényről. A kliens számára az egységes `admin_set_user_pricing_configuration` az egyetlen támogatott módosítási út.
+
+## Automatikus pricing tesztek aktuális állapota
+
+Lefedett:
+- admin-only Fix beállítás;
+- Fix override létrejötte;
+- havi motor tényleges Fix díjszámítása;
+- Free felülírás;
+- Fix + Tréningterem Csoportos speciális díj;
+- Fixed → Progressive;
+- Progressive → Fixed;
+- Fixed → Tiered;
+- múltbeli hónap tiltása;
+- azonos kezdőhónapú Fix terv módosítása;
+- jövőbeli többváltozásos idővonal;
+- DB exclusion constraint megléte az override-intervallumokra;
+- legacy RPC authenticated végrehajtásának tiltása.
+
+Külön valódi kétfolyamatos concurrency shell-teszt a pricing konfigurációra még további hardeningként elkészíthető; a DB-szintű exclusion constraint és a userenkénti advisory lock azonban jelenleg is kötelezően védi az intervallum-konzisztenciát.
+
+## Production dokumentációs kapu – aktuális állapot
+
+Lezárt:
+1. Fix óradíj üzleti státusz;
+2. régi FS dokumentumhierarchia;
+3. booking e-mail go-live státusz;
+4. payment backend scope;
+5. friss funkciók UAT checklistje és futási jegyzőkönyve;
+6. pricing future timeline és API-hardening.
+
+Még nyitott:
+1. sorozat-scope rekord-szintű, technológiafüggetlen dokumentáció;
+2. legalább egy teljes dokumentált manuális staging UAT-kör;
+3. production backup/off-site mentés;
+4. sikeres restore-drill;
+5. production monitoring/heartbeat + alert drill;
+6. végső független review;
+7. explicit production GO.
