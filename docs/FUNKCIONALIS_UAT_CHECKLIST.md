@@ -1,438 +1,332 @@
 # A-Hely foglalási rendszer – Funkcionális UAT checklist
 
-Verzió: 1.0
-
-Dátum: 2026-08-18
-
-Kapcsolódó issue: #32
+Verzió: 1.1
+Dátum: 2026-08-26
+Kapcsolódó issue-k: #32, #82
+Kanonikus funkcionális forrás: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
 
 ## 1. Cél
 
-A checklist célja annak bizonyítása, hogy a jelenlegi rendszer a Skedda kiváltásához szükséges napi foglalási működést végponttól végpontig, felhasználói szemmel helyesen biztosítja.
+A checklist célja annak bizonyítása, hogy a jelenlegi rendszer a Skedda kiváltásához szükséges napi foglalási működést és a kanonikus baseline-ban elfogadott admin/pénzügyi funkciókat végponttól végpontig, felhasználói szemmel helyesen biztosítja.
 
-Ez a fázis megelőzi a tényleges production backup/restore automatizálást. Production indulás előtt továbbra is kötelező lesz a napi backup és sikeres restore-drill.
+Ez a dokumentum a 2026-08-22–26 között elkészült funkciókkal kibővített UAT-készlet. Production indulás előtt továbbra is kötelező a backup/restore automatizálás, sikeres restore-drill, production monitoring/alert teszt és minden production blocker lezárása.
 
-A teljes díjszámítás, befizetés, tartozás, XLSX és pénzügyi modul most nem része az elfogadási tesztnek.
+A Befizetések UI nem aktív scope. Automatikus booking confirmation e-mail nem go-live blocker.
 
 ## 2. Tesztelési elv
 
 Minden tesztesethez háromféle bizonyíték tartozhat:
-
 - **Automatikus:** meglévő Vitest, pgTAP vagy konkurenciateszt;
 - **Kódszintű:** az implementáció jelen van, de böngészős működés még nem bizonyított;
 - **Manuális UAT:** valódi böngészős használattal ellenőrizendő.
 
 Státuszok:
-
 - `NEM FUTOTT`
 - `SIKERES`
 - `HIBÁS`
 - `BLOKKOLT`
 
 Hiba súlyossága:
-
-- **P1:** adatvesztés, jogosulatlan hozzáférés, dupla foglalás vagy a rendszer alapvető használhatatlansága;
+- **P1:** adatvesztés, jogosulatlan hozzáférés, dupla foglalás, pénzügyileg hibás elszámolás vagy a rendszer alapvető használhatatlansága;
 - **P2:** lényeges üzleti szabály hibás, vagy a normál napi működés érdemben akadályozott;
 - **P3:** kisebb UX, szövegezési vagy kényelmi probléma.
 
-A Skedda-kiváltási funkcionális kapu akkor teljesül, ha nincs nyitott P1/P2 funkcionális hiba.
+A production-funkcionális kapu akkor teljesül, ha nincs nyitott P1/P2 funkcionális hiba vagy production blocker.
 
 ## 3. Tesztkörnyezet és tesztadat
 
-A manuális UAT-ot staging környezetben kell futtatni, nem production adaton.
+A manuális UAT staging környezetben fut, nem production adaton.
 
 Szükséges minimum tesztidentitások:
-
 1. `ADMIN-1`: aktív admin;
-2. `USER-A`: aktív normál user, több helyiséghez foglalási és ismétlési joggal;
-3. `USER-B`: aktív normál user, eltérő helyiségjogokkal;
-4. `USER-HIDDEN`: aktív user, akinek neve mások számára maszkolt;
-5. `USER-INACTIVE`: inaktív user.
+2. `ADMIN-2`: második aktív admin az utolsó-admin védelemhez;
+3. `USER-A`: aktív normál user, több helyiséghez foglalási és ismétlési joggal;
+4. `USER-B`: aktív normál user, eltérő helyiségjogokkal;
+5. `USER-HIDDEN`: aktív user a privacy teszthez;
+6. `USER-INACTIVE`: inaktív user;
+7. `USER-NEW`: onboarding előtt álló új user;
+8. `USER-FREE`: Free pricing;
+9. `USER-FIXED`: Fix óradíj tesztuser, amikor az admin UI/RPC elkészült.
 
 Szükséges tesztkonfiguráció:
-
 - legalább 2 normál helyiség;
 - Tréningterem;
 - egy user által nem foglalható helyiség;
-- USER-A és USER-B részben eltérő jogosultságai.
+- eltérő room-group és közvetlen `can_repeat` jogok;
+- legalább egy teszthónap pricing és settlement vizsgálathoz.
 
-## 4. Belépés és felhasználói életciklus
+## 4. Belépés, onboarding és felhasználói életciklus
 
 ### UAT-AUTH-01 – Sikeres belépés
-
-**Lépések**
-1. Nyisd meg a belépési oldalt.
-2. Jelentkezz be USER-A-val.
-
-**Elvárt eredmény**
-- sikeres belépés;
-- a foglalási felület nyílik meg;
-- a user neve helyesen jelenik meg;
-- admin menüpontok nem láthatók.
-
-**Bizonyíték:** kódszintű + manuális UAT.
+**Elvárt eredmény:** sikeres belépés; foglalási felület; user neve helyes; admin menüpont nincs normál usernél.
 
 ### UAT-AUTH-02 – Hibás jelszó
-
-**Elvárt eredmény**
-- nincs belépés;
-- magyar, érthető hibaüzenet;
-- nincs technikai hiba vagy érzékeny adat a válaszban.
+**Elvárt eredmény:** nincs belépés; magyar hibaüzenet; érzékeny technikai adat nem jelenik meg.
 
 ### UAT-AUTH-03 – Inaktív user
-
-**Lépések:** próbálj belépni USER-INACTIVE-ként.
-
-**Elvárt eredmény**
-- a védett funkciók nem használhatók;
-- közvetlen védett URL megnyitásával sem lehet jogosultságot szerezni.
-
-**Automatikus háttér:** aktív profil- és jogosultságellenőrzések.
+**Elvárt eredmény:** védett funkciók közvetlen URL/API manipulációval sem használhatók.
 
 ### UAT-AUTH-04 – Kijelentkezés
-
-**Elvárt eredmény**
-- session megszűnik;
-- védett oldal újranyitása belépésre visz.
+**Elvárt eredmény:** session megszűnik; védett oldal belépésre visz.
 
 ### UAT-AUTH-05 – Jelszó-visszaállítás
+**Elvárt eredmény:** reset flow működik; hibás/lejárt link érthetően kezelve.
 
-**Lépések**
-1. Indíts jelszó-visszaállítást.
-2. Nyisd meg a reset linket.
-3. Adj meg új jelszót.
-4. Jelentkezz be az új jelszóval.
+### UAT-ONBOARD-01 – Onboarding blokkolás
+**Lépések:** USER-NEW állítson jelszót, de ne fejezze be az adatkitöltést.
+**Elvárt eredmény:** normál user nem használhatja a foglalási felületet; onboarding oldalra kerül. Adminra ez nem vonatkozik.
 
-**Elvárt eredmény:** teljes folyamat működik; hibás/lejárt link kezelése érthető.
+### UAT-ONBOARD-02 – Kötelező számlázási adatok
+**Elvárt eredmény:** telefon, számlatípus, számlázási név/cím kötelező; vállalkozónál adószám nélkül nincs sikeres befejezés; magánszemélynél nem kötelező.
+
+### UAT-ONBOARD-03 – Név átvétele és sikeres befejezés
+**Elvárt eredmény:** „számlázási név megegyezik” opció helyesen kitölt; sikeres mentés után foglalási rendszer elérhető; `onboarding_completed_at` jellegű állapot rögzül.
+
+### UAT-IMPORT-01 – CSV user import
+**Előkészítés:** `last_name,first_name,email` oszlopokat tartalmazó CSV.
+**Elvárt eredmény:** új userek létrejönnek aktiváló levél automatikus kiküldése nélkül; számlázási adatot nem kell importálni.
+
+### UAT-IMPORT-02 – CSV duplikált és meglévő e-mail
+**Elvárt eredmény:** fájlon belüli duplikált e-mail hibás; már létező e-mail biztonságosan kihagyott/egyértelműen jelzett; nincs duplikált auth/profile.
 
 ## 5. Naptár és alap használhatóság
 
 ### UAT-CAL-01 – Napi többhelyiséges naptár
+**Elvárt eredmény:** jogosult helyiségek oszlopokban; 07:00–22:00; saját foglalás elkülönül; névláthatóság szabályos.
 
-**Elvárt eredmény**
-- a user számára foglalható helyiségek oszlopokban jelennek meg;
-- 07:00–22:00 idősáv áttekinthető;
-- saját foglalás vizuálisan elkülönül;
-- más foglalások neve a névláthatósági szabály szerint jelenik meg.
-
-**Automatikus háttér:** `010_calendar_ui_support.sql`, `007_booking_visibility.sql`, `008_effective_room_permissions.sql`.
-
-### UAT-CAL-02 – Előző/Ma/Következő nap
-
-**Elvárt eredmény:** a dátumváltás helyes; a kiválasztott nap foglalásai jelennek meg.
+### UAT-CAL-02 – Dátumváltás
+**Elvárt eredmény:** kiválasztott nap foglalásai jelennek meg.
 
 ### UAT-CAL-03 – Nem foglalható helyiség
+**Elvárt eredmény:** UI-ban nem választható; közvetlen manipulációval sem foglalható.
 
-**Elvárt eredmény**
-- USER-A nem kap olyan helyiséget foglalási választási lehetőségként, amelyhez nincs joga;
-- közvetlen manipulációval sem lehet oda foglalni.
+### UAT-CAL-04 – Globális névláthatóság és stabil szín
+**Lépések:** globális névláthatóság BE/KI állapotának ellenőrzése USER-A, másik user és admin szemszögből.
+**Elvárt eredmény:** kikapcsolva más user neve és stabil színe sem szivárog ki normál usernek; saját foglalás felismerhető; admin látja az adminisztrációhoz szükséges identitást.
 
-### UAT-CAL-04 – Névláthatóság
-
-**Lépések**
-1. USER-HIDDEN hozzon létre foglalást.
-2. USER-A nézze meg ugyanazt a naptárt.
-3. ADMIN-1 is nézze meg.
-
-**Elvárt eredmény:** a maszkolás a jóváhagyott szabály szerint működik; saját foglalás mindig felismerhető.
+### UAT-COLOR-01 – Stabil user-szín
+**Elvárt eredmény:** ugyanazon user színe újratöltés és új session után változatlan; privacy kikapcsolásnál nem használható más user azonosítására.
 
 ## 6. Egyedi foglalás
 
 ### UAT-BOOK-01 – Normál sikeres foglalás
-
-**Lépések**
-1. USER-A válasszon engedélyezett normál szobát.
-2. Foglaljon egy jövőbeli napon 09:00–10:00 időre.
-3. Frissítse a naptárt és nyissa meg a Foglalásaim oldalt.
-
-**Elvárt eredmény**
-- pontosan egy foglalás jön létre;
-- a naptárban és Foglalásaim alatt is látszik;
-- időpont, helyiség, használattípus és megjegyzés helyes.
-
-**Automatikus háttér:** `003_create_booking_rpc.sql` + konkurenciateszt.
+**Elvárt eredmény:** pontosan egy booking; naptárban és Foglalásaimban megjelenik; adatok helyesek.
 
 ### UAT-BOOK-02 – 90 perces foglalás
-
-**Lépések:** foglalás 10:00–11:30.
-
-**Elvárt eredmény:** sikeres, 90 perces időtartam.
+**Elvárt eredmény:** sikeres 10:00–11:30.
 
 ### UAT-BOOK-03 – Minimum 1 óra
-
-**Lépések:** próbálj 30 perces foglalást létrehozni.
-
-**Elvárt eredmény:** elutasítás; nincs adatbázisrekord.
+**Elvárt eredmény:** 30 perc elutasított; nincs rekord.
 
 ### UAT-BOOK-04 – 30 perces rács
+**Elvárt eredmény:** UI és backend is kikényszeríti.
 
-**Elvárt eredmény:** UI csak félórás értékeket ajánl; manipulált nem félórás időpont backend/DB oldalon is elutasított.
-
-### UAT-BOOK-05 – Nyitvatartás előtt/után
-
-**Elvárt eredmény:** 07:00 előtti vagy 22:00 utáni idő nem foglalható.
+### UAT-BOOK-05 – Nyitvatartás
+**Elvárt eredmény:** 07:00 előtt / 22:00 után elutasított.
 
 ### UAT-BOOK-06 – Minden naptári nap foglalható
-
-**Elvárt eredmény:** nincs globális zárt nap vagy általános naptári kivételdátum. A user a saját jogosultsága, az előrefoglalási limit, a napi 07:00–22:00 idősáv és a többi foglalási szabály keretein belül bármely naptári napon foglalhat.
-
-**Automatikus háttér:** `017_always_open_calendar.sql`.
+**Elvárt eredmény:** nincs általános zárt nap; egyéb szabályok érvényesek.
 
 ### UAT-BOOK-07 – Előrefoglalási limit
-
-**Elvárt eredmény:** user default vagy egyedi limitjén túli dátum elutasított; limiten belüli engedélyezett.
+**Elvárt eredmény:** user limitjén belül engedélyezett, túl elutasított.
 
 ### UAT-BOOK-08 – Átfedő foglalás
-
-**Lépések**
-1. USER-A foglalja le ugyanazt a helyiséget 10:00–11:00-ra.
-2. USER-B próbáljon 10:30–11:30-ra foglalni.
-
-**Elvárt eredmény:** második foglalás elutasított; első változatlanul megmarad.
-
-**Automatikus háttér:** GiST exclusion constraint + `003_create_booking_rpc.sql`.
+**Elvárt eredmény:** második elutasított; első változatlan.
 
 ### UAT-BOOK-09 – Egymáshoz érő foglalások
-
-**Lépések:** meglévő 10:00–11:00 után foglalj 11:00–12:00-ra.
-
-**Elvárt eredmény:** sikeres; félig nyitott intervallum miatt nem ütközés.
+**Elvárt eredmény:** 10–11 után 11–12 sikeres.
 
 ### UAT-BOOK-10 – Két egyidejű foglalási kísérlet
-
-**Elvárt eredmény:** ugyanarra a helyiség/időre két párhuzamos kérésből legfeljebb egy sikeres.
-
-**Bizonyíték:** automatizált konkurenciateszt kötelező; manuálisan nem szükséges reprodukálni.
+**Elvárt eredmény:** maximum egy sikeres. Automatizált konkurenciateszt kötelező.
 
 ### UAT-BOOK-11 – Idempotens újraküldés
+**Elvárt eredmény:** nem jön létre duplikált booking.
 
-**Elvárt eredmény:** ugyanaz a kérés/idempotenciakulcs nem hoz létre második foglalást.
+### UAT-BOOK-12 – Sikeres/sikertelen UI-visszajelzés
+**Elvárt eredmény:** sikeres booking egyértelműen visszajelzett és azonnal megjelenik; sikertelen booking nem jelenik meg sikeresként. Booking confirmation e-mail hiánya nem hiba.
+
+### UAT-BOOK-13 – Foglalás címe
+**Elvárt eredmény:** megadott `Foglalás címe` mentődik és jogosult admin riportban később visszakereshető.
 
 ## 7. Tréningterem
 
-### UAT-TRAIN-01 – Normál user 10 napos limit
-
-**Lépések**
-1. USER-A próbáljon Tréningtermet 10 napon belül foglalni.
-2. Próbáljon a limit után foglalni.
-
-**Elvárt eredmény:** első engedélyezett, második elutasított a beállított limit szerint.
+### UAT-TRAIN-01 – Normál user előrefoglalási limit
+**Elvárt eredmény:** beállított default/egyedi limit érvényesül.
 
 ### UAT-TRAIN-02 – Egyéni/csoportos használat
-
-**Elvárt eredmény:** mindkét használattípus rögzíthető a jogosult esetekben és helyesen jelenik meg.
+**Elvárt eredmény:** Tréningteremnél mindkettő; normál szobán nincs group selector.
 
 ### UAT-TRAIN-03 – Ismétlődő Tréningterem normál userként
-
 **Elvárt eredmény:** elutasított.
 
 ### UAT-TRAIN-04 – Ismétlődő Tréningterem adminként
+**Elvárt eredmény:** engedélyezett.
 
-**Elvárt eredmény:** az üzleti szabály szerint engedélyezett.
+### UAT-TRAIN-05 – Csoportos default 5000 Ft és admin override
+**Lépések:** admin foglaljon Csoportos Tréningtermet; ellenőrizze 5000 Ft defaultot; írja át pl. 7500 Ft-ra.
+**Elvárt eredmény:** mentett booking a választott díjjal számolódik; havi részletezésben helyesen jelenik meg.
 
-## 8. Saját foglalás módosítása
+### UAT-TRAIN-06 – Atomi booking + egyedi díj
+**Bizonyíték:** automatizált rollback teszt kötelező.
+**Elvárt eredmény:** díjrögzítési hiba esetén booking/sorozat sem marad félkész állapotban.
+
+## 8. Saját foglalás módosítása és duplikálása
 
 ### UAT-EDIT-01 – Sikeres módosítás
+**Elvárt eredmény:** régi idő felszabadul; új egyszer jelenik meg.
 
-**Lépések:** USER-A módosítson egy 24 órán túl kezdődő egyedi foglalást más időpontra.
+### UAT-EDIT-02 – Ütköző módosítás
+**Elvárt eredmény:** elutasított; eredeti megmarad.
 
-**Elvárt eredmény**
-- régi időpont felszabadul;
-- új időpont egyszer jelenik meg;
-- módosított adat megjelenik a naptárban és Foglalásaim alatt.
-
-**Automatikus háttér:** `005_update_booking_rpc.sql`.
-
-### UAT-EDIT-02 – Módosítás ütköző időpontra
-
-**Elvárt eredmény:** elutasított; eredeti foglalás nem vész el.
-
-### UAT-EDIT-03 – Módosítás jogosulatlan helyiségbe
-
+### UAT-EDIT-03 – Jogosulatlan helyiség
 **Elvárt eredmény:** elutasított.
 
-### UAT-EDIT-04 – 24 órán belüli módosítás normál userként
-
-**Elvárt eredmény:** elutasított.
+### UAT-EDIT-04 – 24 órán belüli módosítás
+**Elvárt eredmény:** normál usernek elutasított.
 
 ### UAT-EDIT-05 – Párhuzamos módosítás
+**Elvárt eredmény:** elavult optimistic-concurrency kérés nem ír felül frissebb állapotot.
 
-**Elvárt eredmény:** optimista konkurenciavédelem miatt elavult módosítás nem írhatja felül az újabb állapotot.
+### UAT-EDIT-06 – Duplikálás
+**Lépések:** meglévő booking → Duplikálás → új időpont.
+**Elvárt eredmény:** új booking előtöltött releváns adatokkal készíthető; eredeti booking változatlan; minden foglalási szabály újra érvényesül.
 
 ## 9. Lemondás
 
-### UAT-CANCEL-01 – Saját foglalás lemondása 24 órán túl
+### UAT-CANCEL-01 – Saját foglalás 24 órán túl
+**Elvárt eredmény:** sikeres; aktív naptárból eltűnik; idő felszabadul; audit/történet megmarad.
 
-**Elvárt eredmény**
-- sikeres;
-- foglalás eltűnik az aktív naptárból;
-- időpont újra foglalható;
-- lemondási/audit információ megmarad.
+### UAT-CANCEL-02 – Saját foglalás 24 órán belül
+**Elvárt eredmény:** elutasított.
 
-**Automatikus háttér:** `004_cancel_booking_rpc.sql`.
-
-### UAT-CANCEL-02 – Saját foglalás lemondása 24 órán belül
-
-**Elvárt eredmény:** normál user számára elutasított.
-
-### UAT-CANCEL-03 – Ismétlődő sorozat egy alkalma
-
-**Elvárt eredmény:** az egyedi alkalom lemondható anélkül, hogy a teljes sorozat többi alkalma eltűnne.
+### UAT-CANCEL-03 – Sorozat egy alkalma
+**Elvárt eredmény:** csak az adott alkalom törlődik/lemondódik.
 
 ### UAT-CANCEL-04 – Admin törlés
-
-**Elvárt eredmény:** admin üzleti szabály szerint bármikor törölhet; törlés auditált és havi óraszámból kizárt.
-
-**Megjegyzés:** a DB-képesség implementált; a böngészős admin végpontot külön ellenőrizni kell. Ha nincs használható admin UI, P2 funkcionális gap issue készül.
+**Elvárt eredmény:** bármikor; auditált; havi aktív elszámolásból kizárt.
 
 ## 10. Ismétlődő foglalások
 
 ### UAT-REC-01 – Heti sorozat darabszámmal
-
-**Elvárt eredmény:** a megadott számú alkalom jön létre ugyanazon helyi kezdési idővel.
-
 ### UAT-REC-02 – Kétheti sorozat
-
-**Elvárt eredmény:** 14 napos ritmus.
-
 ### UAT-REC-03 – Napi sorozat
-
-**Elvárt eredmény:** napi ritmus, üzleti korlátokon belül.
-
 ### UAT-REC-04 – Havi sorozat
-
-**Elvárt eredmény:** eredeti naptári nap követése; rövidebb hónapban dokumentált hónapvégi szabály.
-
 ### UAT-REC-05 – Végdátum
-
-**Elvárt eredmény:** végdátum után nincs alkalom.
-
 ### UAT-REC-06 – Kivételdátum
-
-**Elvárt eredmény:** kivételdátum nem hoz létre foglalást; a többi alkalom változatlan.
-
 ### UAT-REC-07 – `abort_all`
-
-**Elvárt eredmény:** egyetlen ütközés esetén az egész új sorozat visszagörget; részleges sorozat nem marad.
-
 ### UAT-REC-08 – `create_available`
-
-**Elvárt eredmény:** szabad alkalmak létrejönnek; ütközők dokumentáltan kimaradnak; eredmény érthetően látható.
-
 ### UAT-REC-09 – DST-váltás
 
-**Elvárt eredmény:** helyi kezdési idő nem tolódik el téli/nyári időszámítás váltásakor.
+Az elvárt működés a kanonikus baseline szerint: helyi kezdési idő megőrzése, kivételdátum kihagyása, ütközésnél választott policy szerinti atomikus vagy részleges létrehozás.
 
-**Automatikus háttér:** `009_recurring_booking_rpc.sql`, `012_recurring_booking_ui_support.sql`, konkurenciateszt.
+### UAT-REC-10 – Sorozat scope műveletek
+**Elvárt eredmény:** aktuális alkalom / ettől kezdve / teljes sorozat user-facing scope-ok elérhetők és a dokumentált backend szemantikát követik.
+**Megjegyzés:** a rekord-szintű pontos scope-dokumentáció production előtt külön lezárandó dokumentációs tétel.
 
 ## 11. Admin – felhasználók, helyiségek és hozzáférések
 
 ### UAT-ADMIN-01 – Admin menü jogosultság
-
-**Elvárt eredmény:** ADMIN-1 látja; USER-A közvetlen URL-lel sem fér hozzá.
-
-### UAT-ADMIN-02 – User meghívás/létrehozás
-
-**Elvárt eredmény:** új user létrehozható a jóváhagyott meghívásos folyamattal; nincs nyilvános regisztráció.
-
+### UAT-ADMIN-02 – User létrehozás és aktiváló link
 ### UAT-ADMIN-03 – User aktiválás/inaktiválás
-
-**Elvárt eredmény:** státuszváltás érvényesül a következő hozzáférésnél.
-
-### UAT-ADMIN-04 – Helyiség létrehozás/módosítás/deaktiválás
-
-**Elvárt eredmény:** admin kezelheti; deaktivált helyiség új foglalásra nem használható; történeti adatok megmaradnak.
-
+### UAT-ADMIN-04 – Helyiség kezelés
 ### UAT-ADMIN-05 – Közvetlen user-helyiségjog
+### UAT-ADMIN-06 – Csoportos `can_book`
+**Elvárt eredmény:** csoporttagság foglalási jogot ad a konfiguráció szerint.
 
-**Elvárt eredmény:** változtatás után a user foglalási lehetősége azonnal a jóváhagyott szabály szerint változik.
+### UAT-ADMIN-07 – `can_repeat` kizárólag közvetlen jog
+**Elvárt eredmény:** csoporttagság önmagában soha nem ad repeat jogot; közvetlen permission igen; Tréningterem normál user repeat továbbra is tiltott.
 
-### UAT-ADMIN-06 – Csoportos jogosultság
+### UAT-ADMIN-08 – Globális névláthatóság
+### UAT-ADMIN-09 – Utolsó admin védelem
+**Lépések:** ADMIN-1/ADMIN-2 mellett egy admin lefokozása/deaktiválása megengedett; utolsó aktív admin lefokozása vagy deaktiválása próbálva.
+**Elvárt eredmény:** az utolsó admin művelet backendből is elutasított.
 
-**Elvárt eredmény:** csoporttagság és csoport-helyiségjog effektív jogosultságként érvényesül.
+## 12. Díjazás és havi elszámolás
 
-### UAT-ADMIN-07 – User-szintű ismétlődési jog
+### UAT-PRICING-01 – Sávos 20 óra
+**Elvárt eredmény:** 20 × 1900 Ft = 38 000 Ft normál díj.
 
-**Elvárt eredmény:** repeat jog nélkül normál user egyik foglalható normál helyiségben sem indíthat sorozatot; repeat joggal minden effektíven foglalható normál helyiségben indíthat, Tréningteremben viszont normál user továbbra sem. Adminra ez a normál user korlátozás nem vonatkozik.
+### UAT-PRICING-02 – Progresszív 20 óra
+**Elvárt eredmény:** 15 × 2700 + 5 × 1900 = 50 000 Ft.
 
-### UAT-ADMIN-08 – Névláthatóság kapcsolása
+### UAT-PRICING-03 – Free
+**Elvárt eredmény:** minden booking 0 Ft, beleértve Tréningterem Csoportos használatot is; óraszám megmarad.
 
-**Elvárt eredmény:** a naptár-read model az új globális beállítást követi; kikapcsolva más user neve és stabil színe sem szivárog ki normál usernek.
+### UAT-PRICING-04 – Policy effective month
+**Elvárt eredmény:** jövőbeli hónapra beállítható; megfelelő hónaptól érvényes; történeti lezárt hónap kontrollálatlanul nem írható át.
 
-## 12. Havi óraszám és CSV
+### UAT-PRICING-05 – Fix óradíj admin kezelése
+**Státusz:** jelenleg **BLOKKOLT production gap**, amíg admin RPC/UI nincs kész.
+**Elvárt eredmény a megvalósítás után:** admin userenként és effective month-tal fix óradíjat állít; auditált; normál user nem módosíthatja.
+
+### UAT-PRICING-06 – Fix precedencia
+**Elvárt eredmény:** Fix felülírja a tiered/progressive normál díjat; Free a Fixet is; nem-Free Tréningterem Csoportos továbbra is saját speciális díjon számolódik.
 
 ### UAT-MONTH-01 – Havi összesítés
-
-**Előkészítés:** USER-A-nak legyen a hónapban 60 és 90 perces aktív foglalása.
-
-**Elvárt eredmény:** 2 foglalás, 150 perc, 2,50 óra.
-
-**Automatikus háttér:** `014_monthly_hours_export.sql`.
+**Elvárt eredmény:** aktív foglalások órái és fizetendő összege helyes.
 
 ### UAT-MONTH-02 – Lemondott foglalás kizárása
-
-**Elvárt eredmény:** lemondott foglalás nem növeli a havi óraszámot.
-
-### UAT-MONTH-03 – Hónaphatár
-
-**Elvárt eredmény:** Europe/Budapest helyi hónap szerint számol.
-
+### UAT-MONTH-03 – Hónaphatár Europe/Budapest
 ### UAT-MONTH-04 – Admin-only hozzáférés
+### UAT-MONTH-05 – Foglalás címe a tételes aktív listában
+**Elvárt eredmény:** `Foglalás címe` oszlop látszik; Tréningterem admin booking cím visszakereshető.
 
-**Elvárt eredmény:** normál vagy inaktív user sem oldalon, sem export URL-en nem fér hozzá.
-
-### UAT-CSV-01 – CSV letöltés
-
-**Elvárt eredmény**
-- Excelben közvetlenül megnyitható;
-- magyar ékezetek helyesek;
-- oszlopok és számértékek helyesek;
-- biztonságos fájlnév.
+### UAT-CSV-01 – Összesítő CSV
+**Elvárt eredmény:** magyar ékezetek, magyar Excel-kompatibilis óraszám, biztonságos fájlnév.
 
 ### UAT-CSV-02 – CSV formula-injection
+**Bizonyíték:** automatikus Vitest.
 
-**Bizonyíték:** automatikus Vitest; manuális ellenőrzés opcionális.
+### UAT-CSV-03 – Részletes CSV Foglalás címe
+**Elvárt eredmény:** a részletes export tartalmazza a `Foglalás címe` mezőt.
 
-## 13. Mobil/tablet és UX
+## 13. Settlement és pénzügyi történet
 
-A napi foglalási naptár használhatóságát legalább az alábbi viewportokon kell kézzel ellenőrizni:
+### UAT-SETTLE-01 – Settlement snapshot létrehozása
+**Elvárt eredmény:** ugyanazt a központi pricing eredményt snapshotolja, amelyet a havi számítás használ.
 
-- mobil kb. 390 px szélesség;
-- tablet kb. 768–1024 px;
-- desktop 1280 px vagy szélesebb.
+### UAT-SETTLE-02 – Snapshot/revision immutabilitás
+**Bizonyíték:** automatikus DB teszt kötelező.
+**Elvárt eredmény:** történeti revision/booking-line közvetlenül nem írható át vagy törölhető kontrollálatlanul.
+
+### UAT-PAY-01 – Befizetések UI parkoltatva
+**Lépések:** admin menü és közvetlen régi `/admin/befizetesek` URL ellenőrzése.
+**Elvárt eredmény:** nincs aktív Befizetések menüpont/használható payment UI; közvetlen régi URL biztonságosan átirányít a jóváhagyott admin oldalra. Payment backend megléte nem jelent aktív feature-t.
+
+## 14. Mobil/tablet és UX
+
+Kézi ellenőrzés legalább:
+- mobil kb. 390 px;
+- tablet 768–1024 px;
+- desktop 1280 px+.
 
 ### UAT-UX-01 – Mobil naptár
-
-**Elvárt eredmény:** oldal nem törik; a többhelyiséges naptár elérhető/görgethető; foglalási űrlap használható.
+**Elvárt eredmény:** 7 napos sáv, sticky időoszlop, long press, természetes scroll, modal használható.
 
 ### UAT-UX-02 – Tablet naptár
-
-**Elvárt eredmény:** alap napi feladatok kényelmesen elvégezhetők.
-
 ### UAT-UX-03 – Magyar szövegek
-
-**Elvárt eredmény:** user felületen nincs fejlesztői angol hiba, SQL/stack trace vagy értelmezhetetlen technikai szöveg.
-
 ### UAT-UX-04 – Dupla kattintás / lassú kérés
+**Elvárt eredmény:** nincs duplikált üzleti rekord.
 
-**Elvárt eredmény:** ismételt submit nem eredményez duplikált üzleti rekordot.
+### UAT-UX-05 – Ismert mobil scroll hiba ellenőrzése
+**Elvárt eredmény:** 07:00–22:00 között folyamatos függőleges scroll; a korábban esetlegesen megfigyelt 18:00 körüli megakadás nem kívánt viselkedés.
 
-## 14. Kifejezetten ellenőrzendő potenciális funkcionális gap-ek
+## 15. Production infrastruktúra UAT-kapu
 
-A kódszintű áttekintés alapján ezekre a manuális UAT során külön figyelni kell:
+Ezek nem a napi booking funkciók részei, de production GO előtt kötelező bizonyítékok:
 
-1. **Admin foglaláskezelés:** az adatbázis admin módosítás/törlés képessége implementált, de ellenőrizni kell, hogy a jelenlegi UI-ból egy admin más user foglalását ténylegesen kényelmesen tudja-e kezelni.
-2. **Admin nevében / user számára történő foglalás:** ellenőrizni kell, szükséges-e a Skedda-kiváltáshoz, és ha igen, van-e hozzá teljes UI-folyamat.
-3. **Heti nézet:** a jelenlegi implementációs terv szerint még nincs kész. Nem blokkoló, ha a jóváhagyott Skedda-kiváltási minimum a napi többhelyiséges nézet; üzleti UAT során döntendő.
-4. **E-mail visszaigazolás:** outbox-adatmodell van, de a worker/retry a backlog szerint nincs kész. A napi foglalási működéshez el kell dönteni, hogy ez Skedda-kiváltási blokkoló-e vagy későbbi kényelmi funkció.
-5. **Admin beállítások teljessége:** a fő jogosultság- és helyiségkezelés kész, de a még nem exponált központi paramétereket külön fel kell mérni.
+### UAT-PROD-01 – Backup automatizálás
+**Elvárt eredmény:** ütemezett backup ténylegesen létrejön, ellenőrzött, off-platform tárolt.
 
-Egy ilyen gap nem automatikusan hiba: az UAT során az üzleti szükséglet alapján `P2`, `P3` vagy `NEM SZÜKSÉGES MOST` döntést kap.
+### UAT-PROD-02 – Restore-drill
+**Elvárt eredmény:** backupból külön környezetben helyreáll a DB; booking/jogosultság/audit/settlement konzisztencia PASS.
 
-## 15. UAT jegyzőkönyv
+### UAT-PROD-03 – Monitoring/heartbeat alert drill
+**Elvárt eredmény:** kontrollált hibát külső monitor észlel; riasztás ténylegesen megérkezik; recovery jelzés is működik.
+
+## 16. UAT jegyzőkönyv
 
 Minden manuális futásnál rögzítendő:
-
 - dátum;
 - környezet és commit SHA;
 - tesztelő;
@@ -441,14 +335,18 @@ Minden manuális futásnál rögzítendő:
 - rövid megjegyzés;
 - hiba esetén GitHub issue száma és P1/P2/P3 besorolása.
 
-## 16. Kilépési feltétel
+A `docs/UAT_FUTASI_JEGYZOKONYV.md`-t ezzel a checklist-verzióval szinkronban kell tartani.
 
-A rendszer funkcionálisan Skedda-kiváltásra alkalmasnak akkor minősíthető, ha:
+## 17. Kilépési feltétel
 
-1. nincs nyitott P1/P2 üzleti működési hiba;
-2. a kritikus AUTH, BOOK, EDIT, CANCEL, REC, ADMIN és MONTH tesztek sikeresek;
+A rendszer productionre funkcionálisan alkalmasnak csak akkor minősíthető, ha:
+1. nincs nyitott P1/P2 vagy production blocker;
+2. a kritikus AUTH/ONBOARD/BOOK/EDIT/CANCEL/REC/ADMIN/PRICING/MONTH tesztek sikeresek;
 3. a napi naptár mobilon, tableten és desktopon használható;
 4. a meglévő automatikus tesztek és CI zöldek ugyanazon elfogadott kódon;
-5. az UAT során talált scope-döntések dokumentálva vannak.
-
-Ezután következik a production backup/restore automatizálás és a sikeres restore-drill, majd a staging → production bevezetési kapu.
+5. a Fix óradíj admin RPC/UI és regressziós tesztje elkészült;
+6. backup + restore-drill sikeres;
+7. monitoring/alert drill sikeres;
+8. a manuális UAT eredménye dokumentált;
+9. kritikus független review lezárt;
+10. explicit production GO jóváhagyás megszületett.
