@@ -18,7 +18,6 @@ select ok(
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000001', true);
-
 select lives_ok(
   $$select public.admin_set_user_pricing_configuration('91000000-0000-0000-0000-000000000002','fixed',2400,date '2027-01-01',gen_random_uuid())$$,
   'Fix díj beállítható'
@@ -27,12 +26,16 @@ select lives_ok(
   $$select public.admin_set_user_pricing_configuration('91000000-0000-0000-0000-000000000002','progressive',null,date '2027-02-01',gen_random_uuid())$$,
   'Fix után Progresszív mód beállítható'
 );
+reset role;
+
 select is(
   (select valid_to from public.user_price_overrides where user_id='91000000-0000-0000-0000-000000000002' and valid_from=date '2027-01-01'),
   date '2027-01-31',
   'Fixed → Progresszív lezárja a Fix időszakot'
 );
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000001', true);
 select lives_ok(
   $$select public.admin_set_user_pricing_configuration('91000000-0000-0000-0000-000000000002','fixed',2600,date '2027-03-01',gen_random_uuid())$$,
   'Új Fix időszak beállítható'
@@ -41,12 +44,16 @@ select lives_ok(
   $$select public.admin_set_user_pricing_configuration('91000000-0000-0000-0000-000000000002','tiered',null,date '2027-04-01',gen_random_uuid())$$,
   'Fix után Sávos mód beállítható'
 );
+reset role;
+
 select is(
   (select valid_to from public.user_price_overrides where user_id='91000000-0000-0000-0000-000000000002' and valid_from=date '2027-03-01'),
   date '2027-03-31',
   'Fixed → Sávos lezárja a Fix időszakot'
 );
 
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000001', true);
 select throws_ok(
   $$select public.admin_set_user_pricing_configuration('91000000-0000-0000-0000-000000000002','fixed',2000,date '2026-07-01',gen_random_uuid())$$,
   '22023',
