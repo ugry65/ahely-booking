@@ -1,0 +1,223 @@
+begin;
+
+select plan(20);
+
+insert into auth.users (id, email, raw_user_meta_data) values
+  ('a0000000-0000-0000-0000-000000000001', 'scope-admin@example.invalid', '{"first_name":"Scope","last_name":"Admin"}'),
+  ('a0000000-0000-0000-0000-000000000002', 'scope-user@example.invalid', '{"first_name":"Scope","last_name":"User"}');
+update public.profiles set role = 'admin' where id = 'a0000000-0000-0000-0000-000000000001';
+update public.profiles set can_repeat_bookings = true where id = 'a0000000-0000-0000-0000-000000000002';
+insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat) values
+  ('a0000000-0000-0000-0000-000000000002','11000000-0000-0000-0000-000000000002',true,true),
+  ('a0000000-0000-0000-0000-000000000002','11000000-0000-0000-0000-000000000001',true,true)
+on conflict (user_id, room_id) do update set can_book = true, can_repeat = true;
+
+-- Normál 4 alkalmas sorozat: occurrence / series update és following cancel.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select lives_ok(
+  format($sql$select public.create_booking_series(
+    '11000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000002',
+    %L::timestamptz,%L::timestamptz,'daily',null,4,'{}'::date[],'abort_all','individual','scope alap',
+    'a0000000-0000-0000-0000-000000000101')$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '10:00') at time zone 'Europe/Budapest'),
+  'Négy alkalmas normál sorozat létrehozható');
+reset role;
+
+update public.bookings
+set booking_title = 'Megőrzendő scope cím'
+where series_id = (select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101');
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select is(
+  public.update_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 1 limit 1),
+    'occurrence',
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 1 limit 1),
+    '11000000-0000-0000-0000-000000000002',
+    (select start_at + interval '1 hour' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 1 limit 1),
+    (select end_at + interval '1 hour' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 1 limit 1),
+    'individual','occurrence módosítva','a0000000-0000-0000-0000-000000000102'
+  ),
+  1,
+  'Occurrence update pontosan egy bookingot módosít'
+);
+reset role;
+
+select is(
+  (select count(*) from public.bookings
+    where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101')
+      and (start_at at time zone 'Europe/Budapest')::time = time '10:00'),
+  1::bigint,
+  'Occurrence update után csak egy alkalom tolódott 10:00-ra'
+);
+select is(
+  (select count(*) from public.bookings
+    where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101')
+      and booking_title='Megőrzendő scope cím'),
+  4::bigint,
+  'Scope update a booking_title mezőt nem írja felül'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select is(
+  public.update_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 2 limit 1),
+    'series',
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 2 limit 1),
+    '11000000-0000-0000-0000-000000000002',
+    (select start_at + interval '2 hours' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 2 limit 1),
+    (select start_at + interval '3 hours' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at offset 2 limit 1),
+    'individual','teljes jövő módosítva','a0000000-0000-0000-0000-000000000103'
+  ),
+  4,
+  'Series update minden aktív jövőbeli bookingot módosít, a kiválasztott előtti jövőbelieket is'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings
+    where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101')
+      and note='teljes jövő módosítva'),
+  4::bigint,
+  'Series update minden jövőbeli targetre az új mezőket alkalmazza'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select is(
+  public.cancel_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') and status='active' order by start_at offset 2 limit 1),
+    'following','following teszt','a0000000-0000-0000-0000-000000000104'
+  ),
+  2,
+  'Following cancel a kiválasztottat és minden későbbi aktív jövőbeli bookingot lemondja'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') and status='cancelled'),
+  2::bigint,
+  'Following cancel után két booking cancelled'
+);
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') and status='active'),
+  2::bigint,
+  'Following cancel a korábbi két jövőbeli bookingot érintetlenül hagyja'
+);
+
+-- Cutoff: a teljes scope atomikusan bukjon, ha bármely target cutoffon belüli.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select lives_ok(
+  format($sql$select public.create_booking_series(
+    '11000000-0000-0000-0000-000000000002','a0000000-0000-0000-0000-000000000002',
+    %L::timestamptz,%L::timestamptz,'daily',null,2,'{}'::date[],'abort_all','individual','cutoff scope',
+    'a0000000-0000-0000-0000-000000000111')$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 20) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 20) + time '10:00') at time zone 'Europe/Budapest'),
+  'Cutoff tesztsorozat létrejön');
+reset role;
+
+update public.app_settings set value='10000'::jsonb where key='cancellation_cutoff_hours';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
+select throws_ok(
+  format($sql$select public.cancel_booking_scope(%L::uuid,'series','cutoff rollback','a0000000-0000-0000-0000-000000000112')$sql$,
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000111') order by start_at limit 1)),
+  'P0001',
+  'A sorozat egyik érintett foglalása 10000 órán belül kezdődik, ezért a művelet nem hajtható végre.',
+  'Cutoffon belüli target miatt a teljes scope-cancel elutasított'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000111') and status='active'),
+  2::bigint,
+  'Cutoff hiba után egyik booking sem mondódott le'
+);
+
+-- Tréningterem booking-specifikus díj scope-update szemantika.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
+select lives_ok(
+  format($sql$select public.admin_create_booking_series_with_group_rate(
+    '11000000-0000-0000-0000-000000000001','a0000000-0000-0000-0000-000000000002',
+    %L::timestamptz,%L::timestamptz,'daily',null,2,'{}','abort_all','group',
+    'rate scope','a0000000-0000-0000-0000-000000000121','Rate scope cím',7500
+  )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 30) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 30) + time '10:00') at time zone 'Europe/Budapest'),
+  '7500 Ft-os Tréningterem csoportos sorozat létrejön');
+
+select is(
+  public.update_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'series',
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    '11000000-0000-0000-0000-000000000001',
+    (select start_at + interval '1 hour' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    (select end_at + interval '1 hour' from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'group','rate marad','a0000000-0000-0000-0000-000000000122'
+  ),
+  2,
+  'Tréningterem+Csoportos scope update mindkét targetet módosítja'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') and group_hourly_rate_huf=7500),
+  2::bigint,
+  'Tréningterem+Csoportos megmaradásakor az egyedi 7500 Ft-os rate megmarad'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
+select is(
+  public.update_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'series',
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    '11000000-0000-0000-0000-000000000002',
+    (select start_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    (select end_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'individual','rate null','a0000000-0000-0000-0000-000000000123'
+  ),
+  2,
+  'Normál/egyéni állapotra váltás mindkét targetet módosítja'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') and group_hourly_rate_huf is null),
+  2::bigint,
+  'Tréningterem+Csoportos státusz elhagyásakor a speciális rate nullázódik'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000001', true);
+select is(
+  public.update_booking_scope(
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'series',
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    '11000000-0000-0000-0000-000000000001',
+    (select start_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    (select end_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') order by start_at limit 1),
+    'group','rate default','a0000000-0000-0000-0000-000000000124'
+  ),
+  2,
+  'Visszaváltás Tréningterem+Csoportos módra mindkét targetet módosítja'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') and group_hourly_rate_huf=5000),
+  2::bigint,
+  'Újra Tréningterem+Csoportos állapotnál a default 5000 Ft-os rate kerül alkalmazásra'
+);
+select is(
+  (select count(*) from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000121') and booking_title='Rate scope cím'),
+  2::bigint,
+  'Többszöri scope update után is megmarad a booking title'
+);
+
+select * from finish();
+rollback;
