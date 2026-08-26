@@ -26,26 +26,42 @@ function safeRpcMessage(error: { code?: string; message?: string } | null, fallb
 export async function setUserPricingPolicy(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
-  const pricingScheme = String(formData.get("pricingScheme") ?? "");
+  const pricingMode = String(formData.get("pricingScheme") ?? "");
   const validMonth = String(formData.get("validMonth") ?? "");
+  const fixedRateRaw = String(formData.get("fixedRate") ?? "").trim();
 
   if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználó."));
-  if (!["tiered", "progressive", "free"].includes(pricingScheme)) {
+  if (!["tiered", "progressive", "fixed", "free"].includes(pricingMode)) {
     redirect(resultUrl("hiba", "Érvénytelen díjazási mód.", userId));
   }
   if (!/^\d{4}-\d{2}$/.test(validMonth)) {
     redirect(resultUrl("hiba", "Az érvényességi hónap megadása kötelező.", userId));
   }
 
+  let fixedRate: number | null = null;
+  if (pricingMode === "fixed") {
+    if (!/^\d+$/.test(fixedRateRaw)) {
+      redirect(resultUrl("hiba", "Fix díjazásnál az óradíj megadása kötelező.", userId));
+    }
+    fixedRate = Number(fixedRateRaw);
+    if (!Number.isSafeInteger(fixedRate) || fixedRate < 0) {
+      redirect(resultUrl("hiba", "A Fix óradíj érvénytelen.", userId));
+    }
+  }
+
   const validFrom = `${validMonth}-01`;
   const supabase = await createClient();
-  const { error } = await supabase.rpc("admin_set_user_pricing_policy", {
+  const { error } = await supabase.rpc("admin_set_user_pricing_configuration", {
     p_user_id: userId,
-    p_pricing_scheme: pricingScheme,
+    p_pricing_mode: pricingMode,
+    p_hourly_rate_huf: fixedRate,
     p_valid_from: validFrom,
     p_correlation_id: crypto.randomUUID(),
   });
 
-  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A díjazási mód mentése nem sikerült."), userId));
-  redirect(resultUrl("uzenet", "A díjazási mód és az érvényességi hónap elmentve.", userId));
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A díjazás mentése nem sikerült."), userId));
+  const message = pricingMode === "fixed"
+    ? `A Fix óradíj (${fixedRate!.toLocaleString("hu-HU")} Ft/óra) és az érvényességi hónap elmentve.`
+    : "A díjazási mód és az érvényességi hónap elmentve.";
+  redirect(resultUrl("uzenet", message, userId));
 }
