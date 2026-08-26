@@ -1,10 +1,11 @@
 begin;
 
-select plan(19);
+select plan(21);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('a0000000-0000-0000-0000-000000000001', 'scope-admin@example.invalid', '{"first_name":"Scope","last_name":"Admin"}'),
-  ('a0000000-0000-0000-0000-000000000002', 'scope-user@example.invalid', '{"first_name":"Scope","last_name":"User"}');
+  ('a0000000-0000-0000-0000-000000000002', 'scope-user@example.invalid', '{"first_name":"Scope","last_name":"User"}'),
+  ('a0000000-0000-0000-0000-000000000003', 'scope-other@example.invalid', '{"first_name":"Scope","last_name":"Other"}');
 update public.profiles set role = 'admin' where id = 'a0000000-0000-0000-0000-000000000001';
 update public.profiles set can_repeat_bookings = true where id = 'a0000000-0000-0000-0000-000000000002';
 insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat) values
@@ -14,7 +15,8 @@ on conflict (user_id, room_id) do update set can_book = true, can_repeat = true;
 
 -- Ez a fájl a scope üzleti szemantikát teszteli. A security/EXECUTE/RLS határt
 -- külön DB tesztek fedik. Itt a teszt-session privilegizált marad, miközben
--- az RPC actorát továbbra is a request.jwt.claim.sub határozza meg.
+-- az RPC actorát továbbra is a request.jwt.claim.sub határozza meg. Az ownership
+-- határ viszont üzleti invariáns is, ezért arra itt explicit negatív regresszió van.
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
 
 select lives_ok(
@@ -26,6 +28,31 @@ select lives_ok(
     (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '10:00') at time zone 'Europe/Budapest'),
   'Négy alkalmas normál sorozat létrehozható'
 );
+
+-- Másik normál user nem kezelheti a sorozat tulajdonosának scope-ját.
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000003', true);
+select throws_ok(
+  format($sql$select public.update_booking_scope(
+    %L::uuid,'series',%L::timestamptz,%L::uuid,%L::timestamptz,%L::timestamptz,
+    'individual','tiltott módosítás','a0000000-0000-0000-0000-000000000105'
+  )$sql$,
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1),
+    (select updated_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1),
+    (select room_id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1),
+    (select start_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1),
+    (select end_at from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1)),
+  'P0001',
+  'Csak a saját foglalásodat módosíthatod.',
+  'Más user sorozatának scope-update művelete elutasított'
+);
+select throws_ok(
+  format($sql$select public.cancel_booking_scope(%L::uuid,'series','tiltott lemondás','a0000000-0000-0000-0000-000000000106')$sql$,
+    (select id from public.bookings where series_id=(select id from public.booking_series where idempotency_key='a0000000-0000-0000-0000-000000000101') order by start_at limit 1)),
+  'P0001',
+  'Csak a saját foglalásodat mondhatod le.',
+  'Más user sorozatának scope-cancel művelete elutasított'
+);
+select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
 
 update public.bookings
 set booking_title = 'Megőrzendő scope cím'
