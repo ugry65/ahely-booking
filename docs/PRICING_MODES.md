@@ -34,6 +34,8 @@ A meglévő `pricing_tiers`, `user_price_overrides`, `special_room_rates`, `mont
 
 A user díjazási módját a külön `user_pricing_policies` tábla tárolja. Ez csak a számítás módját választja ki; az árlistát nem duplikálja.
 
+**Nyitott dokumentációs/üzleti pont:** a `user_price_overrides` réteg a jelenlegi számítási motorban ténylegesen aktív és fix user-óradíjként felülírja a sávos/progresszív normál díjszámítást, miközben `Free` esetén továbbra is 0 Ft az eredmény. Ennek végleges üzleti státuszát és admin kezelhetőségét külön döntésben kell lezárni; addig nem tekinthető eltávolítható adatmodell-maradványnak.
+
 ## Biztonság
 
 - Közvetlen Data API írás a `user_pricing_policies` táblára tiltott.
@@ -41,12 +43,14 @@ A user díjazási módját a külön `user_pricing_policies` tábla tárolja. Ez
 - Minden változás `audit_logs` rekordot hoz létre.
 - A belső effektív módot meghatározó függvény közvetlenül nem hívható `authenticated` szerepkörből.
 
-## Következő fejlesztési egység
+## Implementációs állapot
 
-A következő fázis a központi havi díjszámító backend/DB logika:
-- sávos nem progresszív számítás;
-- progresszív számítás;
-- Free 0 Ft;
-- Tréningterem speciális szabályok;
-- törölt foglalások kizárása;
-- ugyanazon számítás használata dashboard és settlement esetén.
+A központi havi díjszámító backend/DB logika elkészült és automatikus tesztekkel lefedett. Támogatja:
+- sávos, nem progresszív számítást;
+- progresszív számítást;
+- Free 0 Ft-ot;
+- Tréningterem speciális szabályokat;
+- törölt foglalások kizárását;
+- ugyanazon központi számítás használatát a havi nézet és settlement folyamat számára.
+
+A fix `user_price_overrides` réteg végleges admin/üzleti státusza külön lezárandó döntési pont.
