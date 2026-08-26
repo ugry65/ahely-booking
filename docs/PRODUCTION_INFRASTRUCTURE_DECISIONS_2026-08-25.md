@@ -60,7 +60,39 @@ Következő külön vizsgálat:
 
 Hostingváltás csak proof-of-concept és staging UAT után fogadható el. Productiont a hosting-kísérletek nem érinthetik.
 
-## 5. Következő beszélgetés feladata
+## 5. Production monitoring, heartbeat és proaktív riasztás
+
+Új kötelező production követelmény: az A-Hely ne a felhasználói hibabejelentésből értesüljön arról, hogy a foglalási rendszer nem működik vagy súlyosan lelassult.
+
+A production infrastruktúra véglegesítésekor külön monitoring és riasztási megoldást kell tervezni és bevezetni.
+
+Minimum elvárt monitoring rétegek:
+- **külső uptime/heartbeat ellenőrzés:** független szolgáltatás rendszeres időközönként kívülről ellenőrizze a production alkalmazást;
+- **alkalmazás health endpoint:** legyen olyan biztonságos health-check végpont, amely nem csak azt bizonyítja, hogy a webserver HTTP választ ad, hanem ellenőrizni tudja az alkalmazás alapvető működőképességét;
+- **adatbázis/Supabase elérhetőség ellenőrzése:** a health-check különbséget tudjon tenni frontend/hosting és backend/adatbázis hiba között, érzékeny adat kiadása nélkül;
+- **válaszidő figyelés:** ne csak teljes leállás, hanem tartós vagy súlyos lassulás is észlelhető legyen;
+- **hibaarány / alkalmazáshibák figyelése:** production szerveroldali hibák és kritikus klienshibák lehetőség szerint központilag láthatók legyenek;
+- **backup heartbeat:** külön ellenőrizni kell, hogy a legutóbbi sikeres backup nem régebbi-e a megengedett RPO-nál; a backup script futása önmagában nem elegendő;
+- **riasztás:** kiesés, ismételt health-check hiba, kritikus lassulás vagy elmaradt backup esetén az admin proaktív értesítést kapjon megfelelő csatornán;
+- **recovery értesítés:** a rendszer helyreállásáról is legyen jelzés, hogy az incidens lezárható legyen;
+- **monitoring függetlenség:** az elsődleges uptime monitor lehetőség szerint ne ugyanazon hosting infrastruktúrán fusson, mint maga az alkalmazás, mert közös kiesés esetén nem tudna riasztani.
+
+A health endpoint nem tartalmazhat érzékeny adatot, secretet, user-információt vagy részletes belső hibát publikus válaszban. A monitoringhoz szükséges mélyebb diagnosztika külön védett/logging csatornán történjen.
+
+A végleges megoldás kiválasztásakor vizsgálandó:
+- ingyenes vagy nagyon alacsony költségű uptime-monitor szolgáltatások;
+- ellenőrzési gyakoriság és várható észlelési idő;
+- e-mail/push/egyéb riasztási lehetőség;
+- response-time és SSL/domain expiry monitoring;
+- alkalmazás- és error-monitoring külön szolgáltatásának szükségessége;
+- a hosting szolgáltató saját monitoringjának használhatósága második jelként, de nem kizárólagos ellenőrzésként;
+- false positive riasztások kezelése és incidens-eszkaláció.
+
+Production readiness során konkrét monitoring elfogadási tesztet kell végrehajtani: kontrolláltan hibás health választ vagy staging kiesést kell előidézni, és bizonyítani kell, hogy a külső monitor ezt észleli és a riasztás ténylegesen megérkezik. A recovery jelzést is ellenőrizni kell.
+
+A monitoring végleges szolgáltatója és pontos intervalluma még nyitott production infrastruktúra-döntés; a **proaktív működésfigyelés követelménye azonban ettől kezdve kötelező**.
+
+## 6. Következő beszélgetés feladata
 
 A következő chat kizárólag a production infrastruktúra költség/üzembiztonság döntésre fókuszáljon, új üzleti funkció fejlesztése nélkül.
 
@@ -70,15 +102,17 @@ Vizsgálandó:
 3. Supabase Free + Google Drive saját automatizált backup részletes technikai terve.
 4. Backup gyakoriság/RPO, retention, titkosítás, secret-kezelés, monitoring és riasztás.
 5. Tényleges restore-próba terve és elfogadási kritériumai.
-6. Végső production infrastruktúra ajánlás és go/no-go döntés.
+6. Production uptime/heartbeat, health-check, válaszidő- és hibamonitoring, valamint proaktív riasztás konkrét megoldásának kiválasztása és tesztelése.
+7. Végső production infrastruktúra ajánlás és go/no-go döntés.
 
-## 6. Változatlan production kapuk
+## 7. Változatlan production kapuk
 
 Production deploy továbbra sem történhet addig, amíg:
 - teljes CI és kritikus regresszió zöld;
 - staging UAT lezárt;
 - backup automatizálás működik;
 - tényleges restore-próba sikeres;
+- production monitoring/heartbeat és riasztás működése kontrollált teszttel bizonyított;
 - kritikus független review megtörtént;
 - production konfiguráció és rollback terv ellenőrzött;
 - explicit üzleti jóváhagyás nincs.
