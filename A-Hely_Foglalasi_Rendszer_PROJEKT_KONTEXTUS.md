@@ -3,10 +3,21 @@
 ## Cél
 Az A-Hely jelenlegi AllBooked/Skedda rendszerének kiváltása saját, webalapú foglalási és elszámolási rendszerrel. A rendszer legyen egyszerű, mobilon is jól használható, biztonságos, auditálható, és kezelje a havi elszámolást is.
 
+## Kanonikus funkcionális forrás
+A jelenlegi rendszer elsődleges funkcionális és újraimplementálási specifikációja:
+
+`docs/CURRENT_FUNCTIONAL_BASELINE.md`
+
+Az `A-Hely_Foglalasi_Rendszer_Funkcionalis_Specifikacio_v1.0.docx` **történeti / SUPERSEDED** dokumentum. Nem használható önálló vagy elsődleges implementációs forrásként, mert több pontját későbbi üzleti döntések felülírták.
+
+A 2026-08-26-i Claude-review és az arra adott tulajdonosi döntések kötelező kiegészítő forrásai:
+- `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`;
+- `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`.
+
 ## Szerepkörök
 **Admin:** userek, helyiségek, jogosultságok, árak, foglalási szabályok, foglalások, elszámolás, export és beállítások kezelése.
 
-**Normál user:** csak az engedélyezett helyiségeket és foglalásokat látja; foglalhat, saját foglalását szabály szerint módosíthatja/törölheti; ismétlődő foglalás csak engedélyezett keretek között. A havi elszámolási dashboard userenként ki- és bekapcsolható. Más userek neve alapból látható, de admin userenként letilthatja.
+**Normál user:** csak az engedélyezett helyiségeket és foglalásokat látja; foglalhat, saját foglalását szabály szerint módosíthatja/törölheti; ismétlődő foglalás csak engedélyezett keretek között. A havi elszámolási dashboard userenként ki- és bekapcsolható. Más foglalók nevének láthatósága **globális admin beállítás**, nem userenkénti kapcsoló; kikapcsolva más user neve és stabil azonosító színe sem kerülhet ki normál usernek.
 
 ## Helyiségek
 - Tréningterem
@@ -47,16 +58,30 @@ Az A-Hely jelenlegi AllBooked/Skedda rendszerének kiváltása saját, webalapú
 - Havi statisztika: törölt foglalások száma és a törlés előtti idő; részletes lista is lekérhető.
 
 ## Díjazás
+Az admin userenként négy üzleti díjazási lehetőség közül választhat:
+- **Sávos** – default;
+- **Progresszív**;
+- **Fix óradíj**;
+- **Free / 0 Ft**.
+
 Default havi **sávos** díjazás: a hónap teljes elszámolandó normál óraszáma meghatározza az összes normál órára alkalmazott óradíjat.
 - 1–15 óra: 2700 Ft/óra
 - 16–60 óra: 1900 Ft/óra
 - 61 órától: 1700 Ft/óra
 
-Admin userenként választhat **progresszív** díjazást is. Progresszív módban a sávok külön-külön árazódnak (például 20 óránál az első 15 óra 2700 Ft, a következő 5 óra 1900 Ft). Új user defaultja a sávos mód.
+Progresszív módban a sávok külön-külön árazódnak (például 20 óránál az első 15 óra 2700 Ft, a következő 5 óra 1900 Ft).
 
-Userenként időbeli érvényességgel díjszabás állítható be. Lehetséges Free / 0 Ft díjazás is. Az érvényességi dátumok miatt a történeti elszámolásnak reprodukálhatónak kell maradnia.
+Fix óradíjnál a user normál órái az adott hónapra érvényes fix óradíjon számolódnak. A jelenlegi technikai modell ezt `user_price_overrides` réteggel kezeli. A Fix óradíj **nem** írja felül a nem-Free Tréningterem csoportos speciális díját.
 
-A normál szobák díjazása ugyanaz; kivétel a Tréningterem csoportos használata.
+Precedencia:
+1. `Free` → minden foglalás 0 Ft;
+2. egyébként érvényes Fix óradíj → normál órák fix díjon;
+3. fix override hiányában Sávos/Progresszív;
+4. Tréningterem Csoportos külön speciális/foglalás-specifikus díj, kivéve Free usert.
+
+Userenként időbeli érvényességgel díjszabás állítható be. Az érvényességi dátumok miatt a történeti elszámolásnak reprodukálhatónak kell maradnia.
+
+**Production gap:** a DB motor a Fix óradíjat már számolja, de a biztonságos, auditált admin RPC/UI kezelést production előtt be kell fejezni és tesztelni.
 
 ## Havi user dashboard
 Userenként kapcsolható. Mutassa:
@@ -71,9 +96,19 @@ A díjszabás miatt a hónap közbeni fizetendő összeg változhat.
 ## Elszámolás – aktuális scope döntés
 A foglalórendszer a foglalásokból számolja a havi óraszámot és fizetendő összeget. Ami aktív foglalásként benne van a rendszerben, elszámolandó; ami törölve/lemondva van, nem szerepel az elszámolásban.
 
-A **Befizetések UI jelenleg nem része az aktív foglaló rendszer scope-jának.** A befizetés rögzítése a külön pénzügyi elszámolási projekt/folyamat része, ahol a Skedda/elszámolási agent végzi a könyvelést. A korábban elkészült payment DB-réteg nincs visszatörölve, de az alkalmazás navigációjából és aktív UI-jából ki van véve.
+A **Befizetések UI jelenleg nem része az aktív foglaló rendszer scope-jának.** A befizetés rögzítése a külön pénzügyi elszámolási projekt/folyamat része. A korábban elkészült payment DB-réteg nincs visszatörölve, de **parkoltatott/befagyasztott**, az alkalmazás navigációjából és aktív UI-jából ki van véve, és ebben a fázisban nem fejlesztendő tovább.
 
 A havi összesítés és settlement/audit történeti adatai továbbra is úgy készüljenek, hogy későbbi pénzügyi feldolgozás és export megbízhatóan elvégezhető legyen.
+
+## Foglalási e-mail státusz
+Automatikus booking confirmation e-mail **nem go-live blocker és nem kötelező az első production verzióban**.
+
+Kötelező viszont:
+- sikeres foglalás egyértelmű UI-visszajelzése;
+- azonnali megjelenés a naptárban/Foglalásaimban;
+- sikertelen foglalás ne jelenjen meg sikeresként.
+
+E-mail értesítés későbbi fejlesztési lehetőség.
 
 ## Export
 A havi/tételes exportnak tartalmaznia kell a pénzügyi feldolgozáshoz szükséges adatokat. A tételes aktív foglalások és a részletes CSV tartalmazza a `Foglalás címe` mezőt is.
@@ -102,11 +137,27 @@ Kötelező:
 - adatbázis-szintű ütközésvédelem;
 - backend jogosultságellenőrzés;
 - auditnapló;
-- technikai hibalog.
+- technikai hibalog;
+- production működés proaktív monitoringja/heartbeatje és riasztása.
 
 Adatmegőrzési cél: 2 év.
 A tervezett törlés előtt admin figyelmeztetés: 30 / 15 / 5 / 1 nappal.
 Automatikus végleges törlés helyett admin jóváhagyása szükséges.
+
+## Production monitoring
+A production rendszer hibáját vagy súlyos lassulását nem a usernek kell elsőként észlelnie.
+
+Production előtt kötelező kialakítani és kontrollált teszttel bizonyítani:
+- külső uptime/heartbeat monitort;
+- biztonságos health endpointot;
+- alkalmazás + DB/Supabase elérhetőség ellenőrzést;
+- válaszidő figyelést;
+- kritikus hibamonitoringot;
+- backup heartbeatet;
+- automatikus riasztást és recovery értesítést;
+- a monitoring hostingtól való megfelelő függetlenségét.
+
+Részletek: `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md`.
 
 ## UI
 - reszponzív webapp;
@@ -133,19 +184,19 @@ Kiindulási javaslat:
 A végleges production hosting és backup infrastruktúra még production readiness döntési pont. Részletes checkpoint: `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md`.
 
 ## Fejlesztési munkamód
-1. FS
-2. Technikai architektúra
-3. Adatmodell
-4. GitHub repository és issue-k
-5. Implementáció
-6. Automatikus tesztek
-7. Független AI/Claude review
-8. Javítás
-9. Üzleti specifikáció szerinti ellenőrzés
-10. Staging
-11. Élesítés
+1. kanonikus baseline / aktuális üzleti követelmény;
+2. technikai architektúra;
+3. adatmodell;
+4. GitHub repository és issue-k;
+5. implementáció;
+6. automatikus tesztek;
+7. független AI/Claude review;
+8. javítás;
+9. üzleti baseline szerinti ellenőrzés;
+10. staging;
+11. élesítés.
 
-Különösen szigorú review kell a foglalási motorra, ütközésvédelemre, jogosultságokra, sávos/progresszív díjszámításra, elszámolásra, backupra és restore-ra.
+Különösen szigorú review kell a foglalási motorra, ütközésvédelemre, jogosultságokra, Sávos/Progresszív/Fix/Free díjszámításra, elszámolásra, backupra, restore-ra és monitoringra.
 
 ## 2026-08-18-i fejlesztési sorrend döntés
 
@@ -186,10 +237,10 @@ A részletes technikai és regressziós checklist forrása: `docs/BOOKING_UI_UX_
 
 ## 2026-08-25-i funkcionális fáziszárás és production readiness checkpoint
 
-A staging UAT alapján a jelen fejlesztési fázis funkcionális scope-ja lezárható. Új üzleti funkció fejlesztése helyett a következő szakasz a production infrastruktúra és élesítési biztonság bizonyítása.
+A staging UAT alapján a 2026-08-25-i fejlesztési fázis fő funkcionális scope-ja lezárult. Új, nem szükséges üzleti funkció fejlesztése helyett a következő szakasz a production infrastruktúra és élesítési biztonság bizonyítása.
 
 Lezárt üzleti döntések:
-- default sávos díjazás; opcionális progresszív és Free díjazás userenként, érvényességi idővel;
+- default Sávos; opcionális Progresszív és Free díjazás userenként, érvényességi idővel;
 - Tréningterem csoportos default 5000 Ft/óra, admin foglalásonként felülírhatja;
 - Tréningterem admin foglalás címe szerepel a havi tételes lekérdezésben/exportban;
 - Befizetések UI kivéve a foglaló rendszer aktív scope-jából.
@@ -204,12 +255,25 @@ Infrastruktúra döntési irány:
 - Cloudflare Workers jelenleg blokkolt a Next.js 16 `proxy.ts` támogatási/kompatibilitási kockázata miatt;
 - következő vizsgálati fókusz: Netlify és más üzleti használatra alkalmas, olcsó Next.js hosting alternatívák.
 
+## 2026-08-26-i Claude-review döntések
+
+A független review után véglegesen elfogadott:
+- a **Fix óradíj** megtartása negyedik admin üzleti díjazási lehetőségként, érvényességi hónappal;
+- a régi FS v1.0 **SUPERSEDED** státusza;
+- a booking confirmation e-mail nem go-live blocker;
+- a payment backend parkoltatott/befagyasztott.
+
+A kanonikus baseline v1.1 ezeket már tartalmazza. A Fix óradíj admin RPC/UI lezárása production blocker implementációs gap.
+
+Részletes döntés: `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`.
+Review-feldolgozás: `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`.
+
 Részletes infrastruktúra checkpoint: `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md`.
 Production readiness checklist: `docs/PRODUCTION_READINESS_CHECKLIST.md`.
 
-Production továbbra is tilos sikeres backup automatizálás, tényleges restore-drill, teljes regresszió, kritikus független review és explicit üzleti jóváhagyás nélkül.
+Production továbbra is tilos a nyitott production blockerek lezárása, sikeres backup automatizálás, tényleges restore-drill, monitoring/alert teszt, teljes regresszió, kritikus független review és explicit üzleti jóváhagyás nélkül.
 
-## Nem MVP
+## Nem MVP / későbbi fejlesztés
 - bankkártyás fizetés
 - SSO/SAML
 - membership
@@ -218,14 +282,17 @@ Production továbbra is tilos sikeres backup automatizálás, tényleges restore
 - add-ons
 - natív mobilapp
 - komplex notification engine
+- automatikus booking confirmation e-mail
 - közvetlen számlázó-integráció
+- befizetések aktív UI-ja
 - teljes statisztikai dashboard
 
 ## Új fejlesztési beszélgetés indítása
 Az új fejlesztési beszélgetés első feladata:
-1. ezt a projektkontextust és az aktuális FS-t áttekinteni;
-2. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
-3. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
-4. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
-5. a GitHub repository aktuális branch/PR állapotát ellenőrizni; productionre csak review-zott, stagingen elfogadott állapot kerülhet;
-6. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben.
+1. **kötelezően** áttekinteni ezt a projektkontextust és a `docs/CURRENT_FUNCTIONAL_BASELINE.md` aktuális verzióját; a régi FS v1.0 csak történeti/SUPERSEDED forrás;
+2. kötelezően áttekinteni a `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` és `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md` dokumentumokat, amíg tartalmuk teljesen be nem olvad a release-baseline-ba;
+3. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
+4. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
+5. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
+6. a GitHub repository aktuális branch/PR állapotát ellenőrizni; productionre csak review-zott, stagingen elfogadott állapot kerülhet;
+7. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben.
