@@ -81,7 +81,9 @@ Precedencia:
 
 Userenként időbeli érvényességgel díjszabás állítható be. Az érvényességi dátumok miatt a történeti elszámolásnak reprodukálhatónak kell maradnia.
 
-**Production gap:** a DB motor a Fix óradíjat már számolja, de a biztonságos, auditált admin RPC/UI kezelést production előtt be kell fejezni és tesztelni.
+A Fix óradíj biztonságos, auditált admin RPC/UI kezelése elkészült: az admin a módot, a Ft/óra értéket és az érvényességi hónapot a Díjazás felületen állíthatja. A kliensoldal egyetlen módosítási belépési pontja az egységes `admin_set_user_pricing_configuration`; a belső policy-helper közvetlen authenticated végrehajtása tiltott.
+
+Egy userhez több egymást követő jövőbeli díjazási változás előre beütemezhető. Egy korábbi kezdőhónapra rögzített új beállítás **nem törli automatikusan** a már későbbi hónapokra korábban beütemezett változásokat; azok a saját kezdőhónapjuktól életbe lépnek, hacsak az admin külön nem módosítja őket. Az admin Díjazás felület az összes jövőbeli effektív változást időrendben mutatja és erre külön figyelmeztet.
 
 ## Havi user dashboard
 Userenként kapcsolható. Mutassa:
@@ -240,7 +242,7 @@ A részletes technikai és regressziós checklist forrása: `docs/BOOKING_UI_UX_
 A staging UAT alapján a 2026-08-25-i fejlesztési fázis fő funkcionális scope-ja lezárult. Új, nem szükséges üzleti funkció fejlesztése helyett a következő szakasz a production infrastruktúra és élesítési biztonság bizonyítása.
 
 Lezárt üzleti döntések:
-- default Sávos; opcionális Progresszív és Free díjazás userenként, érvényességi idővel;
+- default Sávos; opcionális Progresszív, Fix óradíj és Free díjazás userenként, érvényességi idővel;
 - Tréningterem csoportos default 5000 Ft/óra, admin foglalásonként felülírhatja;
 - Tréningterem admin foglalás címe szerepel a havi tételes lekérdezésben/exportban;
 - Befizetések UI kivéve a foglaló rendszer aktív scope-jából.
@@ -263,7 +265,9 @@ A független review után véglegesen elfogadott:
 - a booking confirmation e-mail nem go-live blocker;
 - a payment backend parkoltatott/befagyasztott.
 
-A kanonikus baseline v1.1 ezeket már tartalmazza. A Fix óradíj admin RPC/UI lezárása production blocker implementációs gap.
+A kanonikus baseline ezeket tartalmazza. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja továbbra is production readiness kapu, de az RPC/UI hiánya már nem production gap.
+
+A jövőbeli díjazási tervek megtartása tudatos működés: egy korábbi kezdőhónap módosítása nem törli a későbbre már beütemezett változásokat. Ezeket az admin teljes idővonalként látja.
 
 Részletes döntés: `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`.
 Review-feldolgozás: `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`.
