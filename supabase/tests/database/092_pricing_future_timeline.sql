@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(6);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('92000000-0000-0000-0000-000000000001', 'timeline-admin@example.com', '{"first_name":"Timeline","last_name":"Admin"}'::jsonb),
@@ -8,6 +8,17 @@ insert into auth.users (id, email, raw_user_meta_data) values
 
 update public.profiles set role = 'admin' where id = '92000000-0000-0000-0000-000000000001';
 select set_config('request.jwt.claim.sub', '92000000-0000-0000-0000-000000000001', true);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'user_price_override_no_overlap'
+      and contype = 'x'
+      and conrelid = 'public.user_price_overrides'::regclass
+  ),
+  'A Fix óradíj időintervallumokat adatbázis exclusion constraint védi az átfedéstől'
+);
 
 select lives_ok(
   $$select public.admin_set_user_pricing_configuration(
