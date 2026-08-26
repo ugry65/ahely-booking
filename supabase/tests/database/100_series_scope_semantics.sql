@@ -13,9 +13,10 @@ insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat)
 on conflict (user_id, room_id) do update set can_book = true, can_repeat = true;
 
 -- Teszt-segédjog: az authenticated szerepkörnek csak ebben a tranzakcióban kell
--- a sorozatazonosítót feloldania a scope-RPC inputjaihoz. A fájl végi rollback
--- ezt a GRANT-ot is visszavonja; production jogosultságot nem módosít.
+-- a sorozat- és foglalásazonosítókat feloldania a scope-RPC inputjaihoz. A fájl végi rollback
+-- ezeket a GRANT-okat is visszavonja; production jogosultságot nem módosít.
 grant select on public.booking_series to authenticated;
+grant select on public.bookings to authenticated;
 
 -- Normál 4 alkalmas sorozat: occurrence / series update és following cancel.
 set local role authenticated;
