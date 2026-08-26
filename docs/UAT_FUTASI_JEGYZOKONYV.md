@@ -96,8 +96,8 @@ Kapcsolódó issue-k: #32, #82
 | UAT-PRICING-02 | NEM FUTOTT | progressive 20 óra = 50 000 Ft | |
 | UAT-PRICING-03 | NEM FUTOTT | Free = 0 | |
 | UAT-PRICING-04 | NEM FUTOTT | effective month | |
-| UAT-PRICING-05 | BLOKKOLT | Fix óradíj admin RPC/UI production gap | #82 |
-| UAT-PRICING-06 | BLOKKOLT | Fix/Free/Tréningterem precedencia teljes E2E az RPC/UI után | #82 |
+| UAT-PRICING-05 | NEM FUTOTT | Fix óradíj admin RPC/UI elkészült; manuális staging UAT szükséges | #82 |
+| UAT-PRICING-06 | NEM FUTOTT | Fix/Free/Tréningterem precedencia DB-regresszióval lefedett; E2E staging UAT szükséges | #82 |
 | UAT-MONTH-01 | NEM FUTOTT | | |
 | UAT-MONTH-02 | NEM FUTOTT | | |
 | UAT-MONTH-03 | NEM FUTOTT | | |
@@ -122,15 +122,16 @@ Kapcsolódó issue-k: #32, #82
 
 | Téma | Döntés | Forrás |
 | --- | --- | --- |
-| Fix user óradíj | MEGTARTVA, production admin UI/RPC szükséges | `DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` |
-| Régi FS v1.0 | TÖRTÉNETI / SUPERSEDED | ugyanott |
+| Fix user óradíj | MEGTARTVA; admin RPC/UI és regressziós tesztek elkészültek, staging UAT még szükséges | `DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`, `PRICING_MODES.md` |
+| Jövőbeli pricing tervek | Több jövőbeli változás ütemezhető; egy korábbi kezdőhónap módosítása a későbbi terveket nem törli automatikusan; admin UI teljes idővonalat mutat | `PRICING_MODES.md` |
+| Régi FS v1.0 | TÖRTÉNETI / SUPERSEDED | `DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` |
 | Booking confirmation e-mail | NEM go-live blocker, későbbi fejlesztés | ugyanott |
 | Payment backend/UI | backend parkoltatott; aktív UI nincs | ugyanott |
 | Heti nézet | nem része a jelenlegi kötelező baseline-nak | `CURRENT_FUNCTIONAL_BASELINE.md` |
 
 ## Aktuális production blockerek
 
-- [ ] Fix óradíj biztonságos admin RPC/UI + regressziós teszt + UAT.
+- [ ] Fix óradíj manuális staging UAT-ja és teljes pricing idővonal ellenőrzése.
 - [ ] Production backup automatizálás és off-site példány.
 - [ ] Sikeres restore-drill.
 - [ ] Production monitoring/heartbeat és alert drill.
