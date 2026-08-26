@@ -12,6 +12,11 @@ insert into public.user_room_permissions(user_id, room_id, can_book, can_repeat)
   ('a0000000-0000-0000-0000-000000000002','11000000-0000-0000-0000-000000000001',true,true)
 on conflict (user_id, room_id) do update set can_book = true, can_repeat = true;
 
+-- Teszt-segédjog: az authenticated szerepkörnek csak ebben a tranzakcióban kell
+-- a sorozatazonosítót feloldania a scope-RPC inputjaihoz. A fájl végi rollback
+-- ezt a GRANT-ot is visszavonja; production jogosultságot nem módosít.
+grant select on public.booking_series to authenticated;
+
 -- Normál 4 alkalmas sorozat: occurrence / series update és following cancel.
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'a0000000-0000-0000-0000-000000000002', true);
