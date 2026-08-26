@@ -1,10 +1,11 @@
 begin;
 
-select plan(11);
+select plan(16);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('91000000-0000-0000-0000-000000000001', 'pricing-reg-admin@example.invalid', '{"first_name":"Pricing","last_name":"Admin"}'),
-  ('91000000-0000-0000-0000-000000000002', 'pricing-reg-user@example.invalid', '{"first_name":"Pricing","last_name":"User"}');
+  ('91000000-0000-0000-0000-000000000002', 'pricing-reg-user@example.invalid', '{"first_name":"Pricing","last_name":"User"}'),
+  ('91000000-0000-0000-0000-000000000003', 'pricing-reg-transition@example.invalid', '{"first_name":"Pricing","last_name":"Transition"}');
 update public.profiles set role = 'admin' where id = '91000000-0000-0000-0000-000000000001';
 
 select ok(
@@ -80,6 +81,56 @@ select is(
   (select special_due_huf from public.calculate_monthly_pricing('91000000-0000-0000-0000-000000000002',date '2027-05-01')),
   5000::bigint,
   'Tréningterem csoportos díja Fix usernél is külön 5 000 Ft marad'
+);
+
+-- Regresszió: ugyanarra a folyó hónapra beállított Fix díj módosítható, és nem
+-- hoz létre második, átfedő override rekordot.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000001', true);
+select lives_ok(
+  format($sql$select public.admin_set_user_pricing_configuration(
+    '91000000-0000-0000-0000-000000000003','fixed',2100,%L::date,gen_random_uuid())$sql$,
+    date_trunc('month', current_date)::date),
+  'Folyó hónapra Fix díj beállítható'
+);
+select lives_ok(
+  format($sql$select public.admin_set_user_pricing_configuration(
+    '91000000-0000-0000-0000-000000000003','fixed',2300,%L::date,gen_random_uuid())$sql$,
+    date_trunc('month', current_date)::date),
+  'Azonos folyó hónap Fix díja módosítható'
+);
+reset role;
+select is(
+  (select hourly_rate_huf from public.user_price_overrides
+   where user_id='91000000-0000-0000-0000-000000000003'
+     and valid_from=date_trunc('month', current_date)::date),
+  2300::bigint,
+  'Azonos hónap Fix módosítása a meglévő override díját frissíti'
+);
+
+-- Regresszió: Free után egy későbbi effektív hónaptól Fix módra lehet váltani;
+-- a wrapper ilyenkor explicit nem-Free policyt és Fix override-ot hoz létre.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '91000000-0000-0000-0000-000000000001', true);
+select lives_ok(
+  format($sql$select public.admin_set_user_pricing_configuration(
+    '91000000-0000-0000-0000-000000000003','free',null,%L::date,gen_random_uuid())$sql$,
+    (date_trunc('month', current_date) + interval '6 months')::date),
+  'Free mód jövőbeli hónaptól beállítható'
+);
+select lives_ok(
+  format($sql$select public.admin_set_user_pricing_configuration(
+    '91000000-0000-0000-0000-000000000003','fixed',2800,%L::date,gen_random_uuid())$sql$,
+    (date_trunc('month', current_date) + interval '7 months')::date),
+  'Free után későbbi hónaptól Fix mód beállítható'
+);
+reset role;
+select is(
+  (select hourly_rate_huf from public.user_price_overrides
+   where user_id='91000000-0000-0000-0000-000000000003'
+     and valid_from=(date_trunc('month', current_date) + interval '7 months')::date),
+  2800::bigint,
+  'Free → Fix átmenet létrehozza a helyes Fix override-ot'
 );
 
 select * from finish();
