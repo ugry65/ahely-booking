@@ -5,22 +5,23 @@ Branch: `feature/82-pricing-modes`
 
 ## Összefoglalás
 
-A 3. független Claude-review 91%-os újraimplementálhatóságot és két új P1 findingot jelzett a Fix óradíj production implementáció körül. Mindkettőt validáltuk a tényleges kód ellen.
+A 3. független Claude-review 91%-os újraimplementálhatóságot és két új P1 findingot jelzett a Fix óradíj production implementáció körül. Mindkettőt validáltuk a tényleges kód ellen és lezártuk. Az előző review-kból fennmaradt sorozat-scope dokumentációs rés is lezárult a `docs/RECURRING_SERIES_SCOPE_SEMANTICS.md` kanonikus kiegészítő specifikációval.
 
 ## P1-NEW-1 – jövőbeli Fix terv későbbi újraaktiválódása
 
 **Státusz: CLOSED – dokumentált és látható idővonal-szemantika.**
 
-A kód viselkedése összhangban áll a már elfogadott időbeli pricing modellel: egy userhez több, különböző jövőbeli kezdőhónapra szóló díjazási változás előre ütemezhető. Egy korábbi kezdőhónap módosítása nem törli automatikusan a már későbbre rögzített tervet.
+A kód viselkedése összhangban áll az elfogadott időbeli pricing modellel: egy userhez több, különböző jövőbeli kezdőhónapra szóló díjazási változás előre ütemezhető. Egy korábbi kezdőhónap módosítása nem törli automatikusan a már későbbre rögzített tervet.
 
-A valódi hiány az volt, hogy az admin UI korábban csak a legközelebbi jövőbeli változást mutatta, ezért egy későbbi terv meglepetésként léphetett életbe.
+A hiány az volt, hogy az admin UI korábban csak a legközelebbi jövőbeli változást mutatta, ezért egy későbbi terv meglepetésként léphetett életbe.
 
 Javítás:
-- az admin Díjazás oldal minden usernél **az összes jövőbeli effektív változást időrendben megmutatja**;
+- az admin Díjazás oldal minden usernél az összes jövőbeli effektív változást időrendben megmutatja;
 - külön figyelmeztetés jelzi, hogy egy új, korábbi kezdőhónapú beállítás a későbbi, más kezdőhónapú terveket nem törli;
 - a kiválasztott user előzménynézetében külön `Jövőbeli díjazási idővonal` jelenik meg;
 - a szabály a `docs/PRICING_MODES.md` dokumentumban explicit rögzítve;
-- `092_pricing_future_timeline.sql` regressziós teszt bizonyítja, hogy a későbbi terv megmarad, az azonos kezdőhónapú Fix terv viszont módosítható.
+- `092_pricing_future_timeline.sql` regressziós teszt bizonyítja a jövőbeli terv megmaradását és az azonos kezdőhónapú Fix terv módosíthatóságát;
+- ugyanebben a tesztben az override-intervallumok DB exclusion constraintje is ellenőrzött.
 
 Nem vezettünk be automatikus cascade-delete-et, mert az korábban rögzített admin-szándék csendes törlését okozná és ellentétes lenne a több jövőbeli pricing változás támogatásával.
 
@@ -34,6 +35,23 @@ A kliensoldali módosítás egyetlen támogatott útja az egységes `admin_set_u
 
 A `091_fixed_user_pricing_hardening.sql` teszt explicit ellenőrzi, hogy a legacy RPC már nem elérhető authenticated szerepkörből.
 
+## Korábbi P1-1 – sorozat-scope szemantika
+
+**Státusz: CLOSED dokumentációs szinten.**
+
+A `docs/RECURRING_SERIES_SCOPE_SEMANTICS.md` technológiafüggetlenül rögzíti:
+- `occurrence`: csak a kiválasztott alkalom;
+- `following`: a kiválasztott + minden későbbi aktív jövőbeli alkalom;
+- `series`: a teljes sorozat minden aktív jövőbeli alkalma, múltbeli és már cancelled bookingok visszaírása nélkül;
+- több alkalmat érintő update/cancel atomi validációját;
+- jogosultsági és 24 órás cutoff viselkedést;
+- optimistic concurrency és idempotencia követelményét;
+- az eredeti sorozat-generálási pillanatkép és az élő booking állapot különválasztását;
+- a Tréningterem booking-specifikus csoportos díj öröklési/történeti viselkedését;
+- a napi naptár és a szűkebb `Foglalásaim` kezelés közötti user-facing különbséget.
+
+A dokumentum a `CURRENT_FUNCTIONAL_BASELINE.md` §11 kanonikus kiegészítő specifikációja.
+
 ## Automatikus teszt-gapek
 
 A 3. review által jelzett fő hiányokból javítva:
@@ -44,9 +62,10 @@ A 3. review által jelzett fő hiányokból javítva:
 - múltbeli hónap Fix módosítása: tesztelve és tiltott;
 - jövőbeli többváltozásos pricing idővonal: tesztelve;
 - azonos kezdőhónapú Fix terv módosítása: tesztelve;
-- legacy RPC publikus végrehajtási jogának tiltása: tesztelve.
+- legacy RPC publikus végrehajtási jogának tiltása: tesztelve;
+- override exclusion constraint megléte: tesztelve.
 
-Külön párhuzamos concurrency shell-teszt a `user_price_overrides` konfigurációra még nem készült; az adatbázis GiST exclusion constraint + userenkénti advisory transaction lock kettős védelmet ad. Ez production előtt további hardeningként elvégezhető, de a pricing konfiguráció adatbázis-szintű overlap-védelme már kötelező constrainttel rendelkezik.
+Külön valódi kétfolyamatos concurrency shell-teszt a `user_price_overrides` konfigurációra még további hardeningként elkészíthető; az adatbázis GiST exclusion constraint + userenkénti advisory transaction lock kettős védelmet ad.
 
 ## UAT státusz
 
@@ -58,12 +77,11 @@ A production infrastruktúra UAT-k továbbra is blokkoltak addig, amíg backup/r
 
 ## Fennmaradó production teendők
 
-A Fix óradíj kódszintű blocker lezárása után a fő production kapuk:
-1. legfrissebb CI teljes zöld állapota;
-2. manuális staging UAT, beleértve a Fix óradíj idővonalat;
-3. sorozat-szerkesztési scope rekord-szintű dokumentálása;
-4. production backup/off-site mentés;
-5. sikeres restore-drill;
-6. production monitoring/heartbeat + alert drill;
-7. végső független review;
-8. explicit production GO.
+A kód- és dokumentációs P1 findingok lezárása után a fő production kapuk:
+1. legfrissebb Application és Database CI teljes zöld állapota;
+2. teljes manuális staging UAT, beleértve a Fix óradíj idővonalat és sorozat-scope műveleteket;
+3. production backup/off-site mentés;
+4. sikeres restore-drill;
+5. production monitoring/heartbeat + alert drill;
+6. végső független review;
+7. explicit production GO.
