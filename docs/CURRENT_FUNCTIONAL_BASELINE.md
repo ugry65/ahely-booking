@@ -604,7 +604,7 @@ Admin számára elérhető kezelési területek:
 - Felhasználók;
 - Helyiségek és helyiségcsoportok;
 - közvetlen user–room jogosultságok/repeat kivételek;
-- **Díjazás: Sávos / Progresszív / Fix óradíj / Free, effective month és jövőbeli idővonal**;
+- díjazási policyk és érvényesség;
 - havi órák/fizetendő;
 - tételes aktív foglalások;
 - lemondási riport;
@@ -612,7 +612,7 @@ Admin számára elérhető kezelési területek:
 
 `Befizetések` menüpont **nem** része az aktuális aktív navigációnak. Közvetlen régi URL sem adhat használható payment UI-t.
 
-A Fix óradíj admin RPC/UI az implementált staging baseline része. Production GO előtt a manuális UAT és az általános production-readiness kapuk teljesítése szükséges; maga az admin RPC/UI hiánya már nem blocker.
+A Fix óradíj admin kezelése implementálva és DB-regresszióval lefedett; a manuális staging UAT (`UAT-PRICING-05/06`) production-readiness kapu.
 
 ---
 
@@ -659,7 +659,6 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 17. **SettlementBookingLine** – foglalásszintű történeti pénzügyi sor.
 18. **AuditLog** – append-only kritikus eseménytörténet.
 19. **SystemSettings** – globális paraméterek (pl. névláthatóság, default limitek).
-20. **BookingScopeOperation** – ismétlődő sorozatok update/cancel műveleti idempotencia- és auditrekordja (actor, scope, selected booking, series, request/result).
 
 A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelentés nem veszhet el.
 
@@ -676,12 +675,10 @@ A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelent�
 - SECURITY DEFINER vagy megfelelő alternatíva esetén explicit, biztonságos search path/context;
 - fizikai törlés korlátozása történeti/audit/pénzügyi adatokon;
 - audit append-only jelleg;
-- idempotencia foglaláslétrehozásnál és sorozat-scope műveleteknél;
+- idempotencia foglaláslétrehozásnál;
 - optimistic concurrency módosításnál;
 - atomi foglalás + egyedi Tréningterem-díj;
-- scope update/cancel teljes célhalmazának atomi validálása és rollbackje;
-- Fix óradíj admin módosítása kizárólag kontrollált, auditált backend műveleten keresztül;
-- a belső pricing-policy helper ne legyen közvetlenül végrehajtható authenticated kliensből.
+- Fix óradíj admin módosítása kizárólag kontrollált, auditált backend műveleten keresztül.
 
 ---
 
@@ -740,14 +737,6 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - kivételdátum;
 - ütközésnél all-or-nothing és skip-conflicts mód;
 - DST/helyi idő megőrzés;
-- occurrence/following/series update pontos célhalmaza;
-- sorozat-update egyetlen hibás/ütköző targetnél teljes rollback;
-- sorozat-scope stale optimistic version elutasítása;
-- occurrence/following/series cancel pontos célhalmaza;
-- scope-cancel egyetlen cutoffon belüli targetnél normál usernek teljes rollback;
-- scope-művelet idempotencia;
-- scope-update booking_title megőrzés;
-- scope-update Tréningterem booking-specifikus csoportdíj megőrzés/nullázás/default 5000 szabályai;
 - Tréningterem 10 napos user limit;
 - Tréningterem repeat user tiltás/admin engedély;
 - Tréningterem csoportos default 5000;
@@ -759,10 +748,6 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - Free felülírja a Fix óradíjat és a Tréningterem speciális díjat is;
 - Fix óradíj nem írja felül a nem-Free Tréningterem csoportos speciális díjat;
 - Fix óradíj admin-only módosítása, érvényességi hónapja és auditja;
-- Fixed→Progresszív és Fixed→Sávos lezárás;
-- múltbeli Fix módosítás tiltása;
-- belső legacy pricing helper közvetlen authenticated EXECUTE tiltása;
-- jövőbeli pricing tervek effektív idővonala;
 - cancelled booking kizárása;
 - pricing policy effective month;
 - havi összesítés;
@@ -798,15 +783,13 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 - mobil hamburger bezár route-váltáskor;
 - foglaló neve/privacy/stabil szín;
 - Szerkesztés/Duplikálás/Törlés;
-- occurrence/following/series scope műveletek a §11 és `SERIES_SCOPE_SEMANTICS.md` szerint;
+- sorozat scope műveletek;
 - onboarding blokkolás és kötelező számlázási adatok;
 - CSV user import;
 - utolsó admin védelme;
 - room group can_book és közvetlen can_repeat különválasztása;
 - Sávos/Progresszív/Free admin policy és effective month;
 - **Fix óradíj admin beállítása, effective month, módosítás/megszüntetés**;
-- minden későbbi beütemezett pricing-változás látható az admin idővonalon;
-- korábbi hónap módosítása mellett a későbbi már beütemezett terv megmarad és a UI ezt egyértelműen jelzi;
 - Free precedencia Fix óradíj és Tréningterem felett;
 - Tréningterem egyedi csoportos díj;
 - Havi órák;
@@ -840,16 +823,15 @@ Ha a rendszert más kóddal vagy más platformon újraépítjük, akkor csak akk
 1. a jelen dokumentum minden `kötelező`, `kell`, `nem lehet`, `tiltott` jellegű szabálya teljesül;
 2. a jogosultságok backend/DB oldalon is érvényesek;
 3. a dupla foglalás konkurens terhelés mellett sem lehetséges;
-4. a díjszámítás ugyanazokat az eredményeket adja, beleértve a Sávos/Progresszív/Fix/Free precedenciát, a jövőbeli pricing-idővonalat és a Tréningterem szabályait;
-5. az ismétlődő sorozatok occurrence/following/series scope-ja, atomi működése és Tréningterem-díjmegőrzése a §11 szerint ekvivalens;
-6. a történeti settlement/audit adatok nem írhatók át kontrollálatlanul;
-7. a mobil és desktop foglalási UX a BOOKING_UI_UX_BASELINE elfogadott működésével ekvivalens;
-8. a kötelező automatikus tesztkészlet zöld;
-9. a funkcionális UAT zöld, nincs P1/P2 eltérés;
-10. backup és tényleges restore-drill bizonyított;
-11. production monitoring/heartbeat és riasztás kontrollált teszttel bizonyított;
-12. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
-13. production csak explicit üzleti GO jóváhagyással indul.
+4. a díjszámítás ugyanazokat az eredményeket adja, beleértve a Sávos/Progresszív/Fix/Free precedenciát és a Tréningterem szabályait;
+5. a történeti settlement/audit adatok nem írhatók át kontrollálatlanul;
+6. a mobil és desktop foglalási UX a BOOKING_UI_UX_BASELINE elfogadott működésével ekvivalens;
+7. a kötelező automatikus tesztkészlet zöld;
+8. a funkcionális UAT zöld, nincs P1/P2 eltérés;
+9. backup és tényleges restore-drill bizonyított;
+10. production monitoring/heartbeat és riasztás kontrollált teszttel bizonyított;
+11. kritikus biztonsági/pénzügyi részek független második review-t kapnak;
+12. production csak explicit üzleti GO jóváhagyással indul.
 
 ---
 
