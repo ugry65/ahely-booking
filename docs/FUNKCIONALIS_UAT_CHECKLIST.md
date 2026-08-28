@@ -47,6 +47,7 @@ Szükséges minimum tesztidentitások:
 7. `USER-NEW`: onboarding előtt álló új user;
 8. `USER-FREE`: Free pricing;
 9. `USER-FIXED`: Fix óradíj tesztuser.
+10. `USER-RESET`: valósan elérhető email a jelszó-visszaállítás ellenőrzéséhez; nem azonos USER-A-val, és meglévő profilját/jogosultságait a bootstrap nem írhatja át.
 
 Szükséges tesztkonfiguráció:
 - legalább 2 normál helyiség;
