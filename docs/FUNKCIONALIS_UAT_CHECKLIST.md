@@ -1,6 +1,6 @@
 # A-Hely foglalási rendszer – Funkcionális UAT checklist
 
-Verzió: 1.1
+Verzió: 1.2
 Dátum: 2026-08-26
 Kapcsolódó issue-k: #32, #82
 Kanonikus funkcionális forrás: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
@@ -46,7 +46,7 @@ Szükséges minimum tesztidentitások:
 6. `USER-INACTIVE`: inaktív user;
 7. `USER-NEW`: onboarding előtt álló új user;
 8. `USER-FREE`: Free pricing;
-9. `USER-FIXED`: Fix óradíj tesztuser, amikor az admin UI/RPC elkészült.
+9. `USER-FIXED`: Fix óradíj tesztuser.
 
 Szükséges tesztkonfiguráció:
 - legalább 2 normál helyiség;
@@ -205,6 +205,16 @@ Szükséges tesztkonfiguráció:
 ### UAT-CANCEL-04 – Admin törlés
 **Elvárt eredmény:** bármikor; auditált; havi aktív elszámolásból kizárt.
 
+### UAT-CANCEL-05 – Sorozat `Ettől kezdve`
+**Elvárt eredmény:** kiválasztott + minden későbbi aktív jövőbeli alkalom lemondódik; korábbi alkalom nem.
+
+### UAT-CANCEL-06 – `Teljes sorozat`
+**Elvárt eredmény:** ugyanazon sorozat minden aktív jövőbeli bookingja lemondódik; múlt/cancelled booking nem változik.
+
+### UAT-CANCEL-07 – Cutoff miatti atomi rollback
+**Lépések:** normál user `following`/`series` scope-jában legyen legalább egy cutoffon belüli target.
+**Elvárt eredmény:** a teljes scope művelet elutasított; távolabbi alkalom sem mondódik le. Admin ugyanazt a scope-ot jogosultsága szerint végrehajthatja.
+
 ## 10. Ismétlődő foglalások
 
 ### UAT-REC-01 – Heti sorozat darabszámmal
@@ -219,9 +229,22 @@ Szükséges tesztkonfiguráció:
 
 Az elvárt működés a kanonikus baseline szerint: helyi kezdési idő megőrzése, kivételdátum kihagyása, ütközésnél választott policy szerinti atomikus vagy részleges létrehozás.
 
-### UAT-REC-10 – Sorozat scope műveletek
-**Elvárt eredmény:** aktuális alkalom / ettől kezdve / teljes sorozat user-facing scope-ok elérhetők és a dokumentált backend szemantikát követik.
-**Megjegyzés:** a rekord-szintű pontos scope-dokumentáció production előtt külön lezárandó dokumentációs tétel.
+### UAT-REC-10 – `Aktuális alkalom` scope update
+**Elvárt eredmény:** csak a kiválasztott aktív jövőbeli booking módosul.
+
+### UAT-REC-11 – `Ettől kezdve` scope update
+**Elvárt eredmény:** kiválasztott + minden későbbi aktív jövőbeli booking ugyanazzal az időeltolással/durationnel és megadott room/use_type/note értékekkel módosul; korábbi nem.
+
+### UAT-REC-12 – `Teljes sorozat` scope update
+**Elvárt eredmény:** minden aktív jövőbeli booking módosul, múlt/cancelled nem.
+
+### UAT-REC-13 – Scope update atomi rollback
+**Elvárt eredmény:** ha egyetlen target ütközne vagy szabályt sértene, egyik target sem módosul.
+
+### UAT-REC-14 – Scope update történeti/pénzügyi adatok
+**Elvárt eredmény:** booking_title megmarad; Tréningterem+Csoportos állapot megmaradásakor az egyedi booking-rate megmarad; státusz elhagyásakor nullázódik; új Tréningterem+Csoportos állapotnál default 5000 Ft/óra érvényesül.
+
+A részletes kötelező szemantika: `docs/SERIES_SCOPE_SEMANTICS.md`.
 
 ## 11. Admin – felhasználók, helyiségek és hozzáférések
 
@@ -256,11 +279,16 @@ Az elvárt működés a kanonikus baseline szerint: helyi kezdési idő megőrz�
 **Elvárt eredmény:** jövőbeli hónapra beállítható; megfelelő hónaptól érvényes; történeti lezárt hónap kontrollálatlanul nem írható át.
 
 ### UAT-PRICING-05 – Fix óradíj admin kezelése
-**Státusz:** jelenleg **BLOKKOLT production gap**, amíg admin RPC/UI nincs kész.
-**Elvárt eredmény a megvalósítás után:** admin userenként és effective month-tal fix óradíjat állít; auditált; normál user nem módosíthatja.
+**Státusz:** implementálva, manuális staging UAT-ra kész.
+**Lépések:** admin válassza a Fix óradíjat, adjon meg pl. 2200 Ft/óra értéket és effective month-ot; majd ugyanarra a hónapra módosítsa az értéket és későbbi hónaptól váltson másik módra.
+**Elvárt eredmény:** admin userenként és effective month-tal fix óradíjat állít; az effektív állapot és előzmény látható; auditált; normál user nem módosíthatja.
 
 ### UAT-PRICING-06 – Fix precedencia
 **Elvárt eredmény:** Fix felülírja a tiered/progressive normál díjat; Free a Fixet is; nem-Free Tréningterem Csoportos továbbra is saját speciális díjon számolódik.
+
+### UAT-PRICING-07 – Jövőbeli pricing-idővonal
+**Lépések:** ütemezz későbbi Fix módot, majd egy annál korábbi hónaptól állíts Progresszív/Sávos/Free módot.
+**Elvárt eredmény:** a későbbi korábban ütemezett terv nem törlődik; minden jövőbeli effektív változás látható az admin idővonalon; a UI külön jelzi, hogy a későbbi tervek megmaradnak.
 
 ### UAT-MONTH-01 – Havi összesítés
 **Elvárt eredmény:** aktív foglalások órái és fizetendő összege helyes.
