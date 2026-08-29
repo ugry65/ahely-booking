@@ -19,7 +19,7 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId, isAdmin = false }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string; isAdmin?: boolean }) {
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, bookingUsers = [], currentUserId, isAdmin = false }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; bookingUsers?: BookingUser[]; currentUserId?: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
@@ -65,7 +65,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                   {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
                 </select>
               </label>
-              <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
+              <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} /></label>
               <BookingTimeFields options={timeOptions()} initialStartTime="09:00" initialEndTime="10:00" />
 
               <label>Ismétlődés

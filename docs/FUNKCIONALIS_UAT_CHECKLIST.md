@@ -1,7 +1,7 @@
 # A-Hely foglalási rendszer – Funkcionális UAT checklist
 
-Verzió: 1.2
-Dátum: 2026-08-26
+Verzió: 1.3
+Dátum: 2026-08-29
 Kapcsolódó issue-k: #32, #82
 Kanonikus funkcionális forrás: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
 
@@ -149,6 +149,10 @@ Szükséges tesztkonfiguráció:
 ### UAT-BOOK-13 – Foglalás címe
 **Elvárt eredmény:** megadott `Foglalás címe` mentődik és jogosult admin riportban később visszakereshető.
 
+### UAT-BOOK-14 – Múltbeli foglalás
+**Lépések:** USER-A, majd ADMIN-1 hozzon létre egy-egy egyszeri foglalást múltbeli dátumra.
+**Elvárt eredmény:** mindkét foglalás sikeresen létrejön és a múltbeli naptári napon megjelenik; a jogosultsági, időrács-, nyitvatartási és ütközési szabályok továbbra is érvényesek.
+
 ## 7. Tréningterem
 
 ### UAT-TRAIN-01 – Normál user előrefoglalási limit
@@ -227,6 +231,8 @@ Szükséges tesztkonfiguráció:
 ### UAT-REC-07 – `abort_all`
 ### UAT-REC-08 – `create_available`
 ### UAT-REC-09 – DST-váltás
+### UAT-REC-09A – Teljesen múltbeli sorozat
+**Elvárt eredmény:** ismétlődési joggal rendelkező normál user múltbeli első alkalommal és múltbeli végdátummal is létrehozhat sorozatot.
 
 Az elvárt működés a kanonikus baseline szerint: helyi kezdési idő megőrzése, kivételdátum kihagyása, ütközésnél választott policy szerinti atomikus vagy részleges létrehozás.
 

@@ -1,6 +1,6 @@
 begin;
 
-select plan(46);
+select plan(48);
 
 select has_function(
   'public', 'create_booking_series',
@@ -59,6 +59,30 @@ insert into public.access_group_members (group_id, user_id) values
 insert into public.access_group_rooms (group_id, room_id, can_book, can_repeat) values
   ('27000000-0000-0000-0000-000000000111', '11000000-0000-0000-0000-000000000008', true, true),
   ('27000000-0000-0000-0000-000000000112', '11000000-0000-0000-0000-000000000009', true, true);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000112', true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking_series(
+      '11000000-0000-0000-0000-000000000010',
+      '00000000-0000-0000-0000-000000000112',
+      %L::timestamptz, %L::timestamptz, 'daily', null, 2, '{}',
+      'abort_all', 'individual', 'Múltbeli sorozat',
+      '28000000-0000-0000-0000-000000000128'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 4) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 4) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'Normál user teljesen múltbeli sorozatot is létrehozhat'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings
+   where series_id = (select id from public.booking_series where idempotency_key = '28000000-0000-0000-0000-000000000128')),
+  2::bigint,
+  'A múltbeli sorozat mindkét alkalma létrejött'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000112', true);

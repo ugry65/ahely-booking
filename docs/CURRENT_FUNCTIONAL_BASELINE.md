@@ -73,7 +73,7 @@ Nem része az aktuális aktív scope-nak:
 - időrács: 30 perc;
 - minimum foglalási idő: 60 perc;
 - 60, 90, 120 stb. perces foglalás engedélyezett;
-- foglalás csak jövőbeli időpontra hozható létre;
+- aktív normál user és admin múltbeli időpontra is létrehozhat egyszeri vagy ismétlődő foglalást; a többi jogosultsági, időrács-, nyitvatartási és ütközési szabály változatlan;
 - nincs globális hétvégi/zárt-nap tiltás: bármely naptári nap használható a többi szabály keretein belül;
 - időintervallumok félig nyitottként kezelendők: `[start, end)`, ezért 10:00–11:00 és 11:00–12:00 nem ütközik;
 - minden hónap- és dátumhatár Europe/Budapest szerint számítandó, DST-t is helyesen kezelve.
@@ -267,7 +267,7 @@ Sikeres foglaláshoz egyszerre teljesüljön:
 - aktív és jogosult user;
 - foglalható helyiség;
 - megfelelő can_book jog;
-- jövőbeli dátum;
+- múltbeli, mai vagy jövőbeli dátum; jövőbeli dátumnál az előrefoglalási limit is teljesüljön;
 - 07:00–22:00;
 - 30 perces rács;
 - minimum 60 perc;
@@ -723,7 +723,7 @@ Egy nulláról újraimplementált rendszer nem tekinthető ekvivalensnek legalá
 - 30 perces rács;
 - minimum 1 óra;
 - nyitvatartás;
-- múltbeli foglalás tiltása;
+- múltbeli egyszeri és ismétlődő foglalás engedélyezése normál usernek és adminnak;
 - előrefoglalási limitek;
 - jogosulatlan szoba tiltása;
 - átfedő foglalás;

@@ -3,6 +3,7 @@ import { requireActiveProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { createRecurringBooking } from "./actions";
 import { RecurringExceptionCalendar } from "./recurring-exception-calendar";
+import { RecurringEndFields } from "../recurring-end-fields";
 
 type RepeatableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 type Occurrence = { occurrence_index: number; service_date: string; start_at: string; end_at: string; booking_id?: string; status?: string; reason?: string };
@@ -10,7 +11,6 @@ type SeriesResult = { series_id: string; created: Occurrence[]; skipped: Occurre
 const UUID_PATTERN = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 
 function budapestToday() { return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()); }
-function shiftDate(date: string, days: number) { const [y, m, d] = date.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10); }
 function timeOptions() { return Array.from({ length: 31 }, (_, index) => { const minute = 420 + index * 30; return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`; }); }
 function occurrenceLabel(item: Occurrence) { return new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(item.start_at)); }
 
@@ -40,9 +40,9 @@ export default async function RecurringBookingPage({ searchParams }: { searchPar
       {rooms.length ? <form action={createRecurringBooking} className="stack">
         <input type="hidden" name="idempotencyKey" value={crypto.randomUUID()} />
         <label>Helyiség<select name="roomId" required defaultValue=""><option value="" disabled>Válassz helyiséget</option>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}{room.is_training_room ? " – Tréningterem" : ""}</option>)}</select></label>
-        <div className="form-row"><label>Első alkalom dátuma<input name="date" type="date" required min={today} defaultValue={today} /></label><label>Gyakoriság<select name="frequency" defaultValue="weekly"><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select></label></div>
+        <div className="form-row"><label>Első alkalom dátuma<input name="date" type="date" required defaultValue={today} /></label><label>Gyakoriság<select name="frequency" defaultValue="weekly"><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select></label></div>
         <div className="form-row"><label>Kezdés<select name="startTime" required defaultValue="09:00">{times.slice(0, -2).map((time) => <option key={time}>{time}</option>)}</select></label><label>Befejezés<select name="endTime" required defaultValue="10:00">{times.slice(2).map((time) => <option key={time}>{time}</option>)}</select></label></div>
-        <fieldset><legend>Sorozat vége</legend><label className="inline-check"><input type="radio" name="endMode" value="count" defaultChecked /> Ismétlésszám alapján</label><label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" /></label><label className="inline-check"><input type="radio" name="endMode" value="date" /> Végdátum alapján</label><label>Végdátum<input name="endsOn" type="date" min={today} max={shiftDate(today, 366)} /></label><p className="muted form-help">A kiválasztott befejezési módhoz tartozó mezőt vesszük figyelembe.</p></fieldset>
+        <RecurringEndFields initialDate={today} />
         <RecurringExceptionCalendar />
         <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select><span className="muted form-help">Megszakításnál egyetlen alkalom sem jön létre. A másik lehetőség a foglalt vagy szabálytalan alkalmakat kihagyja és pontosan felsorolja.</span></label>
         <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>

@@ -84,7 +84,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 
 - időegység: 30 perc;
 - minimum foglalás: 60 perc;
-- csak jövőbeli időpontra lehet foglalni;
+- múltbeli időpontra aktív normál user és admin is létrehozhat egyszeri vagy ismétlődő foglalást;
 - ütközést backend/adatbázis oldalon is ellenőrizni kell;
 - jogosulatlan helyiségre manipulált klienssel sem lehet foglalni;
 - előrefoglalási limit backend oldali szabály;
@@ -99,7 +99,7 @@ A 2026-08-20-i és 2026-08-21-i manuális UAT során sikeresen igazoltuk többek
 
 - normál foglalás létrehozása;
 - minimum 60 perces foglalási szabály;
-- múltbeli foglalás tiltása;
+- a múltbeli foglalás korábbi tiltási tesztjét a 2026-08-29-i jóváhagyott üzleti döntés felülírta; az új elvárás szerint normál user és admin is létrehozhat múltbeli egyszeri és ismétlődő foglalást, ennek staging újratesztje szükséges;
 - átfedő foglalás elutasítása;
 - ismétlődő sorozat létrehozása;
 - ismétlődő kivételdátum kezelése;
