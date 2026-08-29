@@ -38,6 +38,7 @@ Ez a fájl azt rögzíti, hogy a manuális UAT kritikus üzleti területei mög�
 | Egyedi foglalási űrlap validáció | `src/lib/booking-form.test.ts` | igen |
 | Módosítás/lemondás űrlap validáció | `src/lib/booking-operation-form.test.ts` | igen |
 | Ismétlődő űrlap validáció | `src/lib/recurring-booking-form.test.ts` | igen |
+| Ismétlődő sorozat lezárási módjai a normál foglalási modalban | `src/app/(protected)/foglalasok/recurring-end-fields.test.tsx` | igen, a módváltás és a teljes user journey miatt |
 | Hozzáférés admin űrlap validáció | `src/lib/room-access-form.test.ts` | igen |
 | Konkurens egyedi foglalás | `scripts/test-booking-concurrency.sh` | nem szükséges kézzel versenyeztetni |
 | Konkurens foglalás-módosítás | `scripts/test-booking-mutation-concurrency.sh` | nem szükséges kézzel versenyeztetni |

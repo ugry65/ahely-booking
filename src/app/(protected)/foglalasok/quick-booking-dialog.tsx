@@ -6,6 +6,7 @@ import { createRecurringBooking } from "./ismetlod/actions";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import type { BookableRoom } from "./calendar-booking-grid";
 import { BookingTimeFields } from "./booking-time-fields";
+import { RecurringEndFields } from "./recurring-end-fields";
 
 const OPEN_MINUTE = 7 * 60;
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
@@ -81,8 +82,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
               {repeatFrequency !== "none" ? (
                 <fieldset className="repeat-options">
                   <legend>Ismétlődés beállításai</legend>
-                  <input type="hidden" name="endMode" value="count" />
-                  <label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label>
+                  <RecurringEndFields initialDate={selectedDate} />
                   <RecurringExceptionCalendar />
                   <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label>
                 </fieldset>

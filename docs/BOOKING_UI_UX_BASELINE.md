@@ -62,6 +62,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 - Ismétlődés gyakorisága: napi, heti, kétheti, havi.
 - Ismétlődési lehetőség csak akkor aktív, ha a backend jogosultság (`list_repeatable_rooms`) ezt engedi.
 - Az ismétlődő foglalás továbbra is a meglévő backend sorozat-létrehozási folyamatot használja; UI nem kerülheti meg a szerveroldali szabályokat.
+- A sorozat vége ugyanebben a foglalási ablakban két módon adható meg: **alkalmak száma alapján** vagy **végdátum alapján**. A választott módhoz tartozó mező kötelező, a másik nem kerül elküldésre.
 - Kivételdátumok kiválasztása későbbi finomításnál naptáras, Skedda-szerű megoldás legyen; szöveges lista nem tekintendő végleges UX-nek.
 - Mentés nélküli bezáráskor az ideiglenes `Új foglalás` kijelölés kötelezően eltűnik; X, Mégse és backdrop bezárás sem hagyhat fantom blokkot a naptárban.
 
@@ -138,6 +139,7 @@ Minden, a foglalási naptárt, mobil CSS-t, foglalási modált vagy navigációt
 - a `+` gyorsfoglalás megmaradt-e;
 - 7 napos felső sáv és naptár ikon megmaradt-e;
 - ismétlődés a foglalási ablakban maradt-e;
+- ismétlődő foglalásnál az alkalomszámos és a végdátumos lezárás is választható-e;
 - normál szobánál nincs-e Csoportos választó;
 - Tréningterem neve nincs-e duplázva;
 - mobil hamburger menü navigáció után bezár-e;

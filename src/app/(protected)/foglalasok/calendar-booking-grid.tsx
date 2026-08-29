@@ -7,6 +7,7 @@ import { createRecurringBooking } from "./ismetlod/actions";
 import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, normalizeCalendarSelection, type CalendarSelection } from "@/lib/calendar-selection";
 import { BookingTimeFields } from "./booking-time-fields";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
+import { RecurringEndFields } from "./recurring-end-fields";
 
 export type BookableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 export type CalendarBooking = {
@@ -140,7 +141,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         <label>Dátum<input name="date" type="date" defaultValue={selectedDate} required /></label>
         <BookingTimeFields options={options} initialStartTime={calendarMinuteToTime(selection.startMinute)} initialEndTime={calendarMinuteToTime(selection.endMinute)} />
         {dialogMode !== "edit" ? <label>Ismétlődés<select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}><option value="none">Nincs</option><option value="daily">Naponta</option><option value="weekly">Hetente</option><option value="biweekly">Kéthetente</option><option value="monthly">Havonta</option></select>{!canRepeat ? <span className="muted form-help">Ehhez a helyiséghez nincs ismétlődő foglalási jogosultságod.</span> : null}</label> : null}
-        {dialogMode !== "edit" && repeatFrequency !== "none" ? <fieldset className="repeat-options"><legend>Ismétlődés beállításai</legend><input type="hidden" name="endMode" value="count" /><label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label><RecurringExceptionCalendar /><label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label></fieldset> : null}
+        {dialogMode !== "edit" && repeatFrequency !== "none" ? <fieldset className="repeat-options"><legend>Ismétlődés beállításai</legend><RecurringEndFields initialDate={selectedDate} /><RecurringExceptionCalendar /><label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label></fieldset> : null}
         {dialogRoom?.is_training_room ? <label>Használat<select name="useType" value={useType} onChange={(event) => setUseType(event.target.value as "individual" | "group")}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label> : <input type="hidden" name="useType" value="individual" />}
         {showGroupRate ? <label>Csoportos óradíj<input name="groupHourlyRateHuf" type="number" min="0" step="1" defaultValue="5000" required /><span className="muted form-help">Alapértelmezett díj: 5 000 Ft/óra. Adminisztrátorként ennél a foglalásnál vagy sorozatnál felülírhatod.</span></label> : null}
         <label>Foglalás címe<input name="bookingTitle" maxLength={100} defaultValue={sourceBooking?.booking_title ?? ""} placeholder="Opcionális" /></label>
