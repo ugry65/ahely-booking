@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth";
+import { pricingMonthOptions } from "@/lib/pricing-months";
 import { createClient } from "@/lib/supabase/server";
 import { setUserPricingPolicy } from "./actions";
 
@@ -127,6 +128,7 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
   const today = budapestToday();
   const currentMonth = monthStart(today);
   const defaultValidMonth = nextMonth(today);
+  const validMonthOptions = pricingMonthOptions(currentMonth.slice(0, 7));
   const selectedProfile = profiles.find((profile) => profile.id === params.user) ?? null;
   const selectedPolicies = selectedProfile
     ? policies.filter((policy) => policy.user_id === selectedProfile.id).sort((a, b) => b.valid_from.localeCompare(a.valid_from))
@@ -175,11 +177,11 @@ export default async function PricingAdminPage({ searchParams }: { searchParams:
                       ) : "—"}
                     </td>
                     <td colSpan={3}>
-                      <form action={setUserPricingPolicy} className="admin-editor-row compact">
+                      <form action={setUserPricingPolicy} className="pricing-editor-row">
                         <input type="hidden" name="userId" value={profile.id} />
                         <label>Díjazás<select name="pricingScheme" defaultValue={current.mode}><option value="tiered">Sávos</option><option value="progressive">Progresszív</option><option value="fixed">Fix óradíj</option><option value="free">Free – 0 Ft</option></select></label>
                         <label>Fix díj (Ft/óra)<input type="number" name="fixedRate" min="0" step="1" defaultValue={current.mode === "fixed" ? current.rate ?? "" : ""} placeholder="pl. 2200" /></label>
-                        <label>Érvényes hónap<input type="month" name="validMonth" min={currentMonth.slice(0, 7)} defaultValue={defaultValidMonth} required /></label>
+                        <label>Érvényes hónap<select name="validMonth" defaultValue={defaultValidMonth} required>{validMonthOptions.map((month) => <option key={month.value} value={month.value}>{month.label}</option>)}</select></label>
                         <button type="submit">Mentés</button>
                         <Link className="button secondary" href={`/admin/dijazas?user=${profile.id}`}>Előzmények</Link>
                       </form>
