@@ -2,6 +2,9 @@ begin;
 
 select plan(15);
 
+-- A security/EXECUTE/RLS határt a meglévő DB tesztek külön fedik. Ebben a
+-- szemantikai regressziós tesztben a session privilegizált marad, miközben az
+-- RPC-k és a trigger actorát továbbra is a request.jwt.claim.sub határozza meg.
 select has_function(
   'public',
   'guard_booking_update_cutoff',
@@ -45,7 +48,6 @@ update public.app_settings
 set value = '10000'::jsonb
 where key = 'cancellation_cutoff_hours';
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', true);
 select throws_ok(
   format(
@@ -67,7 +69,6 @@ select throws_ok(
   'A foglalás 10000 órán belül már nem módosítható.',
   'Normál user az eredeti booking cutoffján belül nem tolhatja későbbre a foglalást'
 );
-reset role;
 
 select ok(
   (
@@ -88,7 +89,6 @@ select is(
   'Elutasított egyedi módosítás nem hagy félkész operation rekordot'
 );
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000001', true);
 select lives_ok(
   format(
@@ -108,7 +108,6 @@ select lives_ok(
   ),
   'Admin a cutoffon belüli bookingot továbbra is módosíthatja'
 );
-reset role;
 
 select is(
   (select note from public.bookings where id = 'b1000000-0000-0000-0000-000000000001'),
@@ -117,7 +116,6 @@ select is(
 );
 
 -- Scope cutoff: a teljes sorozatmódosításnak változatlanul kell maradnia.
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', true);
 select lives_ok(
   format(
@@ -161,7 +159,6 @@ select throws_ok(
   'A foglalás 10000 órán belül már nem módosítható.',
   'Cutoffon belüli normál user teljes scope-update művelete elutasított'
 );
-reset role;
 
 select is(
   (select count(*) from public.bookings
@@ -186,7 +183,6 @@ update public.app_settings
 set value = '24'::jsonb
 where key = 'cancellation_cutoff_hours';
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', true);
 select lives_ok(
   format(
@@ -203,7 +199,6 @@ select lives_ok(
   ),
   'Ütközéses rollback tesztsorozat létrejön'
 );
-reset role;
 
 insert into public.bookings (
   id, room_id, user_id, created_by, start_at, end_at, idempotency_key, note
@@ -218,7 +213,6 @@ insert into public.bookings (
   'ütköző kontroll'
 );
 
-set local role authenticated;
 select set_config('request.jwt.claim.sub', 'b0000000-0000-0000-0000-000000000002', true);
 select throws_ok(
   format(
@@ -246,7 +240,6 @@ select throws_ok(
   'A módosított sorozat egyik időpontja ütközik egy meglévő foglalással.',
   'Egy későbbi target ütközése elutasítja a teljes scope-update műveletet'
 );
-reset role;
 
 select is(
   (select count(*) from public.bookings
