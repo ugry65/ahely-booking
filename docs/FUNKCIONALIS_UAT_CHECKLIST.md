@@ -2,6 +2,7 @@
 
 Verzió: 1.3
 Dátum: 2026-08-29
+Eredmény-nyilvántartás szinkronizálva: 2026-08-30 (az elvárások változtatása nélkül)
 Kapcsolódó issue-k: #32, #82
 Kanonikus funkcionális forrás: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
 
@@ -21,10 +22,11 @@ Minden tesztesethez háromféle bizonyíték tartozhat:
 - **Manuális UAT:** valódi böngészős használattal ellenőrizendő.
 
 Státuszok:
-- `NEM FUTOTT`
-- `SIKERES`
-- `HIBÁS`
-- `BLOKKOLT`
+- `NEM FUTOTT` – bizonyítottan még el nem végzett eset;
+- `SIKERES` – elfogadott kézi vagy az adott esethez megfelelő automatikus bizonyíték (PASS);
+- `HIBÁS` – dokumentált eltérés (FAIL);
+- `BLOKKOLT` – szükséges előfeltétel hiányzik;
+- `EGYEZTETENDŐ` – a korábbi elfogadásokból nem rendelhető hozzá teljes teszteset-bizonyíték; nem azonos a NEM FUTOTT vagy HIBÁS státusszal.
 
 Hiba súlyossága:
 - **P1:** adatvesztés, jogosulatlan hozzáférés, dupla foglalás, pénzügyileg hibás elszámolás vagy a rendszer alapvető használhatatlansága;
@@ -286,7 +288,7 @@ A részletes kötelező szemantika: `docs/SERIES_SCOPE_SEMANTICS.md`.
 **Elvárt eredmény:** jövőbeli hónapra beállítható; megfelelő hónaptól érvényes; történeti lezárt hónap kontrollálatlanul nem írható át.
 
 ### UAT-PRICING-05 – Fix óradíj admin kezelése
-**Státusz:** implementálva, manuális staging UAT-ra kész.
+**Elfogadási státusz:** a 2026-08-30-i jegyzőkönyvben SIKERES; a korábbi staging PASS átvezetve, nem új tesztigény.
 **Lépések:** admin válassza a Fix óradíjat, adjon meg pl. 2200 Ft/óra értéket és effective month-ot; majd ugyanarra a hónapra módosítsa az értéket és későbbi hónaptól váltson másik módra.
 **Elvárt eredmény:** admin userenként és effective month-tal fix óradíjat állít; az effektív állapot és előzmény látható; auditált; normál user nem módosíthatja.
 
@@ -371,6 +373,8 @@ Minden manuális futásnál rögzítendő:
 - hiba esetén GitHub issue száma és P1/P2/P3 besorolása.
 
 A `docs/UAT_FUTASI_JEGYZOKONYV.md`-t ezzel a checklist-verzióval szinkronban kell tartani.
+
+Aktuális eredmény: [UAT futási jegyzőkönyv](UAT_FUTASI_JEGYZOKONYV.md) és [2026-08-30-i checkpoint](UAT_CHECKPOINT_2026-08-30.md). A checklist az elvárásokat, a jegyzőkönyv a végrehajtási/elfogadási státuszt tartalmazza. A PRICING/MONTH/CSV/SETTLE blokk mind a 17 esete PASS. A korábbi PASS eredményeket nem szabad a régi, üres jegyzőkönyv alapján automatikusan újranyitni; az EGYEZTETENDŐ soroknál először a korábbi bizonyítékot kell hozzárendelni.
 
 ## 17. Kilépési feltétel
 

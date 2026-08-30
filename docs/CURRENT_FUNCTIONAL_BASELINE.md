@@ -2,6 +2,7 @@
 
 Verzió: 1.2
 Dátum: 2026-08-26
+Elfogadási státusz frissítve: 2026-08-30; üzleti szabályváltozás nélkül.
 Állapot: **kanonikus funkcionális és újraimplementálási specifikáció; staging baseline, a külön production-readiness kapukkal**
 
 ## 0. A dokumentum célja és használata
@@ -480,7 +481,7 @@ A Fix óradíj csak a **normál** órákra vonatkozik. A Tréningterem csoportos
 
 A dedikált, auditált admin RPC/UI implementálva van. Az admin a Díjazás felületen kiválaszthatja a Fix módot, megadhatja a Ft/óra értéket és a kezdő hónapot. A kliensoldal kizárólag az egységes pricing-konfigurációs backend műveleten keresztül módosíthat; a belső policy-helper közvetlen authenticated végrehajtása tiltott.
 
-A Fix admin funkció kódoldali production gapje lezárt; staging manuális UAT-ja továbbra is production-readiness kapu.
+A Fix admin funkció kódoldali hiánya lezárt; staging manuális UAT-ja is elfogadva (UAT-PRICING-05/06, 2026-08-30-i jegyzőkönyvi átvezetés). Ez önmagában nem teljes production GO. Bizonyíték: [UAT-checkpoint](UAT_CHECKPOINT_2026-08-30.md).
 
 ## 15.5 Free (`free`)
 
@@ -612,7 +613,7 @@ Admin számára elérhető kezelési területek:
 
 `Befizetések` menüpont **nem** része az aktuális aktív navigációnak. Közvetlen régi URL sem adhat használható payment UI-t.
 
-A Fix óradíj admin kezelése implementálva és DB-regresszióval lefedett; a manuális staging UAT (`UAT-PRICING-05/06`) production-readiness kapu.
+A Fix óradíj admin kezelése implementálva, DB-regresszióval lefedett és manuális staging UAT-n elfogadott (`UAT-PRICING-05/06`). A jövőbeli idővonal `UAT-PRICING-07` tesztje is PASS. Az elfogadott verzió és a további production kapuk az [UAT futási jegyzőkönyvben](UAT_FUTASI_JEGYZOKONYV.md) találhatók.
 
 ---
 
