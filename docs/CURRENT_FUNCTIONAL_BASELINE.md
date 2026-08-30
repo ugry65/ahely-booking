@@ -2,7 +2,7 @@
 
 Verzió: 1.2
 Dátum: 2026-08-26
-Elfogadási státusz frissítve: 2026-08-30; üzleti szabályváltozás nélkül.
+Elfogadási státusz és dokumentációs helyesbítés: 2026-08-30; az ismétlési jog leírása a már elfogadott PR #77 / 2026-08-22 döntéshez igazítva, új üzleti szabály nélkül. Bizonyíték: [tételes egyeztetés](UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md).
 Állapot: **kanonikus funkcionális és újraimplementálási specifikáció; staging baseline, a külön production-readiness kapukkal**
 
 ## 0. A dokumentum célja és használata
@@ -183,7 +183,9 @@ Egy user több csoport tagja lehet.
 Effektív foglalási jog:
 `közvetlen user–szoba can_book + aktív csoportból származó can_book`.
 
-Fontos invariáns: csoport **csak can_book** jogot ad. `can_repeat` kizárólag közvetlen user–szoba jogból származhat.
+Fontos invariáns: csoport **csak can_book** jogot ad. Az ismétlési jog **felhasználó-szintű**: normál usernél `profiles.can_repeat_bookings=true` + az adott helyiségre effektív `can_book` + nem Tréningterem. A foglalási jog csoportból vagy közvetlen kivételből is származhat. Kikapcsolt profil-repeat mellett nincs ismétlés; admin Tréningteremben is ismételhet.
+
+A `user_room_permissions.can_repeat` történeti kompatibilitási mező, nem önálló helyiségszintű jogforrás. A támogatott legacy admin RPC TRUE jelzése auditáltan bekapcsolhatja a profil-repeat jogot; közvetlen kliens-táblaírás nem támogatott. A teljes szabály és a kikapcsolás/lock-sorrend: [RECURRING_PERMISSION_RULES](RECURRING_PERMISSION_RULES.md), [elfogadott 2026-08-22 döntés](ACCESS_AND_REPEAT_DECISIONS_2026-08-22.md). A korábbi „kizárólag közvetlen user–szoba jog” mondat dokumentációs hiba volt.
 
 A meglévő közvetlen jogokat csoporttagság nem törölheti/felülírhatja.
 
@@ -604,7 +606,7 @@ Admin számára elérhető kezelési területek:
 - Foglalásaim / foglaláskezelés;
 - Felhasználók;
 - Helyiségek és helyiségcsoportok;
-- közvetlen user–room jogosultságok/repeat kivételek;
+- közvetlen user–room foglalási kivételjogok; a repeat külön, a Felhasználók oldalon user-szintű kapcsoló;
 - díjazási policyk és érvényesség;
 - havi órák/fizetendő;
 - tételes aktív foglalások;
@@ -642,12 +644,12 @@ Audit rekordot alkalmazásból ne lehessen utólag tetszőlegesen átírni vagy 
 Egy új implementációnak legalább az alábbi logikai entitásokat kell reprezentálnia:
 
 1. **User/Auth identity** – hitelesítési identitás.
-2. **Profile** – név, e-mail kapcsolat, telefon, role, active, onboarding, billing adatok, calendar color.
+2. **Profile** – név, e-mail kapcsolat, telefon, role, active, onboarding, billing adatok, calendar color, kanonikus user-szintű `can_repeat_bookings`.
 3. **Room** – helyiség, aktív állapot, Tréningterem jelleg/speciális attribútumok.
 4. **RoomGroup** – adminisztratív helyiségcsoport.
 5. **RoomGroupMembership** – room ↔ group.
 6. **UserRoomGroup** – user ↔ group tagság.
-7. **UserRoomPermission** – közvetlen can_book/can_repeat.
+7. **UserRoomPermission** – közvetlen `can_book` kivételjog; legacy `can_repeat` csak kompatibilitási adat, nem effektív repeat-jogforrás.
 8. **Booking** – owner, creator/actor kapcsolat, room, start/end, status, use_type, note, booking_title, series kapcsolat, idempotency, konkurenciaverzió.
 9. **BookingSeries** – recurrence definíció, owner, room, szabály, scope.
 10. **BookingCancellation** – booking, actor, timestamp, reason, eredeti időadatok.
@@ -788,7 +790,7 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 - onboarding blokkolás és kötelező számlázási adatok;
 - CSV user import;
 - utolsó admin védelme;
-- room group can_book és közvetlen can_repeat különválasztása;
+- csoport/közvetlen `can_book` és profil-szintű `can_repeat_bookings` különválasztása;
 - Sávos/Progresszív/Free admin policy és effective month;
 - **Fix óradíj admin beállítása, effective month, módosítás/megszüntetés**;
 - Free precedencia Fix óradíj és Tréningterem felett;
@@ -807,7 +809,7 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 Nem szabad kész feature-ként értelmezni:
 - saját foglalások teljes naptárnézetének további fejlesztése;
 - ismétlődő kivételdátum Skedda-szerű naptárválasztójának UX finomítása;
-- mobil scroll esetleges 18:00 körüli időszakos megakadásának további vizsgálata, ha reprodukálható; **ez nem kívánt működés és egy új implementációban nem reprodukálandó**;
+- mobil scroll régi, 18:00 körüli megakadás-megjegyzése: aktuális reprodukció vagy célzott végső lezárás nincs igazolva (UAT-UX-05); **nem bizonyított jelenlegi hiba, és nem kívánt/reprodukálásra előírt viselkedés**;
 - automatikus booking confirmation e-mail;
 - közvetlen számlázó-integráció;
 - befizetések aktív UI-ja;

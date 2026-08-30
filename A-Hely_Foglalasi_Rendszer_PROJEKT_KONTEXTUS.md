@@ -282,14 +282,16 @@ Production továbbra is tilos a nyitott production blockerek lezárása, sikeres
 A projektgazda által már elfogadott eredmények bekerültek az [UAT futási jegyzőkönyvbe](docs/UAT_FUTASI_JEGYZOKONYV.md), a checklist v1.3 mind a 98 azonosítójával szinkronban.
 
 - Tesztelt alkalmazáskód: `457363609ffac54555a7a17b1cde7742eec5b60e`, `feature/82-pricing-modes`, PR #90.
-- **36 PASS**, **59 EGYEZTETENDŐ**, **3 production BLOKKOLT**. Az EGYEZTETENDŐ bizonyíték-hozzárendelési hiány, nem automatikus újratesztelési lista.
+- Helyesbített nyilvántartás: **50 tételes PASS, 22 korábbi modul/UI-elfogadás, 1 döntéssel lezárt eset, 22 részleges/tisztázandó bizonyíték és 3 blokkolt production drill**. Az előzetes 36/59/3 összesítés hiányos volt; az új számok nem új UAT-futtatásból származnak.
+- AUTH-01–05, CAL-01–03, CANCEL-01/02 és TRAIN-03/04 korábbi elfogadása visszakeresve; BOOK-11 és EDIT-05 megfelelő automatikus bizonyítékkal lezárva. Az elfogadott admin/onboarding/UI-modulok nem újrakezdendő tesztek.
+- Az ADMIN-07 és a baseline/architektúra ismétlési jogra vonatkozó leírása a már elfogadott PR #77-hez igazítva: profil-szintű repeat + effektív can_book + normál helyiség, nem kizárólag közvetlen per-room repeat.
 - **PRICING-01–07, MONTH-01–05, CSV-01–03, SETTLE-01–02: 17/17 PASS**, a megkezdett elszámolási tesztlánc lezárult.
 - A múltbeli egyedi/sorozatos foglalás két hiányzó jegyzőkönyvi sora (BOOK-14, REC-09A) és a már elfogadott foglalási/UX-eredmények is átvezetve.
 - Ugyanezen forrásfán Application CI: 86 teszt + typecheck/build PASS; Database CI: 615 pgTAP-ellenőrzés + konkurencialépések/schema lint PASS.
 - A korábbi Claude 6 review a `63748919aaa0c2458277536643f79b37efd0bf7c` verzió és PR #91 scope-jában lezárt. Ez nem automatikus review-jóváhagyás a későbbi változásokra.
 - Teljes funkcionális GO, main merge és production deploy nincs jóváhagyva. A fennmaradó UAT-bizonyítékok, a végleges release review-ja, hosting/config, backup/restore és monitoring kapuk külön nyitottak.
 
-Részletes bizonyítékok, határok és folytatási szabály: [UAT-checkpoint 2026-08-30](docs/UAT_CHECKPOINT_2026-08-30.md). A már elfogadott teszteket ne indítsuk újra pusztán a régi jegyzőkönyv hiányos állapota miatt.
+Részletes, esetenkénti források és bizonyítékhatárok: [UAT-bizonyítékegyeztetés](docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md), [checkpoint](docs/UAT_CHECKPOINT_2026-08-30.md). A már elfogadott teszteket ne indítsuk újra pusztán a régi jegyzőkönyv hiányos állapota miatt.
 
 ## Nem MVP / későbbi fejlesztés
 - bankkártyás fizetés
@@ -314,4 +316,4 @@ Az új fejlesztési beszélgetés első feladata:
 5. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
 6. a GitHub repository aktuális branch/PR állapotát ellenőrizni; productionre csak review-zott, stagingen elfogadott állapot kerülhet;
 7. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben;
-8. UAT folytatásakor elolvasni a `docs/UAT_FUTASI_JEGYZOKONYV.md` és `docs/UAT_CHECKPOINT_2026-08-30.md` eredményeit; a már elfogadott teszteket nem automatikusan újrafuttatni.
+8. UAT folytatásakor elolvasni a `docs/UAT_FUTASI_JEGYZOKONYV.md`, `docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md` és `docs/UAT_CHECKPOINT_2026-08-30.md` eredményeit; a már elfogadott teszteket nem automatikusan újrafuttatni. A 22 egyeztetendő sor sem 22 új kézi teszt: előbb meglévő forrás/assertion és releváns változás, csak utána indokolt célzott pótlás.

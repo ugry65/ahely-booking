@@ -1,5 +1,7 @@
 # UAT checkpoint – 2026-08-30
 
+Státusz helyesbítve az alapos visszakeresés után. A korábbi 36 PASS / 59 egyeztetendő előzetes összesítés nem aktuális; a részletes audit: [UAT-bizonyítékegyeztetés](UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md). A már ellenőrzött CSV- és lezárási bizonyítékok változatlanok.
+
 ## Döntés és scope
 
 A projektgazda által már elfogadott eredmények átvezetve; **a PRICING/MONTH/CSV/SETTLE blokk 17/17 PASS, lezárt**. A teljes, 98 esetes funkcionális/production checklist nem kapott blanket GO-t.
@@ -29,32 +31,34 @@ A dokumentációs commit új SHA-ja nem változtatja meg a tesztelt alkalmazásk
 
 ## Teljes checklist-egyeztetés
 
-| Csoport | Összes | PASS | Egyeztetendő | Blokkolt |
-| --- | ---: | ---: | ---: | ---: |
-| ADMIN | 9 | 0 | 9 | 0 |
-| AUTH | 5 | 0 | 5 | 0 |
-| BOOK | 14 | 8 | 6 | 0 |
-| CAL | 4 | 0 | 4 | 0 |
-| CANCEL | 7 | 0 | 7 | 0 |
-| COLOR | 1 | 0 | 1 | 0 |
-| CSV | 3 | 3 | 0 | 0 |
-| EDIT | 6 | 1 | 5 | 0 |
-| IMPORT | 2 | 0 | 2 | 0 |
-| MONTH | 5 | 5 | 0 | 0 |
-| ONBOARD | 3 | 0 | 3 | 0 |
-| PAY | 1 | 0 | 1 | 0 |
-| PRICING | 7 | 7 | 0 | 0 |
-| PROD | 3 | 0 | 0 | 3 |
-| REC | 15 | 7 | 8 | 0 |
-| SETTLE | 2 | 2 | 0 | 0 |
-| TRAIN | 6 | 3 | 3 | 0 |
-| UX | 5 | 0 | 5 | 0 |
-| **Összesen** | **98** | **36** | **59** | **3** |
+| Csoport | Összes | PASS | Modul-elfogadás | Döntéssel lezárt | Egyeztetendő | Blokkolt |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| ADMIN | 9 | 0 | 9 | 0 | 0 | 0 |
+| AUTH | 5 | 5 | 0 | 0 | 0 | 0 |
+| BOOK | 14 | 9 | 0 | 1 | 4 | 0 |
+| CAL | 4 | 3 | 1 | 0 | 0 | 0 |
+| CANCEL | 7 | 2 | 0 | 0 | 5 | 0 |
+| COLOR | 1 | 0 | 1 | 0 | 0 | 0 |
+| CSV | 3 | 3 | 0 | 0 | 0 | 0 |
+| EDIT | 6 | 2 | 1 | 0 | 3 | 0 |
+| IMPORT | 2 | 0 | 2 | 0 | 0 | 0 |
+| MONTH | 5 | 5 | 0 | 0 | 0 | 0 |
+| ONBOARD | 3 | 0 | 3 | 0 | 0 | 0 |
+| PAY | 1 | 0 | 1 | 0 | 0 | 0 |
+| PRICING | 7 | 7 | 0 | 0 | 0 | 0 |
+| PROD | 3 | 0 | 0 | 0 | 0 | 3 |
+| REC | 15 | 7 | 0 | 0 | 8 | 0 |
+| SETTLE | 2 | 2 | 0 | 0 | 0 | 0 |
+| TRAIN | 6 | 5 | 1 | 0 | 0 | 0 |
+| UX | 5 | 0 | 3 | 0 | 2 | 0 |
+| **Összesen** | **98** | **50** | **22** | **1** | **22** | **3** |
 
 - 24 eset a projektgazda 2026-08-29-i átadójában kifejezetten elfogadott eredményből származik (H-01).
 - 7 eset az ezt követő kézi tesztlánc kifejezett PASS/elfogadom eredménye (M-01).
 - 1 eset korábbi repositoryban rögzített kézi elfogadás (TRAIN-05, H-02), új havi riportmegfigyeléssel is alátámasztva.
 - 4 eset automatikus bizonyítékkal lezárt: BOOK-10, TRAIN-06, CSV-02, SETTLE-02 (A-01/A-02).
+- A fenti eredeti 36 PASS-hoz a visszakeresés 12 tételes történeti kézi elfogadást és 2 megfelelő automatikus eredményt rendelt: összesen 50 PASS (44 kézi/korábban elfogadott, 6 automatikus).
+- További 22 korábbi modul-elfogadás és 1 üzleti lezárás külön státuszú; a fennmaradó 22 részleges/tisztázandó bizonyíték nem új kéziteszt-darabszám.
 - Nincs ebben az átvezetésben dokumentált FAIL. Ez nem a teljes nyitott issue-lista hibamentességi nyilatkozata.
 
 A régi jegyzőkönyv 1.2-es verziójelzését 1.3-ra igazítottuk; a hiányzó **BOOK-14** és **REC-09A** sor bekerült. A már elfogadott múltbeli egyszeri/sorozatos foglalást nem nyitottuk újra.
@@ -97,6 +101,8 @@ A MONTH-03 augusztus/szeptember hónaphatári elfogadás nem bizonyítja önmag�
 
 ## Automatikus bizonyíték
 
+Az A-01/A-02 az alkalmazáskód eredeti CI-bizonyítéka. A későbbi, csak dokumentációt módosító `6816c1b7260e52c12811a6ec295154c67ca5990c` headen az [Application #441](https://github.com/ugry65/ahely-booking/actions/runs/33316833260) és [Database #411](https://github.com/ugry65/ahely-booking/actions/runs/33316833237) is SUCCESS: 86 alkalmazásteszt és 615 pgTAP, 7 konkurencialépés, typecheck/build/lint. A-03/A-04 néven ezek támasztják alá a most visszavezetett automatikus eredményeket. A dokumentáció későbbi commitjára új CI-t nem állítunk előre.
+
 ### A-01 – Application checks
 
 [Run #440 / 33267572656](https://github.com/ugry65/ahely-booking/actions/runs/33267572656) · [job 99140265978](https://github.com/ugry65/ahely-booking/actions/runs/33267572656/job/99140265978) · 2026-08-29 · **SUCCESS**.
@@ -131,8 +137,8 @@ A review-verzióhoz képest az elfogadott alkalmazásverzió 14 commitot és 28 
 
 ## Mi maradt nyitva, és hogyan folytassuk
 
-1. **Bizonyítékegyeztetés:** az 59 EGYEZTETENDŐ sort a korábbi eredményekhez hozzárendelni. Először bizonyítékot keresünk, nem újraindítjuk az összes tesztet.
-2. **Tényleges UAT-hiányok:** ha nincs korábbi elfogadás, a projektgazdával egyesével folytatni; elsőként a kritikus AUTH/ONBOARD és jogosultsági, majd EDIT/CANCEL/REC scope-folyamatokat. Az egyeztetés előtt pontos újratesztelési darabszám nem adható.
+1. **Az 59 sor első egyeztetése elkészült:** 14 további PASS, 22 korábbi modul-elfogadás, 1 üzleti lezárás és 22 részleges/tisztázandó bizonyíték. AUTH-01–05 már PASS, az admin/onboarding/UI elfogadásokat nem kérjük újra.
+2. **Célzott bizonyítéktisztázás:** a 22 részleges sor meglévő assertionjeinek, történeti forrásainak és releváns változásainak értékelése; különösen EDIT-04, REC-13 és UX-05. Hiányzó kattintási napló önmagában nem bizonyított el nem végzett teszt. Új kézi teszt csak konkrétan indokolt réshez kérhető; darabszáma ebből az állapotból nem állapítható meg.
 3. **Review és konfiguráció:** végleges release, hosting/Supabase beállítások, live migrációs állapot, migrációs/rollback terv igazolása.
 4. **Production adatbiztonság:** backup/off-platform példány, tényleges restore-drill, konzisztenciaellenőrzés; PROD-01/02 továbbra is BLOKKOLT.
 5. **Production monitoring:** heartbeat, alert és recovery drill; PROD-03 továbbra is BLOKKOLT.

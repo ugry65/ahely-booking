@@ -4,7 +4,7 @@ Státusz: **részleges funkcionális elfogadás; production NEM GO**. Frissítve
 
 A pipák az alább hivatkozott kódhoz és bizonyítékhoz tartoznak, nem általános engedélyek. Tesztelt alkalmazáskód: `457363609ffac54555a7a17b1cde7742eec5b60e`, PR #90. Forrás: [UAT futási jegyzőkönyv](UAT_FUTASI_JEGYZOKONYV.md) és [bizonyíték-checkpoint](UAT_CHECKPOINT_2026-08-30.md).
 
-A checklist v1.3-ból 36 PASS, 59 bizonyíték-egyeztetésre vár, 3 production teszt blokkolt. A PRICING/MONTH/CSV/SETTLE blokk mind a 17 esete elfogadott. Üres checkbox nem feltétlenül jelent hibát vagy el nem végzett tesztet: a szükséges teljes bizonyíték nincs itt igazolva.
+A checklist v1.3 helyesbített státusza: 50 tételes PASS, 22 korábbi modul/UI-elfogadás, 1 döntéssel lezárt eset, 22 részleges/tisztázandó bizonyíték és 3 blokkolt production drill. A részletek és a korábbi 59 sor teljes feloldása a [bizonyítékegyeztetésben](UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md) található. A PRICING/MONTH/CSV/SETTLE blokk mind a 17 esete elfogadott. Üres checkbox nem feltétlenül jelent hibát vagy el nem végzett tesztet: a szükséges teljes bizonyíték nincs itt igazolva.
 
 Production deploy csak minden kötelező kapu igazolt teljesülése és külön explicit jóváhagyás után.
 
@@ -15,14 +15,14 @@ Production deploy csak minden kötelező kapu igazolt teljesülése és külön 
 - [x] A havi tételes aktív foglalások és a részletes CSV `Foglalás címe` funkciója stagingen megfigyelve (MONTH-05, CSV-03).
 - [x] Célzott staging UAT: Tréningterem foglalás címe a tételes havi lekérdezésben látható (MONTH-05).
 - [x] Tréningterem default 5 000 Ft/óra és admin egyedi ár: korábbi elfogadás H-02, jelen havi 7 500 Ft-os tétel M-01 (TRAIN-05).
-- [ ] Befizetések UI nem része az aktív foglaló rendszernek a 2026-08-25-i scope-döntés szerint.
+- [x] Befizetések UI scope-döntése korábban elfogadva; az ellenőrzött régi oldal kódja a Havi órákra irányít (PAY-01, R-08). Ez nem új böngészős UAT-PASS.
 
 ## 2. Kötelező kritikus regresszió
 
 - [x] Normál foglalás (BOOK-01, H-01).
 - [x] Átfedő foglalás blokkolása (BOOK-08, H-01).
 - [x] Két egyidejű foglalási kísérletből csak egy sikerül (BOOK-10, A-02 automatikus konkurenciateszt).
-- [ ] Jogosulatlan helyiségfoglalás blokkolása backend oldalon.
+- [x] Jogosulatlan helyiségfoglalás tiltásának korábbi CAL-03 elfogadása visszakeresve; backend kontrollt a zöld 003/005 tesztek támogatják (R-01/A-04).
 - [ ] 30 perces időegység.
 - [x] Minimum 1 órás foglalás (BOOK-03, H-01).
 - [x] Előrefoglalási limitek: általános 90 nap és Tréningterem 10 nap (BOOK-07, TRAIN-01).
@@ -32,11 +32,14 @@ Production deploy csak minden kötelező kapu igazolt teljesülése és külön 
 - [ ] Ismétlődő foglalások fennmaradó teljes köre: kétheti/havi, DST és scope-update/cancel bizonyítékok egyeztetése.
 - [x] Kivételdátumok (REC-06).
 - [x] Sikeres egyszeri módosítás és lemondott booking kizárása a havi elszámolásból (EDIT-01, MONTH-02).
-- [ ] Módosítás és lemondás teljes jogosultsági/cutoff/sorozat-scope köre.
+- [x] Saját lemondás 24 órán túli engedése és 24 órán belüli tiltása korábban elfogadva (CANCEL-01/02, R-02).
+- [x] Párhuzamos módosítás elavult verziójának elutasítása automatikusan igazolt (EDIT-05, A-04).
+- [ ] Módosítás/lemondás további teljes jogosultsági/cutoff/sorozat-scope bizonyítékegyeztetése; EDIT-04 és REC-13 assertion-határ külön jelölve.
 - [x] Sávos / progresszív / Fix / Free díjazás, precedencia, effective month, teljes jövőbeli idővonal (PRICING-01–07).
 - [x] Havi összesítés és settlement snapshot létrehozás/immutabilitás (MONTH-01–05, SETTLE-01/02).
 - [ ] Auditnapló kritikus műveletekre.
-- [ ] Admin/user jogosultságok és közvetlen URL/API hozzáférés.
+- [x] AUTH-01–05 és CAL-01–03 korábbi tételes elfogadása átvezetve; nem új tesztigény.
+- [ ] A teljes összetett admin/user és URL/API mátrix lezárási alapja: PR #74/#76/#77 modul-elfogadások már rendelkezésre állnak, nem üres tesztek.
 
 ## 3. Adatbiztonsági kapuk
 
@@ -77,7 +80,8 @@ Production deploy csak minden kötelező kapu igazolt teljesülése és külön 
 - [x] Tételes aktív foglalások + Foglalás címe ellenőrizve (MONTH-05).
 - [x] CSV/export kimenet ellenőrizve; formula-injection automatikus bizonyíték is (CSV-01–03).
 - [ ] Lemondási lista és statisztika ellenőrizve.
-- [ ] Felhasználó-, helyiség-, díjazás- és jogosultság-admin funkciók ellenőrizve.
+- [x] A korábbi felhasználó/helyiség/jogosultság-admin modul-UAT elfogadások megőrizve (PR #74/#76/#77); díjazás tételesen PASS.
+- [ ] A modul-elfogadások és a teljes mai összetett tesztelvárások bizonyítékhatára a release-döntésben értékelve; nem minden negatív részlépés külön kézi PASS.
 
 ## 7. Független review
 

@@ -2,7 +2,7 @@
 
 Verzió: 1.3
 Dátum: 2026-08-29
-Eredmény-nyilvántartás szinkronizálva: 2026-08-30 (az elvárások változtatása nélkül)
+Eredmény-nyilvántartás és dokumentációs helyesbítés: 2026-08-30. Az ADMIN-07 elavult leírása a 2026-08-22-én már elfogadott user-szintű repeat modellhez igazítva; azonosítók és esetszám változatlan (98), új üzleti szabály nincs.
 Kapcsolódó issue-k: #32, #82
 Kanonikus funkcionális forrás: `docs/CURRENT_FUNCTIONAL_BASELINE.md`
 
@@ -26,7 +26,11 @@ Státuszok:
 - `SIKERES` – elfogadott kézi vagy az adott esethez megfelelő automatikus bizonyíték (PASS);
 - `HIBÁS` – dokumentált eltérés (FAIL);
 - `BLOKKOLT` – szükséges előfeltétel hiányzik;
-- `EGYEZTETENDŐ` – a korábbi elfogadásokból nem rendelhető hozzá teljes teszteset-bizonyíték; nem azonos a NEM FUTOTT vagy HIBÁS státusszal.
+- `MODUL-ELFOGADÁS` – korábban elfogadott modul/UI-scope, külön tételes PASS állítása nélkül; megőrzendő eredmény;
+- `DÖNTÉSSEL LEZÁRT` – kifejezett korábbi üzleti lezárás, nem új tesztfutás;
+- `EGYEZTETENDŐ` – részleges vagy ellentmondó bizonyíték; nem azonos a NEM FUTOTT vagy HIBÁS státusszal.
+
+A checklist nem hátralévőteszt-lista. A korábbi kézi elfogadást, modul-UAT-t és az adott esethez elégséges automatikus bizonyítékot előbb a [jegyzőkönyvben](UAT_FUTASI_JEGYZOKONYV.md) és a [tételes egyeztetésben](UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md) kell ellenőrizni. Hiányzó eredeti kattintási napló önmagában nem indok az újratesztelésre.
 
 Hiba súlyossága:
 - **P1:** adatvesztés, jogosulatlan hozzáférés, dupla foglalás, pénzügyileg hibás elszámolás vagy a rendszer alapvető használhatatlansága;
@@ -55,7 +59,7 @@ Szükséges tesztkonfiguráció:
 - legalább 2 normál helyiség;
 - Tréningterem;
 - egy user által nem foglalható helyiség;
-- eltérő room-group és közvetlen `can_repeat` jogok;
+- csoportból/közvetlen kivételből származó `can_book`, ettől külön BE/KI profil-szintű `can_repeat_bookings`; a legacy per-room `can_repeat` nem kanonikus jogforrás;
 - legalább egy teszthónap pricing és settlement vizsgálathoz.
 
 ## 4. Belépés, onboarding és felhasználói életciklus
@@ -265,8 +269,9 @@ A részletes kötelező szemantika: `docs/SERIES_SCOPE_SEMANTICS.md`.
 ### UAT-ADMIN-06 – Csoportos `can_book`
 **Elvárt eredmény:** csoporttagság foglalási jogot ad a konfiguráció szerint.
 
-### UAT-ADMIN-07 – `can_repeat` kizárólag közvetlen jog
-**Elvárt eredmény:** csoporttagság önmagában soha nem ad repeat jogot; közvetlen permission igen; Tréningterem normál user repeat továbbra is tiltott.
+### UAT-ADMIN-07 – Felhasználószintű ismétlési jog
+**Elvárt eredmény:** csoporttagság önmagában csak `can_book` jogot ad. Normál user akkor ismételhet, ha profilján `can_repeat_bookings=true`, az adott normál helyiségre effektív `can_book` joga van (csoportból vagy közvetlen kivételből), és a helyiség nem Tréningterem. Kikapcsolt profil-repeat mellett nincs ismétlési jog; admin Tréningteremben is ismételhet.
+**Helyesbítés:** ez a PR #77-ben 2026-08-22-én már elfogadott modell, nem új teszt vagy követelmény. A legacy `user_room_permissions.can_repeat` csak az auditált kompatibilitási út része; részletek: [ismétlési jogosultsági szabály](RECURRING_PERMISSION_RULES.md).
 
 ### UAT-ADMIN-08 – Globális névláthatóság
 ### UAT-ADMIN-09 – Utolsó admin védelem
@@ -345,7 +350,8 @@ Kézi ellenőrzés legalább:
 ### UAT-UX-04 – Dupla kattintás / lassú kérés
 **Elvárt eredmény:** nincs duplikált üzleti rekord.
 
-### UAT-UX-05 – Ismert mobil scroll hiba ellenőrzése
+### UAT-UX-05 – Teljes napi mobilgörgetés és történeti megjegyzés
+**Bizonyítékhatár:** a 18:00 körüli jelenség régi megjegyzés; mostani reprodukció vagy célzott végső lezárás nincs igazolva. Nem minősítjük automatikusan aktuális hibának vagy új tesztigénynek.
 **Elvárt eredmény:** 07:00–22:00 között folyamatos függőleges scroll; a korábban esetlegesen megfigyelt 18:00 körüli megakadás nem kívánt viselkedés.
 
 ## 15. Production infrastruktúra UAT-kapu
