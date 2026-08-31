@@ -18,7 +18,7 @@ require_env() {
   fi
 }
 
-for command_name in supabase age rclone sha256sum tar jq date curl; do
+for command_name in supabase psql age rclone sha256sum tar jq date curl; do
   require_command "$command_name"
 done
 
@@ -79,15 +79,44 @@ for backup_file in roles.sql schema.sql data.sql migration-history.sql; do
   fi
 done
 
+psql \
+  "$PRODUCTION_DB_URL" \
+  -X \
+  -A \
+  -t \
+  -v ON_ERROR_STOP=1 \
+  -c "select json_build_object(
+    'auth_users', (select count(*) from auth.users),
+    'profiles', (select count(*) from public.profiles),
+    'rooms', (select count(*) from public.rooms),
+    'user_room_permissions', (select count(*) from public.user_room_permissions),
+    'booking_series', (select count(*) from public.booking_series),
+    'bookings_total', (select count(*) from public.bookings),
+    'bookings_active', (select count(*) from public.bookings where status = 'active'),
+    'bookings_cancelled', (select count(*) from public.bookings where status = 'cancelled'),
+    'booking_cancellations', (select count(*) from public.booking_cancellations),
+    'audit_logs', (select count(*) from public.audit_logs),
+    'monthly_settlements', (select count(*) from public.monthly_settlements),
+    'settlement_revisions', (select count(*) from public.settlement_revisions),
+    'settlement_booking_lines', (select count(*) from public.settlement_booking_lines)
+  )" \
+  > "$payload_dir/control-counts.json"
+
+if ! jq -e 'type == "object"' "$payload_dir/control-counts.json" >/dev/null; then
+  echo "Critical source control counts are not valid JSON" >&2
+  exit 1
+fi
+
 (
   cd "$payload_dir"
-  sha256sum roles.sql schema.sql data.sql migration-history.sql > DATA_SHA256SUMS
+  sha256sum roles.sql schema.sql data.sql migration-history.sql control-counts.json > DATA_SHA256SUMS
 )
 
 roles_sha="$(sha256sum "$payload_dir/roles.sql" | awk '{print $1}')"
 schema_sha="$(sha256sum "$payload_dir/schema.sql" | awk '{print $1}')"
 data_sha="$(sha256sum "$payload_dir/data.sql" | awk '{print $1}')"
 migration_sha="$(sha256sum "$payload_dir/migration-history.sql" | awk '{print $1}')"
+control_counts_sha="$(sha256sum "$payload_dir/control-counts.json" | awk '{print $1}')"
 supabase_version="$(supabase --version | head -n 1)"
 
 jq -n \
@@ -100,23 +129,27 @@ jq -n \
   --arg schemaSha256 "$schema_sha" \
   --arg dataSha256 "$data_sha" \
   --arg migrationHistorySha256 "$migration_sha" \
+  --arg controlCountsSha256 "$control_counts_sha" \
+  --slurpfile controlCounts "$payload_dir/control-counts.json" \
   '{
     backupVersion: $backupVersion,
     utcTimestamp: $utcTimestamp,
     budapestTimestamp: $budapestTimestamp,
     gitSha: $gitSha,
     supabaseCliVersion: $supabaseVersion,
+    controlCounts: $controlCounts[0],
     files: {
       "roles.sql": {sha256: $rolesSha256},
       "schema.sql": {sha256: $schemaSha256},
       "data.sql": {sha256: $dataSha256},
-      "migration-history.sql": {sha256: $migrationHistorySha256}
+      "migration-history.sql": {sha256: $migrationHistorySha256},
+      "control-counts.json": {sha256: $controlCountsSha256}
     }
   }' > "$payload_dir/manifest.json"
 
 (
   cd "$payload_dir"
-  sha256sum roles.sql schema.sql data.sql migration-history.sql manifest.json > SHA256SUMS
+  sha256sum roles.sql schema.sql data.sql migration-history.sql control-counts.json manifest.json > SHA256SUMS
 )
 
 tar -czf "$plain_bundle" -C "$payload_dir" .
