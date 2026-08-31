@@ -113,6 +113,16 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
     top: 0;
     z-index: 30;
   }
+  .calendar-corner,
+  .room-heading {
+    top: auto;
+  }
+  .room-heading {
+    position: relative;
+  }
+  .calendar-corner {
+    left: 0;
+  }
   .calendar-selection-actions-slot {
     display: none;
   }
