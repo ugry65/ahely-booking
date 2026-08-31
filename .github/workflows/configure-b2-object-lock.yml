@@ -1,5 +1,7 @@
 name: Configure B2 Object Lock
 
+# One-shot production infrastructure configuration. The job remains gated by
+# the exact B2_OBJECT_LOCK_APPLY=GOVERNANCE_30 repository variable.
 on:
   pull_request:
     branches:
