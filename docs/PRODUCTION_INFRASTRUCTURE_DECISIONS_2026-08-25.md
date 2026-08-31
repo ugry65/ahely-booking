@@ -1,6 +1,7 @@
 # A-Hely foglalási rendszer – Production infrastruktúra döntési checkpoint
 
 Dátum: 2026-08-25
+Frissítve: 2026-08-31
 Státusz: a funkcionális fejlesztési fázis lezárása után, production readiness előtt.
 
 ## 1. Lezárt funkcionális scope
@@ -27,25 +28,53 @@ Security hardening:
 - fizikai törlést/audit módosítást tiltó trigger helper függvények fix search_path-ot kaptak;
 - settlement snapshot/revision immutabilitás review során nem találtunk új production blockert.
 
-## 3. Supabase production költség és backup döntési irány
+## 3. Supabase production és backup – 2026-08-31-i döntés
 
-A production Supabase jelenlegi terve: elsődlegesen vizsgáljuk a Free plan megtartását költségoptimalizálás miatt.
+A production Supabase célja költségoptimalizálás miatt a **Free plan megtartása**, amennyiben a saját backup/restore és monitoring rendszer production előtt bizonyítottan működik. A Supabase Pro nem kötelező kiindulási feltétel; későbbi upgrade akkor indokolt, ha a Free plan korlátai, rendelkezésre állása vagy az üzemeltetési teher ezt ténylegesen szükségessé teszi.
 
-A Free plan elfogadásának feltétele, hogy saját, automatizált és ellenőrzött backup/restore rendszert építsünk. A projekt adatbiztonsági elve nem változik: foglalási vagy elszámolási adat elvesztése elfogadhatatlan.
+A Free plan inaktivitás miatti automatikus szüneteltetése külön availability-kockázat. Ezt nem backup-problémaként, hanem monitoring/üzemeltetési kockázatként kezeljük. A production rendszer rendszeres egészségellenőrzése a Supabase/DB működését is ténylegesen ellenőrizze, így a természetes forgalom mellett rendszeres adatbázis-aktivitás is keletkezik. A keep-alive azonban nem helyettesíti a monitoringot és nem tekinthető rendelkezésre állási garanciának.
 
-Tervezett saját backup irány:
-- rendszeres automatikus PostgreSQL logikai backup, nem csak manuális mentés;
-- célként napi egynél gyakoribb mentés vizsgálandó (pl. 4–6 órás RPO);
-- off-platform tárolás;
-- Google Drive elfogadható jelölt off-site backup tárhelyként;
-- több generáció megőrzése (javasolt legalább 30 napi verzió + hosszabb havi archiválás);
-- backup integritás/checksum és futási eredmény ellenőrzése;
-- sikertelen backup esetén riasztás;
+### 3.1. Véglegesített backup ütemezés
+
+A production PostgreSQL adatbázis automatikus logikai backupja **naponta négyszer**, Europe/Budapest idő szerint:
+- 08:00;
+- 12:00;
+- 16:00;
+- 20:00.
+
+Ez tudatos üzleti kompromisszum: nappal legfeljebb kb. 4 órás backup-RPO-t célozunk, éjszaka a 20:00–08:00 közötti hosszabb intervallum elfogadott, mert ebben az időszakban várhatóan kevés módosítás történik. Ha a későbbi tényleges használati adatok jelentős esti/éjszakai aktivitást mutatnak, az ütemezést felül kell vizsgálni.
+
+Minden backup:
+- önálló, időbélyegzett visszaállítási pont legyen;
+- ne írjon felül korábbi mentést;
+- konzisztens PostgreSQL logikai dump legyen;
+- tartalmazzon integritás/checksum ellenőrzést;
+- sikertelen futás esetén adjon hibajelzést;
+- csak akkor számítson sikeresnek, ha a létrehozás és a kijelölt külső célhelyekre történő mentés ellenőrzötten megtörtént.
+
+### 3.2. Két független külső backup cél
+
+Elfogadott célarchitektúra:
+1. **Google Drive** – könnyen elérhető off-site backup példány;
+2. **Backblaze B2** – szolgáltatói szinten független második off-site példány, Object Lock / törlés elleni védelemmel.
+
+A két cél használatának oka, hogy egyetlen cloud-fiók, szolgáltató, hibás automatizmus vagy véletlen törlés ne veszélyeztesse az összes mentést. A Backblaze B2 elsődleges szerepe a Google Drive-tól független, lehetőség szerint immutable biztonsági példány.
+
+A Dropbox nem elsődleges második backup cél; meglévő fiókként opcionális további példány lehet, de nem helyettesíti a Google Drive + Backblaze B2 két független célarchitektúrát.
+
+### 3.3. Retention és restore
+
+A pontos retention implementáció a backup script készítésekor véglegesítendő, de kötelező:
+- többgenerációs megőrzés;
+- rövid távon a napon belüli restore-pontok megőrzése;
+- hosszabb távú napi és havi restore-pontok;
+- a Backblaze B2 oldalon megfelelő Object Lock időtartam;
 - dokumentált és lehetőleg scriptelt restore folyamat;
-- production indulás előtt kötelező tényleges restore-próba külön teszt/staging környezetbe;
-- restore után foglalási, jogosultsági, audit- és pénzügyi konzisztencia ellenőrzése.
+- production indulás előtt tényleges restore-próba külön teszt/staging környezetbe;
+- restore után foglalási, jogosultsági, audit- és elszámolási konzisztencia ellenőrzése;
+- később rendszeres dokumentált restore-drill.
 
-A Supabase Pro továbbra is lehetséges későbbi upgrade, ha a Free plan limitek, rendelkezésre állás vagy az üzemeltetési teher indokolja. Jelenleg azonban nem tekintjük automatikusan kötelező production feltételnek; előbb a saját backup megoldást tervezzük és bizonyítjuk.
+A backup csak akkor tekinthető megfelelőnek, ha a visszaállíthatóság bizonyított. A két külső másolat megléte önmagában nem elég.
 
 ## 4. Hosting / Vercel döntési állapot
 
@@ -60,59 +89,73 @@ Következő külön vizsgálat:
 
 Hostingváltás csak proof-of-concept és staging UAT után fogadható el. Productiont a hosting-kísérletek nem érinthetik.
 
-## 5. Production monitoring, heartbeat és proaktív riasztás
+## 5. Production monitoring, health check és proaktív riasztás – kötelező
 
-Új kötelező production követelmény: az A-Hely ne a felhasználói hibabejelentésből értesüljön arról, hogy a foglalási rendszer nem működik vagy súlyosan lelassult.
+A monitoring **nem csak a Supabase-re vonatkozik**. Kötelező cél, hogy az A-Hely a teljes production rendszer hibáját vagy súlyos lassulását automatikusan észlelje, és ne a felhasználói hibabejelentésből értesüljön róla.
 
-A production infrastruktúra véglegesítésekor külön monitoring és riasztási megoldást kell tervezni és bevezetni.
+A health-checknek end-to-end szemléletűnek kell lennie. Minimum ellenőrizendő rétegek:
+- **publikus alkalmazás / domain / HTTPS:** a production oldal kívülről elérhető-e;
+- **hosting / Next.js alkalmazás:** az alkalmazás ténylegesen képes-e érvényes választ adni;
+- **biztonságos health endpoint:** ne csak statikus HTTP 200-at adjon, hanem ellenőrizze az alapvető alkalmazásműködést;
+- **Supabase / PostgreSQL:** a backend és az adatbázis elérhető-e, és végrehajtható-e egy biztonságos minimális DB-művelet;
+- **válaszidő:** ne csak teljes kiesés, hanem tartós vagy súlyos lassulás is legyen észlelhető;
+- **kritikus alkalmazáshibák:** production szerveroldali hibák és indokolt esetben kritikus klienshibák legyenek központilag láthatók;
+- **backup pipeline:** a legutóbbi sikeres backup megfelel-e az aktuális 08/12/16/20 ütemezésnek, és mindkét külső célra sikeresen eljutott-e;
+- **Google Drive backup cél:** a mentés megléte/eredménye ellenőrizhető legyen;
+- **Backblaze B2 backup cél:** a mentés megléte és védettsége ellenőrizhető legyen;
+- **SSL/domain lejárat:** lehetőség szerint előre jelezze a lejárati problémát.
 
-Minimum elvárt monitoring rétegek:
-- **külső uptime/heartbeat ellenőrzés:** független szolgáltatás rendszeres időközönként kívülről ellenőrizze a production alkalmazást;
-- **alkalmazás health endpoint:** legyen olyan biztonságos health-check végpont, amely nem csak azt bizonyítja, hogy a webserver HTTP választ ad, hanem ellenőrizni tudja az alkalmazás alapvető működőképességét;
-- **adatbázis/Supabase elérhetőség ellenőrzése:** a health-check különbséget tudjon tenni frontend/hosting és backend/adatbázis hiba között, érzékeny adat kiadása nélkül;
-- **válaszidő figyelés:** ne csak teljes leállás, hanem tartós vagy súlyos lassulás is észlelhető legyen;
-- **hibaarány / alkalmazáshibák figyelése:** production szerveroldali hibák és kritikus klienshibák lehetőség szerint központilag láthatók legyenek;
-- **backup heartbeat:** külön ellenőrizni kell, hogy a legutóbbi sikeres backup nem régebbi-e a megengedett RPO-nál; a backup script futása önmagában nem elegendő;
-- **riasztás:** kiesés, ismételt health-check hiba, kritikus lassulás vagy elmaradt backup esetén az admin proaktív értesítést kapjon megfelelő csatornán;
-- **recovery értesítés:** a rendszer helyreállásáról is legyen jelzés, hogy az incidens lezárható legyen;
-- **monitoring függetlenség:** az elsődleges uptime monitor lehetőség szerint ne ugyanazon hosting infrastruktúrán fusson, mint maga az alkalmazás, mert közös kiesés esetén nem tudna riasztani.
+### 5.1. Független külső monitor
 
-A health endpoint nem tartalmazhat érzékeny adatot, secretet, user-információt vagy részletes belső hibát publikus válaszban. A monitoringhoz szükséges mélyebb diagnosztika külön védett/logging csatornán történjen.
+Az elsődleges uptime/health monitor lehetőség szerint **ne ugyanazon a hosting infrastruktúrán fusson**, mint maga az alkalmazás. Közös hosting-kiesés esetén is képesnek kell lennie hibát észlelni és riasztani.
 
-A végleges megoldás kiválasztásakor vizsgálandó:
-- ingyenes vagy nagyon alacsony költségű uptime-monitor szolgáltatások;
-- ellenőrzési gyakoriság és várható észlelési idő;
-- e-mail/push/egyéb riasztási lehetőség;
-- response-time és SSL/domain expiry monitoring;
-- alkalmazás- és error-monitoring külön szolgáltatásának szükségessége;
-- a hosting szolgáltató saját monitoringjának használhatósága második jelként, de nem kizárólagos ellenőrzésként;
-- false positive riasztások kezelése és incidens-eszkaláció.
+A monitoring rendszeres időközönként fusson. A pontos szolgáltató és intervallum külön production readiness döntés, elsődleges szempont az ingyenes vagy nagyon alacsony költség, megfelelő megbízhatóság mellett.
 
-Production readiness során konkrét monitoring elfogadási tesztet kell végrehajtani: kontrolláltan hibás health választ vagy staging kiesést kell előidézni, és bizonyítani kell, hogy a külső monitor ezt észleli és a riasztás ténylegesen megérkezik. A recovery jelzést is ellenőrizni kell.
+### 5.2. Riasztás és recovery
 
-A monitoring végleges szolgáltatója és pontos intervalluma még nyitott production infrastruktúra-döntés; a **proaktív működésfigyelés követelménye azonban ettől kezdve kötelező**.
+Automatikus riasztás szükséges legalább:
+- production elérhetetlenség;
+- ismételt health-check hiba;
+- Supabase/DB hiba;
+- súlyos vagy tartós válaszidő-romlás;
+- kritikus alkalmazáshiba;
+- elmaradt vagy sikertelen backup;
+- ha a backup egyik célhelyre nem jutott el.
 
-## 6. Következő beszélgetés feladata
+A rendszer helyreállásáról **recovery értesítés** is szükséges.
 
-A következő chat kizárólag a production infrastruktúra költség/üzembiztonság döntésre fókuszáljon, új üzleti funkció fejlesztése nélkül.
+A publikus health endpoint nem adhat ki secretet, user-adatot, belső adatbázis-információt vagy részletes stack trace-t. A mélyebb diagnosztika védett logban/monitoring csatornán maradjon.
 
-Vizsgálandó:
-1. Netlify és más reális hosting alternatívák tényleges kompatibilitása a repository aktuális Next.js 16 architektúrájával.
-2. Vercel Pro vs alternatívák teljes költség, kompatibilitás, üzemeltetés, deploy/rollback és kockázat összehasonlítása.
-3. Supabase Free + Google Drive saját automatizált backup részletes technikai terve.
-4. Backup gyakoriság/RPO, retention, titkosítás, secret-kezelés, monitoring és riasztás.
-5. Tényleges restore-próba terve és elfogadási kritériumai.
-6. Production uptime/heartbeat, health-check, válaszidő- és hibamonitoring, valamint proaktív riasztás konkrét megoldásának kiválasztása és tesztelése.
-7. Végső production infrastruktúra ajánlás és go/no-go döntés.
+### 5.3. Monitoring elfogadási teszt
+
+Production indulás előtt kontrollált teszttel bizonyítani kell, hogy a monitoring valóban működik. Legalább:
+- stagingen vagy kontrollált környezetben hibás health választ / kiesést előidézni;
+- bizonyítani, hogy a külső monitor észleli;
+- bizonyítani, hogy a riasztás ténylegesen megérkezik;
+- helyreállítás után a recovery jelzés megérkezik;
+- backup heartbeat hibát szimulálni és ellenőrizni a riasztást;
+- ahol biztonságosan megoldható, külön DB/Supabase hibát is megkülönböztetni az alkalmazás/hosting hibától.
+
+## 6. Következő production infrastruktúra feladatok
+
+1. A Google Drive + Backblaze B2 backup automatizálás technikai megtervezése és implementálása.
+2. A 08:00 / 12:00 / 16:00 / 20:00 Europe/Budapest ütemezés kialakítása.
+3. Retention, titkosítás, checksum, secret-kezelés és B2 Object Lock pontos beállításának véglegesítése.
+4. Tényleges restore-próba terve, végrehajtása és elfogadási kritériumainak dokumentálása.
+5. Teljes production health-check/monitoring szolgáltató kiválasztása költség és megbízhatóság alapján.
+6. Health endpoint és backup heartbeat implementálása.
+7. Riasztási és recovery csatorna kialakítása és kontrollált tesztje.
+8. Hosting véglegesítése és teljes production go/no-go ellenőrzés.
 
 ## 7. Változatlan production kapuk
 
 Production deploy továbbra sem történhet addig, amíg:
 - teljes CI és kritikus regresszió zöld;
 - staging UAT lezárt;
-- backup automatizálás működik;
+- backup automatizálás működik a jóváhagyott napi négyszeri ütemezéssel;
+- Google Drive + Backblaze B2 külső mentés bizonyított;
 - tényleges restore-próba sikeres;
-- production monitoring/heartbeat és riasztás működése kontrollált teszttel bizonyított;
+- teljes production monitoring/health-check és riasztás működése kontrollált teszttel bizonyított;
 - kritikus független review megtörtént;
 - production konfiguráció és rollback terv ellenőrzött;
 - explicit üzleti jóváhagyás nincs.
