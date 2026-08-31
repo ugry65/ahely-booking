@@ -19,6 +19,7 @@ on:
       - "docs/IMPLEMENTATION_PLAN.md"
       - ".github/workflows/application-checks.yml"
       - ".github/workflows/production-backup.yml"
+      - ".github/workflows/production-backup-retention.yml"
       - ".github/workflows/staging-database-deploy.yml"
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
