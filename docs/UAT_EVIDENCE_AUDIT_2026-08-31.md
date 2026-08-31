@@ -8,7 +8,7 @@ A `docs/UAT_DELTA_2026-08-31_PR94.md` után fennmaradó 20 `EGYEZTETENDŐ` téte
 
 Egy tétel lezárható automatikus vagy kombinált bizonyítékkal, ha a checklist elvárt eredménye nem kifejezetten vizuális/interakciós minőség, és a meglévő regressziós teszt közvetlenül ugyanazt az üzleti invariánst bizonyítja. Hiányzó régi kattintási napló önmagában nem indok új manuális UAT-ra.
 
-## Meglévő bizonyítékkal lezárható tételek
+## Meglévő bizonyítékkal lezárt tételek
 
 ### BOOK
 
@@ -32,7 +32,7 @@ Egy tétel lezárható automatikus vagy kombinált bizonyítékkal, ha a checkli
 
 - **UAT-REC-02 – SIKERES automatikus bizonyítékkal.** `009_recurring_booking_rpc.sql`: kétheti sorozat létrejön, az occurrence-ok közti különbség explicit 14 nap.
 - **UAT-REC-04 – SIKERES automatikus bizonyítékkal.** `009_recurring_booking_rpc.sql`: havi ismétlődés január 31-ről rövid februárban hónapvégre igazodik, majd visszatér az eredeti naptári napra; szökőév is külön assertion.
-- **UAT-REC-09 – SIKERES automatikus bizonyítékkal.** A korábbi teljes DB regressziós csomagban az `009_recurring_booking_rpc.sql` őszi és tavaszi DST-falióra eseteket explicit ellenőriz; ez időzóna-szemantika, nem vizuális UAT-követelmény.
+- **UAT-REC-09 – SIKERES automatikus bizonyítékkal.** A teljes DB regressziós csomagban az `009_recurring_booking_rpc.sql` őszi és tavaszi DST-falióra eseteket explicit ellenőriz; ez időzóna-szemantika, nem vizuális UAT-követelmény.
 - **UAT-REC-10 – SIKERES automatikus bizonyítékkal.** `100_series_scope_semantics.sql`: occurrence update pontosan egy bookingot módosít.
 - **UAT-REC-11 – SIKERES automatikus bizonyítékkal.** `099_calendar_booking_management.sql`: following update a kiválasztott és későbbi occurrence-okat együtt módosítja, az elsőt változatlanul hagyja.
 - **UAT-REC-12 – SIKERES automatikus bizonyítékkal.** `100_series_scope_semantics.sql`: series update minden aktív jövőbeli targetre alkalmazza az új mezőket.
@@ -42,14 +42,16 @@ Egy tétel lezárható automatikus vagy kombinált bizonyítékkal, ha a checkli
 
 - **UAT-UX-04 – SIKERES automatikus bizonyítékkal.** A checklist elvárt eredménye: dupla kattintás / lassú kérés esetén ne jöjjön létre duplikált üzleti rekord. Ezt közvetlenül védi és bizonyítja az idempotens `create_booking` regresszió, valamint a párhuzamos booking creation teszt és az adatbázis-szintű overlap védelem. A követelmény nem vizuális animáció vagy gombállapot, hanem üzleti duplikációmentesség.
 
-## Két célzott automatikus pótlás
+## Két célzott automatikus pótlás – lezárva
 
-A bizonyítékaudit két olyan esetet talált, ahol az üzleti működés valószínűleg helyes és részleges/történeti bizonyíték volt, de egy rövid determinisztikus regresszió indokolt:
+A bizonyítékaudit két olyan esetet talált, ahol az üzleti működés részleges/történeti bizonyítékkal már alátámasztott volt, de egy rövid determinisztikus regresszió indokolt:
 
-- **UAT-BOOK-02 – 90 perces foglalás**
-- **UAT-BOOK-09 – egymáshoz pontosan érő foglalások**
+- **UAT-BOOK-02 – SIKERES automatikus bizonyítékkal.** Pontosan 90 perces foglalás.
+- **UAT-BOOK-09 – SIKERES automatikus bizonyítékkal.** Egymáshoz pontosan érő foglalások.
 
-Ezekhez a PR #97 új `103_booking_duration_and_touching_boundaries.sql` pgTAP tesztje készült. A teszt 10:00–11:30 közötti pontos 90 perces bookingot, majd ugyanabban a helyiségben 11:30–12:30 közötti, pontosan érintkező második bookingot hoz létre és ellenőrzi a mentett határt/időtartamot. A végleges `SIKERES` státusz feltétele a PR #97 teljes Database CI-jének zöld eredménye.
+A PR #97 `103_booking_duration_and_touching_boundaries.sql` pgTAP tesztje 10:00–11:30 közötti pontos 90 perces bookingot, majd ugyanabban a helyiségben 11:30–12:30 közötti, pontosan érintkező második bookingot hoz létre. Ellenőrzi a 90 perces eltárolt időtartamot, a két rekord pontos egyszeri létrejöttét és azt, hogy az első `end_at` értéke pontosan a második `start_at` értéke.
+
+**CI-bizonyíték:** Database tests run **#424 / 33374099745 – SUCCESS** a PR #97 aktuális headjén. Sikeres volt a migrációkból történő DB rebuild, a teljes pgTAP csomag, minden konkurenciateszt és a schema lint.
 
 ## Egyetlen valódi manuális maradék
 
@@ -61,19 +63,19 @@ Minimális ellenőrzés:
 3. külön figyeld a 17:30–19:00 szakaszt;
 4. PASS, ha nincs megakadás, visszaugrás vagy olyan scroll-lock, amely megakadályozza a nap aljának elérését.
 
-## Várható státusz a PR #97 zöld CI-je után
+## Aktuális funkcionális UAT-státusz
 
 | Státusz | Darab |
 | --- | ---: |
-| SIKERES | 71 |
-| MODUL-ELFOGADÁS | 22 |
-| DÖNTÉSSEL LEZÁRT | 1 |
-| EGYEZTETENDŐ / manuális | 1 |
-| BLOKKOLT production drill | 3 |
+| SIKERES | **71** |
+| MODUL-ELFOGADÁS | **22** |
+| DÖNTÉSSEL LEZÁRT | **1** |
+| EGYEZTETENDŐ / manuális | **1** |
+| BLOKKOLT production drill | **3** |
 | **Összesen** | **98** |
 
 A 71 SIKERES szám a korábbi 52-höz 19 lezárást ad hozzá. Ez nem 19 új manuális futás: 17 meglévő bizonyíték szakmai lezárása + 2 új célzott automatikus regresszió.
 
 ## Production kapu
 
-A funkcionális UAT végleges lezárásához a PR #97 zöld CI-je után csak UAT-UX-05 célzott manuális ellenőrzése marad. Ettől külön, production előtt továbbra is kötelező a három infrastruktúra-drill: backup, tényleges restore, valamint monitoring/alert/recovery.
+A funkcionális UAT végleges lezárásához már csak UAT-UX-05 célzott manuális ellenőrzése marad. Ettől külön, production előtt továbbra is kötelező a három infrastruktúra-drill: backup, tényleges restore, valamint monitoring/alert/recovery.
