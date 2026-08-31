@@ -11,6 +11,7 @@ on:
       - "next.config.ts"
       - "proxy.ts"
       - "docs/BACKUP_RESTORE_*.md"
+      - "docs/DECISION_2026-08-31_BACKUP_RETENTION_OBJECT_LOCK.md"
       - "docs/PRODUCTION_BACKUP_MONITORING_TECHNICAL_DESIGN.md"
       - "docs/STAGING_ADATBAZIS_DEPLOY.md"
       - "docs/PRODUCTION_ADATBAZIS_DEPLOY.md"
@@ -45,9 +46,11 @@ jobs:
       - run: pnpm test
       - run: pnpm typecheck
       - name: Validate production backup shell syntax
-        run: bash -n ./scripts/backup-production.sh ./scripts/test-backup-production.sh
+        run: bash -n ./scripts/backup-production.sh ./scripts/test-backup-production.sh ./scripts/test-retention-production.sh
       - name: Test production backup pipeline with fake remotes
         run: bash ./scripts/test-backup-production.sh
+      - name: Test production backup retention policy
+        run: bash ./scripts/test-retention-production.sh
       - run: pnpm build
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
