@@ -4,6 +4,11 @@
   gap: .65rem;
 }
 
+.calendar-scroll {
+  overscroll-behavior-x: auto;
+  overscroll-behavior-y: auto;
+}
+
 .desktop-app-nav {
   position: sticky;
   top: 0;
