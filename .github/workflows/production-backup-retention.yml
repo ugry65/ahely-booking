@@ -1,0 +1,97 @@
+name: Production backup retention
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Retention ellenőrzése vagy alkalmazása"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - apply
+      confirmation:
+        description: "Apply módnál írd be: RETENTION"
+        required: false
+        default: ""
+        type: string
+  schedule:
+    - cron: "30 21 * * *"
+      timezone: "Europe/Budapest"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-backup-retention
+  cancel-in-progress: false
+
+jobs:
+  retention:
+    if: ${{ github.event_name != 'schedule' || vars.RETENTION_AUTOMATION_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    env:
+      BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+      BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+
+      RCLONE_CONFIG_GDRIVE_TYPE: drive
+      RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
+      RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+      RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+      RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
+
+      RCLONE_CONFIG_B2_TYPE: b2
+      RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_ACCOUNT_ID }}
+      RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rclone
+
+      - name: Validate required retention configuration
+        run: |
+          required=(
+            BACKUP_GDRIVE_REMOTE
+            BACKUP_B2_REMOTE
+            RCLONE_CONFIG_GDRIVE_CLIENT_ID
+            RCLONE_CONFIG_GDRIVE_CLIENT_SECRET
+            RCLONE_CONFIG_GDRIVE_TOKEN
+            RCLONE_CONFIG_B2_ACCOUNT
+            RCLONE_CONFIG_B2_KEY
+          )
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing production retention configuration: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Require explicit confirmation for manual apply
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'apply' }}
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          if [ "$CONFIRMATION" != "RETENTION" ]; then
+            echo "Manual retention apply requires confirmation input: RETENTION" >&2
+            exit 1
+          fi
+
+      - name: Run retention policy
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            python3 ./scripts/retention-production.py --apply
+          elif [ "${{ inputs.mode }}" = "apply" ]; then
+            python3 ./scripts/retention-production.py --apply
+          else
+            python3 ./scripts/retention-production.py
+          fi
