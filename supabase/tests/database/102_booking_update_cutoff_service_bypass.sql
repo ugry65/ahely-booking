@@ -11,6 +11,12 @@ select is(
   'A service/internal bypass teszt valóban null auth.uid() kontextusban fut'
 );
 
+insert into auth.users (id, email, raw_user_meta_data) values (
+  'b0000000-0000-0000-0000-000000000102',
+  'cutoff-service-target@example.invalid',
+  '{"first_name":"Service","last_name":"Target"}'
+);
+
 insert into public.bookings (
   id,
   room_id,
@@ -24,8 +30,8 @@ insert into public.bookings (
 ) values (
   'b1000000-0000-0000-0000-000000000102',
   '11000000-0000-0000-0000-000000000002',
-  '00000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000001',
+  'b0000000-0000-0000-0000-000000000102',
+  'b0000000-0000-0000-0000-000000000102',
   (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '13:00') at time zone 'Europe/Budapest',
   (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '14:00') at time zone 'Europe/Budapest',
   'b2000000-0000-0000-0000-000000000102',
