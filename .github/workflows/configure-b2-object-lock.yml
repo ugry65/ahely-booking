@@ -1,0 +1,38 @@
+name: Configure B2 Object Lock
+
+on:
+  pull_request:
+    branches:
+      - feature/82-pricing-modes
+    paths:
+      - ".github/workflows/configure-b2-object-lock.yml"
+      - "scripts/configure-b2-object-lock.sh"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: configure-b2-object-lock
+  cancel-in-progress: false
+
+jobs:
+  configure:
+    if: ${{ github.event.pull_request.head.ref == 'infra/100-backup-monitoring' && vars.B2_OBJECT_LOCK_APPLY == 'GOVERNANCE_30' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    env:
+      BACKUP_B2_ACCOUNT_ID: ${{ secrets.BACKUP_B2_ACCOUNT_ID }}
+      BACKUP_B2_APPLICATION_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
+      BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+      B2_OBJECT_LOCK_CONFIRMATION: ${{ vars.B2_OBJECT_LOCK_APPLY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate shell syntax
+        run: bash -n ./scripts/configure-b2-object-lock.sh
+
+      - name: Configure and verify Governance 30-day Object Lock
+        run: bash ./scripts/configure-b2-object-lock.sh
