@@ -1,0 +1,22 @@
+name: Backup automation CI
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/backup/**'
+      - '.github/workflows/backup-automation-ci.yml'
+      - 'docs/BACKUP_AUTOMATION_RUNBOOK.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Run backup automation regression tests
+        run: bash scripts/backup/test-backup.sh
