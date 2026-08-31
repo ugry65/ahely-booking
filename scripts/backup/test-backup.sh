@@ -69,7 +69,7 @@ export AGE_RECIPIENT="age1testrecipient"
 export GDRIVE_REMOTE="gdrive:ahely"
 export B2_REMOTE="b2:ahely"
 
-output="$($ROOT_DIR/scripts/backup/create-backup.sh)"
+output="$(bash "$ROOT_DIR/scripts/backup/create-backup.sh")"
 backup_file="$(printf '%s\n' "$output" | awk -F= '/^BACKUP_FILE=/{print $2}')"
 [[ -n "$backup_file" ]]
 [[ -f "$TMP_DIR/remotes/gdrive/ahely/$backup_file" ]]
@@ -93,14 +93,14 @@ PY
 # Fail-closed: ha a második kötelező cél hibázik, az egész futásnak hibával kell végződnie.
 export BACKUP_TIMESTAMP_UTC="20260831T160000Z"
 export MOCK_FAIL_REMOTE="b2:"
-if "$ROOT_DIR/scripts/backup/create-backup.sh" >/dev/null 2>&1; then
+if bash "$ROOT_DIR/scripts/backup/create-backup.sh" >/dev/null 2>&1; then
   echo "FAIL: B2 feltöltési hiba mellett a backup script sikerrel tért vissza" >&2
   exit 1
 fi
 
 # Titkosítás kötelező valós és teszt futásban is.
 unset MOCK_FAIL_REMOTE AGE_RECIPIENT
-if "$ROOT_DIR/scripts/backup/create-backup.sh" >/dev/null 2>&1; then
+if bash "$ROOT_DIR/scripts/backup/create-backup.sh" >/dev/null 2>&1; then
   echo "FAIL: AGE_RECIPIENT nélkül a backup script sikerrel tért vissza" >&2
   exit 1
 fi
