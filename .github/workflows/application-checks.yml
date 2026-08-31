@@ -11,11 +11,13 @@ on:
       - "next.config.ts"
       - "proxy.ts"
       - "docs/BACKUP_RESTORE_*.md"
+      - "docs/PRODUCTION_BACKUP_MONITORING_TECHNICAL_DESIGN.md"
       - "docs/STAGING_ADATBAZIS_DEPLOY.md"
       - "docs/PRODUCTION_ADATBAZIS_DEPLOY.md"
       - "docs/STAGING_WEB_ES_UAT_BOOTSTRAP.md"
       - "docs/IMPLEMENTATION_PLAN.md"
       - ".github/workflows/application-checks.yml"
+      - ".github/workflows/production-backup.yml"
       - ".github/workflows/staging-database-deploy.yml"
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
@@ -42,6 +44,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm typecheck
+      - name: Validate production backup shell syntax
+        run: bash -n ./scripts/backup-production.sh
       - run: pnpm build
         env:
           NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
