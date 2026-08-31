@@ -13,8 +13,9 @@ declare
 begin
   -- A cutoff a normál user által végzett élő foglalásmódosítást védi.
   -- Lemondáskor a status active -> cancelled váltás külön RPC-szabályt használ,
-  -- ezért azt ez a trigger nem blokkolja.
-  if old.status <> 'active' or new.status <> 'active' then
+  -- ezért azt ez a trigger nem blokkolja. Csak az eredeti aktív állapot számít:
+  -- így egy jövőbeli, kombinált status + időmező UPDATE sem kerülheti meg a guardot.
+  if old.status <> 'active' then
     return new;
   end if;
 
@@ -26,7 +27,8 @@ begin
 
   -- A megbízható belső/service műveleteknek nincs auth.uid()-juk. A kliensoldali
   -- booking write továbbra is RLS/RPC határ mögött van; a normál felhasználói
-  -- hívásoknál az actor profil kötelezően feloldható.
+  -- hívásoknál az actor profil kötelezően feloldható. Ezt a szándékos bypass ágat
+  -- külön pgTAP regressziós teszt védi.
   if v_actor_id is null then
     return new;
   end if;
@@ -63,7 +65,6 @@ before update of room_id, start_at, end_at, use_type, note on public.bookings
 for each row
 when (
   old.status = 'active'
-  and new.status = 'active'
   and (
     old.room_id is distinct from new.room_id
     or old.start_at is distinct from new.start_at
@@ -77,6 +78,6 @@ execute function public.guard_booking_update_cutoff();
 revoke all on function public.guard_booking_update_cutoff() from public, anon, authenticated;
 
 comment on function public.guard_booking_update_cutoff() is
-  'DB-szintű regresszióvédelem: normál user az eredeti start_at alapján cutoffon belüli aktív foglalást nem módosíthat; admin bypass. Lezárja a módosítás -> későbbre tolás -> lemondás kerülőutat.';
+  'DB-szintű regresszióvédelem: normál user az eredeti start_at alapján cutoffon belüli aktív foglalást nem módosíthat; admin és megbízható auth.uid() nélküli service/internal művelet bypass. Lezárja a módosítás -> későbbre tolás -> lemondás kerülőutat.';
 
 commit;
