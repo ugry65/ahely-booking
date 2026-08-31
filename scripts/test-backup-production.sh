@@ -44,6 +44,15 @@ printf '%s\n' '-- fake Supabase backup content' 'select 1;' > "$output"
 EOF
 chmod +x "$fake_bin/supabase"
 
+cat > "$fake_bin/psql" <<'EOF'
+#!/usr/bin/env bash
+set -Eeuo pipefail
+cat <<'JSON'
+{"auth_users":12,"profiles":12,"rooms":9,"user_room_permissions":21,"booking_series":4,"bookings_total":87,"bookings_active":80,"bookings_cancelled":7,"booking_cancellations":7,"audit_logs":154,"monthly_settlements":10,"settlement_revisions":13,"settlement_booking_lines":75}
+JSON
+EOF
+chmod +x "$fake_bin/psql"
+
 cat > "$fake_bin/age" <<'EOF'
 #!/usr/bin/env bash
 set -Eeuo pipefail
