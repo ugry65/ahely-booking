@@ -43,7 +43,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ "${PRODUCTION_BACKUP_TEST_APPROVED:-}" != "BACKUP" ]; then
+          approval="$(printf '%s' "${PRODUCTION_BACKUP_TEST_APPROVED:-}" | xargs)"
+          if [ "$approval" != "BACKUP" ]; then
             echo "Production backup verification is not approved: expected PRODUCTION_BACKUP_TEST_APPROVED=BACKUP" >&2
             exit 1
           fi
