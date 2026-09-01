@@ -1,0 +1,89 @@
+name: Verify Google Drive backup target
+
+on:
+  pull_request:
+    branches:
+      - feature/82-pricing-modes
+    paths:
+      - ".github/workflows/verify-gdrive-backup-target.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    if: ${{ github.event.pull_request.head.ref == 'infra/100-backup-monitoring' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+      RCLONE_CONFIG_GDRIVE_TYPE: drive
+      RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
+      RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+      RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+      RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
+
+    steps:
+      - name: Validate required Google Drive configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            BACKUP_GDRIVE_REMOTE
+            RCLONE_CONFIG_GDRIVE_CLIENT_ID
+            RCLONE_CONFIG_GDRIVE_CLIENT_SECRET
+            RCLONE_CONFIG_GDRIVE_TOKEN
+          )
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing Google Drive backup configuration: $name" >&2
+              exit 1
+            fi
+          done
+          case "$BACKUP_GDRIVE_REMOTE" in
+            gdrive:*) ;;
+            *)
+              echo "BACKUP_GDRIVE_REMOTE must use the gdrive: remote" >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Install rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rclone
+
+      - name: Upload, read back, verify, and delete canary
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          work_dir="$(mktemp -d)"
+          canary_name="github-actions-gdrive-canary-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.txt"
+          remote_file="${BACKUP_GDRIVE_REMOTE%/}/${canary_name}"
+          cleanup() {
+            rclone deletefile "$remote_file" >/dev/null 2>&1 || true
+            rm -rf "$work_dir"
+          }
+          trap cleanup EXIT
+
+          printf 'A-Hely Google Drive backup target verification\nrun=%s\nattempt=%s\n' \
+            "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "$work_dir/canary.txt"
+          expected_sha="$(sha256sum "$work_dir/canary.txt" | awk '{print $1}')"
+
+          rclone copyto "$work_dir/canary.txt" "$remote_file" --no-traverse
+          actual_sha="$(rclone cat "$remote_file" | sha256sum | awk '{print $1}')"
+
+          if [ "$actual_sha" != "$expected_sha" ]; then
+            echo "Google Drive canary checksum mismatch" >&2
+            exit 1
+          fi
+
+          rclone deletefile "$remote_file"
+          if rclone lsf "$remote_file" >/dev/null 2>&1; then
+            echo "Google Drive canary still exists after delete" >&2
+            exit 1
+          fi
+
+          trap - EXIT
+          rm -rf "$work_dir"
+          echo "PASS: GitHub Actions can write, read, verify, and delete in the configured Google Drive backup target."
