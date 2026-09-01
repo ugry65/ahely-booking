@@ -98,6 +98,8 @@ Bizonyított, hogy a backupVersion 2 formátum:
 - a production-kori migration-meta séma visszaállítható;
 - a migration history teljes egészében visszaállítható és konzisztens.
 
+Megjegyzés: a jelenlegi production adatállapotban a kritikus üzleti kontrollok közül ténylegesen nem nulla adat a `rooms=11`; a felhasználói, foglalási, audit- és settlement kontrollok 0 értékűek voltak. A drill ezért technikailag teljes és konzisztens restore-bizonyíték, de éles üzleti adatok megjelenése után célszerű ismételt restore drillt végezni nem nulla booking/settlement adatokkal is.
+
 ## Kötelező restore sorrend v2 bundle esetén
 
 1. encrypted artifact checksum;
