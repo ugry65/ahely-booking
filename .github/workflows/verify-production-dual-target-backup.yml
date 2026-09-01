@@ -80,4 +80,5 @@ jobs:
       - name: Run encrypted dual-target production backup verification
         shell: bash
         run: |
+          # Explicitly approved one-shot verification; no success heartbeat is sent.
           BACKUP_HEARTBEAT_URL="" ./scripts/backup-production.sh
