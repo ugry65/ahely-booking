@@ -16,12 +16,13 @@ concurrency:
 
 jobs:
   backup:
-    if: ${{ github.event.pull_request.head.ref == 'infra/100-backup-monitoring' && vars.PRODUCTION_BACKUP_TEST_APPROVED == 'BACKUP' }}
+    if: ${{ github.event.pull_request.head.ref == 'infra/100-backup-monitoring' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
 
     env:
+      PRODUCTION_BACKUP_TEST_APPROVED: ${{ vars.PRODUCTION_BACKUP_TEST_APPROVED }}
       PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
       BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
       BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
@@ -38,6 +39,16 @@ jobs:
       RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
 
     steps:
+      - name: Require explicit one-shot approval
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${PRODUCTION_BACKUP_TEST_APPROVED:-}" != "BACKUP" ]; then
+            echo "Production backup verification is not approved: expected PRODUCTION_BACKUP_TEST_APPROVED=BACKUP" >&2
+            exit 1
+          fi
+          echo "PASS: explicit production backup verification approval is present."
+
       - name: Check out repository
         uses: actions/checkout@v4
 
@@ -80,5 +91,4 @@ jobs:
       - name: Run encrypted dual-target production backup verification
         shell: bash
         run: |
-          # Explicitly approved one-shot verification; no success heartbeat is sent.
           BACKUP_HEARTBEAT_URL="" ./scripts/backup-production.sh
