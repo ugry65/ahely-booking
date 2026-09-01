@@ -13,6 +13,31 @@ A restore drill kizárólag izolált PostgreSQL 17 / local Supabase környezetbe
 
 A recovery private key nem került GitHubba, Google Drive-ra vagy Backblaze B2-re. A visszafejtés azon a helyi gépen történt, ahol a recovery key biztonságosan rendelkezésre áll.
 
+## V1 drill és feltárt hiányosság
+
+Az első production backup:
+
+- GitHub Actions run: `33547980831`
+- artifact: `ahely-booking-production_20260901T191321Z_387e40d5afcc.tar.gz.age`
+- Google Drive upload/read-back SHA-256: PASS
+- Backblaze B2 upload/read-back SHA-256: PASS
+- encrypted artifact és belső checksumok: PASS
+- business schema/data restore platform-kompatibilis local Supabase stackben: PASS
+- kritikus üzleti kontrollszámok: PASS
+
+A v1 restore drill azonban feltárta, hogy a `migration-history.sql` kizárólag data-only dump volt. A production `supabase_migrations.schema_migrations` tábla hat mezőt tartalmazott (`version`, `statements`, `name`, `created_by`, `idempotency_key`, `rollback`), míg a friss local Supabase CLI által létrehozott alapstruktúra csak három mezős volt (`version`, `statements`, `name`). Ezért a migration-history önmagában nem volt önleíró és garantáltan visszaállítható.
+
+## Javítás – backupVersion 2
+
+A backup pipeline javítva lett:
+
+- új `migration-schema.sql` készül a production `supabase_migrations` sémáról;
+- `migration-history.sql` külön data-only dump marad;
+- `migration-schema.sql` bekerült a nem üres komponens-ellenőrzésbe;
+- bekerült a `DATA_SHA256SUMS` és `SHA256SUMS` fájlokba;
+- bekerült a `manifest.json` fájllistába és SHA-256 mezővel rendelkezik;
+- backup formátum verziója `2`.
+
 ## V2 production backup bizonyíték
 
 - GitHub Actions run: `33558905620`
@@ -32,8 +57,9 @@ A local Supabase adatbázis nulláról újra lett inicializálva. A korábbi ide
 1. `roles.sql`
 2. `schema.sql`
 3. `data.sql`
-4. production-kori `supabase_migrations` séma visszaállítása a `migration-schema.sql` fájlból
-5. `migration-history.sql` visszatöltése
+4. a helyi placeholder/meta `supabase_migrations` séma kontrollált cseréje
+5. production-kori `supabase_migrations` séma visszaállítása a `migration-schema.sql` fájlból
+6. `migration-history.sql` visszatöltése
 
 A restore `ON_ERROR_STOP=1` és tranzakciós/fail-closed módban történt.
 
@@ -75,6 +101,20 @@ Bizonyított, hogy a backupVersion 2 formátum:
 - a migration history teljes egészében visszaállítható és konzisztens.
 
 Megjegyzés: a jelenlegi production adatállapotban a kritikus üzleti kontrollok közül ténylegesen nem nulla adat a `rooms=11`; a felhasználói, foglalási, audit- és settlement kontrollok 0 értékűek voltak. Éles üzleti adatok megjelenése után célszerű ismételt restore drillt végezni nem nulla booking/settlement adatokkal is.
+
+## Kötelező restore sorrend v2 bundle esetén
+
+1. encrypted artifact checksum;
+2. decrypt;
+3. belső checksumok;
+4. platform-kompatibilis izolált local Supabase stack;
+5. `roles.sql`;
+6. `schema.sql`;
+7. `data.sql`;
+8. a helyi `supabase_migrations` placeholder/meta séma kontrollált cseréje;
+9. `migration-schema.sql`;
+10. `migration-history.sql`;
+11. kritikus kontrollszámok és migration history ellenőrzése.
 
 ## Fontos: a teljes restore PASS nem jelent production GO-t
 
