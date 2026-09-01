@@ -1,5 +1,6 @@
 name: Verify production dual-target backup
 
+# Re-run after aligning supabase/config.toml with production PostgreSQL 17.
 on:
   pull_request:
     branches:
