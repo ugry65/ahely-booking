@@ -1,4 +1,4 @@
-name: Verify Google Drive backup target
+name: Verify backup targets
 
 on:
   pull_request:
@@ -16,36 +16,52 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
+      BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
       BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+      BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+
       RCLONE_CONFIG_GDRIVE_TYPE: drive
       RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
       RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
       RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
       RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
 
+      RCLONE_CONFIG_B2_TYPE: b2
+      RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_ACCOUNT_ID }}
+      RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
+
     steps:
-      - name: Validate required Google Drive configuration
+      - name: Validate required backup configuration
         shell: bash
         run: |
           set -euo pipefail
           required=(
+            BACKUP_AGE_RECIPIENT
             BACKUP_GDRIVE_REMOTE
+            BACKUP_B2_REMOTE
             RCLONE_CONFIG_GDRIVE_CLIENT_ID
             RCLONE_CONFIG_GDRIVE_CLIENT_SECRET
             RCLONE_CONFIG_GDRIVE_TOKEN
+            RCLONE_CONFIG_B2_ACCOUNT
+            RCLONE_CONFIG_B2_KEY
           )
           for name in "${required[@]}"; do
             if [ -z "${!name:-}" ]; then
-              echo "Missing Google Drive backup configuration: $name" >&2
+              echo "Missing backup prerequisite: $name" >&2
               exit 1
             fi
           done
           case "$BACKUP_GDRIVE_REMOTE" in
             gdrive:*) ;;
-            *)
-              echo "BACKUP_GDRIVE_REMOTE must use the gdrive: remote" >&2
-              exit 1
-              ;;
+            *) echo "BACKUP_GDRIVE_REMOTE must use the gdrive: remote" >&2; exit 1 ;;
+          esac
+          case "$BACKUP_B2_REMOTE" in
+            b2:*) ;;
+            *) echo "BACKUP_B2_REMOTE must use the b2: remote" >&2; exit 1 ;;
+          esac
+          case "$BACKUP_AGE_RECIPIENT" in
+            age1*) ;;
+            *) echo "BACKUP_AGE_RECIPIENT does not look like an age public recipient" >&2; exit 1 ;;
           esac
 
       - name: Install rclone
@@ -53,7 +69,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends rclone
 
-      - name: Upload, read back, verify, and delete canary
+      - name: Verify B2 read access
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          rclone lsf "$BACKUP_B2_REMOTE" --max-depth 1 >/dev/null
+          echo "PASS: GitHub Actions can read the configured Backblaze B2 backup target."
+
+      - name: Upload, read back, verify, and delete Google Drive canary
         shell: bash
         run: |
           set -Eeuo pipefail
