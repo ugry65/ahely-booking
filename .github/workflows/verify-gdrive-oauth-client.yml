@@ -40,6 +40,7 @@ jobs:
             https://oauth2.googleapis.com/token)"
 
           error="$(printf '%s' "$response" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("error", ""))')"
+          echo "Google OAuth verification error code: ${error:-<empty>}"
           if [ "$error" != "invalid_grant" ]; then
             echo "Google did not accept the configured OAuth client credential pair (expected invalid_grant for the deliberately invalid authorization code)." >&2
             exit 1
