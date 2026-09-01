@@ -65,6 +65,14 @@ supabase db dump \
   -x "storage.buckets_vectors" \
   -x "storage.vector_indexes"
 
+# The migration history data is not self-describing. Preserve the exact
+# production migration metadata schema separately so a restore is independent
+# from whatever schema a future/local Supabase CLI version happens to create.
+supabase db dump \
+  --db-url "$PRODUCTION_DB_URL" \
+  -f "$payload_dir/migration-schema.sql" \
+  --schema supabase_migrations
+
 supabase db dump \
   --db-url "$PRODUCTION_DB_URL" \
   -f "$payload_dir/migration-history.sql" \
@@ -72,7 +80,7 @@ supabase db dump \
   --data-only \
   --schema supabase_migrations
 
-for backup_file in roles.sql schema.sql data.sql migration-history.sql; do
+for backup_file in roles.sql schema.sql data.sql migration-schema.sql migration-history.sql; do
   if [ ! -s "$payload_dir/$backup_file" ]; then
     echo "Backup component is empty: $backup_file" >&2
     exit 1
@@ -109,18 +117,19 @@ fi
 
 (
   cd "$payload_dir"
-  sha256sum roles.sql schema.sql data.sql migration-history.sql control-counts.json > DATA_SHA256SUMS
+  sha256sum roles.sql schema.sql data.sql migration-schema.sql migration-history.sql control-counts.json > DATA_SHA256SUMS
 )
 
 roles_sha="$(sha256sum "$payload_dir/roles.sql" | awk '{print $1}')"
 schema_sha="$(sha256sum "$payload_dir/schema.sql" | awk '{print $1}')"
 data_sha="$(sha256sum "$payload_dir/data.sql" | awk '{print $1}')"
-migration_sha="$(sha256sum "$payload_dir/migration-history.sql" | awk '{print $1}')"
+migration_schema_sha="$(sha256sum "$payload_dir/migration-schema.sql" | awk '{print $1}')"
+migration_history_sha="$(sha256sum "$payload_dir/migration-history.sql" | awk '{print $1}')"
 control_counts_sha="$(sha256sum "$payload_dir/control-counts.json" | awk '{print $1}')"
 supabase_version="$(supabase --version | head -n 1)"
 
 jq -n \
-  --arg backupVersion "1" \
+  --arg backupVersion "2" \
   --arg utcTimestamp "$utc_timestamp" \
   --arg budapestTimestamp "$budapest_timestamp" \
   --arg gitSha "$git_sha" \
@@ -128,7 +137,8 @@ jq -n \
   --arg rolesSha256 "$roles_sha" \
   --arg schemaSha256 "$schema_sha" \
   --arg dataSha256 "$data_sha" \
-  --arg migrationHistorySha256 "$migration_sha" \
+  --arg migrationSchemaSha256 "$migration_schema_sha" \
+  --arg migrationHistorySha256 "$migration_history_sha" \
   --arg controlCountsSha256 "$control_counts_sha" \
   --slurpfile controlCounts "$payload_dir/control-counts.json" \
   '{
@@ -142,6 +152,7 @@ jq -n \
       "roles.sql": {sha256: $rolesSha256},
       "schema.sql": {sha256: $schemaSha256},
       "data.sql": {sha256: $dataSha256},
+      "migration-schema.sql": {sha256: $migrationSchemaSha256},
       "migration-history.sql": {sha256: $migrationHistorySha256},
       "control-counts.json": {sha256: $controlCountsSha256}
     }
@@ -149,7 +160,7 @@ jq -n \
 
 (
   cd "$payload_dir"
-  sha256sum roles.sql schema.sql data.sql migration-history.sql control-counts.json manifest.json > SHA256SUMS
+  sha256sum roles.sql schema.sql data.sql migration-schema.sql migration-history.sql control-counts.json manifest.json > SHA256SUMS
 )
 
 tar -czf "$plain_bundle" -C "$payload_dir" .
