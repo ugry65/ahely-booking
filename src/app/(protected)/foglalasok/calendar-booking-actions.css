@@ -5,8 +5,7 @@
 }
 
 .calendar-scroll {
-  overscroll-behavior-x: auto;
-  overscroll-behavior-y: auto;
+  overscroll-behavior: auto;
 }
 
 .desktop-app-nav {
@@ -113,15 +112,15 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
     top: 0;
     z-index: 30;
   }
-  .calendar-corner,
-  .room-heading {
-    top: auto;
+  .calendar-scroll {
+    overflow-x: auto;
+    overflow-y: clip;
+    overscroll-behavior: auto;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
   }
-  .room-heading {
-    position: relative;
-  }
-  .calendar-corner {
-    left: 0;
+  .room-timeline {
+    touch-action: auto !important;
   }
   .calendar-selection-actions-slot {
     display: none;
