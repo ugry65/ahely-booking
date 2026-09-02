@@ -4,7 +4,9 @@ Verzió: 1.0
 
 Dátum: 2026-08-18
 
-Státusz: fejlesztési baseline
+Státusz: **TÖRTÉNETI BASELINE / részben SUPERSEDED**
+
+> **Fontos 2026-09-02-i megjegyzés:** ez a dokumentum a korai backup-stratégiai kiindulópontot őrzi, de a konkrét production megoldás azóta megváltozott és tényleges restore drillel validálva lett. A backup gyakoriság, retention, célhelyek, titkosítás, artifact-formátum és restore eljárás aktuális forrásai: `docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md`, `docs/PRODUCTION_BACKUP_RESTORE_DRILL_PLAN_2026-09-01.md`, `docs/PRODUCTION_BACKUP_MONITORING_TECHNICAL_DESIGN.md`, `docs/DECISION_2026-08-31_BACKUP_RETENTION_OBJECT_LOCK.md`, valamint a `scripts/backup-production.sh` aktuális implementációja. Eltérés esetén ezek az újabb források az irányadók. A jelenlegi production backup naponta 4× fut (08/12/16/20 Europe/Budapest), Google Drive + Backblaze B2 célokra, `age` titkosítással, backupVersion 2 formátumban. A 2026-09-01-i teljes end-to-end v2 restore drill PASS.
 
 ## 1. Cél és prioritás
 
