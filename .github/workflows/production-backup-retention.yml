@@ -17,14 +17,16 @@ on:
         default: ""
         type: string
   schedule:
-    - cron: "30 21 * * *"
+    # Run in the middle of the 20:00-08:00 backup gap.
+    - cron: "0 2 * * *"
       timezone: "Europe/Budapest"
 
 permissions:
   contents: read
 
+# Shared with production backup so artifact creation and deletion can never overlap.
 concurrency:
-  group: production-backup-retention
+  group: production-backup-storage-maintenance
   cancel-in-progress: false
 
 jobs:
