@@ -2,20 +2,27 @@
 set -Eeuo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-local_db_url="${LOCAL_SUPABASE_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
-local_db_container="${LOCAL_SUPABASE_DB_CONTAINER:-supabase_db_ahely-booking}"
+source_db_url="${LOCAL_SUPABASE_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 test_root="$(mktemp -d)"
-cleanup() { rm -rf "$test_root"; }
+restore_project="$test_root/ahely-restore-ci"
+restore_stack_started=0
+
+cleanup() {
+  if [ "$restore_stack_started" -eq 1 ] && [ -d "$restore_project" ]; then
+    (cd "$restore_project" && supabase stop --no-backup >/dev/null 2>&1) || true
+  fi
+  rm -rf "$test_root"
+}
 trap cleanup EXIT
 
 for command_name in supabase psql age age-keygen sha256sum tar jq docker; do
   command -v "$command_name" >/dev/null 2>&1 || { echo "Missing required command: $command_name" >&2; exit 1; }
 done
 
-printf '%s\n' 'Resetting local Supabase before nonzero fixture...'
+printf '%s\n' 'Resetting source local Supabase before nonzero fixture...'
 supabase db reset
 
-psql "$local_db_url" -X -v ON_ERROR_STOP=1 -f "$repo_root/scripts/fixtures/nonzero-restore-fixture.sql"
+psql "$source_db_url" -X -v ON_ERROR_STOP=1 -f "$repo_root/scripts/fixtures/nonzero-restore-fixture.sql"
 
 control_counts_sql="select json_build_object(
   'auth_users', (select count(*) from auth.users),
@@ -33,7 +40,7 @@ control_counts_sql="select json_build_object(
   'settlement_booking_lines', (select count(*) from public.settlement_booking_lines)
 )"
 
-source_counts="$(psql "$local_db_url" -X -A -t -v ON_ERROR_STOP=1 -c "$control_counts_sql")"
+source_counts="$(psql "$source_db_url" -X -A -t -v ON_ERROR_STOP=1 -c "$control_counts_sql")"
 printf '%s\n' "$source_counts" | jq -e '
   .auth_users > 0 and
   .profiles > 0 and
@@ -48,7 +55,7 @@ printf '%s\n' "$source_counts" | jq -e '
   .settlement_booking_lines > 0
 ' >/dev/null || { echo "Fixture did not create all required nonzero control categories" >&2; exit 1; }
 
-source_migration_rows="$(psql "$local_db_url" -X -A -t -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
+source_migration_rows="$(psql "$source_db_url" -X -A -t -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
 
 fake_bin="$test_root/bin"
 remote_root="$test_root/remotes"
@@ -90,7 +97,7 @@ recipient="$(age-keygen -y "$key_file")"
 
 export PATH="$fake_bin:$PATH"
 export FAKE_RCLONE_ROOT="$remote_root"
-export PRODUCTION_DB_URL="$local_db_url"
+export PRODUCTION_DB_URL="$source_db_url"
 export BACKUP_AGE_RECIPIENT="$recipient"
 export BACKUP_GDRIVE_REMOTE="gdrive:nonzero-restore-test"
 export BACKUP_B2_REMOTE="b2:nonzero-restore-test"
@@ -111,15 +118,15 @@ sidecar="$artifact.sha256"
 
 plain_bundle="$test_root/restore.tar.gz"
 age --decrypt -i "$key_file" -o "$plain_bundle" "$artifact"
-restore_dir="$test_root/restore"
-mkdir -p "$restore_dir"
-tar -xzf "$plain_bundle" -C "$restore_dir"
+bundle_dir="$test_root/bundle"
+mkdir -p "$bundle_dir"
+tar -xzf "$plain_bundle" -C "$bundle_dir"
 (
-  cd "$restore_dir"
+  cd "$bundle_dir"
   sha256sum -c SHA256SUMS
 )
 
-artifact_counts="$(jq -cS . "$restore_dir/control-counts.json")"
+artifact_counts="$(jq -cS . "$bundle_dir/control-counts.json")"
 expected_counts="$(printf '%s\n' "$source_counts" | jq -cS .)"
 [ "$artifact_counts" = "$expected_counts" ] || {
   echo "Artifact control counts differ from source counts" >&2
@@ -128,34 +135,44 @@ expected_counts="$(printf '%s\n' "$source_counts" | jq -cS .)"
   exit 1
 }
 
-printf '%s\n' 'Resetting local Supabase to clean restore target...'
-supabase db reset
+# The proven 2026-09-01 drill restored into a freshly initialized Supabase
+# project with no application migrations. A repository `db reset` is NOT a
+# pristine restore target because it already creates application objects.
+printf '%s\n' 'Stopping source stack and creating pristine Supabase restore target...'
+supabase stop --no-backup
+mkdir -p "$restore_project"
+(
+  cd "$restore_project"
+  supabase init
+  supabase db start
+)
+restore_stack_started=1
 
-docker inspect "$local_db_container" >/dev/null 2>&1 || {
-  echo "Local Supabase DB container not found: $local_db_container" >&2
-  exit 1
-}
+restore_project_id="$(sed -n 's/^project_id = "\([^"]*\)"/\1/p' "$restore_project/supabase/config.toml" | head -n 1)"
+[ -n "$restore_project_id" ] || { echo "Could not determine restore project_id" >&2; exit 1; }
+restore_db_container="$(docker ps --filter "label=com.supabase.cli.project=$restore_project_id" --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+[ -n "$restore_db_container" ] || { echo "Could not find restore database container for project $restore_project_id" >&2; exit 1; }
+restore_db_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 
-# roles.sql contains cluster-level role settings that the normal local `postgres`
-# login is intentionally not allowed to change. The proven local Supabase restore
-# context uses the container's `supabase_admin` role for the complete atomic restore.
+# roles.sql contains cluster-level role settings. The complete restore therefore
+# runs inside the isolated local DB container as Supabase's local admin role.
 restore_sql="$test_root/full-restore.sql"
-cat "$restore_dir/roles.sql" > "$restore_sql"
+cat "$bundle_dir/roles.sql" > "$restore_sql"
 printf '\n' >> "$restore_sql"
-cat "$restore_dir/schema.sql" >> "$restore_sql"
+cat "$bundle_dir/schema.sql" >> "$restore_sql"
 printf '\nSET session_replication_role = replica;\n' >> "$restore_sql"
-cat "$restore_dir/data.sql" >> "$restore_sql"
+cat "$bundle_dir/data.sql" >> "$restore_sql"
 printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n' >> "$restore_sql"
-cat "$restore_dir/migration-schema.sql" >> "$restore_sql"
+cat "$bundle_dir/migration-schema.sql" >> "$restore_sql"
 printf '\n' >> "$restore_sql"
-cat "$restore_dir/migration-history.sql" >> "$restore_sql"
+cat "$bundle_dir/migration-history.sql" >> "$restore_sql"
 printf '\nSET session_replication_role = origin;\n' >> "$restore_sql"
 
-docker exec -i "$local_db_container" \
+docker exec -i "$restore_db_container" \
   psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
   < "$restore_sql"
 
-restored_counts="$(psql "$local_db_url" -X -A -t -v ON_ERROR_STOP=1 -c "$control_counts_sql")"
+restored_counts="$(psql "$restore_db_url" -X -A -t -v ON_ERROR_STOP=1 -c "$control_counts_sql")"
 actual_counts="$(printf '%s\n' "$restored_counts" | jq -cS .)"
 [ "$actual_counts" = "$expected_counts" ] || {
   echo "Restored control counts differ from source counts" >&2
@@ -164,13 +181,13 @@ actual_counts="$(printf '%s\n' "$restored_counts" | jq -cS .)"
   exit 1
 }
 
-restored_migration_rows="$(psql "$local_db_url" -X -A -t -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
+restored_migration_rows="$(psql "$restore_db_url" -X -A -t -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations')"
 [ "$restored_migration_rows" = "$source_migration_rows" ] || {
   echo "Migration history row count mismatch: source=$source_migration_rows restored=$restored_migration_rows" >&2
   exit 1
 }
 
-psql "$local_db_url" -X -v ON_ERROR_STOP=1 <<'SQL'
+psql "$restore_db_url" -X -v ON_ERROR_STOP=1 <<'SQL'
 do $$
 declare
   rls_ok boolean;
@@ -219,5 +236,10 @@ begin
 end
 $$;
 SQL
+
+(
+  cd "$restore_project"
+  supabase db lint --level warning
+)
 
 printf '%s\n' "Nonzero backup/restore sandbox drill passed: $actual_counts; migration_history_rows=$restored_migration_rows"
