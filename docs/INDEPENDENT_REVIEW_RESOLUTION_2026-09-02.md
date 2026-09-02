@@ -135,10 +135,21 @@ Ezért jelen állapotban nincs olyan automation surface, amelybe host guard ép�
 ### M6 – GitHub `production` Environment protection
 
 **Review severity:** MAJOR
-**Resolution:** ELLENŐRIZENDŐ
-**Státusz:** NYITOTT
+**Resolution:** KÉZZEL ELLENŐRIZVE ÉS SZIGORÍTVA
+**Státusz:** RESOLVED
 
-A repository kódból nem bizonyítható a GitHub Environment UI protection konfigurációja. Production GO előtt kézzel ellenőrizni kell, hogy a scheduled backup/retention nem akad el manuális approvalon, miközben a one-shot admin műveletek megfelelő kontroll alatt maradnak.
+2026-09-02-án a GitHub `production` Environment beállításait a projektgazda képernyőképpel ellenőrizte, majd a branch-hozzáférést és bypass szabályt szigorította.
+
+Aktuális állapot:
+
+- Required reviewers: OFF;
+- Wait timer: OFF;
+- Deployment branches and tags: `Selected branches and tags`;
+- engedélyezett branch: kizárólag `main`;
+- administrator bypass: OFF;
+- `SUPABASE_PRODUCTION_DB_URL` environment secretként tárolva.
+
+Ez biztosítja, hogy a scheduled production backup/retention a `main` ágon ne akadjon manuális approvalra, ugyanakkor fejlesztési/PR branch ne férjen hozzá a production environmenthez. A one-shot/admin workflow-k sem használhatják a production environmentet fejlesztési branchről.
 
 ## Egyéb findingok
 
@@ -155,8 +166,7 @@ Nyitott kritikus/major gate-ek:
 1. B1: merge után tényleges scheduled backup bizonyítás;
 2. M1: nem nulla reprezentatív adattal új restore drill;
 3. M2: post-merge daily B2 credential backup + retention dry-run bizonyítás;
-4. M6: GitHub `production` Environment protection kézi ellenőrzése;
-5. mobil UAT #98;
-6. teljes staging/UAT és végső production gate.
+4. mobil UAT #98;
+5. teljes staging/UAT és végső production gate.
 
-A B2 PR-trigger security finding (B2), OAuth security finding (B3 security része), retention race (M3) és B2 least-privilege implementáció (M2) 2026-09-02-án javítva/lezárva; M2-nél csak a post-merge működési proof marad.
+A B2 PR-trigger security finding (B2), OAuth security finding (B3 security része), retention race (M3), B2 least-privilege implementáció (M2) és GitHub production Environment protection finding (M6) 2026-09-02-án javítva/lezárva; M2-nél csak a post-merge működési proof marad.
