@@ -1,8 +1,15 @@
 # A-Hely foglalási rendszer – Production backup/restore és monitoring technikai terv
 
 Dátum: 2026-08-31
+Utolsó státuszfrissítés: 2026-09-02
 Kapcsolódó issue: #100
-Státusz: TECHNIKAI TERV – implementáció előtt
+Státusz: **RÉSZBEN IMPLEMENTÁLVA ÉS BACKUP/RESTORE OLDALON TÉNYLEGES DRILLEL VALIDÁLVA**
+
+> **Aktuális reprodukciós forrás:** `docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md`.
+>
+> **Tényleges restore bizonyíték:** `docs/PRODUCTION_BACKUP_RESTORE_DRILL_PLAN_2026-09-01.md`.
+>
+> A backup/restore rész 2026-09-01-én teljes end-to-end `backupVersion 2` restore drillel PASS. A monitoring, Object Lock, kulcspéldányok, OAuth token rotáció, független review és további production-readiness gate-ek külön még nyitottak.
 
 ## 1. Cél és biztonsági elv
 
@@ -26,14 +33,19 @@ A production go-live kapu addig zárt, amíg a backup automatizálás, a két k�
 
 Elsődleges eszköz: Supabase CLI `supabase db dump`, nem nyers `pg_dump`.
 
-Minden backup futás legalább az alábbi fájlokat hozza létre ideiglenes, runner-local könyvtárban:
+**Aktuális implementált backupVersion 2** minden futásnál legalább az alábbi fájlokat hozza létre ideiglenes, runner-local könyvtárban:
 
 1. `roles.sql` – `--role-only`;
 2. `schema.sql` – séma és adatbázis objektumok;
 3. `data.sql` – adatok `--data-only --use-copy` módban;
-4. `migration-history.sql` – `supabase_migrations` séma adatainak külön exportja, ha a fő dump nem biztosítja a szükséges visszaállítási bizonyítékot;
-5. `manifest.json` – projekt/ref, UTC és Europe/Budapest időbélyeg, Git commit SHA, Supabase CLI verzió, Postgres verzió, fájlméretek, hash-ek és backup pipeline verzió;
-6. `SHA256SUMS` – minden bundle-tag ellenőrzőösszege.
+4. `migration-schema.sql` – a production `supabase_migrations` meta-séma pontos definíciója;
+5. `migration-history.sql` – a `supabase_migrations` séma data-only history exportja;
+6. `control-counts.json` – kritikus forrásoldali táblaszámok a restore utóellenőrzéséhez;
+7. `DATA_SHA256SUMS` – adatkomponensek checksumjai;
+8. `manifest.json` – UTC/Budapest időbélyeg, Git commit SHA, Supabase CLI verzió, backup formátum verzió, control-countok és fájl-hash-ek;
+9. `SHA256SUMS` – a teljes belső payload ellenőrzőösszegei.
+
+A `migration-schema.sql` 2026-09-01-én, tényleges restore drill során feltárt v1-hiányosság miatt lett kötelező. A migration-history data-only dump önmagában nem elég, mert a production migration meta-séma eltérhet attól, amit egy local vagy későbbi Supabase CLI hoz létre.
 
 A bundle NEM tartalmazhat adatbázis-jelszót, service role kulcsot, OAuth tokent, B2 kulcsot vagy egyéb secretet.
 
@@ -61,18 +73,19 @@ Fontos: a Supabase adatbázis-backup a Storage objektumok tényleges bináris ta
 
 1. Supabase CLI dumpok létrehozása.
 2. Fájlok méretének és nem üres állapotának ellenőrzése.
-3. SHA-256 checksum generálása.
-4. Manifest készítése.
-5. Egyetlen tömörített bundle létrehozása.
-6. Bundle kliensoldali titkosítása.
-7. A titkosított artifact hash-ének rögzítése.
-8. Ugyanennek a változatlan titkosított artifactnak feltöltése Google Drive-ra és B2-re.
-9. Mindkét feltöltés utáni objektum/file metadata ellenőrzés.
-10. Sikeres heartbeat csak mindkét cél PASS után.
+3. Kritikus source control-countok lekérdezése.
+4. SHA-256 checksum generálása.
+5. Manifest készítése.
+6. Egyetlen tömörített bundle létrehozása.
+7. Bundle kliensoldali titkosítása.
+8. A titkosított artifact hash-ének rögzítése.
+9. Ugyanennek a változatlan titkosított artifactnak feltöltése Google Drive-ra és B2-re.
+10. Mindkét feltöltés utáni tényleges read-back SHA-256 ellenőrzés.
+11. Sikeres heartbeat csak mindkét cél PASS után.
 
 ### 4.2. Titkosítás
 
-Javasolt megoldás: `age` publikus kulcsos titkosítás.
+Implementált megoldás: `age` publikus kulcsos titkosítás.
 
 Előny:
 - a backup runnernek csak a publikus recipient kulcs kell;
@@ -85,89 +98,115 @@ A privát recovery kulcs legalább két, egymástól független, offline/biztons
 
 ### 5.1. Google Drive
 
-- külön backup mappa;
-- timestampes fájlnév, felülírás tiltva;
-- upload után file ID/méret/hash vagy más megfelelő integritási meta ellenőrzés;
-- jogosultság minimális szükséges scope-ra korlátozva;
-- OAuth/service credential csak secret store-ban.
+Implementált cél:
+
+- külön backup mappa: `A-Hely-Booking-Production-Backups`;
+- timestampes fájlnév;
+- `rclone` feltöltés;
+- upload utáni teljes artifact read-back és SHA-256 összevetés;
+- `.sha256` sidecar read-back összevetés;
+- minimális OAuth `drive.file` scope.
 
 ### 5.2. Backblaze B2
 
-- privát bucket;
-- külön application key minimális jogosultsággal;
-- Object Lock bekapcsolva;
-- timestampes objektumkulcs, nincs overwrite;
-- upload utáni méret/hash ellenőrzés;
-- retention implementáció csak a külön jóváhagyott retention döntés után.
+Implementált cél:
 
-Első technikai irány: Governance jellegű törlésvédelem, mert a Compliance mód visszafordíthatatlansága üzemeltetési kockázatot okozhat. A végleges Object Lock időtartam külön üzleti jóváhagyás.
+- privát bucket: `ahely-booking-production-backups`;
+- külön application key;
+- Object Lock képes bucket;
+- timestampes objektumkulcs;
+- upload utáni teljes artifact read-back és SHA-256 összevetés;
+- sidecar read-back összevetés.
+
+Jóváhagyott Object Lock cél: **Governance 30 nap**. Ennek tényleges production konfigurációja és külön bizonyítása továbbra is külön gate, ha még nincs lezárva.
 
 ## 6. Automatizálási runner
 
-Elsődleges implementációs irány: GitHub Actions scheduled workflow, mert:
-- a repo és CI már GitHubon van;
-- a Supabase hivatalosan dokumentál CLI-alapú GitHub Actions backup mintát;
-- egyszerű audit trail és futási log biztosítható.
+Implementált irány: GitHub Actions scheduled workflow.
 
-A workflow:
-- csak a jóváhagyott release/default branch verzióján fusson;
-- támogassa a kézi `workflow_dispatch` tesztet;
-- a négy időpontot Europe/Budapest szerint kezelje;
-- ne commitolja a backupot a repóba;
-- minimális GitHub permissionnel fusson;
-- minden upload/ellenőrzés fail-closed legyen;
-- ne logoljon connection stringet vagy secretet.
+A production workflow:
+- `.github/workflows/production-backup.yml`;
+- kézi `workflow_dispatch` támogatás;
+- kézi futásnál pontos `BACKUP` confirmation szükséges;
+- 08:00 / 12:00 / 16:00 / 20:00 Europe/Budapest schedule;
+- GitHub `production` environment;
+- minimális GitHub permission;
+- minden upload/ellenőrzés fail-closed;
+- secretet nem logol;
+- scheduled futásnál csak a megfelelő időablak heartbeatje kap success pinget.
 
 Megjegyzés: a hosted scheduler nem valós idejű hard-SLA. Ezért a backup freshness monitoringnak az elmaradt futást is észlelnie kell; önmagában a cron beállítás nem bizonyítja az RPO-t.
 
-## 7. Retention – döntésre előkészített ajánlás
+## 7. Retention – JÓVÁHAGYOTT AKTUÁLIS DÖNTÉS
 
-Automatikus végleges törlést a végleges jóváhagyásig nem vezetünk be.
+A korábbi „döntésre előkészített” állapotot a 2026-08-31-i döntés felülírta.
 
-Javasolt többgenerációs policy kiindulásnak:
+Aktuális retention:
+
 - 0–14 nap: mind a napi 4 restore-pont;
 - 15–90 nap: napi 1 restore-pont;
 - 3–24 hónap: havi 1 restore-pont.
 
-A B2 Object Lock minimális időtartamát úgy kell megválasztani, hogy egy hibás törlőscript vagy kompromittált credential ne tudja a rövid távú szükséges restore-pontokat eltávolítani.
+B2 Governance Object Lock cél: 30 nap, ezért B2-n a rövid távú 0–30 napos restore-pontok törlés ellen védettek legyenek.
 
-A pontos retention és Object Lock napok külön üzleti döntés; addig csak létrehozás, nem automatikus törlés implementálható.
+Részletes forrás: `docs/DECISION_2026-08-31_BACKUP_RETENTION_OBJECT_LOCK.md`.
 
-## 8. Restore runbook
+## 8. Restore runbook – IMPLEMENTÁLT ÉS VALIDÁLT
 
-A restore folyamat külön script/runbook legyen, és alapértelmezetten NEM célozhat production adatbázist.
+Elsődleges reprodukciós forrás:
 
-Minimum folyamat:
-1. kiválasztott backup objektum azonosítása;
-2. GDrive vagy B2 letöltés;
-3. titkosított artifact SHA-256 ellenőrzése;
-4. `age` decrypt offline/recovery kulccsal;
-5. belső `SHA256SUMS` ellenőrzése;
-6. új/izolált Supabase projekt vagy sandbox előkészítése;
-7. roles/schema/data visszaállítása egyértelmű hibakezeléssel és `ON_ERROR_STOP` használattal;
-8. szükséges platform/Auth konfiguráció helyreállítása;
-9. migration status ellenőrzése;
-10. konzisztencia tesztcsomag futtatása.
+`docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md`
+
+A tényleges 2026-09-01-i drill jegyzőkönyve:
+
+`docs/PRODUCTION_BACKUP_RESTORE_DRILL_PLAN_2026-09-01.md`
+
+A tényleges drill legfontosabb megállapításai:
+
+- sima `postgres:17` konténer nem tekinthető elegendő Supabase restore célkörnyezetnek;
+- platform-kompatibilis local Supabase stack szükséges;
+- a v1 migration-history data-only formátum hiányos volt;
+- backupVersion 2 külön `migration-schema.sql` komponenssel javította ezt;
+- tiszta local Supabase reset után ugyanabból a v2 artifactból `roles.sql + schema.sql + data.sql + migration-schema.sql + migration-history.sql` egy tranzakcióban sikeresen visszaállt;
+- source business control-countok és restore utáni control-countok egyeztek;
+- migration history `COPY 42`, utóellenőrzés 42 sor.
+
+Bizonyító v2 run:
+
+- GitHub Actions run: `33558905620`;
+- artifact: `ahely-booking-production_20260901T210519Z_d71300fa8a56.tar.gz.age`;
+- GDrive read-back hash: PASS;
+- B2 read-back hash: PASS;
+- encrypted local hash: PASS;
+- belső checksumok: PASS;
+- end-to-end restore: PASS.
 
 ### 8.1. Restore acceptance tesztek
 
-Legalább:
-- felhasználók/Auth adatok léteznek;
+Minimum:
+- encrypted artifact checksum PASS;
+- decrypt PASS;
+- minden belső checksum PASS;
+- platform-kompatibilis izolált local Supabase stack;
+- teljes restore `ON_ERROR_STOP=1` mellett;
+- lehetőség szerint egyetlen tranzakció;
+- felhasználók/Auth adatok léteznek és source control-counttal egyeznek;
 - profile ↔ auth user kapcsolat konzisztens;
 - room és user-room jogosultságok helyesek;
 - aktív/törölt booking darabszámok és kulcsmezők egyeznek;
 - booking series és occurrence kapcsolatok helyesek;
-- audit log rekordok megvannak és immutabilitási szabályok élnek;
+- audit log rekordok megvannak;
 - pricing konfiguráció és effective period adatok helyesek;
 - havi settlement snapshot/revision adatok konzisztensen visszaálltak;
 - kritikus DB függvények/triggerek/RLS szabályok jelen vannak;
-- overlap/concurrency védelem regresszióteszt PASS.
+- overlap/concurrency védelem regresszióteszt PASS;
+- migration schema/history konzisztens.
 
-A restore drill eredménye külön jegyzőkönyvbe kerül, backup timestamp + source hash + target project + teszteredmények megjelölésével.
+A 2026-09-01-i production adatállapotban a tényleges nem nulla business kontroll `rooms=11` volt; user/booking/audit/settlement kontrollok 0-k voltak. Éles nem nulla üzleti adatok megjelenése után a drillt meg kell ismételni valós booking/settlement adatokkal is.
 
 ## 9. Teljes rendszer health endpoint
 
-Javasolt endpoint: `GET /api/health`.
+Javasolt/implementált endpoint: `GET /api/health`.
 
 Publikus válasz minimális legyen, például:
 - `status: ok|degraded|down`;
@@ -199,11 +238,11 @@ Minimum monitorok:
 6. B2 target success;
 7. lehetőség szerint SSL/domain expiry.
 
-Költségérzékeny első irány:
+Aktuális setup irány:
 - UptimeRobot Free: külső HTTP/HTTPS health/uptime monitor;
-- külön cron/heartbeat szolgáltatás vagy a választott monitor heartbeat funkciója a backup pipeline számára.
+- Healthchecks.io: négy külön backup heartbeat check (08/12/16/20).
 
-A végleges szolgáltató kiválasztásnál üzleti használhatóság, alert csatornák és megbízhatóság elsőbbséget élvez a kényelmi funkciókkal szemben.
+A végleges monitoring acceptance drill még külön lezárandó production gate.
 
 ## 11. Alerting
 
@@ -232,50 +271,62 @@ Production előtt kontrolláltan bizonyítani kell:
 5. egyik backup target hibája degraded/failed állapotot generál;
 6. alert ténylegesen eljut az üzemeltetőhöz.
 
-## 13. Implementációs bontás
+## 13. Implementációs állapot 2026-09-02
 
 ### Fázis A – backup mag
-- backup script;
-- manifest/checksum;
-- `age` encryption;
-- lokális/sandbox teszt.
+- backup script: KÉSZ;
+- manifest/checksum: KÉSZ;
+- `age` encryption: KÉSZ;
+- lokális/sandbox teszt: PASS.
 
 ### Fázis B – két célhely
-- Google Drive upload + verify;
-- B2 upload + verify;
-- Object Lock konfiguráció ellenőrzés;
-- részleges hibák fail-closed kezelése.
+- Google Drive upload + verify: PASS;
+- B2 upload + verify: PASS;
+- Object Lock konfiguráció: külön még bizonyítandó;
+- részleges hibák fail-closed kezelése: tesztelve.
 
 ### Fázis C – scheduler/heartbeat
-- GitHub Actions 08/12/16/20;
-- manual run;
-- heartbeat success/failure;
-- missed-backup alert.
+- GitHub Actions 08/12/16/20: implementálva;
+- manual run: implementálva;
+- heartbeat secret/setup: implementálva;
+- kontrollált missed-backup alert drill: még nyitott.
 
 ### Fázis D – restore
-- restore script/runbook;
-- isolated restore;
-- adat- és regresszió-ellenőrzés;
-- restore jegyzőkönyv.
+- reprodukálható runbook: KÉSZ;
+- izolált restore: TELJES PASS;
+- business control-count ellenőrzés: PASS;
+- migration-meta restore: PASS;
+- nem nulla production booking/settlement adatokkal ismételt későbbi drill: szükséges, amikor lesz ilyen adat.
 
 ### Fázis E – app monitoring
-- `/api/health`;
-- külső uptime monitor;
-- alert/recovery;
-- kontrollált failure drill.
+- `/api/health`: implementálva;
+- külső uptime monitor: setup elkezdve/konfigurálva;
+- alert/recovery kontrollált drill: még nyitott.
 
 ### Fázis F – független review
-- backup/restore stratégia;
-- secret kezelés;
-- Object Lock/retention;
-- monitoring failure modes;
-- production go/no-go checklist.
+- #104 független review: még kötelező.
 
-## 14. Nem része ennek a branchnek
+## 14. Nem production-ready gate-ek
 
-- `main` merge;
-- production deploy;
-- production DB módosítása;
-- production credential létrehozása vagy rotációja;
-- végleges retention-törlés bevezetése jóváhagyás nélkül;
-- a nyitott mobil UAT-hiba elfogadottnak minősítése.
+A backup/restore TELJES PASS önmagában nem jelent production GO-t.
+
+Még külön lezárandó többek között:
+
+- B2 Governance Object Lock 30 nap tényleges konfiguráció és bizonyítás;
+- `age` recovery private key két független offline/biztonságos példánya;
+- Google Drive OAuth refresh token rotációja a korábbi képernyőkép-expozíció miatt;
+- monitoring alert/recovery kontrollált drill;
+- #104 független review;
+- mobil UAT #98;
+- teljes staging/UAT és production gate ellenőrzés.
+
+## 15. Dokumentációs szabály
+
+Backup artifact-formátum, restore sorrend, titkosítás, célhely, retention vagy control-count változtatásakor kötelező frissíteni:
+
+- ezt a technikai dokumentumot;
+- `docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md`;
+- szükség esetén új restore-drill jegyzőkönyvet;
+- PR/issue státuszt.
+
+A cél, hogy egy későbbi beszélgetés a chat-előzmények nélkül, kizárólag a repository aktuális dokumentumaiból reprodukálni tudja a folyamatot.
