@@ -44,9 +44,11 @@ jobs:
       RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
       RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
 
+      # Daily backup uses a separate bucket-restricted B2 key. The elevated
+      # Object Lock administration credential is intentionally not available here.
       RCLONE_CONFIG_B2_TYPE: b2
-      RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_ACCOUNT_ID }}
-      RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
+      RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_DAILY_ACCOUNT_ID }}
+      RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_DAILY_APPLICATION_KEY }}
 
       HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
       HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
