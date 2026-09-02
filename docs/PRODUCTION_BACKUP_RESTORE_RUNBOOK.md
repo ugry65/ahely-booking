@@ -132,7 +132,7 @@ A 2026-09-01-i drill alatt a privát kulcs Windows gépen ezen a helyen volt:
 
 Ez útvonal csak a drill gép aktuális helye, nem kötelező jövőbeli szabvány.
 
-Production-ready állapot előtt a recovery private key legalább **két egymástól független, a tulajdonos által kontrollált példányban** legyen megőrizve. Az elfogadott 2026-09-02-i megoldás:
+Production-ready állapot előtt a recovery private key legalább **két egymástól független, a tulajdonos által kontrollált példányban** legyen megőrizve. A 2026-09-02-i elfogadott megoldás:
 
 1. egy példány a tulajdonos saját NAS rendszerén;
 2. egy második példány ettől független másik meghajtón.
@@ -354,27 +354,618 @@ Bizonyított:
 - Google Drive read-back SHA-256 PASS;
 - Backblaze B2 upload PASS;
 - Backblaze B2 read-back SHA-256 PASS;
-- ugyanaz a titkosított artifact került mindkét célhelyre;
-- restore drill során külső és belső checksum PASS;
-- tiszta local Supabase környezetből end-to-end restore PASS;
-- végső kontroll: `rooms=11`, minden további rögzített üzleti kontroll 0, `migration_history_rows=42`.
+- ugyanaz a titkosított artifact volt mindkét célon.
 
-## 10. Monitoring és Object Lock bizonyítékok
+Ez a konkrét artifact lett a teljes v2 restore drill forrása.
 
-- B2 Object Lock: Governance / 30 nap, B2 API-val bizonyított 2026-09-02-án.
-- Healthchecks.io backup heartbeat alert + recovery drill: PASS 2026-09-02-án.
-- Kontrollált failure jelzés után DOWN e-mail megérkezett.
-- 45 másodperces várakozás után recovery ping és UP e-mail megérkezett.
-- A drill nem érintette a production adatbázist vagy a backup artifactokat.
+---
 
-## 11. Production-ready előtt még kötelező
+## 10. Restore környezet – követelmény
 
-- a recovery private key két független példányának megőrzése a `docs/DECISION_2026-09-02_AGE_RECOVERY_KEY_CUSTODY.md` szerint;
-- a korábban képernyőképen megjelent Google Drive OAuth refresh token rotációja;
-- #104 független review lezárása;
-- mobil UAT #98 lezárása;
-- teljes staging/UAT és production gate ellenőrzés.
+Restore drillhez **nem elegendő egy sima `postgres:17` Docker image**.
 
-## 12. Gate
+A tényleges drill bizonyította, hogy a Supabase platform-specifikus szerepkörök, Auth séma és extensionök miatt platform-kompatibilis Supabase local stack szükséges.
 
-A backup/restore és heartbeat monitoring technikailag bizonyított, de a rendszer ettől még nem production-ready. Nincs automatikus `main` merge és nincs production deploy.
+A sikeres drill környezetében:
+
+- Docker CLI: `29.7.2`;
+- Docker Desktop + WSL2;
+- Supabase CLI: `2.116.0`;
+- local Supabase PostgreSQL image: `ghcr.io/supabase/postgres:17.6.1.165`;
+- rclone: `1.75.0`;
+- age: `1.3.1`;
+- Node: `v24.18.0`.
+
+Ezek a bizonyított drill verziók. Jövőbeli restore-nál eltérő verzió használható, de eltérés esetén kompatibilitást újra bizonyítani kell.
+
+---
+
+## 11. Windows előfeltételek – reprodukció
+
+A 2026-09-01-i drill Windows PowerShellből történt.
+
+Szükséges:
+
+- Docker Desktop;
+- működő WSL2;
+- Node/npm;
+- Supabase CLI (`npx.cmd supabase` használható);
+- rclone;
+- age;
+- recovery private key helyben.
+
+### 11.1. Docker Desktop
+
+Telepítéshez a drill során használt parancs:
+
+```powershell
+winget install -e --id Docker.DockerDesktop
+```
+
+Ha Docker Desktop azt jelzi, hogy a WSL túl régi:
+
+```powershell
+wsl --update
+```
+
+Ezután Docker Desktop újraindítás szükséges lehet.
+
+Ellenőrzés:
+
+```powershell
+docker --version
+docker info
+```
+
+### 11.2. Supabase CLI PowerShell alatt
+
+A gépen a PowerShell execution policy miatt az `npx` `.ps1` wrapper tiltva volt. A működő megoldás:
+
+```powershell
+npx.cmd supabase --version
+```
+
+A drill során ez `2.116.0` verziót adott.
+
+---
+
+## 12. Izolált local Supabase stack létrehozása
+
+Hozz létre külön restore könyvtárat:
+
+```powershell
+$local = "$HOME\Documents\ahely-supabase-restore"
+New-Item -ItemType Directory -Force $local | Out-Null
+Set-Location $local
+```
+
+Inicializálás:
+
+```powershell
+npx.cmd supabase init
+```
+
+Indítás:
+
+```powershell
+npx.cmd supabase start
+```
+
+A sikeres indulás megjeleníti többek között a local Project URL-t, Database URL-t és Studio URL-t.
+
+A local kulcsok fejlesztői kulcsok, de nem szükséges őket dokumentációba vagy chatbe másolni.
+
+Konténernév ellenőrzése:
+
+```powershell
+docker ps --format "table {{.Names}}\t{{.Image}}" | Select-String "supabase_db"
+```
+
+A drillben a konténer neve:
+
+`supabase_db_ahely-supabase-restore`
+
+A jövőben a név a könyvtár/projekt nevétől függhet.
+
+---
+
+## 13. Platform-kompatibilitás előellenőrzés
+
+Ajánlott ellenőrzés restore előtt.
+
+Auth audit tábla:
+
+```powershell
+docker exec supabase_db_ahely-supabase-restore `
+  psql -U postgres -d postgres `
+  -c "select ordinal_position, column_name, data_type from information_schema.columns where table_schema='auth' and table_name='audit_log_entries' order by ordinal_position;"
+```
+
+A 2026-09-01-i kompatibilis stackben szerepelt az `ip_address` oszlop.
+
+Supabase role-ok:
+
+```powershell
+docker exec supabase_db_ahely-supabase-restore `
+  psql -U postgres -d postgres `
+  -c "select rolname, rolsuper, rolcanlogin from pg_roles where rolname in ('supabase_admin','supabase_realtime_admin') order by rolname;"
+```
+
+Elvárt: mindkét role létezzen.
+
+---
+
+## 14. Restore artifact letöltése Google Drive-ról
+
+A drill gépen a helyi rclone remote neve `gdrive2:` volt.
+
+Remote-ok ellenőrzése:
+
+```powershell
+rclone listremotes
+```
+
+Backup lista:
+
+```powershell
+rclone lsf gdrive2:A-Hely-Booking-Production-Backups
+```
+
+Általános változók:
+
+```powershell
+$dir = "$HOME\Documents\ahely-restore-drill"
+New-Item -ItemType Directory -Force $dir | Out-Null
+$artifactName = "<KIVALASZTOTT_ARTIFACT>.tar.gz.age"
+```
+
+Artifact letöltés:
+
+```powershell
+rclone copyto `
+  "gdrive2:A-Hely-Booking-Production-Backups/$artifactName" `
+  "$dir\$artifactName"
+```
+
+Sidecar letöltés:
+
+```powershell
+rclone copyto `
+  "gdrive2:A-Hely-Booking-Production-Backups/$artifactName.sha256" `
+  "$dir\$artifactName.sha256"
+```
+
+A bizonyító drill konkrét fájlja:
+
+`ahely-booking-production_20260901T210519Z_d71300fa8a56.tar.gz.age`
+
+---
+
+## 15. Külső encrypted artifact integritásellenőrzése
+
+```powershell
+$artifact = Join-Path $dir $artifactName
+$sidecar = Join-Path $dir "$artifactName.sha256"
+
+$expected = (Get-Content $sidecar).Split()[0].Trim().ToLower()
+$actual = (Get-FileHash $artifact -Algorithm SHA256).Hash.ToLower()
+
+"Expected: $expected"
+"Actual:   $actual"
+"Match:    $($expected -eq $actual)"
+```
+
+PASS feltétel:
+
+`Match: True`
+
+Ha `False`, **STOP**. Ne decryptelj és ne restore-olj sérült artifactból.
+
+---
+
+## 16. Decrypt
+
+Példa:
+
+```powershell
+$key = "$HOME\Documents\ahely-backup-age-key.txt"
+$output = Join-Path $dir ($artifactName -replace '\.age$','')
+
+age --decrypt -i $key -o $output $artifact
+```
+
+A private key tartalmát nem szabad terminálba kiíratni vagy megosztani.
+
+---
+
+## 17. Bundle kibontása
+
+```powershell
+$extract = Join-Path $dir "extracted-v2"
+New-Item -ItemType Directory -Force $extract | Out-Null
+
+tar -xzf $output -C $extract
+Get-ChildItem $extract
+```
+
+BackupVersion 2 esetén kötelezően jelen legyen legalább:
+
+- `roles.sql`
+- `schema.sql`
+- `data.sql`
+- `migration-schema.sql`
+- `migration-history.sql`
+- `control-counts.json`
+- `manifest.json`
+- `SHA256SUMS`
+
+---
+
+## 18. Belső checksum ellenőrzés
+
+PowerShell:
+
+```powershell
+Get-Content (Join-Path $extract "SHA256SUMS") | ForEach-Object {
+    if ($_ -match '^([0-9a-fA-F]{64})\s+\*?(.+)$') {
+        $expected = $matches[1].ToLower()
+        $file = $matches[2].Trim()
+        $path = Join-Path $extract $file
+        $actual = (Get-FileHash $path -Algorithm SHA256).Hash.ToLower()
+
+        if ($expected -eq $actual) {
+            "PASS  $file"
+        } else {
+            "FAIL  $file"
+        }
+    }
+}
+```
+
+Minden felsorolt komponensnek `PASS` eredményt kell adnia.
+
+Bármely `FAIL` esetén **STOP**.
+
+---
+
+## 19. Fontos történeti finding – miért lett backupVersion 2
+
+A v1 bundle tartalmazott `migration-history.sql` fájlt, de nem tartalmazta a production `supabase_migrations` séma definícióját.
+
+A v1 restore során kiderült:
+
+- a production `schema_migrations` history adat 6 mezőt használt:
+  - `version`
+  - `statements`
+  - `name`
+  - `created_by`
+  - `idempotency_key`
+  - `rollback`
+- a friss local Supabase CLI által létrehozott alap `schema_migrations` tábla csak 3 mezős volt:
+  - `version`
+  - `statements`
+  - `name`
+
+Következmény: a data-only migration-history dump nem volt önállóan visszaállítható.
+
+Javítás:
+
+- backupVersion 2 bevezetése;
+- új `migration-schema.sql` komponens;
+- checksum/manifest frissítése;
+- restore során production-kori migration séma visszaállítása a history előtt.
+
+Ez a finding a restore drill egyik legfontosabb eredménye.
+
+---
+
+## 20. Egyszeri hibakeresési lépések – NEM részei a normál runbooknak
+
+A 2026-09-01-i vizsgálat alatt több diagnosztikai kerülőút történt. Ezeket **nem kell normál restore-nál megismételni**:
+
+- sima `postgres:17` konténer próbája;
+- kézi `supabase_migrations` struktúra találgatása;
+- `00000000000000_restore_init.sql` placeholder migration létrehozása;
+- `supabase migration repair` kísérlet;
+- placeholder history tábla létrehozása csak a CLI aktuális struktúrájának megfigyeléséhez.
+
+Ezek diagnosztikai lépések voltak a v1 hiányosság okának azonosítására.
+
+A normál v2 restore ezeket **nem igényli**.
+
+---
+
+## 21. Tiszta restore drill előkészítése
+
+Ha korábbi teszt futott ugyanabban a local Supabase projektben:
+
+```powershell
+npx.cmd supabase db reset --local
+```
+
+A tiszta drillben a `supabase/migrations` könyvtárban ne legyen diagnosztikai placeholder migration.
+
+A 2026-09-01-i végső bizonyító futás előtt a korábban létrehozott placeholder fájlt eltávolítottuk, majd újra `db reset --local` futott.
+
+A tiszta reset után nem jelent meg többé:
+
+`Applying migration 00000000000000_restore_init.sql`
+
+---
+
+## 22. V2 restore fájlok bemásolása a DB konténerbe
+
+```powershell
+$extract = "$HOME\Documents\ahely-restore-drill\extracted-v2"
+$dbContainer = "supabase_db_ahely-supabase-restore"
+
+docker cp "$extract\roles.sql" "$dbContainer`:/tmp/roles.sql"
+docker cp "$extract\schema.sql" "$dbContainer`:/tmp/schema.sql"
+docker cp "$extract\data.sql" "$dbContainer`:/tmp/data.sql"
+docker cp "$extract\migration-schema.sql" "$dbContainer`:/tmp/migration-schema.sql"
+docker cp "$extract\migration-history.sql" "$dbContainer`:/tmp/migration-history.sql"
+```
+
+Ha a local projekt neve eltér, a `$dbContainer` értékét a `docker ps` alapján módosítani kell.
+
+---
+
+## 23. Teljes end-to-end v2 restore – bizonyított parancs
+
+A sikeres 2026-09-01-i végső restore egyetlen tranzakcióban futott:
+
+```powershell
+docker exec supabase_db_ahely-supabase-restore `
+  psql `
+  -U supabase_admin `
+  -d postgres `
+  --single-transaction `
+  --variable ON_ERROR_STOP=1 `
+  --file /tmp/roles.sql `
+  --file /tmp/schema.sql `
+  --command "SET session_replication_role = replica" `
+  --file /tmp/data.sql `
+  --command "SET session_replication_role = origin" `
+  --command "DROP SCHEMA IF EXISTS supabase_migrations CASCADE" `
+  --file /tmp/migration-schema.sql `
+  --command "SET session_replication_role = replica" `
+  --file /tmp/migration-history.sql `
+  --command "SET session_replication_role = origin"
+```
+
+### Miért így?
+
+`--single-transaction`
+
+- a teljes restore egy tranzakció;
+- hiba esetén nincs elfogadható félkész állapot.
+
+`ON_ERROR_STOP=1`
+
+- az első SQL hibánál a `psql` megáll.
+
+`session_replication_role = replica`
+
+- data/history betöltés alatt szükséges trigger/replication viselkedés kontrollálására.
+
+`DROP SCHEMA IF EXISTS supabase_migrations CASCADE`
+
+- biztosítja, hogy egy local/future CLI által esetleg létrehozott eltérő migration-meta tábla ne akadályozza a production-kori séma visszaállítását;
+- ugyanabban a tranzakcióban történik, ezért hiba esetén rollbackel.
+
+`migration-schema.sql` a `migration-history.sql` előtt
+
+- a history pontos production-kori struktúrába töltődik.
+
+---
+
+## 24. Forrás kontrollszámok megtekintése
+
+A restore előtt/után a bundle-ben lévő forrásértékek:
+
+```powershell
+Get-Content "$extract\control-counts.json"
+```
+
+A 2026-09-01-i bizonyító production állapot:
+
+- `auth_users`: 0
+- `profiles`: 0
+- `rooms`: 11
+- `user_room_permissions`: 0
+- `booking_series`: 0
+- `bookings_total`: 0
+- `bookings_active`: 0
+- `bookings_cancelled`: 0
+- `booking_cancellations`: 0
+- `audit_logs`: 0
+- `monthly_settlements`: 0
+- `settlement_revisions`: 0
+- `settlement_booking_lines`: 0
+
+Ezek **nem általános elvárt konstansok**. Jövőbeli restore-nál mindig az adott artifact `control-counts.json` értékei az elvártak.
+
+---
+
+## 25. Restore utáni kontroll lekérdezés
+
+A bizonyított ellenőrző lekérdezés:
+
+```powershell
+docker exec supabase_db_ahely-supabase-restore `
+  psql -U supabase_admin -d postgres -A -t `
+  -c "select json_build_object(
+    'auth_users', (select count(*) from auth.users),
+    'profiles', (select count(*) from public.profiles),
+    'rooms', (select count(*) from public.rooms),
+    'user_room_permissions', (select count(*) from public.user_room_permissions),
+    'booking_series', (select count(*) from public.booking_series),
+    'bookings_total', (select count(*) from public.bookings),
+    'bookings_active', (select count(*) from public.bookings where status='active'),
+    'bookings_cancelled', (select count(*) from public.bookings where status='cancelled'),
+    'booking_cancellations', (select count(*) from public.booking_cancellations),
+    'audit_logs', (select count(*) from public.audit_logs),
+    'monthly_settlements', (select count(*) from public.monthly_settlements),
+    'settlement_revisions', (select count(*) from public.settlement_revisions),
+    'settlement_booking_lines', (select count(*) from public.settlement_booking_lines),
+    'migration_history_rows', (select count(*) from supabase_migrations.schema_migrations)
+  );"
+```
+
+A business kontrollokat az artifact `control-counts.json` fájljával kell összevetni.
+
+A migration history sorainak számát a restore output (`COPY N`) és az utólagos DB count együtt bizonyítja.
+
+---
+
+## 26. 2026-09-01 teljes end-to-end v2 PASS bizonyíték
+
+A tiszta local Supabase reset után ugyanabból a v2 artifactból visszaállt:
+
+- `roles.sql`: PASS;
+- `schema.sql`: PASS;
+- `data.sql`: PASS;
+- `migration-schema.sql`: PASS;
+- `migration-history.sql`: PASS.
+
+Migration history betöltés:
+
+`COPY 42`
+
+Utóellenőrzés:
+
+`migration_history_rows = 42`
+
+Végső business kontroll:
+
+- `rooms = 11`;
+- minden további, a source artifactban rögzített business kontroll = 0.
+
+Ez pontosan egyezett a v2 artifact forrásoldali kontrolladataival.
+
+**Eredmény: TELJES END-TO-END V2 RESTORE DRILL PASS a 2026-09-01-i production adatállapoton.**
+
+---
+
+## 27. PASS / FAIL döntési szabály
+
+Restore PASS csak akkor mondható ki, ha egyszerre teljesül:
+
+1. az encrypted artifact sidecar SHA-256 egyezik;
+2. az `age` decrypt sikeres;
+3. minden belső `SHA256SUMS` PASS;
+4. platform-kompatibilis izolált Supabase környezetet használunk;
+5. a teljes restore `ON_ERROR_STOP=1` mellett hiba nélkül fut;
+6. nincs részleges restore;
+7. minden business control-count egyezik az artifact `control-counts.json` értékével;
+8. migration schema restore sikeres;
+9. migration history restore sikeres;
+10. migration history utóellenőrzés konzisztens.
+
+Bármely eltérés esetén az eredmény FAIL vagy INVESTIGATE, nem PASS.
+
+---
+
+## 28. Restore drill korlátja – jelenlegi production adatok
+
+A bizonyító drill idején productionben:
+
+- 11 room volt;
+- user = 0;
+- booking = 0;
+- audit = 0;
+- settlement = 0.
+
+Ez bizonyítja a technikai restore-láncot és a nem üres room adatok visszaállítását, de nem bizonyít még valós, nem nulla foglalási/pénzügyi adatokon végzett helyreállítást.
+
+Amint productionben tényleges üzleti adatok vannak, célszerű és production üzemeltetésben negyedévente kötelező megismételni a drillt, különösen nem nulla:
+
+- Auth user;
+- profile;
+- booking;
+- cancelled booking;
+- audit log;
+- settlement/revision adatokkal.
+
+---
+
+## 29. A restore után ajánlott további alkalmazási tesztek
+
+Az egyszerű count-egyezésen túl éles adatokkal végzett későbbi drillnél kötelezően vagy erősen ajánlott:
+
+- Auth user ↔ profile kapcsolatok ellenőrzése;
+- room permission mintavétel;
+- aktív és törölt booking rekordok mintavételes összevetése;
+- booking overlap DB constraint ellenőrzése;
+- RLS státuszok;
+- kritikus RPC-k;
+- audit trigger/immutabilitás;
+- pricing konfiguráció;
+- havi settlement snapshot/revision;
+- alkalmazási smoke teszt a restaurált DB ellen.
+
+---
+
+## 30. Cleanup local drill után
+
+A local restore környezet csak tesztkörnyezet.
+
+Ha már nincs rá szükség:
+
+```powershell
+Set-Location "$HOME\Documents\ahely-supabase-restore"
+npx.cmd supabase stop
+```
+
+Ha az izolált környezetet végleg törölni akarjuk, előtte ellenőrizni kell, hogy nincs benne egyetlen szükséges bizonyíték vagy lokálisan egyedüli recovery fájl sem.
+
+A recovery private key törlése **nem** része a cleanupnak.
+
+---
+
+## 31. Ismert még nyitott production gate-ek
+
+A teljes restore PASS nem jelenti azt, hogy a teljes infrastruktúra production-ready.
+
+2026-09-02-án már lezárt és bizonyított:
+
+- B2 Governance Object Lock 30 nap: PASS, B2 API-val igazolva;
+- monitoring alert + recovery kontrollált drill: PASS, DOWN és UP e-mail kézbesítéssel igazolva.
+
+Még külön lezárandó:
+
+- recovery private key két független példánya a `docs/DECISION_2026-09-02_AGE_RECOVERY_KEY_CUSTODY.md` szerint;
+- Google Drive OAuth token rotáció;
+- #104 független review;
+- mobil UAT #98;
+- teljes staging/UAT és production readiness ellenőrzés.
+
+---
+
+## 32. Reprodukciós gyorslista
+
+Ha egy jövőbeli beszélgetésben a restore-t újra kell futtatni, a minimális sorrend:
+
+1. olvasd el ezt a runbookot;
+2. ellenőrizd a legfrissebb `scripts/backup-production.sh` kódot;
+3. válassz v2 vagy újabb backup artifactot;
+4. izolált Supabase local/sandbox környezet;
+5. artifact + sidecar letöltés;
+6. encrypted SHA-256 ellenőrzés;
+7. `age` decrypt;
+8. belső SHA-256 ellenőrzés;
+9. tiszta DB reset;
+10. öt SQL komponens bemásolása;
+11. teljes tranzakciós restore;
+12. business control-count összevetés;
+13. migration history ellenőrzés;
+14. dokumentáld a run/artifact/hash/eredményt;
+15. csak minden egyezés után PASS.
+
+---
+
+## 33. Dokumentációs változtatási szabály
+
+Ha a backup artifact formátuma, a backup célhely, a titkosítás, a restore sorrend, a control-count lista vagy a retention változik, ezt a dokumentumot ugyanabban a fejlesztési szeletben frissíteni kell.
+
+A runbook célja, hogy a következő restore ne korábbi chat-emlékezetből, hanem ellenőrizhető projektforrásból legyen végrehajtható.
