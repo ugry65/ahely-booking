@@ -1,0 +1,91 @@
+name: Package functional reimplementation docs
+
+on:
+  push:
+    branches:
+      - infra/100-backup-monitoring
+    paths:
+      - .github/workflows/package-functional-reimplementation-docs.yml
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build functional documentation bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="A-Hely_Functional_Reimplementation_Docs"
+          mkdir -p "$out/docs"
+
+          files=(
+            "docs/CURRENT_FUNCTIONAL_BASELINE.md"
+            "A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md"
+            "docs/BOOKING_UI_UX_BASELINE.md"
+            "docs/skedda-mobile-calendar-ux.md"
+            "docs/ADMIN_USER_MANAGEMENT.md"
+            "docs/ADMIN_REPORTING_RULES.md"
+            "docs/PRICING_MODES.md"
+            "docs/SERIES_SCOPE_SEMANTICS.md"
+            "docs/RECURRING_PERMISSION_RULES.md"
+            "docs/ACCESS_AND_REPEAT_DECISIONS_2026-08-22.md"
+            "docs/DECISION_2026-08-25_FINANCIAL_SCOPE_AND_TRAINING_GROUP_RATE.md"
+            "docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md"
+            "docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md"
+            "docs/FUNKCIONALIS_UAT_CHECKLIST.md"
+          )
+
+          for f in "${files[@]}"; do
+            test -f "$f" || { echo "Missing required document: $f" >&2; exit 1; }
+            if [[ "$f" == docs/* ]]; then
+              cp "$f" "$out/docs/"
+            else
+              cp "$f" "$out/"
+            fi
+          done
+
+          cat > "$out/README_FIRST.md" <<'EOF'
+          # A-Hely – Funkcionális újraimplementálási dokumentumcsomag
+
+          ## Cél
+          Ez a csomag az A-Hely foglalási rendszer üzleti, funkcionális, jogosultsági és UI/UX működésének újraimplementálásához készült. Szándékosan nem tartalmazza a jelenlegi hosting-, deployment-, backup-, monitoring- vagy konkrét technológiai architektúrát, mert egy későbbi újraimplementáció más technológiával is készülhet.
+
+          ## Olvasási sorrend AI / új fejlesztő számára
+          1. `docs/CURRENT_FUNCTIONAL_BASELINE.md` – elsődleges kanonikus as-built és újraimplementálási specifikáció.
+          2. `A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md` – döntési kontextus, superseded források, scope és aktuális állapot.
+          3. `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` – kötelező desktop/mobil UX viselkedés.
+          4. `docs/ADMIN_USER_MANAGEMENT.md` – admin és user életciklus/jogosultságok.
+          5. `docs/ADMIN_REPORTING_RULES.md` – admin riportok és exportok.
+          6. `docs/PRICING_MODES.md` – Sávos / Progresszív / Fix / Free díjazás és precedencia.
+          7. `docs/SERIES_SCOPE_SEMANTICS.md`, `docs/RECURRING_PERMISSION_RULES.md`, `docs/ACCESS_AND_REPEAT_DECISIONS_2026-08-22.md` – ismétlődő foglalások, scope és repeat jogosultság.
+          8. `docs/DECISION_2026-08-25_FINANCIAL_SCOPE_AND_TRAINING_GROUP_RATE.md` – pénzügyi scope és Tréningterem csoportos díj.
+          9. `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` és `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md` – véglegesített review-döntések.
+          10. `docs/FUNKCIONALIS_UAT_CHECKLIST.md` – funkcionális acceptance/regressziós ellenőrzési lista.
+
+          ## Forrásprioritás
+          Üzleti/funkcionális eltérés esetén a frissebb explicit döntés és a `CURRENT_FUNCTIONAL_BASELINE.md` az irányadó. A régi `A-Hely_Foglalasi_Rendszer_Funkcionalis_Specifikacio_v1.0.docx` történeti/SUPERSEDED forrás, ezért nincs ebben a csomagban.
+
+          ## Amit ez a csomag szándékosan NEM tartalmaz
+          - Next.js/Supabase mint kötelező technológiai választás;
+          - deployment/hosting architektúra;
+          - production backup/restore implementáció;
+          - monitoring szolgáltatók és workflow-k;
+          - konkrét GitHub Actions infrastruktúra.
+
+          Az új rendszer technikai architektúrája eltérhet, de a dokumentált üzleti szabályok, biztonsági invariánsok, jogosultságok és felhasználói működés nem változtatható meg feltételezés alapján.
+          EOF
+
+          cp docs/CURRENT_FUNCTIONAL_BASELINE.md "$out/00_CURRENT_FUNCTIONAL_BASELINE_COPY.md"
+
+      - name: Upload documentation package
+        uses: actions/upload-artifact@v4
+        with:
+          name: A-Hely-Functional-Reimplementation-Docs
+          path: A-Hely_Functional_Reimplementation_Docs/
+          if-no-files-found: error
+          retention-days: 7
