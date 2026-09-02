@@ -3,11 +3,12 @@ set -Eeuo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 local_db_url="${LOCAL_SUPABASE_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
+local_db_container="${LOCAL_SUPABASE_DB_CONTAINER:-supabase_db_ahely-booking}"
 test_root="$(mktemp -d)"
 cleanup() { rm -rf "$test_root"; }
 trap cleanup EXIT
 
-for command_name in supabase psql age age-keygen sha256sum tar jq; do
+for command_name in supabase psql age age-keygen sha256sum tar jq docker; do
   command -v "$command_name" >/dev/null 2>&1 || { echo "Missing required command: $command_name" >&2; exit 1; }
 done
 
@@ -130,18 +131,29 @@ expected_counts="$(printf '%s\n' "$source_counts" | jq -cS .)"
 printf '%s\n' 'Resetting local Supabase to clean restore target...'
 supabase db reset
 
-psql "$local_db_url" \
-  -X \
-  --single-transaction \
-  -v ON_ERROR_STOP=1 \
-  -f "$restore_dir/roles.sql" \
-  -f "$restore_dir/schema.sql" \
-  -c 'set session_replication_role = replica;' \
-  -f "$restore_dir/data.sql" \
-  -c 'drop schema if exists supabase_migrations cascade;' \
-  -f "$restore_dir/migration-schema.sql" \
-  -f "$restore_dir/migration-history.sql" \
-  -c 'set session_replication_role = origin;'
+docker inspect "$local_db_container" >/dev/null 2>&1 || {
+  echo "Local Supabase DB container not found: $local_db_container" >&2
+  exit 1
+}
+
+# roles.sql contains cluster-level role settings that the normal local `postgres`
+# login is intentionally not allowed to change. The proven local Supabase restore
+# context uses the container's `supabase_admin` role for the complete atomic restore.
+restore_sql="$test_root/full-restore.sql"
+cat "$restore_dir/roles.sql" > "$restore_sql"
+printf '\n' >> "$restore_sql"
+cat "$restore_dir/schema.sql" >> "$restore_sql"
+printf '\nSET session_replication_role = replica;\n' >> "$restore_sql"
+cat "$restore_dir/data.sql" >> "$restore_sql"
+printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n' >> "$restore_sql"
+cat "$restore_dir/migration-schema.sql" >> "$restore_sql"
+printf '\n' >> "$restore_sql"
+cat "$restore_dir/migration-history.sql" >> "$restore_sql"
+printf '\nSET session_replication_role = origin;\n' >> "$restore_sql"
+
+docker exec -i "$local_db_container" \
+  psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
+  < "$restore_sql"
 
 restored_counts="$(psql "$local_db_url" -X -A -t -v ON_ERROR_STOP=1 -c "$control_counts_sql")"
 actual_counts="$(printf '%s\n' "$restored_counts" | jq -cS .)"
