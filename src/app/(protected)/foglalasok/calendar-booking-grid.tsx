@@ -16,7 +16,7 @@ export type CalendarBooking = {
   booking_title: string | null; note: string | null; series_id: string | null; updated_at: string | null; can_manage: boolean;
 };
 type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string; isAdmin?: boolean };
-type TouchGesture = { roomId: string; pointerId: number; startX: number; startY: number; anchorMinute: number; active: boolean; element: HTMLDivElement };
+type TouchGesture = { roomId: string; pointerId: number; startX: number; startY: number; startScrollY: number; anchorMinute: number; active: boolean; element: HTMLDivElement };
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 type BookingScope = "occurrence" | "following" | "series";
 type DialogMode = "create" | "duplicate" | "edit";
@@ -26,6 +26,7 @@ const TIMELINE_HEIGHT = (CALENDAR_CLOSE_MINUTE - CALENDAR_OPEN_MINUTE) * PIXELS_
 const minuteToPixel = (minute: number) => minute * PIXELS_PER_MINUTE;
 const LONG_PRESS_MS = 500;
 const TOUCH_MOVE_CANCEL_PX = 10;
+const RECENT_SCROLL_GUARD_MS = 180;
 
 function localMinute(iso: string) {
   const parts = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Budapest", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso));
@@ -54,24 +55,46 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   const dragState = useRef<{ roomId: string; anchorMinute: number } | null>(null);
   const touchGesture = useRef<TouchGesture | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastScrollAt = useRef(0);
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [selection?.roomId, selection?.startMinute, selection?.endMinute, repeatFrequency, dialogMode, editScope, cancelTarget?.booking.booking_id, cancelTarget?.scope]);
 
   useEffect(() => {
     setSelectionActionHost(document.getElementById("calendar-selection-actions-slot"));
+    const handleWindowScroll = () => {
+      lastScrollAt.current = performance.now();
+      cancelPendingTouchGesture();
+    };
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
   }, []);
 
   function minuteFromPointer(element: HTMLElement, clientY: number) { const rect = element.getBoundingClientRect(); return CALENDAR_OPEN_MINUTE + (clientY - rect.top) / PIXELS_PER_MINUTE; }
   function cancelLongPress() { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } }
+  function cancelPendingTouchGesture() {
+    const gesture = touchGesture.current;
+    if (!gesture || gesture.active) return;
+    cancelLongPress();
+    touchGesture.current = null;
+  }
   function activateSelection(roomId: string, element: HTMLDivElement, pointerId: number, anchorMinute: number) {
+    try { element.setPointerCapture(pointerId); } catch { touchGesture.current = null; return; }
     setMenuBooking(null); setSourceBooking(null); setDialogMode("create"); setBookingDialogOpen(false); setDialogRoomId(roomId); setRepeatFrequency("none"); setUseType("individual");
-    element.setPointerCapture(pointerId); dragState.current = { roomId, anchorMinute }; setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
+    dragState.current = { roomId, anchorMinute }; setSelection(normalizeCalendarSelection(roomId, anchorMinute, anchorMinute));
   }
   function beginSelection(roomId: string, event: PointerEvent<HTMLDivElement>) {
     if ((event.target as HTMLElement).closest(".booking-block")) return;
     const anchorMinute = minuteFromPointer(event.currentTarget, event.clientY);
     if (event.pointerType === "touch") {
-      cancelLongPress(); touchGesture.current = { roomId, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, anchorMinute, active: false, element: event.currentTarget };
-      longPressTimer.current = setTimeout(() => { const gesture = touchGesture.current; if (!gesture || gesture.pointerId !== event.pointerId) return; gesture.active = true; activateSelection(gesture.roomId, gesture.element, gesture.pointerId, gesture.anchorMinute); }, LONG_PRESS_MS); return;
+      cancelLongPress();
+      if (performance.now() - lastScrollAt.current < RECENT_SCROLL_GUARD_MS) { touchGesture.current = null; return; }
+      touchGesture.current = { roomId, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, startScrollY: window.scrollY, anchorMinute, active: false, element: event.currentTarget };
+      longPressTimer.current = setTimeout(() => {
+        const gesture = touchGesture.current;
+        if (!gesture || gesture.pointerId !== event.pointerId) return;
+        if (Math.abs(window.scrollY - gesture.startScrollY) > 1) { cancelPendingTouchGesture(); return; }
+        gesture.active = true;
+        activateSelection(gesture.roomId, gesture.element, gesture.pointerId, gesture.anchorMinute);
+      }, LONG_PRESS_MS); return;
     }
     event.preventDefault(); activateSelection(roomId, event.currentTarget, event.pointerId, anchorMinute);
   }
@@ -84,8 +107,8 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
     const drag = dragState.current; if (!drag || drag.roomId !== roomId) return;
     setSelection(normalizeCalendarSelection(roomId, drag.anchorMinute, minuteFromPointer(event.currentTarget, event.clientY)));
   }
-  function endSelection(event?: PointerEvent<HTMLDivElement>) {
-    cancelLongPress(); const completedTouchSelection = event?.pointerType === "touch" && touchGesture.current?.active === true;
+  function endSelection(event?: PointerEvent<HTMLDivElement>, cancelled = false) {
+    cancelLongPress(); const completedTouchSelection = !cancelled && event?.pointerType === "touch" && touchGesture.current?.active === true;
     if (event?.pointerType === "touch") touchGesture.current = null; dragState.current = null; if (completedTouchSelection) setBookingDialogOpen(true);
   }
   function clearSelection() { cancelLongPress(); touchGesture.current = null; setBookingDialogOpen(false); setDialogRoomId(""); setRepeatFrequency("none"); setUseType("individual"); setSelection(null); setSourceBooking(null); setDialogMode("create"); }
@@ -106,14 +129,14 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   const showGroupRate = isAdmin && dialogMode !== "edit" && dialogRoom?.is_training_room && useType === "group";
 
   return <div className="calendar-workspace stack">
-    <div className="calendar-card" aria-label={`${selectedDate} foglalásai`}><div className="calendar-scroll"><div className="calendar-grid" style={{ gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(${roomMinWidth}, 1fr))`, width: "max(100%, max-content)" }}>
+    <div className="calendar-card" aria-label={`${selectedDate} foglalásai`}><div className="calendar-scroll" onScroll={cancelPendingTouchGesture}><div className="calendar-grid" style={{ gridTemplateColumns: `4.25rem repeat(${rooms.length}, minmax(${roomMinWidth}, 1fr))`, width: "max(100%, max-content)" }}>
       <div className="calendar-corner" />
       {rooms.map((room) => <div className="room-heading" key={room.room_id} style={{ minWidth: roomMinWidth }}>{room.room_name}</div>)}
       <div className="time-axis" style={{ height: `${TIMELINE_HEIGHT}px` }}>
         {Array.from({ length: 16 }, (_, index) => <div aria-hidden="true" className="time-axis-hour-line" key={`line-${index}`} style={{ top: `${minuteToPixel(index * 60)}px` }} />)}
         {Array.from({ length: 15 }, (_, index) => <span key={`label-${index}`} style={{ top: `${minuteToPixel(index * 60 + 30)}px` }}>{String(index + 7).padStart(2, "0")}:00</span>)}
       </div>
-      {rooms.map((room) => <div className="room-timeline" key={room.room_id} style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "auto" }} onPointerDown={(event) => beginSelection(room.room_id, event)} onPointerMove={(event) => moveSelection(room.room_id, event)} onPointerUp={(event) => endSelection(event)} onPointerCancel={(event) => endSelection(event)} onContextMenu={(event) => event.preventDefault()} aria-label={`${room.room_name} szabad időpontjai. Asztali gépen húzással, mobilon hosszan nyomva indítható foglalás.`}>
+      {rooms.map((room) => <div className="room-timeline" key={room.room_id} style={{ height: `${TIMELINE_HEIGHT}px`, cursor: "crosshair", touchAction: "pan-x pan-y" }} onPointerDown={(event) => beginSelection(room.room_id, event)} onPointerMove={(event) => moveSelection(room.room_id, event)} onPointerUp={(event) => endSelection(event)} onPointerCancel={(event) => endSelection(event, true)} onContextMenu={(event) => event.preventDefault()} aria-label={`${room.room_name} szabad időpontjai. Asztali gépen húzással, mobilon hosszan nyomva indítható foglalás.`}>
         {selection?.roomId === room.room_id && !sourceBooking ? <div className="selection-block" style={{ top: `${minuteToPixel(selection.startMinute - CALENDAR_OPEN_MINUTE)}px`, height: `${minuteToPixel(selection.endMinute - selection.startMinute)}px` }}><strong>{calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</strong><span>Új foglalás</span></div> : null}
         {bookings.filter((booking) => booking.room_id === room.room_id).map((booking) => {
           const start = Math.max(localMinute(booking.start_at), CALENDAR_OPEN_MINUTE); const end = Math.min(localMinute(booking.end_at), CALENDAR_CLOSE_MINUTE);
