@@ -125,6 +125,26 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
     position: sticky;
     top: 0;
   }
+  .room-heading {
+    z-index: 8;
+    background: #f8f6f1;
+  }
+  .calendar-corner {
+    left: 0;
+    z-index: 12;
+    background: #f8f6f1;
+    box-shadow: 1px 1px 0 #d8d4c8;
+  }
+  .time-axis {
+    position: sticky;
+    left: 0;
+    z-index: 10;
+    background-color: #f8f6f1;
+    box-shadow: 1px 0 0 #d8d4c8;
+  }
+  .time-axis span {
+    background: #f8f6f1;
+  }
   .room-timeline {
     touch-action: auto !important;
   }
