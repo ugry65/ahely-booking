@@ -22,6 +22,10 @@
     padding-inline: 1rem;
   }
 
+  .profile-page-heading {
+    padding-inline: 1rem;
+  }
+
   .card,
   .wide-card {
     width: 100%;
