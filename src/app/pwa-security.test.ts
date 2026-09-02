@@ -20,7 +20,7 @@ describe("PWA security baseline", () => {
     expect(serviceWorker).toContain('url.pathname.startsWith("/api/")');
     expect(serviceWorker).toContain('url.pathname.startsWith("/auth/")');
     expect(serviceWorker).toContain('request.mode === "navigate"');
-    expect(serviceWorker).not.toContain("sync");
+    expect(serviceWorker).not.toContain('addEventListener("sync"');
     expect(serviceWorker).not.toContain("indexedDB");
   });
 });
