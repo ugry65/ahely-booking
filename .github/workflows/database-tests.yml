@@ -5,6 +5,9 @@ on:
     paths:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
+      - "scripts/backup-production.sh"
+      - "scripts/fixtures/nonzero-restore-fixture.sql"
+      - "scripts/test-backup-restore-nonzero.sh"
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
@@ -16,6 +19,9 @@ on:
     paths:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
+      - "scripts/backup-production.sh"
+      - "scripts/fixtures/nonzero-restore-fixture.sql"
+      - "scripts/test-backup-restore-nonzero.sh"
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
@@ -34,7 +40,7 @@ concurrency:
 jobs:
   database-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -44,6 +50,11 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: 2.114.0
+
+      - name: Install restore drill dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends age postgresql-client
 
       - name: Start local database
         run: supabase db start
@@ -75,7 +86,10 @@ jobs:
       - name: Run repeat permission compatibility concurrency test
         run: bash ./scripts/test-repeat-permission-concurrency.sh
 
-      - name: Lint database schema
+      - name: Run nonzero backup/restore sandbox drill
+        run: bash ./scripts/test-backup-restore-nonzero.sh
+
+      - name: Lint restored database schema
         run: supabase db lint --level warning
 
       - name: Stop local Supabase services
