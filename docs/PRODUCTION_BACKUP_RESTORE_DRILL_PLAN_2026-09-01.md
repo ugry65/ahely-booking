@@ -1,7 +1,16 @@
 # A-Hely – Production backup restore drill terv és jegyzőkönyv
 
 Dátum: 2026-09-01
+Utolsó dokumentációs frissítés: 2026-09-02
 Státusz: **TELJES PASS – backupVersion 2 end-to-end restore drill sikeres.**
+
+## Reprodukciós forrás
+
+A teljes, parancsszintű, reprodukálható eljárás külön operatív runbookban található:
+
+`docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md`
+
+A jelen dokumentum a tényleges 2026-09-01-i bizonyító drill jegyzőkönyve. A runbook különválasztja a normál jövőbeli restore-folyamatot azoktól az egyszeri diagnosztikai kerülőutaktól, amelyek a v1 hiba feltárásához kellettek.
 
 ## Cél
 
@@ -12,6 +21,20 @@ Bizonyítani, hogy a production adatbázisról készült, client-side `age` titk
 A restore drill kizárólag izolált PostgreSQL 17 / local Supabase környezetben történt. Production vagy staging adatbázisra a drill nem futott.
 
 A recovery private key nem került GitHubba, Google Drive-ra vagy Backblaze B2-re. A visszafejtés azon a helyi gépen történt, ahol a recovery key biztonságosan rendelkezésre áll.
+
+## Bizonyított helyi restore környezet
+
+A sikeres drill során használt környezet:
+
+- Docker CLI: `29.7.2`;
+- Docker Desktop + WSL2;
+- Node: `v24.18.0`;
+- Supabase CLI: `2.116.0` (`npx.cmd supabase`);
+- local Supabase PostgreSQL image: `ghcr.io/supabase/postgres:17.6.1.165`;
+- rclone: `1.75.0`;
+- age: `1.3.1`.
+
+Ezek nem örök verziópin-ek, hanem a sikeres drill bizonyított verziói. Jövőbeli eltérő verzióknál a kompatibilitást újra ellenőrizni kell.
 
 ## V1 drill és feltárt hiányosság
 
@@ -27,6 +50,8 @@ Az első production backup:
 
 A v1 restore drill azonban feltárta, hogy a `migration-history.sql` kizárólag data-only dump volt. A production `supabase_migrations.schema_migrations` tábla hat mezőt tartalmazott (`version`, `statements`, `name`, `created_by`, `idempotency_key`, `rollback`), míg a friss local Supabase CLI által létrehozott alapstruktúra csak három mezős volt (`version`, `statements`, `name`). Ezért a migration-history önmagában nem volt önleíró és garantáltan visszaállítható.
 
+A hiba feltárása közben egy sima `postgres:17` konténerrel, majd helyi placeholder migrationnel is történt diagnosztikai próba. Ezek **nem részei a végleges restore runbooknak**. A végleges megoldás platform-kompatibilis local Supabase stack + backupVersion 2 lett.
+
 ## Javítás – backupVersion 2
 
 A backup pipeline javítva lett:
@@ -38,6 +63,8 @@ A backup pipeline javítva lett:
 - bekerült a `manifest.json` fájllistába és SHA-256 mezővel rendelkezik;
 - backup formátum verziója `2`.
 
+A javítás oka: a migration-history ne függjön attól, hogy egy későbbi vagy local Supabase CLI éppen milyen meta-sémát hoz létre.
+
 ## V2 production backup bizonyíték
 
 - GitHub Actions run: `33558905620`
@@ -45,7 +72,7 @@ A backup pipeline javítva lett:
 - ugyanazon encrypted artifact Google Drive-ra és Backblaze B2-re feltöltve: PASS
 - Google Drive read-back SHA-256: PASS
 - Backblaze B2 read-back SHA-256: PASS
-- letöltött encrypted artifact `.sha256` sidecar ellenőrzése: PASS
+- letöltött encrypted artifact `.sha256` sidecar ellenőrzése: PASS (`Match: True`)
 - `age` decrypt: PASS
 - tar.gz kicsomagolás: PASS
 - minden belső `SHA256SUMS` komponens: PASS, beleértve a `migration-schema.sql` és `migration-history.sql` fájlokat.
@@ -57,11 +84,13 @@ A local Supabase adatbázis nulláról újra lett inicializálva. A korábbi ide
 1. `roles.sql`
 2. `schema.sql`
 3. `data.sql`
-4. a helyi placeholder/meta `supabase_migrations` séma kontrollált cseréje
+4. a helyi `supabase_migrations` meta séma kontrollált eltávolítása ugyanabban a tranzakcióban (`DROP SCHEMA IF EXISTS ... CASCADE`)
 5. production-kori `supabase_migrations` séma visszaállítása a `migration-schema.sql` fájlból
 6. `migration-history.sql` visszatöltése
 
-A restore `ON_ERROR_STOP=1` és tranzakciós/fail-closed módban történt.
+A restore `--single-transaction`, `ON_ERROR_STOP=1` és fail-closed módban történt. A data és migration-history betöltés idején `session_replication_role = replica`, majd `origin` visszaállítás történt.
+
+A pontos, reprodukálható PowerShell parancs a `docs/PRODUCTION_BACKUP_RESTORE_RUNBOOK.md` dokumentumban szerepel.
 
 ### Végső kontrollszámok
 
@@ -83,6 +112,8 @@ A v2 backup és a tiszta v2 restore eredménye pontosan egyezett:
 - `migration_history_rows`: 42
 
 A `migration-history.sql` restore során `COPY 42` futott le, az utóellenőrzés pedig szintén 42 sort adott.
+
+Fontos: a fenti 0/11 értékek a konkrét 2026-09-01-i artifact forrásállapotát írják le. Jövőbeli drillnél **nem ezek a konstans elvárások**, hanem mindig az adott bundle `control-counts.json` értékei.
 
 ## Eredmény
 
@@ -108,13 +139,14 @@ Megjegyzés: a jelenlegi production adatállapotban a kritikus üzleti kontrollo
 2. decrypt;
 3. belső checksumok;
 4. platform-kompatibilis izolált local Supabase stack;
-5. `roles.sql`;
-6. `schema.sql`;
-7. `data.sql`;
-8. a helyi `supabase_migrations` placeholder/meta séma kontrollált cseréje;
-9. `migration-schema.sql`;
-10. `migration-history.sql`;
-11. kritikus kontrollszámok és migration history ellenőrzése.
+5. tiszta local DB/reset;
+6. `roles.sql`;
+7. `schema.sql`;
+8. `data.sql`;
+9. a helyi `supabase_migrations` meta séma kontrollált cseréje;
+10. `migration-schema.sql`;
+11. `migration-history.sql`;
+12. kritikus kontrollszámok és migration history ellenőrzése.
 
 ## Fontos: a teljes restore PASS nem jelent production GO-t
 
