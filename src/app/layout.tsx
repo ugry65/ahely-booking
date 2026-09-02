@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./skedda-mobile.css";
 import "./mobile-hour-grid.css";
+import "./mobile-responsive.css";
 
 export const metadata: Metadata = {
   title: "A-Hely foglalás",
