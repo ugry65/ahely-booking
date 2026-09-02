@@ -5,6 +5,7 @@ name: Verify backup heartbeat alert recovery
 # It only sends an explicit failure signal followed by recovery to the
 # existing 08:00 Healthchecks.io check. Execution is gated by the exact
 # MONITORING_DRILL_APPROVED=ALERT_RECOVERY repository variable.
+# Retrigger marker: gate configured 2026-09-02.
 on:
   pull_request:
     branches:
