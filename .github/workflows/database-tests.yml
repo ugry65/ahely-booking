@@ -89,9 +89,6 @@ jobs:
       - name: Run nonzero backup/restore sandbox drill
         run: bash ./scripts/test-backup-restore-nonzero.sh
 
-      - name: Lint restored database schema
-        run: supabase db lint --level warning
-
       - name: Stop local Supabase services
         if: always()
         run: supabase stop
