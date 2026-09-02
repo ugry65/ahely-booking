@@ -83,18 +83,21 @@ Minimum bizonyítandó:
 ### M2 – B2 napi kulcs túlzott jogosultsága
 
 **Review severity:** MAJOR
-**Resolution:** ELFOGADVA
-**Státusz:** NYITOTT
+**Resolution:** ELFOGADVA ÉS IMPLEMENTÁLVA
+**Státusz:** IMPLEMENTÁCIÓ RESOLVED; POST-MERGE PROOF NYITOTT
 
-A napi backup/retention jelenleg ugyanazt a B2 application key secretet használja, amely a one-shot Object Lock adminisztrációhoz is szükséges capability-ket hordozta. Least-privilege szempontból külön napi kulcs indokolt.
+A napi backup/retention korábban ugyanazt a B2 application key secretet használta, amely az Object Lock adminisztrációhoz is szükséges capability-ket hordozta. Least-privilege szempontból ezt szétválasztottuk.
 
-Célállapot:
+2026-09-02-i javítás:
 
-- `BACKUP_B2_ACCOUNT_ID` / `BACKUP_B2_APPLICATION_KEY`: csak napi backup + retention minimális fájlműveletek;
-- Object Lock adminisztráció külön, emelt jogú credentiallel;
-- emelt jogú credential ne legyen napi scheduled workflow-ban.
+- létrejött külön bucket-restricted napi B2 application key: `ahely-booking-production-daily`;
+- új GitHub secretek: `BACKUP_B2_DAILY_ACCOUNT_ID`, `BACKUP_B2_DAILY_APPLICATION_KEY`;
+- `.github/workflows/production-backup.yml` kizárólag a `*_DAILY_*` credentialt használja;
+- `.github/workflows/production-backup-retention.yml` kizárólag a `*_DAILY_*` credentialt használja;
+- `.github/workflows/configure-b2-object-lock.yml` továbbra is a külön emelt jogú `BACKUP_B2_ACCOUNT_ID` / `BACKUP_B2_APPLICATION_KEY` párost használja;
+- az emelt jogú Object Lock credential így nincs jelen a napi scheduled backup/retention workflow-kban.
 
-A pontos B2 capability-ket külön beállítás előtt ellenőrizni kell.
+Mivel a production backup workflow még nincs a default branch-en, a napi kulccsal végzett tényleges scheduled/dispatch proof csak merge után végezhető el biztonságosan. Elfogadási feltétel: az első post-merge production backup és retention dry-run a `*_DAILY_*` kulccsal sikeres legyen.
 
 ### M3 – retention és backup időzítési race
 
@@ -151,9 +154,9 @@ Nyitott kritikus/major gate-ek:
 
 1. B1: merge után tényleges scheduled backup bizonyítás;
 2. M1: nem nulla reprezentatív adattal új restore drill;
-3. M2: B2 daily/admin credential szétválasztás;
+3. M2: post-merge daily B2 credential backup + retention dry-run bizonyítás;
 4. M6: GitHub `production` Environment protection kézi ellenőrzése;
 5. mobil UAT #98;
 6. teljes staging/UAT és végső production gate.
 
-A B2 PR-trigger security finding (B2), OAuth security finding (B3 security része) és retention race (M3) 2026-09-02-án javítva/lezárva.
+A B2 PR-trigger security finding (B2), OAuth security finding (B3 security része), retention race (M3) és B2 least-privilege implementáció (M2) 2026-09-02-án javítva/lezárva; M2-nél csak a post-merge működési proof marad.
