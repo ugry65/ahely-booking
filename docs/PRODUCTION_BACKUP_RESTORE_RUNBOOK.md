@@ -23,6 +23,10 @@ Célja, hogy egy későbbi fejlesztési beszélgetésben vagy másik AI/fejleszt
 
 Ez a runbook **nem jogosít production in-place restore-ra**. Production adatbázis visszaállítása kizárólag tényleges incidensnél, külön dokumentált döntéssel történhet.
 
+### Dokumentum-karbantartási szabály
+
+Ez a runbook a backup/restore blokk elsődleges operatív leírása. Ha a backup script, artifact-formátum, célhely, titkosítás, restore sorrend, control-count lista, scheduler, kulcskezelés vagy retention változik, ezt a dokumentumot **ugyanabban a fejlesztési szeletben** frissíteni kell. A runbook frissítése nélkül a backup/restore módosítás dokumentációs szempontból nem tekinthető lezártnak.
+
 ---
 
 ## 2. Elsődleges források és elsőbbség
