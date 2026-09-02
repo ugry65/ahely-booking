@@ -27,6 +27,10 @@ Ez a runbook **nem jogosít production in-place restore-ra**. Production adatbá
 
 Ez a runbook a backup/restore blokk elsődleges operatív leírása. Ha a backup script, artifact-formátum, célhely, titkosítás, restore sorrend, control-count lista, scheduler, kulcskezelés vagy retention változik, ezt a dokumentumot **ugyanabban a fejlesztési szeletben** frissíteni kell. A runbook frissítése nélkül a backup/restore módosítás dokumentációs szempontból nem tekinthető lezártnak.
 
+### Forrásütközés kezelése
+
+Ha ez a runbook és a tényleges implementáció között eltérés van, **a repository aktuális kódja nem értelmezhető automatikusan helyesebb üzleti döntésként**. Ilyenkor STOP/INVESTIGATE szükséges: össze kell vetni a változtatás commitját, a kapcsolódó döntési dokumentumot és a drill bizonyítékát, majd a dokumentációt és/vagy implementációt konzisztenssé kell tenni. Kritikus restore-t nem szabad bizonytalan forráselsőbbséggel végrehajtani.
+
 ---
 
 ## 2. Elsődleges források és elsőbbség
@@ -41,7 +45,7 @@ A backup/restore blokk aktuális forrásai:
 6. `docs/DECISION_2026-08-31_BACKUP_RETENTION_OBJECT_LOCK.md` – retention/Object Lock döntés;
 7. PR #103 – aktuális implementation/evidence összefoglaló.
 
-A régebbi `docs/BACKUP_RESTORE_STRATEGIA.md` történeti baseline. Ha retention, célhely, gyakoriság vagy artifact-formátum kérdésben eltérés van, a fenti frissebb dokumentumok és az aktuális kód az irányadó.
+A régebbi `docs/BACKUP_RESTORE_STRATEGIA.md` történeti baseline. Ha retention, célhely, gyakoriság vagy artifact-formátum kérdésben eltérés van, a fenti frissebb dokumentumok és az aktuális kód az irányadó, de ellentmondás esetén a fenti STOP/INVESTIGATE szabály érvényes.
 
 ---
 
