@@ -1,15 +1,15 @@
 name: Configure B2 Object Lock
 
-# One-shot production infrastructure configuration. The job remains gated by
-# the exact B2_OBJECT_LOCK_APPLY=GOVERNANCE_30 repository variable.
-# 2026-09-02: retrigger after explicit gate creation to verify/apply the approved setting.
+# Manual-only production infrastructure configuration.
+# This workflow is intentionally not triggered by pull_request or schedule.
+# Running it requires an explicit typed confirmation.
 on:
-  pull_request:
-    branches:
-      - feature/82-pricing-modes
-    paths:
-      - ".github/workflows/configure-b2-object-lock.yml"
-      - "scripts/configure-b2-object-lock.sh"
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type GOVERNANCE_30 to verify/apply the approved B2 Object Lock policy"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -20,7 +20,6 @@ concurrency:
 
 jobs:
   configure:
-    if: ${{ github.event.pull_request.head.ref == 'infra/100-backup-monitoring' && vars.B2_OBJECT_LOCK_APPLY == 'GOVERNANCE_30' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: production
@@ -28,9 +27,19 @@ jobs:
       BACKUP_B2_ACCOUNT_ID: ${{ secrets.BACKUP_B2_ACCOUNT_ID }}
       BACKUP_B2_APPLICATION_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
       BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
-      B2_OBJECT_LOCK_CONFIRMATION: ${{ vars.B2_OBJECT_LOCK_APPLY }}
+      B2_OBJECT_LOCK_CONFIRMATION: ${{ inputs.confirmation }}
 
     steps:
+      - name: Require explicit confirmation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${B2_OBJECT_LOCK_CONFIRMATION:-}" != "GOVERNANCE_30" ]; then
+            echo "B2 Object Lock configuration not approved: type GOVERNANCE_30 exactly." >&2
+            exit 1
+          fi
+          echo "PASS: explicit B2 Object Lock confirmation is present."
+
       - name: Check out repository
         uses: actions/checkout@v4
 
