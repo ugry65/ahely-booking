@@ -6,6 +6,7 @@ import { createRecurringBooking } from "./ismetlod/actions";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import type { BookableRoom } from "./calendar-booking-grid";
 import { BookingTimeFields } from "./booking-time-fields";
+import { RecurringEndFields } from "./recurring-end-fields";
 
 const OPEN_MINUTE = 7 * 60;
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
@@ -18,19 +19,22 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string }) {
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, bookingUsers = [], currentUserId, isAdmin = false }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; bookingUsers?: BookingUser[]; currentUserId?: string; isAdmin?: boolean }) {
   const [open, setOpen] = useState(false);
   const [selectedRoomId, setSelectedRoomId] = useState("");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
+  const [useType, setUseType] = useState<"individual" | "group">("individual");
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [open, repeatFrequency]);
   const selectedRoom = rooms.find((room) => room.room_id === selectedRoomId);
   const canRepeat = selectedRoomId ? repeatableRoomIds.includes(selectedRoomId) : false;
   const formAction = repeatFrequency === "none" ? createBooking : createRecurringBooking;
+  const showGroupRate = isAdmin && selectedRoom?.is_training_room && useType === "group";
 
   function closeDialog() {
     setOpen(false);
     setSelectedRoomId("");
     setRepeatFrequency("none");
+    setUseType("individual");
   }
 
   return (
@@ -56,12 +60,12 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                 </label>
               ) : null}
               <label>Helyiség
-                <select name="roomId" required value={selectedRoomId} onChange={(event) => { setSelectedRoomId(event.target.value); setRepeatFrequency("none"); }}>
+                <select name="roomId" required value={selectedRoomId} onChange={(event) => { setSelectedRoomId(event.target.value); setRepeatFrequency("none"); setUseType("individual"); }}>
                   <option value="" disabled>Válassz helyiséget</option>
                   {rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}
                 </select>
               </label>
-              <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
+              <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} /></label>
               <BookingTimeFields options={timeOptions()} initialStartTime="09:00" initialEndTime="10:00" />
 
               <label>Ismétlődés
@@ -78,16 +82,22 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
               {repeatFrequency !== "none" ? (
                 <fieldset className="repeat-options">
                   <legend>Ismétlődés beállításai</legend>
-                  <input type="hidden" name="endMode" value="count" />
-                  <label>Alkalmak száma<input name="occurrenceCount" type="number" min="1" max="400" defaultValue="6" required /></label>
+                  <RecurringEndFields initialDate={selectedDate} />
                   <RecurringExceptionCalendar />
                   <label>Ütközés kezelése<select name="conflictPolicy" defaultValue="abort_all"><option value="abort_all">Teljes sorozat megszakítása</option><option value="create_available">Csak a szabad alkalmak létrehozása</option></select></label>
                 </fieldset>
               ) : null}
 
               {selectedRoom?.is_training_room ? (
-                <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
+                <label>Használat<select name="useType" value={useType} onChange={(event) => setUseType(event.target.value as "individual" | "group")}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
               ) : <input type="hidden" name="useType" value="individual" />}
+
+              {showGroupRate ? (
+                <label>Csoportos óradíj
+                  <input name="groupHourlyRateHuf" type="number" min="0" step="1" defaultValue="5000" required />
+                  <span className="muted form-help">A Tréningterem csoportos használatának alapdíja 5 000 Ft/óra. Adminisztrátorként ennél a foglalásnál vagy sorozatnál felülírhatod.</span>
+                </label>
+              ) : null}
 
               <label>Foglalás címe<input name="bookingTitle" maxLength={100} placeholder="Opcionális" /></label>
               <span className="muted form-help">A címet csak te és az adminisztrátorok láthatják.</span>

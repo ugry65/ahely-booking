@@ -1,6 +1,7 @@
 # A-Hely foglalási UI/UX baseline – regresszióvédelmi dokumentum
 
 Dátum: 2026-08-20
+Történeti státuszok helyesbítése: 2026-08-30, új UI-módosítás nélkül.
 
 Állapot: **kötelezően megőrzendő baseline**
 
@@ -62,6 +63,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 - Ismétlődés gyakorisága: napi, heti, kétheti, havi.
 - Ismétlődési lehetőség csak akkor aktív, ha a backend jogosultság (`list_repeatable_rooms`) ezt engedi.
 - Az ismétlődő foglalás továbbra is a meglévő backend sorozat-létrehozási folyamatot használja; UI nem kerülheti meg a szerveroldali szabályokat.
+- A sorozat vége ugyanebben a foglalási ablakban két módon adható meg: **alkalmak száma alapján** vagy **végdátum alapján**. A választott módhoz tartozó mező kötelező, a másik nem kerül elküldésre.
 - Kivételdátumok kiválasztása későbbi finomításnál naptáras, Skedda-szerű megoldás legyen; szöveges lista nem tekintendő végleges UX-nek.
 - Mentés nélküli bezáráskor az ideiglenes `Új foglalás` kijelölés kötelezően eltűnik; X, Mégse és backdrop bezárás sem hagyhat fantom blokkot a naptárban.
 
@@ -83,7 +85,7 @@ A naptárból kijelölt foglalásnál a kijelölt helyiség, dátum, kezdés és
 
 - időegység: 30 perc;
 - minimum foglalás: 60 perc;
-- csak jövőbeli időpontra lehet foglalni;
+- múltbeli időpontra aktív normál user és admin is létrehozhat egyszeri vagy ismétlődő foglalást;
 - ütközést backend/adatbázis oldalon is ellenőrizni kell;
 - jogosulatlan helyiségre manipulált klienssel sem lehet foglalni;
 - előrefoglalási limit backend oldali szabály;
@@ -98,7 +100,7 @@ A 2026-08-20-i és 2026-08-21-i manuális UAT során sikeresen igazoltuk többek
 
 - normál foglalás létrehozása;
 - minimum 60 perces foglalási szabály;
-- múltbeli foglalás tiltása;
+- a múltbeli foglalás korábbi tiltási tesztjét a 2026-08-29-i jóváhagyott üzleti döntés felülírta; az új elvárás szerinti múltbeli egyszeri és ismétlődő foglalás staging UAT-ja már elfogadott (BOOK-14, REC-09A). A 2026-08-30-i [jegyzőkönyv](UAT_FUTASI_JEGYZOKONYV.md) ezt átvezeti; nem újratesztelendő pusztán az elavult megjegyzés miatt;
 - átfedő foglalás elutasítása;
 - ismétlődő sorozat létrehozása;
 - ismétlődő kivételdátum kezelése;
@@ -122,7 +124,7 @@ A részletes UAT státuszok forrása továbbra is `docs/FUNKCIONALIS_UAT_CHECKLI
 
 Ezeket nem szabad összekeverni a már elfogadott baseline elemekkel:
 
-- mobil függőleges görgetés 18:00 körüli időszakos „megakadása” kivizsgálandó; a kívánt állapot az egyetlen folyamatos scroll 07:00–22:00 között;
+- mobil függőleges görgetés: a 18:00 körüli időszakos „megakadás” történeti megjegyzés. A természetes scroll korábbi elfogadása és az augusztus 24-i jóváhagyott UI megőrzendő; külön célzott végső lezárás vagy aktuális reprodukció nem került elő. Ezért UAT-UX-05 bizonyítékegyeztetés, nem most igazolt hiba. A kívánt állapot továbbra is egyetlen folyamatos scroll 07:00–22:00 között; részletek: [bizonyítékegyeztetés](UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md);
 - saját foglalások naptárnézetének teljes megvalósítása;
 - ismétlődő foglalás kivételdátumainak Skedda-szerű naptárválasztója;
 - további pixel/spacing finomítások a Skedda képernyőkihasználásához.
@@ -138,6 +140,7 @@ Minden, a foglalási naptárt, mobil CSS-t, foglalási modált vagy navigációt
 - a `+` gyorsfoglalás megmaradt-e;
 - 7 napos felső sáv és naptár ikon megmaradt-e;
 - ismétlődés a foglalási ablakban maradt-e;
+- ismétlődő foglalásnál az alkalomszámos és a végdátumos lezárás is választható-e;
 - normál szobánál nincs-e Csoportos választó;
 - Tréningterem neve nincs-e duplázva;
 - mobil hamburger menü navigáció után bezár-e;

@@ -70,10 +70,10 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         </form>
       </header>
 
-      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} bookingUsers={bookingUsers} currentUserId={profile.id} /> : null}
+      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} bookingUsers={bookingUsers} currentUserId={profile.id} isAdmin={profile.role === "admin"} /> : null}
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
       {roomsResult.error || bookingsResult.error || managementResult.error || repeatableRoomsResult.error || usersResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
-      {rooms.length ? <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} bookingUsers={bookingUsers} currentUserId={profile.id} /> : <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>}
+      {rooms.length ? <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} bookingUsers={bookingUsers} currentUserId={profile.id} isAdmin={profile.role === "admin"} /> : <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>}
     </section>
   );
 }

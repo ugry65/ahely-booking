@@ -12,6 +12,7 @@ describe("booking form", () => {
     expect(budapestLocalToIso("2026-10-25", "09:00")).toBe("2026-10-25T08:00:00.000Z");
   });
   it("érvényes foglalást RPC-paraméterré alakít és normalizálja a címet", () => expect(parseBookingForm(valid)).toEqual({ ok: true, value: { roomId: valid.roomId, date: valid.date, startAt: "2026-09-10T07:00:00.000Z", endAt: "2026-09-10T08:00:00.000Z", useType: "individual", note: "Rövid megjegyzés", bookingTitle: "Konzultáció", idempotencyKey: valid.idempotencyKey } }));
+  it("múltbeli dátumot is érvényes foglalási adattá alakít", () => expect(parseBookingForm({ ...valid, date: "2020-01-10" })).toMatchObject({ ok: true, value: { date: "2020-01-10" } }));
   it("az üres foglalási címet nullára normalizálja", () => expect(parseBookingForm({ ...valid, bookingTitle: "   " })).toMatchObject({ ok: true, value: { bookingTitle: null } }));
   it("elutasítja a 100 karakternél hosszabb foglalási címet", () => expect(parseBookingForm({ ...valid, bookingTitle: "x".repeat(101) })).toMatchObject({ ok: false, error: "A foglalás címe legfeljebb 100 karakteres lehet." }));
   it("fail-closed módon elutasítja a hibás UUID-t és időrácsot", () => { expect(parseBookingForm({ ...valid, roomId: "nem-uuid" }).ok).toBe(false); expect(parseBookingForm({ ...valid, startTime: "09:15" }).ok).toBe(false); });
