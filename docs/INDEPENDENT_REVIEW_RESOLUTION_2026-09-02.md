@@ -12,8 +12,8 @@ Ez a dokumentum a független review findingjainak hivatalos feldolgozási napló
 
 ### B1 – PR még nincs `main` ágon
 
-**Review severity:** BLOCKING
-**Resolution:** RELEASE GATE / nem implementációs hiba
+**Review severity:** BLOCKING  
+**Resolution:** RELEASE GATE / nem implementációs hiba  
 **Státusz:** NYITOTT A RELEASE-IG
 
 A PR #103 szándékosan draft és nincs mergelve. A scheduled GitHub Actions workflow csak default branch-en válik aktívvá, ezért production automatikus backupot csak a végső review/UAT/gate után szabad aktiválni. Ez megfelel a projekt kötelező sorrendjének. `main` merge vagy production deploy továbbra sem történt.
@@ -22,8 +22,8 @@ Elfogadási feltétel: merge után az első valódi scheduled backup futás kül
 
 ### B2 – PR-triggerelt workflow-k production secretekkel
 
-**Review severity:** BLOCKING
-**Resolution:** ELFOGADVA ÉS JAVÍTVA
+**Review severity:** BLOCKING  
+**Resolution:** ELFOGADVA ÉS JAVÍTVA  
 **Státusz:** RESOLVED
 
 A review helyesen azonosította, hogy ideiglenes proof workflow-k `pull_request` triggerrel production credentialökhöz fértek hozzá.
@@ -43,9 +43,9 @@ A korábbi proof runok bizonyítékai a PR #103-ban és drill dokumentációban 
 
 ### B3 – Google OAuth rotáció dokumentációs ellentmondás
 
-**Review severity:** BLOCKING
-**Resolution:** STALE FINDING + DOKUMENTÁCIÓS KONSZOLIDÁCIÓ SZÜKSÉGES
-**Státusz:** SECURITY RÉSZ RESOLVED; DOC NORMALIZATION NYITOTT
+**Review severity:** BLOCKING  
+**Resolution:** SECURITY FINDING LEZÁRVA; DOKUMENTÁCIÓ FOLYAMATOSAN KONSZOLIDÁLVA  
+**Státusz:** SECURITY RESOLVED
 
 A review a `141fa6a` állapotot vizsgálta. A review után a tényleges security gate lezárult:
 
@@ -58,32 +58,62 @@ A review a `141fa6a` állapotot vizsgálta. A review után a tényleges security
 7. bizonyító artifact: `ahely-booking-production_20260902T134133Z_6cfad69ed03c.tar.gz.age`;
 8. végső log: `Backup artifact verified on both independent targets`.
 
-A security kockázat tehát lezárt. A runbook/technical design régi „open blocker” szövegét a dokumentációs normalizációban frissíteni kell.
+A security kockázat tehát lezárt. Az aktuális PR- és restore-drill dokumentáció már PASS állapotként kezeli a rotációt. Régebbi történeti dokumentumokban szereplő korábbi blocker-szöveg csak történeti kontextusként értelmezhető.
 
 ### M1 – restore drill nem nulla üzleti adaton
 
-**Review severity:** MAJOR
-**Resolution:** ELFOGADVA
-**Státusz:** NYITOTT RELEASE GATE
+**Review severity:** MAJOR  
+**Resolution:** ELFOGADVA ÉS BIZONYÍTVA  
+**Státusz:** RESOLVED
 
-A 2026-09-01-i v2 restore drill technikailag teljes PASS, de a production állapotban a legtöbb üzleti kontroll 0 volt. Emiatt a nem nulla Auth/booking/audit/settlement adatok visszaállítása még nincs teljes körűen bizonyítva.
+A 2026-09-01-i v2 production restore drill technikailag teljes PASS volt, de a production állapotban a legtöbb üzleti kontroll 0 volt. A review ezért helyesen kérte a nem nulla Auth/booking/audit/settlement adatok külön visszaállítási bizonyítását.
 
-Döntés: production GO előtt kötelező egy új izolált staging/sandbox restore drill nem nulla reprezentatív adatokkal. Nem elég „később javasolt” feladatként kezelni.
+2026-09-02-án automatizált, izolált M1 regressziós drill készült:
 
-Minimum bizonyítandó:
+- `scripts/fixtures/nonzero-restore-fixture.sql` reprezentatív nem nulla adatállapotot hoz létre;
+- `scripts/test-backup-restore-nonzero.sh` a tényleges `scripts/backup-production.sh` backup-logikát futtatja;
+- valódi `age` titkosítás/visszafejtés és SHA-256 ellenőrzés történik;
+- a forrás stack leállítása után külön, pristine `supabase init` restore-target készül, alkalmazási migrációk előzetes ráfuttatása nélkül;
+- a restore egy tranzakcióban, fail-closed módban fut;
+- control-count, migration history, RLS, policy, FK és trigger ellenőrzés történik;
+- a restored adatbázison schema lint fut.
 
-- legalább 1 auth user + profile;
-- room permission;
-- booking + booking series/releváns ismétlődés;
-- cancellation/audit sor;
-- monthly settlement + revision + booking line;
-- RLS és FK/trigger működés restore után;
-- control-count egyezés.
+Bizonyító futás:
+
+- workflow: `Database tests`;
+- run: `33647635924`;
+- job: `100306833094`;
+- `Run nonzero backup/restore sandbox drill`: PASS;
+- teljes job: PASS;
+- pgTAP: 50 fájl / 643 teszt PASS.
+
+Forrás és restore pontosan egyező kontrollszámok:
+
+- `auth_users=2`;
+- `profiles=2`;
+- `rooms=11`;
+- `user_room_permissions=2`;
+- `booking_series=1`;
+- `bookings_total=13`;
+- `bookings_active=12`;
+- `bookings_cancelled=1`;
+- `booking_cancellations=1`;
+- `audit_logs=5`;
+- `monthly_settlements=1`;
+- `settlement_revisions=1`;
+- `settlement_booking_lines=11`;
+- `migration_history_rows=63`.
+
+A migration history restore `COPY 63` eredménnyel futott. A szerkezeti RLS/policy/FK/trigger ellenőrzések PASS eredményt adtak.
+
+Részletes bizonyíték: `docs/PRODUCTION_BACKUP_RESTORE_DRILL_PLAN_2026-09-01.md`.
+
+**Következtetés:** az M1 production gate lezárva; a nem nulla üzleti adatok visszaállíthatósága automatizált regresszióval bizonyított.
 
 ### M2 – B2 napi kulcs túlzott jogosultsága
 
-**Review severity:** MAJOR
-**Resolution:** ELFOGADVA ÉS IMPLEMENTÁLVA
+**Review severity:** MAJOR  
+**Resolution:** ELFOGADVA ÉS IMPLEMENTÁLVA  
 **Státusz:** IMPLEMENTÁCIÓ RESOLVED; POST-MERGE PROOF NYITOTT
 
 A napi backup/retention korábban ugyanazt a B2 application key secretet használta, amely az Object Lock adminisztrációhoz is szükséges capability-ket hordozta. Least-privilege szempontból ezt szétválasztottuk.
@@ -101,8 +131,8 @@ Mivel a production backup workflow még nincs a default branch-en, a napi kulccs
 
 ### M3 – retention és backup időzítési race
 
-**Review severity:** MAJOR
-**Resolution:** ELFOGADVA ÉS JAVÍTVA
+**Review severity:** MAJOR  
+**Resolution:** ELFOGADVA ÉS JAVÍTVA  
 **Státusz:** RESOLVED
 
 2026-09-02-i javítás:
@@ -114,18 +144,18 @@ Mivel a production backup workflow még nincs a default branch-en, a napi kulccs
 
 ### M4 – `cutoff_15` vs „0–14 nap”
 
-**Review severity:** MAJOR
-**Resolution:** NEM HIBA / DOKUMENTÁCIÓS PONTOSÍTÁS
+**Review severity:** MAJOR  
+**Resolution:** NEM HIBA / DOKUMENTÁCIÓS PONTOSÍTÁS  
 **Státusz:** RESOLVED
 
 A `cutoff_15 = now - 15 days` implementáció a 0–14 napos életkor-tartományt helyesen `<15 nap` intervallumként valósítja meg. Ez 15 darab életkor-napot jelent: 0,1,...,14.
 
-A kód módosítása 14 napos cutoffra valójában túl korai ritkítást okozna. Dokumentációban érdemes explicit `<15 nap` megfogalmazást használni.
+A kód módosítása 14 napos cutoffra valójában túl korai ritkítást okozna.
 
 ### M5 – restore anti-production technikai guard
 
-**Review severity:** MAJOR
-**Resolution:** RÉSZBEN ELFOGADVA
+**Review severity:** MAJOR  
+**Resolution:** RÉSZBEN ELFOGADVA  
 **Státusz:** FELTÉTELES / JÖVŐBELI AUTOMATIZÁLÁSI GATE
 
 Jelenleg nincs általános restore script, amely connection stringet fogadna és automatikusan restore-olna. A restore eljárás manuális, izolált local Supabase stackre dokumentált, és a runbook tiltja a production in-place restore-t.
@@ -134,8 +164,8 @@ Ezért jelen állapotban nincs olyan automation surface, amelybe host guard ép�
 
 ### M6 – GitHub `production` Environment protection
 
-**Review severity:** MAJOR
-**Resolution:** KÉZZEL ELLENŐRIZVE ÉS SZIGORÍTVA
+**Review severity:** MAJOR  
+**Resolution:** KÉZZEL ELLENŐRIZVE ÉS SZIGORÍTVA  
 **Státusz:** RESOLVED
 
 2026-09-02-án a GitHub `production` Environment beállításait a projektgazda képernyőképpel ellenőrizte, majd a branch-hozzáférést és bypass szabályt szigorította.
@@ -149,24 +179,26 @@ Aktuális állapot:
 - administrator bypass: OFF;
 - `SUPABASE_PRODUCTION_DB_URL` environment secretként tárolva.
 
-Ez biztosítja, hogy a scheduled production backup/retention a `main` ágon ne akadjon manuális approvalra, ugyanakkor fejlesztési/PR branch ne férjen hozzá a production environmenthez. A one-shot/admin workflow-k sem használhatják a production environmentet fejlesztési branchről.
+Ez biztosítja, hogy a scheduled production backup/retention a `main` ágon ne akadjon manuális approvalra, ugyanakkor fejlesztési/PR branch ne férjen hozzá a production environmenthez.
 
 ## Egyéb findingok
 
 - `/api/health` rate limit: MINOR; jelenlegi alacsony terhelés mellett nem release blocker, de monitorozandó.
 - 24 hónapos retention calendar-month definíció: INFO; explicit dokumentációs pontosítás indokolt.
 - restore runbook Windows/PowerShell-specifikus részei: INFO; a reprodukció jelenleg ezen a bizonyított platformon érvényes.
+- restored schema lint: `public.create_booking` függvényben `v_existing_id` változó nem olvasott; nem M1/restore-integritási blocker, külön kódtisztításként kezelhető.
 
 ## Aktuális release állapot a review után
 
 **NO production GO.**
 
-Nyitott kritikus/major gate-ek:
+A review technikai findingjai közül B2, B3 security része, M1, M3, M4 és M6 lezárva. M2 implementációja szintén lezárt; csak post-merge működési proof marad. M5 jövőbeli restore-automation gate.
 
-1. B1: merge után tényleges scheduled backup bizonyítás;
-2. M1: nem nulla reprezentatív adattal új restore drill;
-3. M2: post-merge daily B2 credential backup + retention dry-run bizonyítás;
-4. mobil UAT #98;
-5. teljes staging/UAT és végső production gate.
+Nyitott release/gate tételek:
 
-A B2 PR-trigger security finding (B2), OAuth security finding (B3 security része), retention race (M3), B2 least-privilege implementáció (M2) és GitHub production Environment protection finding (M6) 2026-09-02-án javítva/lezárva; M2-nél csak a post-merge működési proof marad.
+1. B1: csak jóváhagyott merge után az első valódi scheduled production backup bizonyítása;
+2. M2: csak jóváhagyott merge után daily B2 credentialdel production backup + retention dry-run proof;
+3. mobil UAT #98;
+4. teljes staging/UAT és végső production gate.
+
+A fenti B1/M2 post-merge ellenőrzések **nem indokolják a merge előrehozását**: `main` merge és production aktiválás csak a mobil UAT, teljes staging/UAT és végső jóváhagyás után történhet.
