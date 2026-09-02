@@ -21,8 +21,9 @@ on:
 permissions:
   contents: read
 
+# Shared with retention so artifact creation and deletion can never overlap.
 concurrency:
-  group: production-database-backup
+  group: production-backup-storage-maintenance
   cancel-in-progress: false
 
 jobs:
