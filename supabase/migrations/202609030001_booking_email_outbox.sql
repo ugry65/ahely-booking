@@ -348,6 +348,8 @@ begin
         lease_token = extensions.gen_random_uuid(),
         leased_at = clock_timestamp(),
         lease_expires_at = clock_timestamp() + make_interval(secs => p_lease_seconds),
+        last_error_code = null,
+        last_error_safe = null,
         updated_at = clock_timestamp()
     from candidates
     where email.id = candidates.id

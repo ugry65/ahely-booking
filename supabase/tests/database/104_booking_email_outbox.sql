@@ -364,9 +364,13 @@ select set_config('test.email_retry_claim_count', count(*)::text, true),
 from public.claim_booking_email_outbox(10, 300);
 reset role;
 select is(
-  current_setting('test.email_retry_claim_count')::integer,
-  1,
-  'Az esedékessé vált retry rekord új lease-szel claimelhető'
+  current_setting('test.email_retry_claim_count') || ':' || (
+    select (last_error_code is null and last_error_safe is null)::text
+    from public.booking_email_outbox
+    where id = current_setting('test.email_outbox_id')::uuid
+  ),
+  '1:true',
+  'Az esedékes retry új lease-szel claimelhető, a korábbi hiba pedig az append-only naplóban marad'
 );
 
 set local role service_role;
