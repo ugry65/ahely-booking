@@ -15,10 +15,12 @@ import {
 import type { BookingEmailEventType, BookingEmailScope } from "./schema";
 import {
   BOOKING_EMAIL_MODES,
-  processBookingEmailBatch,
+  runAuditedBookingEmailBatch,
   type BookingEmailCompletion,
   type BookingEmailMode,
   type BookingEmailOutboxStore,
+  type BookingEmailWorkerRunCompletion,
+  type BookingEmailWorkerRunStore,
   type ClaimedBookingEmail,
 } from "./worker";
 import type { BookingEmailWorkerRuntime } from "./worker-route";
@@ -93,7 +95,14 @@ async function rpcResult(result: PromiseLike<RpcResult>): Promise<unknown> {
   return data;
 }
 
-function createStore(): BookingEmailOutboxStore {
+type BookingEmailWorkerStore = BookingEmailOutboxStore & BookingEmailWorkerRunStore;
+
+function workerRunId(value: unknown): string {
+  if (typeof value !== "string" || !value) throw new Error("Érvénytelen worker-futás azonosító.");
+  return value;
+}
+
+function createStore(): BookingEmailWorkerStore {
   const admin = createAdminClient();
   return {
     async claim(batchSize, leaseSeconds) {
@@ -113,6 +122,25 @@ function createStore(): BookingEmailOutboxStore {
         p_error_safe: completion.errorSafe ?? null,
         p_duration_ms: completion.durationMs,
         p_next_attempt_at: completion.nextAttemptAt ?? null,
+      }));
+    },
+    async start(mode) {
+      return workerRunId(await rpcResult(admin.rpc("start_booking_email_worker_run", {
+        p_mode: mode,
+      })));
+    },
+    async finish(runId, completion: BookingEmailWorkerRunCompletion) {
+      const summary = completion.outcome === "success" ? completion.summary : null;
+      await rpcResult(admin.rpc("finish_booking_email_worker_run", {
+        p_run_id: runId,
+        p_outcome: completion.outcome,
+        p_claimed_count: summary?.claimed ?? 0,
+        p_sent_count: summary?.sent ?? 0,
+        p_captured_count: summary?.captured ?? 0,
+        p_retry_count: summary?.retry ?? 0,
+        p_dead_letter_count: summary?.deadLetter ?? 0,
+        p_error_code: completion.outcome === "failed" ? completion.errorCode : null,
+        p_error_safe: completion.outcome === "failed" ? completion.errorSafe : null,
       }));
     },
   };
@@ -159,9 +187,10 @@ export function createBookingEmailWorkerRuntime(): BookingEmailWorkerRuntime {
 
   return {
     mode,
-    run: () => processBookingEmailBatch({
+    run: () => runAuditedBookingEmailBatch({
       mode,
       store,
+      runStore: store,
       transport,
       senderConfig: config,
       batchSize,

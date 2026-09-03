@@ -40,6 +40,15 @@ export interface BookingEmailOutboxStore {
   complete(completion: BookingEmailCompletion): Promise<void>;
 }
 
+export type BookingEmailWorkerRunCompletion =
+  | { outcome: "success"; summary: BookingEmailWorkerSummary }
+  | { outcome: "failed"; errorCode: string; errorSafe: string };
+
+export interface BookingEmailWorkerRunStore {
+  start(mode: Exclude<BookingEmailMode, "disabled">): Promise<string>;
+  finish(runId: string, completion: BookingEmailWorkerRunCompletion): Promise<void>;
+}
+
 export type BookingEmailWorkerSummary = {
   mode: BookingEmailMode;
   claimed: number;
@@ -57,6 +66,10 @@ export type BookingEmailWorkerOptions = {
   batchSize?: number;
   leaseSeconds?: number;
   now?: () => Date;
+};
+
+export type AuditedBookingEmailWorkerOptions = BookingEmailWorkerOptions & {
+  runStore: BookingEmailWorkerRunStore;
 };
 
 const RETRY_DELAYS_MINUTES = [1, 5, 15, 60, 240, 720, 1440] as const;
@@ -157,6 +170,29 @@ export async function processBookingEmailBatch(
   }
 
   return summary;
+}
+
+export async function runAuditedBookingEmailBatch(
+  options: AuditedBookingEmailWorkerOptions,
+): Promise<BookingEmailWorkerSummary> {
+  const runId = await options.runStore.start(options.mode);
+
+  try {
+    const summary = await processBookingEmailBatch(options);
+    await options.runStore.finish(runId, { outcome: "success", summary });
+    return summary;
+  } catch (error) {
+    try {
+      await options.runStore.finish(runId, {
+        outcome: "failed",
+        errorCode: "worker_failed",
+        errorSafe: "A booking e-mail worker futása nem fejeződött be.",
+      });
+    } catch {
+      // Az eredeti worker-hiba marad az elsődleges; adatbázis-kieséskor a futás running állapota is riasztási jel.
+    }
+    throw error;
+  }
 }
 
 export function disabledBookingEmailWorkerSummary(): BookingEmailWorkerSummary {

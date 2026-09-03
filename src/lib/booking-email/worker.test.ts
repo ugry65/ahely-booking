@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { createCaptureTransport, type EmailTransport } from "./provider";
 import {
   processBookingEmailBatch,
+  runAuditedBookingEmailBatch,
   type BookingEmailCompletion,
   type BookingEmailOutboxStore,
+  type BookingEmailWorkerRunStore,
   type ClaimedBookingEmail,
 } from "./worker";
 
@@ -55,6 +57,61 @@ describe("booking e-mail worker", () => {
     expect(summary).toEqual({ mode: "capture", claimed: 0, sent: 0, captured: 0, retry: 0, deadLetter: 0 });
     expect(store.claim).toHaveBeenCalledWith(10, 300);
     expect(store.complete).not.toHaveBeenCalled();
+  });
+
+  it("a sikeres üres futást is heartbeatként és pontos összesítővel naplózza", async () => {
+    const store = storeFor([]);
+    const runStore: BookingEmailWorkerRunStore = {
+      start: vi.fn().mockResolvedValue("run-201"),
+      finish: vi.fn().mockResolvedValue(undefined),
+    };
+    const summary = await runAuditedBookingEmailBatch({
+      mode: "capture",
+      store,
+      runStore,
+      transport: createCaptureTransport(),
+      senderConfig,
+    });
+    expect(runStore.start).toHaveBeenCalledWith("capture");
+    expect(runStore.finish).toHaveBeenCalledWith("run-201", { outcome: "success", summary });
+  });
+
+  it("a worker-hibát nyers hiba nélkül failed futásként naplózza", async () => {
+    const store = storeFor([]);
+    store.claim.mockRejectedValue(new Error("SUPABASE_SERVICE_ROLE_KEY=private"));
+    const runStore: BookingEmailWorkerRunStore = {
+      start: vi.fn().mockResolvedValue("run-202"),
+      finish: vi.fn().mockResolvedValue(undefined),
+    };
+    await expect(runAuditedBookingEmailBatch({
+      mode: "send",
+      store,
+      runStore,
+      transport: createCaptureTransport(),
+      senderConfig,
+    })).rejects.toThrow("SUPABASE_SERVICE_ROLE_KEY=private");
+    expect(runStore.finish).toHaveBeenCalledWith("run-202", {
+      outcome: "failed",
+      errorCode: "worker_failed",
+      errorSafe: "A booking e-mail worker futása nem fejeződött be.",
+    });
+    expect(JSON.stringify((runStore.finish as ReturnType<typeof vi.fn>).mock.calls)).not.toContain("private");
+  });
+
+  it("a heartbeat naplózási hiba nem fedi el az eredeti worker-hibát", async () => {
+    const store = storeFor([]);
+    store.claim.mockRejectedValue(new Error("primary worker failure"));
+    const runStore: BookingEmailWorkerRunStore = {
+      start: vi.fn().mockResolvedValue("run-203"),
+      finish: vi.fn().mockRejectedValue(new Error("heartbeat unavailable")),
+    };
+    await expect(runAuditedBookingEmailBatch({
+      mode: "send",
+      store,
+      runStore,
+      transport: createCaptureTransport(),
+      senderConfig,
+    })).rejects.toThrow("primary worker failure");
   });
 
   it("capture módban renderel, majd captured eredménnyel zár", async () => {

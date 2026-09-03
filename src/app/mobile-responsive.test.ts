@@ -50,4 +50,15 @@ describe("mobile responsive page baseline", () => {
     expect(css).toContain(".cancellation-report .table-scroll");
     expect(css).toContain("content: attr(data-label)");
   });
+
+  it("keeps the booking e-mail monitor cards and audit tables mobile-safe", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "src", "app", "(protected)", "admin", "email-ertesitesek", "page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "mobile-admin-responsive.css"), "utf8");
+    expect(page).toContain("email-monitor-grid");
+    expect(page).toContain("email-monitor-table");
+    expect(page).toContain('data-label="Biztonságos hiba"');
+    expect(css).toContain(".email-monitor-status dl");
+    expect(css).toContain(".email-monitor .table-scroll");
+    expect(css).toContain(".email-monitor-table td::before");
+  });
 });

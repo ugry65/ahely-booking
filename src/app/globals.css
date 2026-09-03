@@ -52,6 +52,7 @@ nav { display: flex; align-items: center; justify-content: space-between; gap: 1
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
 .form-help { margin: 0; font-size: .83rem; }
 .message.error { border: 1px solid #dbaca4; background: #fff0ed; color: #7b271c; }
+.message.warning { border: 1px solid #d8bd7c; background: #fff8e7; color: #70551c; }
 .message.success { border: 1px solid #a8cbb5; background: #edf8f0; color: #205537; }
 .empty-state { padding: 3rem 1.5rem; text-align: center; }
 .admin-grid { display: grid; grid-template-columns: minmax(18rem, 30rem) minmax(24rem, 1fr); gap: 1.5rem; align-items: start; }
@@ -91,6 +92,15 @@ legend { padding: 0 .35rem; font-weight: 800; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: .7rem; border-bottom: 1px solid #d8d4c8; text-align: left; white-space: nowrap; }
 tfoot th { font-weight: 800; }
+.email-monitor-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; }
+.email-monitor-metric { display: grid; gap: .3rem; width: 100%; min-width: 0; padding: 1.25rem; }
+.email-monitor-metric strong { font-size: 2rem; line-height: 1; }
+.email-monitor-metric small { color: #65716a; }
+.email-monitor-status dl { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 0; }
+.email-monitor-status dl div { min-width: 0; padding-top: .7rem; border-top: 1px solid #e4e0d7; }
+.email-monitor-status dt { color: #65716a; font-size: .82rem; font-weight: 700; }
+.email-monitor-status dd { margin: .3rem 0 0; overflow-wrap: anywhere; font-weight: 800; }
+.email-monitor-table code { white-space: normal; overflow-wrap: anywhere; }
 .desktop-calendar-header { display: flex; align-items: center; justify-content: space-between; gap: .75rem; flex-wrap: wrap; padding: .35rem 0 .5rem; border-bottom: 1px solid #ddd8cc; }
 .mobile-date-toolbar { display: none; }
 .booking-modal-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 1rem; background: rgb(31 42 36 / 42%); }
