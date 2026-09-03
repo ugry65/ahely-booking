@@ -297,6 +297,19 @@ Javítás:
 
 Tulajdonosi iPhone UAT: **PASS („Most jó”)**.
 
+### Beállítások
+
+A Beállítások oldal forrásauditja szerint az előrefoglalási limitek űrlapját a közös mobil responsive réteg már egy oszlopra töri, a mezők és a mentés gomb viewporton belül maradnak. Külön oldal-specifikus javítás nem volt szükséges.
+
+### Lemondások
+
+A hátralévő mobil audit két rést azonosított és javított:
+
+- a széles összesítő és tételes riporttáblák mobilon kártyanézetté alakulnak, az összes üzleti mező saját címkével megmarad;
+- a Havi órák oldalon már igazolt iOS `input[type="month"]` megoldással összhangban mobilon külön Év + Hónap választó jelenik meg, desktopon a natív hónapválasztó marad.
+
+Automatikus regresszióvédelem ellenőrzi a kártyanézetet, a kritikus lemondási mezők megtartását és a reszponzív hónapválasztó használatát. Valós iPhone/Android UAT még szükséges.
+
 ### Android
 
 Az általános responsive CSS várhatóan platformfüggetlen, de iOS/Android böngészőeltérések miatt **külön valós Android Chrome UAT szükséges**. iPhone PASS nem tekintendő automatikus Android PASS-nak.
@@ -325,25 +338,36 @@ A releváns PR #110 futásokon unit test, typecheck és production build PASS á
 
 ---
 
-## 6. Nyitott kérdés – inaktív „M hely” helyiségcsoport törlése
+## 6. Inaktív „Mhely” helyiségcsoport törlésének vizsgálata
 
-A tulajdonos jelezte, hogy van egy inaktív `M hely` csoport, és kérdés, hogy törölhető-e az admin UI-ból.
+A tulajdonos jelezte, hogy van egy inaktív `M hely` csoport. A staging adatbázisban a tényleges név `Mhely`.
 
-Jelenleg a Helyiségek adminfelület `saveAccessGroup` művelettel létrehozást/módosítást/inaktiválást támogat; külön csoporttörlés UI a vizsgált markupban nincs.
+Vizsgálati eredmény:
 
-A csoport fizikai törlését **nem szabad ad-hoc módon elvégezni**, mert csoport–helyiség és user/csoport kapcsolatokra, auditálhatóságra és történeti jogosultságokra hatással lehet.
+- a Helyiségek adminfelület `saveAccessGroup` művelettel létrehozást/módosítást/inaktiválást támogat; külön csoporttörlés UI nincs;
+- támogatott `admin_delete_access_group` vagy más csoporttörlő RPC nincs;
+- az `access_group_members` és `access_group_rooms` idegen kulcsai `ON DELETE RESTRICT` szabályúak;
+- a staging `Mhely` csoport inaktív, jelenleg 0 user-tagsága és 0 room-mappingje van;
+- a csoporthoz 2 megőrzött auditbejegyzés tartozik (`created`, `updated`);
+- nyers SQL `DELETE` a jelenlegi kapcsolatmentes állapotban fizikailag végrehajtható lenne, de ez nem támogatott, nem auditált admin művelet, ezért nem alkalmazható kerülőútként.
 
-Következő lépésként a kapcsolódó DB sémát/RPC/actiont meg kell vizsgálni, és csak utána dönthető el:
+Ajánlott hosszú távú modell:
 
-- marad-e kizárólag soft delete/inaktiválás;
-- vagy készül biztonságos admin „Törlés” művelet dependency-ellenőrzéssel és auditnaplóval.
+- alapértelmezett életciklus az inaktiválás;
+- külön végleges admin törlés csak akkor készüljön, ha erre explicit üzleti igény van;
+- a művelet csak nem kanonikus, már inaktív, aktuális tagság és room-mapping nélküli csoportot törölhessen;
+- a dependency-ellenőrzés, zárolás, törlés és `access_group.deleted` audit egy tranzakcióban történjen;
+- kapcsolat vagy tiltott kanonikus csoport esetén fail-closed hiba legyen;
+- DB-regressziós teszt és független jogosultsági/adatbiztonsági review szükséges.
+
+Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapot működésileg biztonságos; külön törlés funkció készítése tulajdonosi döntésre vár.
 
 ---
 
 ## 7. Következő fejlesztési sorrend
 
-1. a `M hely` csoport törlés/inaktiválás üzleti-technikai szabályának tisztázása;
-2. #109 további mobil oldalak ellenőrzése/javítása: Beállítások, Lemondások és egyéb admin oldalak;
+1. döntés arról, hogy szükséges-e külön, auditált helyiségcsoport-törlés; addig az inaktiválás a támogatott működés;
+2. #109 Lemondások célzott iPhone UAT, valamint a védett oldalak tablet/desktop regressziós ellenőrzése;
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
