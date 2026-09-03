@@ -38,4 +38,16 @@ describe("mobile responsive page baseline", () => {
     expect(css).toContain(".admin-permission-list details");
     expect(css).toContain(".permission-matrix-row > button");
   });
+
+  it("keeps the cancellation report readable without page-level horizontal scrolling", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "src", "app", "(protected)", "admin", "lemondasok", "page.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "mobile-admin-responsive.css"), "utf8");
+    expect(page).toContain("ResponsiveMonthField");
+    expect(page).toContain("cancellation-summary-table");
+    expect(page).toContain("cancellation-detail-table");
+    expect(page).toContain('data-label="Lemondás ideje"');
+    expect(page).toContain('data-label="Indok"');
+    expect(css).toContain(".cancellation-report .table-scroll");
+    expect(css).toContain("content: attr(data-label)");
+  });
 });

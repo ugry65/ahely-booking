@@ -103,4 +103,55 @@
   .admin-record-list .admin-editor-row > button {
     width: 100%;
   }
+
+  /* Lemondások: minden riportmező kártyán marad, oldalirányú görgetés nélkül. */
+  .cancellation-report .table-scroll {
+    overflow-x: visible;
+  }
+
+  .cancellation-table,
+  .cancellation-table tbody {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: .85rem;
+  }
+
+  .cancellation-table thead {
+    display: none;
+  }
+
+  .cancellation-table tr {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding: .8rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .75rem;
+    background: #fff;
+  }
+
+  .cancellation-table td {
+    display: grid;
+    grid-template-columns: minmax(7.6rem, 42%) minmax(0, 1fr);
+    gap: .65rem;
+    align-items: start;
+    min-width: 0;
+    padding: .45rem 0;
+    border-bottom: 1px solid #ece8df;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .cancellation-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .cancellation-table td::before {
+    content: attr(data-label);
+    color: #65716a;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
 }

@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { cancellationPeriod, CANCELLATION_PERIODS, leadTimeLabel, type CancellationDetailRow, type CancellationSummaryRow } from "@/lib/cancellation-report";
 import { monthStart, validMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
+import { ResponsiveMonthField } from "../responsive-month-field";
 
 function currentBudapestMonth() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit" }).format(new Date());
@@ -35,14 +36,14 @@ export default async function CancellationsPage({ searchParams }: { searchParams
   const detailExportQuery = new URLSearchParams({ honap: endMonth, idoszak: String(period) });
   if (selectedUserId) detailExportQuery.set("user", selectedUserId);
 
-  return <section className="stack">
+  return <section className="stack cancellation-report">
     <header className="page-heading">
       <div><p className="eyebrow">Adminisztráció</p><h1>Lemondások</h1><p className="muted">A lemondási viselkedés külön riportja. Ezek az adatok nem részei a számlázási havi óráknak.</p></div>
       <Link className="button secondary" href="/admin/havi-orak">Havi órák</Link>
     </header>
 
     <form className="card monthly-filter" method="get">
-      <label>Záró hónap<input type="month" name="honap" defaultValue={endMonth} required /></label>
+      <ResponsiveMonthField initialMonth={endMonth} label="Záró hónap" name="honap" />
       <label>Időszak<select name="idoszak" defaultValue={String(period)}>{CANCELLATION_PERIODS.map((months) => <option key={months} value={months}>{months} hónap</option>)}</select></label>
       <button>Megjelenítés</button>
       <a className="button secondary" href={`/admin/lemondasok/export?honap=${endMonth}&idoszak=${period}`}>Összesítő CSV</a>
@@ -51,9 +52,9 @@ export default async function CancellationsPage({ searchParams }: { searchParams
     {summaryResponse.error ? <p className="message error" role="alert">A lemondási statisztika betöltése nem sikerült.</p> : null}
     <section className="card wide-card stack">
       <div><h2>Userenkénti lemondási statisztika</h2><p className="muted">A „lemondási arány” csak azt méri, amikor a foglalást maga a user mondta le. Admin által törölt foglalás nem növeli ezt az arányt. A „törölt foglalás/óra” viszont minden lemondott foglalást megmutat.</p></div>
-      <div className="table-scroll"><table>
+      <div className="table-scroll"><table className="cancellation-table cancellation-summary-table">
         <thead><tr><th>Felhasználó</th><th>Összes foglalás</th><th>Törölt foglalás</th><th>Törölt óra</th><th>User saját törlése</th><th>Lemondási arány</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={row.user_id}><td>{row.user_name}</td><td>{row.total_bookings}</td><td>{row.cancelled_count}</td><td>{hours(row.cancelled_hours)}</td><td>{row.user_cancelled_count}</td><td>{Number(row.cancellation_rate).toLocaleString("hu-HU", { maximumFractionDigits: 1 })}%</td></tr>)}</tbody>
+        <tbody>{rows.map((row) => <tr key={row.user_id}><td data-label="Felhasználó">{row.user_name}</td><td data-label="Összes foglalás">{row.total_bookings}</td><td data-label="Törölt foglalás">{row.cancelled_count}</td><td data-label="Törölt óra">{hours(row.cancelled_hours)}</td><td data-label="User saját törlése">{row.user_cancelled_count}</td><td data-label="Lemondási arány">{Number(row.cancellation_rate).toLocaleString("hu-HU", { maximumFractionDigits: 1 })}%</td></tr>)}</tbody>
       </table></div>
       {!rows.length && !summaryResponse.error ? <p className="muted">A kiválasztott időszakban nincs foglalási adat.</p> : null}
     </section>
@@ -68,9 +69,9 @@ export default async function CancellationsPage({ searchParams }: { searchParams
         <a className="button secondary" href={`/admin/lemondasok/reszletek-export?${detailExportQuery.toString()}`}>Részletes CSV</a>
       </form>
       {detailsResponse.error ? <p className="message error" role="alert">A tételes lemondások betöltése nem sikerült.</p> : null}
-      <div className="table-scroll"><table>
+      <div className="table-scroll"><table className="cancellation-table cancellation-detail-table">
         <thead><tr><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Mettől</th><th>Meddig</th><th>Óra</th><th>Lemondás ideje</th><th>Mennyivel előtte</th><th>Lemondta</th><th>Indok</th></tr></thead>
-        <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.cancelled_hours)}</td><td>{cancellationTimestamp(row.cancelled_at)}</td><td>{leadTimeLabel(row.minutes_before_start)}</td><td>{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</td><td>{row.cancellation_reason ?? "–"}</td></tr>)}</tbody>
+        <tbody>{details.map((row) => <tr key={row.booking_id}><td data-label="Felhasználó">{row.user_name}</td><td data-label="Dátum">{row.booking_date}</td><td data-label="Helyiség">{row.room_name}</td><td data-label="Mettől">{time(row.start_time)}</td><td data-label="Meddig">{time(row.end_time)}</td><td data-label="Óra">{hours(row.cancelled_hours)}</td><td data-label="Lemondás ideje">{cancellationTimestamp(row.cancelled_at)}</td><td data-label="Mennyivel előtte">{leadTimeLabel(row.minutes_before_start)}</td><td data-label="Lemondta">{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</td><td data-label="Indok">{row.cancellation_reason ?? "–"}</td></tr>)}</tbody>
       </table></div>
       {!details.length && !detailsResponse.error ? <p className="muted">A kiválasztott feltételekkel nincs lemondott foglalás.</p> : null}
     </section>

@@ -7,6 +7,11 @@
   display: none;
 }
 
+.responsive-month-field {
+  display: grid;
+  min-width: 0;
+}
+
 @media (max-width: 52rem) {
   .desktop-month-picker {
     display: none;
@@ -16,6 +21,12 @@
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: .65rem;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .monthly-filter > .responsive-month-field {
     width: 100%;
     min-width: 0;
     max-width: 100%;
