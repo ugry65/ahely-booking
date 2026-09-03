@@ -1,0 +1,47 @@
+.desktop-month-picker {
+  display: grid;
+  gap: .4rem;
+}
+
+.mobile-month-picker {
+  display: none;
+}
+
+@media (max-width: 52rem) {
+  .desktop-month-picker {
+    display: none;
+  }
+
+  .mobile-month-picker {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: .65rem;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mobile-month-picker-label {
+    grid-column: 1 / -1;
+    font-weight: 600;
+  }
+
+  .mobile-month-picker label {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mobile-month-picker label > span {
+    font-size: .78rem;
+    color: #65716a;
+  }
+
+  .mobile-month-picker select {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
