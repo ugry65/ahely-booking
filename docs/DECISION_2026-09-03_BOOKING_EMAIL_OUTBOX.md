@@ -251,7 +251,7 @@ Elkészült a `202609030001_booking_email_outbox.sql` migráció és a hozzá ta
 - legfeljebb 8 befejezett próbálkozás, eseménykori payload-immutabilitás és fizikai törlés tiltása;
 - 47 pgTAP ellenőrzés és külön két-workeres konkurencia-tesztscript.
 
-A migráció nincs alkalmazva stagingre vagy productionre. A helyi futtatókörnyezetben Supabase CLI/Postgres nem állt rendelkezésre, ezért a DB-tesztek tényleges futtatása a database CI vagy külön staging alkalmazás előtti friss lokális Supabase-környezet kötelező kapuja. Az alkalmazás 91 unit tesztje, typecheckje és production buildje PASS.
+A migráció nincs alkalmazva stagingre vagy productionre. A GitHub Database tests #520 friss adatbázis-resetből **685/685 pgTAP PASS** eredményt adott; az új két-workeres outbox claim konkurenciateszt, minden korábbi konkurenciateszt és a schema lint is PASS. Az Application checks #571, a helyi 91 unit teszt, typecheck, production build és a Vercel preview ellenőrzés szintén PASS.
 
 ## 12. Nyitott külső függőségek
 

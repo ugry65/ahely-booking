@@ -130,7 +130,7 @@ Részletes döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 A #111 draft ágon elkészült a külön outbox és append-only kézbesítési napló migrációja, az idempotens belső enqueue helper, valamint a service-role-only lease claim/result RPC. A regressziós csomag 47 pgTAP ellenőrzést és külön két-workeres `SKIP LOCKED` konkurenciatesztet tartalmaz.
 
-Az alkalmazásoldali 91 unit teszt, typecheck és production build PASS. A migráció még nincs stagingre alkalmazva; a helyi környezet Supabase CLI/Postgres hiánya miatt a pgTAP és konkurenciateszt tényleges futtatása továbbra is kötelező database CI/staging kapu. Nem történt valódi e-mail-küldés, main merge vagy production deploy.
+Az alkalmazásoldali 91 unit teszt, typecheck és production build PASS. A GitHub Database tests #520 friss resetből 685/685 pgTAP PASS eredményt adott; az új két-workeres outbox claim konkurenciateszt, minden korábbi konkurenciateszt és a schema lint is PASS. A migráció még nincs stagingre alkalmazva. Nem történt valódi e-mail-küldés, main merge vagy production deploy.
 
 ---
 
