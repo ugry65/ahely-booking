@@ -48,6 +48,18 @@ function recipient(value: string): string {
   return normalized;
 }
 
+export function validateBookingEmailSenderConfig(
+  config: BookingEmailSenderConfig,
+): BookingEmailSenderConfig {
+  const messageIdDomain = header(config.messageIdDomain, "Message-ID domain").toLowerCase();
+  if (!/^[a-z0-9.-]+$/.test(messageIdDomain)) throw new Error("Érvénytelen Message-ID domain.");
+  return {
+    from: header(config.from, "feladó"),
+    replyTo: recipient(config.replyTo),
+    messageIdDomain,
+  };
+}
+
 function messageId(jobId: string, domain: string): string {
   const safeId = jobId.toLowerCase();
   const safeDomain = header(domain, "Message-ID domain").toLowerCase();
@@ -61,14 +73,15 @@ export function buildOutboundBookingEmail(
   job: BookingEmailJob,
   config: BookingEmailSenderConfig,
 ): OutboundEmailMessage {
+  const validatedConfig = validateBookingEmailSenderConfig(config);
   const payload = parseBookingEmailJob(job);
   const rendered = renderBookingEmail(job.eventType, payload);
   return {
-    from: header(config.from, "feladó"),
-    replyTo: recipient(config.replyTo),
+    from: validatedConfig.from,
+    replyTo: validatedConfig.replyTo,
     to: recipient(job.recipientEmail),
     ...rendered,
-    messageId: messageId(job.id, config.messageIdDomain),
+    messageId: messageId(job.id, validatedConfig.messageIdDomain),
   };
 }
 

@@ -5,6 +5,7 @@ import {
   createBookingEmailSender,
   createCaptureTransport,
   createNodemailerCompatibleTransport,
+  validateBookingEmailSenderConfig,
 } from "./provider";
 import { renderBookingEmail } from "./render";
 import { parseBookingEmailPayload, type BookingEmailJob } from "./schema";
@@ -161,6 +162,14 @@ describe("booking e-mail provider adapter", () => {
   it("elutasítja a header injection kísérletet", () => {
     expect(() => buildOutboundBookingEmail({ ...job, recipientEmail: "maria@example.com\nBcc: x@example.com" }, config))
       .toThrow("címzett e-mail");
+  });
+
+  it("a feladói konfigurációt claim előtt validálhatóvá teszi", () => {
+    expect(validateBookingEmailSenderConfig(config)).toEqual(config);
+    expect(() => validateBookingEmailSenderConfig({ ...config, from: "A-Hely\r\nBcc: x@example.com" }))
+      .toThrow("feladó");
+    expect(() => validateBookingEmailSenderConfig({ ...config, messageIdDomain: "https://a-hely.com" }))
+      .toThrow("Message-ID domain");
   });
 
   it("capture módban hálózat nélkül eltárolja a teljes renderelt üzenetet", async () => {
