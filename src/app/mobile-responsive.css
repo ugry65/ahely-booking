@@ -45,6 +45,13 @@
     max-width: 100%;
   }
 
+  input[type="month"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
   button,
   .button {
     min-height: 2.75rem;
@@ -96,6 +103,11 @@
   .recurring-end-choice {
     min-width: 0;
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .monthly-filter > label {
+    width: 100%;
+    min-width: 0;
   }
 
   .table-scroll {
