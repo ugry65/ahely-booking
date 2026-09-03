@@ -132,6 +132,12 @@ A #111 draft ágon elkészült a külön outbox és append-only kézbesítési n
 
 Az alkalmazásoldali 91 unit teszt, typecheck és production build PASS. A GitHub Database tests #520 friss resetből 685/685 pgTAP PASS eredményt adott; az új két-workeres outbox claim konkurenciateszt, minden korábbi konkurenciateszt és a schema lint is PASS. A migráció még nincs stagingre alkalmazva. Nem történt valódi e-mail-küldés, main merge vagy production deploy.
 
+### Booking RPC enqueue-integráció – 2026-09-03
+
+A `202609030002_enqueue_booking_emails_from_audit.sql` migráció a kanonikus booking RPC-k meglévő, idempotencia-kulccsal korrelált auditját használja. A `DEFERRABLE INITIALLY DEFERRED` constraint trigger csak a logikai művelet minden booking-, cím- és admin díjazási mellékhatása után készíti el az outbox eseménykori payloadját, de még ugyanabban a tranzakcióban. Egyedi és `occurrence` művelethez egy booking-snapshot, `following`/`series` művelethez egy összefoglaló rekord készül; adminműveletnél is a booking owner a címzett. A payload nem tartalmaz foglalási megjegyzést.
+
+A regressziós csomag további 29 pgTAP ellenőrzést tartalmaz create/update/cancel, admin owner-routing, title utáni snapshot, sorozat create, occurrence/following scope, idempotens retry, rollback és későbbi profil/booking változás elleni immutabilitás lefedésére. A GitHub Database tests #525 friss resetből **714/714 pgTAP PASS** eredményt adott; minden booking-, scope-, hozzáférés- és outbox-konkurenciateszt, valamint a schema lint PASS. Application checks #576 PASS. Staging/production DB alkalmazás, valódi e-mail-küldés, main merge és production deploy nem történt.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány

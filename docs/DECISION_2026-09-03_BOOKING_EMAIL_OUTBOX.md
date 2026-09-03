@@ -230,7 +230,7 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 ## 11. Implementációs sorrend
 
 1. adatbázis-migráció, claim/result RPC-k és pgTAP – **draft ágon elkészült, stagingre még nincs alkalmazva**;
-2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek;
+2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek – **draft ágon elkészült**;
 3. provider adapter, fake transport és sablonok;
 4. worker route, retry és alkalmazástesztek;
 5. admin monitor/read model és riasztási heartbeat;
@@ -252,6 +252,10 @@ Elkészült a `202609030001_booking_email_outbox.sql` migráció és a hozzá ta
 - 47 pgTAP ellenőrzés és külön két-workeres konkurencia-tesztscript.
 
 A migráció nincs alkalmazva stagingre vagy productionre. A GitHub Database tests #520 friss adatbázis-resetből **685/685 pgTAP PASS** eredményt adott; az új két-workeres outbox claim konkurenciateszt, minden korábbi konkurenciateszt és a schema lint is PASS. Az Application checks #571, a helyi 91 unit teszt, typecheck, production build és a Vercel preview ellenőrzés szintén PASS.
+
+A második, `202609030002_enqueue_booking_emails_from_audit.sql` migráció a kanonikus RPC-k korrelált auditjából, tranzakció végéig halasztott constraint triggerrel készíti az eseménykori e-mail snapshotot. A halasztás biztosítja, hogy a booking title és az admin Tréningterem-díjazás atomi mellékhatásai is lezáruljanak az enqueue előtt, miközben rollback esetén sem booking, sem e-mail-feladat nem marad. A trigger a sorozat auditját felismerve egyetlen `occurrence`/`following`/`series` összefoglalót készít, így a bookingonkénti legacy audit/outbox események nem okoznak e-mail duplikációt.
+
+Az ehhez tartozó 29 új pgTAP ellenőrzéssel a teljes adatbáziscsomag **714/714 PASS** a GitHub Database tests #525 futásban. Az összes konkurenciateszt – beleértve az új integráció után izolált outbox claim race-t – és a schema lint PASS; Application checks #576 PASS. A két migráció továbbra sincs stagingre vagy productionre alkalmazva.
 
 ## 12. Nyitott külső függőségek
 

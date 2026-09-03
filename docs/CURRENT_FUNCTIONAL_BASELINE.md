@@ -255,6 +255,8 @@ A 2026-09-02-i üzleti döntés felülírja a korábbi opcionális e-mail állap
 
 A foglalási tranzakció és az értesítési kötelezettség transactional outboxban együtt rögzül. Külső e-mail-szolgáltatói hiba a foglalást nem gördítheti vissza; az értesítés retryzható és auditálható marad. Részletes technikai döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
+A #111 draft ágon a kanonikus create/update/cancel és sorozatos/scope RPC-k korrelált auditjából egy tranzakció végéig halasztott, belső trigger készít pontosan egy változtathatatlan outbox rekordot. Ez a title- és admin díjazási mellékhatások lezárása után, de még ugyanabban a booking tranzakcióban fut. A GitHub Database tests #525 friss resetből 714/714 pgTAP, minden konkurenciateszt és schema lint PASS eredményt adott; staging alkalmazás és valós e-mail-küldés még nem történt.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;
