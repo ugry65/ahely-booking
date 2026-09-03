@@ -343,7 +343,7 @@ Aktuális állapot:
 - kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; transactional outbox technikai irány;
 - migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
 - mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
-- a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; valós mobil UAT még szükséges;
+- a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
 - valós Android Chrome smoke UAT továbbra is szükséges, iPhone PASS nem automatikus Android PASS;
 - a stagingben `Mhely` néven szereplő inaktív csoportnak nincs aktuális user- vagy szobakapcsolata, de audit-előzménye van; támogatott törlő RPC/UI nincs, ezért nem töröltük. Alapértelmezett ajánlás az inaktiválás; külön végleges törlés csak explicit döntéssel, dependency-ellenőrzött és auditált tranzakcióként készülhet.
 

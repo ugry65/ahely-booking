@@ -308,7 +308,9 @@ A hátralévő mobil audit két rést azonosított és javított:
 - a széles összesítő és tételes riporttáblák mobilon kártyanézetté alakulnak, az összes üzleti mező saját címkével megmarad;
 - a Havi órák oldalon már igazolt iOS `input[type="month"]` megoldással összhangban mobilon külön Év + Hónap választó jelenik meg, desktopon a natív hónapválasztó marad.
 
-Automatikus regresszióvédelem ellenőrzi a kártyanézetet, a kritikus lemondási mezők megtartását és a reszponzív hónapválasztó használatát. Valós iPhone/Android UAT még szükséges.
+Automatikus regresszióvédelem ellenőrzi a kártyanézetet, a kritikus lemondási mezők megtartását és a reszponzív hónapválasztó használatát.
+
+Tulajdonosi iPhone UAT: **PASS („Működik”)**. A külön Év + Hónap választó a kereten belül marad és használható. Valós Android Chrome UAT még szükséges.
 
 ### Android
 
@@ -321,7 +323,8 @@ Minimum Android smoke UAT:
 - Havi órák és fizetendő;
 - Díjazás;
 - Hozzáférések;
-- Helyiségek/Helyiségcsoportok.
+- Helyiségek/Helyiségcsoportok;
+- Lemondások, különösen az Év + Hónap választó és a riportkártyák.
 
 ### Automatikus tesztek
 
@@ -367,7 +370,7 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 ## 7. Következő fejlesztési sorrend
 
 1. döntés arról, hogy szükséges-e külön, auditált helyiségcsoport-törlés; addig az inaktiválás a támogatott működés;
-2. #109 Lemondások célzott iPhone UAT, valamint a védett oldalak tablet/desktop regressziós ellenőrzése;
+2. #109 védett oldalak tablet/desktop regressziós ellenőrzése;
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
