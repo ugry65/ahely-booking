@@ -16,6 +16,31 @@ test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
 
 psql "$database_url" -X -v ON_ERROR_STOP=1 <<SQL
+-- Earlier committed booking concurrency tests now legitimately leave pending
+-- notification work behind. Drain it through the public worker state machine so
+-- this test's two workers compete only for the dedicated fixture below.
+do \$drain\$
+declare
+  claimed record;
+  claimed_any boolean;
+begin
+  loop
+    claimed_any := false;
+    for claimed in
+      select * from public.claim_booking_email_outbox(100, 30)
+    loop
+      claimed_any := true;
+      perform public.complete_booking_email_outbox(
+        claimed.id,
+        claimed.lease_token,
+        'captured'
+      );
+    end loop;
+    exit when not claimed_any;
+  end loop;
+end;
+\$drain\$;
+
 insert into auth.users (id, email, raw_user_meta_data) values
   ('$actor_id', 'email-claim-actor@example.invalid', '{"first_name":"Claim","last_name":"Actor"}'),
   ('$user_id', 'email-claim-user@example.invalid', '{"first_name":"Claim","last_name":"User"}');
