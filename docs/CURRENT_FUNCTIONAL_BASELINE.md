@@ -257,6 +257,8 @@ A foglalási tranzakció és az értesítési kötelezettség transactional outb
 
 A #111 draft ágon a kanonikus create/update/cancel és sorozatos/scope RPC-k korrelált auditjából egy tranzakció végéig halasztott, belső trigger készít pontosan egy változtathatatlan outbox rekordot. Ez a title- és admin díjazási mellékhatások lezárása után, de még ugyanabban a booking tranzakcióban fut. A GitHub Database tests #525 friss resetből 714/714 pgTAP, minden konkurenciateszt és schema lint PASS eredményt adott; staging alkalmazás és valós e-mail-küldés még nem történt.
 
+Ugyanezen a draft ágon elkészült a szigorú `payload_version=1` alkalmazásoldali validáció, a magyar text/HTML create/update/cancel és sorozat-összefoglaló renderer, az adminjelzés, HTML/header-injection védelem, `Europe/Budapest` DST-formázás, valamint a providerfüggetlen capture és Nodemailer-kompatibilis transport adapter. Application checks #578: 20 fájl / 109 teszt, typecheck és build PASS; Database tests #527 és Vercel PASS. Tényleges Nodemailer/SMTP kliens, worker route és valós küldés még nincs bekötve.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;

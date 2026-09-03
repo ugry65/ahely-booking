@@ -231,7 +231,7 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 
 1. adatbázis-migráció, claim/result RPC-k és pgTAP – **draft ágon elkészült, stagingre még nincs alkalmazva**;
 2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek – **draft ágon elkészült**;
-3. provider adapter, fake transport és sablonok;
+3. provider adapter, fake transport és sablonok – **providerfüggetlen alkalmazásréteg a draft ágon elkészült; tényleges Nodemailer-kliens még nyitott**;
 4. worker route, retry és alkalmazástesztek;
 5. admin monitor/read model és riasztási heartbeat;
 6. `capture` módú staging deploy és DB/e-mail reconciliation;
@@ -256,6 +256,10 @@ A migráció nincs alkalmazva stagingre vagy productionre. A GitHub Database tes
 A második, `202609030002_enqueue_booking_emails_from_audit.sql` migráció a kanonikus RPC-k korrelált auditjából, tranzakció végéig halasztott constraint triggerrel készíti az eseménykori e-mail snapshotot. A halasztás biztosítja, hogy a booking title és az admin Tréningterem-díjazás atomi mellékhatásai is lezáruljanak az enqueue előtt, miközben rollback esetén sem booking, sem e-mail-feladat nem marad. A trigger a sorozat auditját felismerve egyetlen `occurrence`/`following`/`series` összefoglalót készít, így a bookingonkénti legacy audit/outbox események nem okoznak e-mail duplikációt.
 
 Az ehhez tartozó 29 új pgTAP ellenőrzéssel a teljes adatbáziscsomag **714/714 PASS** a GitHub Database tests #525 futásban. Az összes konkurenciateszt – beleértve az új integráció után izolált outbox claim race-t – és a schema lint PASS; Application checks #576 PASS. A két migráció továbbra sincs stagingre vagy productionre alkalmazva.
+
+Az alkalmazásoldali renderer/provider alapréteg szigorúan csak a `payload_version=1` sémát fogadja el, ismeretlen mezőt – így foglalási megjegyzést is – elutasít. Magyar text és mobilbarát HTML sablont ad create/update/cancel eseményhez, minden scope-hoz, update előtte/utána tartalommal, adminjelzéssel és budapesti DST-formázással. A HTML és a mail headerek injekcióvédettek. A transport szerződés capture implementációval és Nodemailer-kompatibilis adapterrel, determinisztikus Message-ID-val készült; a hibaosztályozó hálózati/4xx hibát retryra, auth/5xx hibát dead letterre képez nyers provider válasz nélkül.
+
+Application checks #578: **20 tesztfájl / 109 teszt, typecheck és Next.js build PASS**; Database tests #527: 714/714 pgTAP, minden konkurenciateszt és schema lint PASS; Vercel PASS. Tényleges Nodemailer dependency és SMTP-kliens, worker route, scheduler, secret konfiguráció, staging alkalmazás és valós küldés még nyitott.
 
 ## 12. Nyitott külső függőségek
 

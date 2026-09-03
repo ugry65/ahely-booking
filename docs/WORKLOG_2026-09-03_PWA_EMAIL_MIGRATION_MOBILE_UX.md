@@ -138,6 +138,22 @@ A `202609030002_enqueue_booking_emails_from_audit.sql` migráció a kanonikus bo
 
 A regressziós csomag további 29 pgTAP ellenőrzést tartalmaz create/update/cancel, admin owner-routing, title utáni snapshot, sorozat create, occurrence/following scope, idempotens retry, rollback és későbbi profil/booking változás elleni immutabilitás lefedésére. A GitHub Database tests #525 friss resetből **714/714 pgTAP PASS** eredményt adott; minden booking-, scope-, hozzáférés- és outbox-konkurenciateszt, valamint a schema lint PASS. Application checks #576 PASS. Staging/production DB alkalmazás, valódi e-mail-küldés, main merge és production deploy nem történt.
 
+### Magyar sablon és provider-szerződés – 2026-09-03
+
+Elkészült a `src/lib/booking-email` providerfüggetlen alkalmazásréteg:
+
+- szigorú, ismeretlen mezőt és verziót elutasító `payload_version=1` parser;
+- magyar text és mobilbarát inline-stílusú HTML create/update/cancel sablon;
+- `single`, `occurrence`, `following` és `series` megjelenítés;
+- admin által végzett művelet jelzése, update előtte/utána blokk és opcionális lemondási ok;
+- minden dinamikus HTML-adat escape-elése és CR/LF header-injection tiltása;
+- `Europe/Budapest` időzóna és DST-kezelés;
+- determinisztikus RFC Message-ID az outbox ID-ból;
+- hálózat nélküli capture transport és Nodemailer-kompatibilis kliensadapter;
+- SMTP hálózati/4xx retry, auth/5xx dead-letter osztályozás nyers provider válasz továbbadása nélkül.
+
+A helyi teljes csomag 20 fájl / **109 teszt PASS**, TypeScript és Next.js production build PASS. A végleges commiton Application checks #578, Database tests #527 (714/714 pgTAP + minden konkurenciateszt + schema lint) és Vercel PASS. Nodemailer dependency/konfiguráció, worker route, scheduler, SMTP secret és valódi küldés még nem készült; staging/production módosítás nem történt.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány
