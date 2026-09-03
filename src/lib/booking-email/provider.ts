@@ -44,7 +44,9 @@ function header(value: string, label: string): string {
 
 function recipient(value: string): string {
   const normalized = header(value, "címzett e-mail").toLowerCase();
-  if (normalized.length > 320 || normalized.indexOf("@") <= 0) throw new Error("Érvénytelen címzett e-mail.");
+  if (normalized.length > 320 || !/^[^\s@,;<>]+@[^\s@,;<>]+$/u.test(normalized)) {
+    throw new Error("Érvénytelen címzett e-mail.");
+  }
   return normalized;
 }
 

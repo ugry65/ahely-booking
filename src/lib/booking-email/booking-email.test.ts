@@ -162,6 +162,8 @@ describe("booking e-mail provider adapter", () => {
   it("elutasítja a header injection kísérletet", () => {
     expect(() => buildOutboundBookingEmail({ ...job, recipientEmail: "maria@example.com\nBcc: x@example.com" }, config))
       .toThrow("címzett e-mail");
+    expect(() => buildOutboundBookingEmail({ ...job, recipientEmail: "maria@example.com, x@example.com" }, config))
+      .toThrow("címzett e-mail");
   });
 
   it("a feladói konfigurációt claim előtt validálhatóvá teszi", () => {
