@@ -118,6 +118,14 @@ Jelszó vagy más SMTP secret nem kerülhet chatbe, repositoryba vagy klienskód
 
 Issue: **#107 – kötelező foglalási e-mail értesítések**.
 
+### Technikai forrásaudit és döntés – 2026-09-03
+
+A repository és a staging read-only auditja alapján a meglévő `outbox_events` általános outbox nem használható közvetlenül booking e-mail worker forrásaként: sorozatoknál alkalmanként külön eseményt tárol, nincs teljes eseménykori levél-snapshotja, lease/dead-letter/próbálkozásnaplója, és stagingen 135 korábbi, feldolgozatlan eseményt tartalmaz. Ezeket nem szabad utólag automatikusan kiküldeni.
+
+Választott irány: külön `booking_email_outbox`, egy logikai sorozatművelethez egy rekord, verziózott minimális payload, DB-deduplikáció, lease-alapú worker claim, append-only delivery attempt napló, exponenciális retry és dead letter. Az SMTP worker Node.js/Next.js környezetben, provider adapterrel készül; a percenkénti scheduler elsődleges terve Supabase Cron + `pg_net`, environmentenként Vaultban tartott URL/token mellett.
+
+Részletes döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány
@@ -374,7 +382,7 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
-6. #107 e-mail: MediaCenter SMTP paraméterek + outbox technikai terv/implementáció + tesztek;
+6. #107 e-mail: a technikai terv elkészült; következő a booking e-mail outbox migráció/RPC tesztimplementációja, majd worker és MediaCenter SMTP paraméterek;
 7. #108 migráció: forrásexportok beszerzése, mapping, dry-run importer és staging migráció;
 8. külön review/CI/UAT után feature-integráció;
 9. `main` merge és production csak explicit tulajdonosi jóváhagyással és a production readiness kapuk lezárása után.

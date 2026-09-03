@@ -56,7 +56,6 @@ A rendszer fő feladatai:
 Nem része az aktuális aktív scope-nak:
 - bankkártyás fizetés;
 - befizetések kézi könyvelésének UI-ja;
-- automatikus booking confirmation e-mail mint go-live feltétel;
 - közvetlen számlázó-integráció;
 - komplex pénzügyi dashboard;
 - natív mobilapp;
@@ -252,15 +251,17 @@ Mentés nélküli bezárás (X, Mégse, backdrop) nem hagyhat fantom `Új foglal
 
 ## 7.1 Foglalási siker-visszajelzés és e-mail
 
-Az automatikus foglalási visszaigazoló e-mail **nem go-live blocker és nem része az első production verzió kötelező funkcióinak**.
+A 2026-09-02-i üzleti döntés felülírja a korábbi opcionális e-mail állapotot. Minden sikeres create/update/cancel foglalási művelet után a foglalás tulajdonosa kötelező e-mailt kap, admin által végzett műveletnél is. Sorozatos vagy `following`/`series` scope művelethez egy összefoglaló e-mail tartozik.
 
-Kötelező viszont:
+A foglalási tranzakció és az értesítési kötelezettség transactional outboxban együtt rögzül. Külső e-mail-szolgáltatói hiba a foglalást nem gördítheti vissza; az értesítés retryzható és auditálható marad. Részletes technikai döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
+
+Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;
 - sikertelen vagy visszagördített foglalás nem jelenhet meg sikeresként;
 - technikai hiba esetén érthető hibaüzenet jelenjen meg, félkész foglalás nélkül.
 
-Booking confirmation e-mail későbbi opcionális fejlesztés.
+Az e-mail funkció production gate: stagingen valós create/update/cancel, adminművelet, sorozat-összefoglalás, retry és kézbesítési napló UAT szükséges.
 
 ---
 
@@ -662,6 +663,8 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 17. **SettlementBookingLine** – foglalásszintű történeti pénzügyi sor.
 18. **AuditLog** – append-only kritikus eseménytörténet.
 19. **SystemSettings** – globális paraméterek (pl. névláthatóság, default limitek).
+20. **BookingEmailOutbox** – egy logikai booking művelethez egy verziózott, deduplikált, retryzható értesítési feladat.
+21. **BookingEmailDeliveryAttempt** – append-only kézbesítési próbálkozás és biztonságos hibastátusz.
 
 A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelentés nem veszhet el.
 
@@ -800,7 +803,7 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 - részletes CSV;
 - lemondási riport;
 - payment UI közvetlen régi URL-je nem használható és a Havi órákra/aktív admin oldalra irányít;
-- sikeres foglalás UI-visszajelzés és azonnali megjelenés; e-mail hiánya nem hiba.
+- sikeres foglalás UI-visszajelzés és azonnali megjelenés; a kötelező booking e-mail külön transactional outboxból, retryzhatóan kézbesítendő.
 
 ---
 
@@ -810,7 +813,6 @@ Nem szabad kész feature-ként értelmezni:
 - saját foglalások teljes naptárnézetének további fejlesztése;
 - ismétlődő kivételdátum Skedda-szerű naptárválasztójának UX finomítása;
 - mobil scroll régi, 18:00 körüli megakadás-megjegyzése: aktuális reprodukció vagy célzott végső lezárás nincs igazolva (UAT-UX-05); **nem bizonyított jelenlegi hiba, és nem kívánt/reprodukálásra előírt viselkedés**;
-- automatikus booking confirmation e-mail;
 - közvetlen számlázó-integráció;
 - befizetések aktív UI-ja;
 - teljes statisztikai/vezetői dashboard.

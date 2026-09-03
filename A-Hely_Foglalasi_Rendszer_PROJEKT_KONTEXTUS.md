@@ -16,6 +16,7 @@ A 2026-08-26-i Claude-review és az arra adott tulajdonosi döntések kötelező
 
 A 2026-09-03-i PWA/e-mail/migráció/mobil UX döntések és UAT-eredmények kötelező kiegészítő forrása:
 - `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+- `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## Szerepkörök
 **Admin:** userek, helyiségek, jogosultságok, árak, foglalási szabályok, foglalások, elszámolás, export és beállítások kezelése.
@@ -121,7 +122,7 @@ Az e-mail küldési hiba nem veszélyeztetheti a már sikeres foglalási tranzak
 
 Preferált feladó a saját A-Hely domain postafiókja; a jelenlegi vizsgált szolgáltató a MediaCenter.hu SMTP. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
 
-GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## Migráció – 2026-09-03-i scope döntés
 A jelenlegi AllBooked/Skedda rendszerből a migráció során kötelezően át kell emelni:
@@ -306,7 +307,7 @@ A független review után akkor véglegesen elfogadott:
 
 **Megjegyzés:** a booking e-mailre vonatkozó 2026-08-26-i döntést a 2026-09-03-i tulajdonosi döntés felülírta; lásd a fenti „Foglalási e-mail státusz” részt és a 2026-09-03-i munkanaplót.
 
-A kanonikus baseline a korábbi állapotot tartalmazhatja, ezért e-mail kérdésben a 2026-09-03-i újabb projektkontextus/döntési dokumentum az irányadó, amíg a baseline következő szinkronja meg nem történik. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
+A kanonikus baseline 2026-09-03-án szinkronizálva lett a kötelező booking e-mail döntéssel. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
 
 A jövőbeli díjazási tervek megtartása tudatos működés: egy korábbi kezdőhónap módosítása nem törli a későbbre már beütemezett változásokat. Ezeket az admin teljes idővonalként látja.
 
@@ -340,7 +341,7 @@ Részletes forrás: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
 
 Aktuális állapot:
 - PWA issue #105 / draft PR #106: iPhone install/standalone/offline fallback PASS; Android/Chromium és hálózat-visszatérés UAT még nyitott;
-- kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; transactional outbox technikai irány;
+- kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; a külön, verziózott booking e-mail outbox, lease/retry/dead-letter, SMTP worker és legacy cutover technikai döntése dokumentálva, implementáció még nyitott;
 - migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
 - mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
 - a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
@@ -364,7 +365,7 @@ Aktuális állapot:
 Az új fejlesztési beszélgetés első feladata:
 1. **kötelezően** áttekinteni ezt a projektkontextust és a `docs/CURRENT_FUNCTIONAL_BASELINE.md` aktuális verzióját; a régi FS v1.0 csak történeti/SUPERSEDED forrás;
 2. kötelezően áttekinteni a `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` és `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md` dokumentumokat, amíg tartalmuk teljesen be nem olvad a release-baseline-ba;
-3. kötelezően áttekinteni a `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` dokumentumot, amíg a PWA/e-mail/migráció/mobil UX változások teljesen be nem olvadnak a kanonikus baseline-ba;
+3. kötelezően áttekinteni a `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és e-mail feladatnál a `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md` dokumentumot;
 4. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
 5. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
 6. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
