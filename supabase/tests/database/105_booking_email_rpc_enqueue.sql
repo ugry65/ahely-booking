@@ -274,8 +274,10 @@ set constraints booking_email_from_audit deferred;
 
 select results_eq(
   $$
-    select count(*)::bigint, min(scope), min(booking_id), min(series_id),
-           min((payload ->> 'affected_count')::integer)
+    select
+      (select count(*) from public.booking_email_outbox
+       where correlation_id = 'a5000000-0000-0000-0000-000000000105'),
+      scope, booking_id, series_id, (payload ->> 'affected_count')::integer
     from public.booking_email_outbox
     where correlation_id = 'a5000000-0000-0000-0000-000000000105'
   $$,
@@ -316,9 +318,11 @@ set constraints booking_email_from_audit deferred;
 
 select results_eq(
   $$
-    select count(*)::bigint, min(scope), min(series_id), min(booking_id),
-           min((payload ->> 'affected_count')::integer),
-           min(payload ->> 'cancellation_reason')
+    select
+      (select count(*) from public.booking_email_outbox
+       where correlation_id = 'a5000000-0000-0000-0000-000000000106'),
+      scope, series_id, booking_id, (payload ->> 'affected_count')::integer,
+      payload ->> 'cancellation_reason'
     from public.booking_email_outbox
     where correlation_id = 'a5000000-0000-0000-0000-000000000106'
   $$,
