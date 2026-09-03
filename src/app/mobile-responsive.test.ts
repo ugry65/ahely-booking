@@ -27,4 +27,15 @@ describe("mobile responsive page baseline", () => {
     expect(css).toContain(".form-row");
     expect(css).toContain("grid-template-columns: minmax(0, 1fr)");
   });
+
+  it("loads and preserves the dedicated pricing/access mobile admin layer", () => {
+    const layout = fs.readFileSync(path.join(process.cwd(), "src", "app", "layout.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "mobile-admin-responsive.css"), "utf8");
+    expect(layout).toContain('import "./mobile-admin-responsive.css"');
+    expect(css).toContain('content: "Kliens"');
+    expect(css).toContain('content: "Aktuális mód"');
+    expect(css).toContain('content: "Ütemezett változások"');
+    expect(css).toContain(".admin-permission-list details");
+    expect(css).toContain(".permission-matrix-row > button");
+  });
 });
