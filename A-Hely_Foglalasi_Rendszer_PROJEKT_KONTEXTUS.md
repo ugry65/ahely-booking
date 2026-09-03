@@ -122,6 +122,8 @@ Az e-mail küldési hiba nem veszélyeztetheti a már sikeres foglalási tranzak
 
 Feladó és Reply-To: `foglalas@a-hely.com`. A MediaCenter által igazolt SMTP host `pop3.mediacenter.hu` (nem elírás), SSL/TLS port 465, teljes e-mail címes felhasználónévvel és kötelező hitelesítéssel. A díjmentes szolgáltatás napi 100 levélre és levelenként 10 címzettre korlátozott; production előtt a terhelési tartalékot vagy a külön privát SMTP csomagot igazolni kell. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
 
+A #111 draft ágon elkészült az outbox, a booking RPC-k tranzakcióvégi enqueue-integrációja, a magyar renderer, a verzióra rögzített Nodemailer-kliens és a Bearer tokennel védett Node.js worker Route Handler. A runtime alapértéke `BOOKING_EMAIL_MODE=disabled`, amely nem claimel és nem küld. Scheduler/monitor, runtime secret, staging DB-alkalmazás és valós SMTP UAT még nyitott; main merge és production deploy nem történt.
+
 GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## Migráció – 2026-09-03-i scope döntés
@@ -341,7 +343,7 @@ Részletes forrás: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
 
 Aktuális állapot:
 - PWA issue #105 / draft PR #106: iPhone install/standalone/offline fallback PASS; Android/Chromium és hálózat-visszatérés UAT még nyitott;
-- kötelező e-mail issue #107 / draft PR #111: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; elkészült a verziózott outbox, lease/retry/dead-letter RPC, a booking műveletek tranzakcióvégi enqueue-integrációja, valamint a magyar text/HTML renderer, capture/Nodemailer-kompatibilis provider-szerződés és biztonságos SMTP-hibaosztályozás; Application checks #578: 109 teszt + typecheck/build PASS, Database tests #527: 714/714 pgTAP + minden konkurenciateszt + lint PASS, Vercel PASS; stagingre nincs alkalmazva, a tényleges Nodemailer-kliens, worker és szolgáltatói UAT még nyitott;
+- kötelező e-mail issue #107 / draft PR #111: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; elkészült a verziózott outbox, lease/retry/dead-letter RPC, a booking műveletek tranzakcióvégi enqueue-integrációja, a magyar text/HTML renderer, valamint a verzióra rögzített Nodemailer-kliens és a Bearer tokennel védett Node.js worker Route Handler; helyben 22 tesztfájl / 125 teszt, typecheck, build és production dependency audit PASS, a végleges kódcommiton Application checks #581, Database tests #530 és Vercel PASS; a runtime alapértéke `disabled`, staging DB-alkalmazás, scheduler/monitor, secret és valós SMTP UAT még nyitott;
 - migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
 - mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
 - a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;

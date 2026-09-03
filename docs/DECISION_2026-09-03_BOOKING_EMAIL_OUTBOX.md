@@ -231,8 +231,8 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 
 1. adatbázis-migráció, claim/result RPC-k és pgTAP – **draft ágon elkészült, stagingre még nincs alkalmazva**;
 2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek – **draft ágon elkészült**;
-3. provider adapter, fake transport és sablonok – **providerfüggetlen alkalmazásréteg a draft ágon elkészült; tényleges Nodemailer-kliens még nyitott**;
-4. worker route, retry és alkalmazástesztek;
+3. provider adapter, fake transport és sablonok – **a draft ágon elkészült**;
+4. worker route, retry és alkalmazástesztek – **a draft ágon elkészült; staging konfiguráció és valós küldés még nincs**;
 5. admin monitor/read model és riasztási heartbeat;
 6. `capture` módú staging deploy és DB/e-mail reconciliation;
 7. MediaCenter SMTP paraméterek + DNS hitelesítés;
@@ -259,7 +259,13 @@ Az ehhez tartozó 29 új pgTAP ellenőrzéssel a teljes adatbáziscsomag **714/7
 
 Az alkalmazásoldali renderer/provider alapréteg szigorúan csak a `payload_version=1` sémát fogadja el, ismeretlen mezőt – így foglalási megjegyzést is – elutasít. Magyar text és mobilbarát HTML sablont ad create/update/cancel eseményhez, minden scope-hoz, update előtte/utána tartalommal, adminjelzéssel és budapesti DST-formázással. A HTML és a mail headerek injekcióvédettek. A transport szerződés capture implementációval és Nodemailer-kompatibilis adapterrel, determinisztikus Message-ID-val készült; a hibaosztályozó hálózati/4xx hibát retryra, auth/5xx hibát dead letterre képez nyers provider válasz nélkül.
 
-Application checks #578: **20 tesztfájl / 109 teszt, typecheck és Next.js build PASS**; Database tests #527: 714/714 pgTAP, minden konkurenciateszt és schema lint PASS; Vercel PASS. Tényleges Nodemailer dependency és SMTP-kliens, worker route, scheduler, secret konfiguráció, staging alkalmazás és valós küldés még nyitott.
+Application checks #578: **20 tesztfájl / 109 teszt, typecheck és Next.js build PASS**; Database tests #527: 714/714 pgTAP, minden konkurenciateszt és schema lint PASS; Vercel PASS.
+
+A következő draft szeletben bekerült a verzióra rögzített Nodemailer SMTP-kliens és a `/api/internal/booking-email-worker` Node.js Route Handler. A Route Handler GET-et fogad a későbbi Vercel Cron kompatibilitásához, valamint POST-ot védett kézi preflighthoz; mindkettő azonos, timing-safe `Authorization: Bearer <CRON_SECRET>` ellenőrzést használ. A legalább 32 bájtos cron-titok, service-role kulcs és SMTP-jelszó szerveroldali env marad.
+
+A `BOOKING_EMAIL_MODE` hiányában `disabled`, és ebben az állapotban az autorizált végpont sem hoz létre Supabase-klienst, nem claimel és nem küld. `capture` és `send` módban a worker 10-es alap batchsel, 300 másodperces lease-szel dolgozik; mindkettő szabályozott envből módosítható. A providerhiba-osztályozás 1/5/15/60/240/720/1440 perces retryt vagy dead lettert eredményez, a nyolcadik próbálkozás után nincs új retry. Payload/scope eltérés küldés nélkül dead letter. Sikeres SMTP-átadás utáni completion-hiba nem indít azonnali második küldést, a lease-alapú helyreállítás megmarad.
+
+A helyi teljes csomag **22 tesztfájl / 125 teszt, typecheck és Next.js build PASS**, a production dependency audit nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. A valós Route Handler smoke teszt token nélkül 401-et, érvényes tokennel `disabled` módban 200-at és nulla claimet adott. Scheduler-bejegyzés, worker heartbeat/monitor, runtime secret, staging alkalmazás és valós levélküldés továbbra is nyitott; main merge és production deploy nem történt.
 
 ## 12. Nyitott külső függőségek
 

@@ -154,6 +154,25 @@ Elkészült a `src/lib/booking-email` providerfüggetlen alkalmazásréteg:
 
 A helyi teljes csomag 20 fájl / **109 teszt PASS**, TypeScript és Next.js production build PASS. A végleges commiton Application checks #578, Database tests #527 (714/714 pgTAP + minden konkurenciateszt + schema lint) és Vercel PASS. Nodemailer dependency/konfiguráció, worker route, scheduler, SMTP secret és valódi küldés még nem készült; staging/production módosítás nem történt.
 
+### Védett worker és SMTP runtime – 2026-09-03
+
+A #111 draft ágon elkészült a szerveroldali kézbesítési futtató:
+
+- verzióra rögzített Nodemailer `9.1.1` és típuscsomag;
+- Node.js `/api/internal/booking-email-worker` Route Handler;
+- timing-safe Bearer auth, legalább 32 bájtos `CRON_SECRET` követelménnyel;
+- alapértelmezetten biztonságos `BOOKING_EMAIL_MODE=disabled`, amely nem hoz létre DB-klienst és nem claimel;
+- explicit `capture` és `send` mód, service-role-only claim/complete RPC adapterrel;
+- 10-es alap batch, 300 másodperces lease és a döntési dokumentum szerinti retry ütem;
+- payload- és scope-validáció küldés előtt, több címzettet vagy header injectiont lehetővé tevő cím elutasítása;
+- nyers SMTP/provider hiba, e-mail tartalom és secret nélküli HTTP-válaszok;
+- SMTP-átadás utáni DB completion-hibánál nincs azonnali újraküldés;
+- fájl- és URL-beolvasás tiltása a Nodemailer transporton.
+
+A helyi teljes ellenőrzés **22 tesztfájl / 125 teszt PASS**, typecheck és Next.js production build PASS; `pnpm audit --prod` nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint), valamint Vercel PASS. A lokális, valódi Route Handler smoke teszt jogosulatlan GET-re 401-et, autorizált `disabled` GET-re 200-at és nulla claim/küldés eredményt adott.
+
+Vercel Cron konfiguráció szándékosan nem került még a repositoryba: az csak production deployon fut, a perces ütem csomagfüggő, miközben az elsődleges architektúraterv továbbra is Supabase Cron + `pg_net`. Scheduler, heartbeat/admin monitor, runtime secret, staging DB-alkalmazás és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány
