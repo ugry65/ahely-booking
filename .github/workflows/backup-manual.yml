@@ -1,0 +1,86 @@
+name: Production backup - manual readiness only
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ahely-production-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production-backup
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Refuse non-default test fixture mode
+        run: |
+          if [[ -n "${BACKUP_SOURCE_FILE:-}" || -n "${BACKUP_ALLOW_FIXTURE_SOURCE:-}" ]]; then
+            echo "Fixture backup mode is forbidden in the production workflow." >&2
+            exit 1
+          fi
+
+      - name: Install PostgreSQL 17 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client-17 age rclone
+
+      - name: Configure rclone remotes
+        env:
+          GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+          GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+          GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_TOKEN }}
+          B2_KEY_ID: ${{ secrets.BACKUP_B2_KEY_ID }}
+          B2_APPLICATION_KEY: ${{ secrets.BACKUP_B2_APPLICATION_KEY }}
+        run: |
+          set -Eeuo pipefail
+          for name in GDRIVE_CLIENT_ID GDRIVE_CLIENT_SECRET GDRIVE_TOKEN B2_KEY_ID B2_APPLICATION_KEY; do
+            [[ -n "${!name}" ]] || { echo "Missing secret: $name" >&2; exit 1; }
+          done
+          mkdir -p "$HOME/.config/rclone"
+          umask 077
+          cat > "$HOME/.config/rclone/rclone.conf" <<EOF
+          [gdrive]
+          type = drive
+          client_id = ${GDRIVE_CLIENT_ID}
+          client_secret = ${GDRIVE_CLIENT_SECRET}
+          scope = drive.file
+          token = ${GDRIVE_TOKEN}
+
+          [b2]
+          type = b2
+          account = ${B2_KEY_ID}
+          key = ${B2_APPLICATION_KEY}
+          EOF
+
+      - name: Create encrypted backup and copy to both targets
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+          B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+          BACKUP_PREFIX: ahely-prod
+        run: |
+          set -Eeuo pipefail
+          [[ -n "$DATABASE_URL" ]] || { echo "Missing BACKUP_DATABASE_URL" >&2; exit 1; }
+          [[ -n "$AGE_RECIPIENT" ]] || { echo "Missing BACKUP_AGE_RECIPIENT" >&2; exit 1; }
+          [[ -n "$GDRIVE_REMOTE" ]] || { echo "Missing BACKUP_GDRIVE_REMOTE" >&2; exit 1; }
+          [[ -n "$B2_REMOTE" ]] || { echo "Missing BACKUP_B2_REMOTE" >&2; exit 1; }
+          bash scripts/backup/create-backup.sh
+
+      - name: Remove local backup artifacts
+        if: always()
+        run: rm -rf ./backup-output "$HOME/.config/rclone/rclone.conf"
+
+# FONTOS: nincs schedule trigger ezen a branchen.
+# A 08:00/12:00/16:00/20:00 Europe/Budapest automatikus ütemezést csak
+# sikeres restore-drill + monitoring + explicit production jóváhagyás után szabad aktiválni.
