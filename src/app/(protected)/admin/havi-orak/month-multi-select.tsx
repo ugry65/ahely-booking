@@ -25,7 +25,16 @@ export function MonthMultiSelect({ initialMonths }: Props) {
     <legend>Elszámolási hónapok</legend>
     <input type="hidden" name="honapok" value={months.join(",")} />
     <div className="monthly-filter">
-      <label>Hónap hozzáadása<input type="month" value={candidate} onChange={(event) => setCandidate(event.target.value)} /></label>
+      <label className="month-picker-label" style={{ width: "100%", minWidth: 0, overflow: "hidden" }}>
+        Hónap hozzáadása
+        <input
+          className="month-picker-input"
+          type="month"
+          value={candidate}
+          onChange={(event) => setCandidate(event.target.value)}
+          style={{ display: "block", width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box" }}
+        />
+      </label>
       <button type="button" className="secondary" onClick={addMonth}>Hozzáadás</button>
     </div>
     <div className="month-selection-list" aria-label="Kiválasztott hónapok">
