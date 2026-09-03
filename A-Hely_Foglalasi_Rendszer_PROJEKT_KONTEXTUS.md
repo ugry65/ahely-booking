@@ -14,6 +14,9 @@ A 2026-08-26-i Claude-review és az arra adott tulajdonosi döntések kötelező
 - `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md`;
 - `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md`.
 
+A 2026-09-03-i PWA/e-mail/migráció/mobil UX döntések és UAT-eredmények kötelező kiegészítő forrása:
+- `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+
 ## Szerepkörök
 **Admin:** userek, helyiségek, jogosultságok, árak, foglalási szabályok, foglalások, elszámolás, export és beállítások kezelése.
 
@@ -102,15 +105,34 @@ A **Befizetések UI jelenleg nem része az aktív foglaló rendszer scope-jának
 
 A havi összesítés és settlement/audit történeti adatai továbbra is úgy készüljenek, hogy későbbi pénzügyi feldolgozás és export megbízhatóan elvégezhető legyen.
 
-## Foglalási e-mail státusz
-Automatikus booking confirmation e-mail **nem go-live blocker és nem kötelező az első production verzióban**.
+## Foglalási e-mail státusz – 2026-09-03-i új döntés
+A korábbi „booking confirmation e-mail nem go-live blocker” döntést a projektgazda **felülírta**.
 
-Kötelező viszont:
-- sikeres foglalás egyértelmű UI-visszajelzése;
-- azonnali megjelenés a naptárban/Foglalásaimban;
-- sikertelen foglalás ne jelenjen meg sikeresként.
+Mostantól kötelező, hogy a foglalás tulajdonosa e-mailt kapjon minden sikeres:
+- új foglalás;
+- foglalásmódosítás;
+- törlés/lemondás
 
-E-mail értesítés későbbi fejlesztési lehetőség.
+után, függetlenül attól, hogy a műveletet ő maga vagy admin végezte.
+
+Ismétlődő/sorozatos műveletnél **egy összefoglaló e-mail** küldendő, nem külön levél minden alkalomról.
+
+Az e-mail küldési hiba nem veszélyeztetheti a már sikeres foglalási tranzakciót. Preferált technikai minta: tartós transactional outbox + külön retry-képes küldő folyamat + auditálható küldési státusz.
+
+Preferált feladó a saját A-Hely domain postafiókja; a jelenlegi vizsgált szolgáltató a MediaCenter.hu SMTP. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
+
+GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+
+## Migráció – 2026-09-03-i scope döntés
+A jelenlegi AllBooked/Skedda rendszerből a migráció során kötelezően át kell emelni:
+- a migráció hónapjának **teljes adatait a hónap első napjától**;
+- minden jövőbeli szükséges adatot és foglalást.
+
+Példa: október 15-i éles átállásnál október 1-től kezdődő szükséges adatok + minden jövőbeli adat migrálandó.
+
+A migráció nem egyszeri kézi DB-beírás: scriptelt, újrafuttatható, dry-run képes, idempotens import szükséges, dokumentált forrás→cél mappinggel, duplikációvédelemmel, ütközésriporttal, staging próbamigrációval és forrás/cél reconciliationnel. Production import előtt friss backup és visszaállítható rollback/restore terv kötelező.
+
+GitHub issue: #108. A pontos mezőmapping a tényleges AllBooked/Skedda user/booking exportminták alapján véglegesítendő.
 
 ## Export
 A havi/tételes exportnak tartalmaznia kell a pénzügyi feldolgozáshoz szükséges adatokat. A tételes aktív foglalások és a részletes CSV tartalmazza a `Foglalás címe` mezőt is.
@@ -169,9 +191,26 @@ Részletek: `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md`.
 - admin és user felület elkülönítve;
 - a normál user foglalási UX a Skedda/AllBooked megszokott használati logikáját kövesse, hogy a váltás minimális újratanulást igényeljen;
 - a stagingen elfogadott részletes UI/UX baseline kötelező referencia: `docs/BOOKING_UI_UX_BASELINE.md`;
-- mobil Skedda-minta részletes leírása: `docs/skedda-mobile-calendar-ux.md`.
+- mobil Skedda-minta részletes leírása: `docs/skedda-mobile-calendar-ux.md`;
+- a normál mobil menüoldalakon az oldal törzse ne legyen oldalirányban görgethető; formok és admin struktúrák törjenek viewporton belül;
+- minden normál mobil oldal legfelső `page-heading` szövegblokkja egységes belső bal pozícióban induljon; a foglalási naptár speciális fejléce kivétel;
+- nagy admin táblák mobilon szükség esetén kártyás nézetre válthatnak úgy, hogy üzleti/pénzügyi adat ne vesszen el.
 
 A baseline-ban rögzített, már elfogadott UI/UX funkciót vagy gesztust későbbi refaktor nem távolíthat el külön dokumentált döntés nélkül.
+
+### PWA – aktív webes scope
+A PWA 2026-09-03-tól aktív scope. A PWA **nem natív mobilapp**, hanem a meglévő Next.js webalkalmazás telepíthető/standalone megjelenési módja.
+
+Első PWA-verzió:
+- online-first;
+- nincs offline üzleti adatírás;
+- nincs booking/auth/Supabase/API response cache;
+- nincs background sync üzleti íráshoz;
+- offline állapotban egyértelmű fallback, stale foglalási naptár nem jelenhet meg aktuális adatként;
+- biztonságos statikus app-shell cache-elhető;
+- iOS/Android/desktop install/UAT szükséges.
+
+Issue #105, draft PR #106. Az iPhone telepítés/standalone és offline fallback UAT PASS; Android/Chromium és hálózat-visszatérés ellenőrzése még külön szükséges.
 
 ## Javasolt technológiai irány
 Kiindulási javaslat:
@@ -259,13 +298,15 @@ Infrastruktúra döntési irány:
 
 ## 2026-08-26-i Claude-review döntések
 
-A független review után véglegesen elfogadott:
+A független review után akkor véglegesen elfogadott:
 - a **Fix óradíj** megtartása negyedik admin üzleti díjazási lehetőségként, érvényességi hónappal;
 - a régi FS v1.0 **SUPERSEDED** státusza;
-- a booking confirmation e-mail nem go-live blocker;
+- a booking confirmation e-mail akkor még nem volt go-live blocker;
 - a payment backend parkoltatott/befagyasztott.
 
-A kanonikus baseline ezeket tartalmazza. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
+**Megjegyzés:** a booking e-mailre vonatkozó 2026-08-26-i döntést a 2026-09-03-i tulajdonosi döntés felülírta; lásd a fenti „Foglalási e-mail státusz” részt és a 2026-09-03-i munkanaplót.
+
+A kanonikus baseline a korábbi állapotot tartalmazhatja, ezért e-mail kérdésben a 2026-09-03-i újabb projektkontextus/döntési dokumentum az irányadó, amíg a baseline következő szinkronja meg nem történik. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
 
 A jövőbeli díjazási tervek megtartása tudatos működés: egy korábbi kezdőhónap módosítása nem törli a későbbre már beütemezett változásokat. Ezeket az admin teljes idővonalként látja.
 
@@ -293,6 +334,19 @@ A projektgazda által már elfogadott eredmények bekerültek az [UAT futási je
 
 Részletes, esetenkénti források és bizonyítékhatárok: [UAT-bizonyítékegyeztetés](docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md), [checkpoint](docs/UAT_CHECKPOINT_2026-08-30.md). A már elfogadott teszteket ne indítsuk újra pusztán a régi jegyzőkönyv hiányos állapota miatt.
 
+## 2026-09-03-i PWA / e-mail / migráció / mobil UX checkpoint
+
+Részletes forrás: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+
+Aktuális állapot:
+- PWA issue #105 / draft PR #106: iPhone install/standalone/offline fallback PASS; Android/Chromium és hálózat-visszatérés UAT még nyitott;
+- kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; transactional outbox technikai irány;
+- migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
+- mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
+- a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
+- valós Android Chrome smoke UAT továbbra is szükséges, iPhone PASS nem automatikus Android PASS;
+- a stagingben `Mhely` néven szereplő inaktív csoportnak nincs aktuális user- vagy szobakapcsolata, de audit-előzménye van; támogatott törlő RPC/UI nincs, ezért nem töröltük. Alapértelmezett ajánlás az inaktiválás; külön végleges törlés csak explicit döntéssel, dependency-ellenőrzött és auditált tranzakcióként készülhet.
+
 ## Nem MVP / későbbi fejlesztés
 - bankkártyás fizetés
 - SSO/SAML
@@ -301,8 +355,7 @@ Részletes, esetenkénti források és bizonyítékhatárok: [UAT-bizonyítékeg
 - floor plan
 - add-ons
 - natív mobilapp
-- komplex notification engine
-- automatikus booking confirmation e-mail
+- komplex, általános notification engine a most kötelező booking e-mailen túl
 - közvetlen számlázó-integráció
 - befizetések aktív UI-ja
 - teljes statisztikai dashboard
@@ -311,9 +364,10 @@ Részletes, esetenkénti források és bizonyítékhatárok: [UAT-bizonyítékeg
 Az új fejlesztési beszélgetés első feladata:
 1. **kötelezően** áttekinteni ezt a projektkontextust és a `docs/CURRENT_FUNCTIONAL_BASELINE.md` aktuális verzióját; a régi FS v1.0 csak történeti/SUPERSEDED forrás;
 2. kötelezően áttekinteni a `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` és `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md` dokumentumokat, amíg tartalmuk teljesen be nem olvad a release-baseline-ba;
-3. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
-4. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
-5. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
-6. a GitHub repository aktuális branch/PR állapotát ellenőrizni; productionre csak review-zott, stagingen elfogadott állapot kerülhet;
-7. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben;
-8. UAT folytatásakor elolvasni a `docs/UAT_FUTASI_JEGYZOKONYV.md`, `docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md` és `docs/UAT_CHECKPOINT_2026-08-30.md` eredményeit; a már elfogadott teszteket nem automatikusan újrafuttatni. A 22 egyeztetendő sor sem 22 új kézi teszt: előbb meglévő forrás/assertion és releváns változás, csak utána indokolt célzott pótlás.
+3. kötelezően áttekinteni a `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` dokumentumot, amíg a PWA/e-mail/migráció/mobil UX változások teljesen be nem olvadnak a kanonikus baseline-ba;
+4. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
+5. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
+6. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;
+7. a GitHub repository aktuális branch/PR állapotát ellenőrizni; productionre csak review-zott, stagingen elfogadott állapot kerülhet;
+8. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben;
+9. UAT folytatásakor elolvasni a `docs/UAT_FUTASI_JEGYZOKONYV.md`, `docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md` és `docs/UAT_CHECKPOINT_2026-08-30.md` eredményeit; a már elfogadott teszteket nem automatikusan újrafuttatni. A 22 egyeztetendő sor sem 22 új kézi teszt: előbb meglévő forrás/assertion és releváns változás, csak utána indokolt célzott pótlás.

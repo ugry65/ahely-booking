@@ -1,0 +1,318 @@
+@media (max-width: 52rem) {
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  main,
+  main > section,
+  .stack,
+  .card,
+  .wide-card,
+  form,
+  fieldset {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  main > section:not(.booking-page) {
+    width: 100%;
+    padding-inline: 1rem;
+  }
+
+  main > section:not(.booking-page) > .page-heading:first-child {
+    padding-inline: 1rem;
+  }
+
+  .card,
+  .wide-card {
+    width: 100%;
+    padding: 1rem;
+  }
+
+  fieldset {
+    padding: .8rem;
+  }
+
+  input,
+  select,
+  textarea,
+  button,
+  .button {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type="month"] {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  button,
+  .button {
+    min-height: 2.75rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .inline-check {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-auto-flow: row;
+    align-items: start;
+    gap: .55rem;
+    min-width: 0;
+  }
+
+  .inline-check input[type="checkbox"] {
+    margin-top: .15rem;
+  }
+
+  .page-heading,
+  .page-heading > *,
+  .booking-summary,
+  .message,
+  .muted,
+  p,
+  h1,
+  h2,
+  h3,
+  label,
+  legend,
+  summary {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-grid,
+  .user-setting-row,
+  .admin-editor-row,
+  .admin-editor-row.compact,
+  .pricing-editor-row,
+  .admin-access-grid,
+  .permission-matrix-row,
+  .permission-matrix-row.member-row,
+  .monthly-filter,
+  .form-row,
+  .result-columns,
+  .recurring-end-choice {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .monthly-filter > label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .table-scroll {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-scroll table {
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .admin-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table tbody {
+    display: grid;
+    gap: .8rem;
+  }
+
+  .admin-table tr {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding: .85rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .75rem;
+    background: #fff;
+  }
+
+  .admin-table td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 38%) minmax(0, 1fr);
+    gap: .6rem;
+    align-items: start;
+    min-width: 0;
+    padding: .48rem 0;
+    border-bottom: 1px solid #ece8df;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table td:last-child {
+    display: block;
+    padding-top: .75rem;
+    border-bottom: 0;
+  }
+
+  .admin-table td::before {
+    color: #65716a;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  .admin-table td:nth-child(1)::before { content: "Név"; }
+  .admin-table td:nth-child(2)::before { content: "E-mail"; }
+  .admin-table td:nth-child(3)::before { content: "Telefonszám"; }
+  .admin-table td:nth-child(4)::before { content: "Helyiségcsoport"; }
+  .admin-table td:nth-child(5)::before { content: "Ismétlés"; }
+  .admin-table td:nth-child(6)::before { content: "Szerepkör"; }
+  .admin-table td:nth-child(7)::before { content: "Állapot"; }
+  .admin-table td:nth-child(8)::before { content: none; }
+
+  .admin-table td:last-child .button {
+    width: 100%;
+  }
+
+  .admin-table td[colspan] {
+    display: block;
+  }
+
+  .admin-table td[colspan]::before {
+    content: none;
+  }
+
+  /* Havi órák és fizetendő: a top-level hónapválasztó egyértelműen azonosítja az oldalt. */
+  main > section.stack:has(> form.card.stack .monthly-filter) > .table-scroll,
+  main > section.stack:has(> form.card.stack .monthly-filter) > section.card .table-scroll {
+    overflow-x: visible;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll table {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll thead {
+    display: none;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tbody {
+    display: grid;
+    gap: .85rem;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tbody tr {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding: .8rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .75rem;
+    background: #fff;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tbody td {
+    display: grid;
+    grid-template-columns: minmax(7.6rem, 42%) minmax(0, 1fr);
+    gap: .65rem;
+    align-items: start;
+    min-width: 0;
+    padding: .45rem 0;
+    border-bottom: 1px solid #ece8df;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tbody td::before {
+    color: #65716a;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  /* Pénzügyi összesítés – 10 oszlop. */
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(1)::before { content: "Hónap"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(2)::before { content: "Felhasználó"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(3)::before { content: "Normál óra"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(4)::before { content: "Tréningterem csoportos"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(5)::before { content: "Díjazás"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(6)::before { content: "Normál díj"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(7)::before { content: "Tréningterem díj"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(8)::before { content: "Fizetendő"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(9)::before { content: "Állapot"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(10)) td:nth-child(10)::before { content: "Művelet"; }
+
+  /* Óra-összesítés – 3 oszlop. */
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(3):last-child) td:nth-child(1)::before { content: "Hónap"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(3):last-child) td:nth-child(2)::before { content: "Felhasználó"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(3):last-child) td:nth-child(3)::before { content: "Összes óra"; }
+
+  /* Tételes aktív foglalások – 8 oszlop. */
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(1)::before { content: "Hónap"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(2)::before { content: "Felhasználó"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(3)::before { content: "Dátum"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(4)::before { content: "Helyiség"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(5)::before { content: "Foglalás címe"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(6)::before { content: "Mettől"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(7)::before { content: "Meddig"; }
+  main > section.stack:has(> form.card.stack .monthly-filter) table:has(th:nth-child(8):last-child) td:nth-child(8)::before { content: "Óra"; }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot {
+    display: block;
+    margin-top: .8rem;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: .75rem;
+    align-items: center;
+    padding: .8rem;
+    border: 1px solid #a8cbb5;
+    border-radius: .7rem;
+    background: #edf8f0;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot th {
+    display: block;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot th:empty {
+    display: none;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot th:first-child {
+    color: #205537;
+    font-size: .8rem;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot th:nth-child(2),
+  main > section.stack:has(> form.card.stack .monthly-filter) .table-scroll tfoot th:last-child:not(:first-child) {
+    font-size: 1rem;
+    text-align: right;
+  }
+
+  main > section.stack:has(> form.card.stack .monthly-filter) .monthly-filter > button,
+  main > section.stack:has(> form.card.stack .monthly-filter) .monthly-filter > .button {
+    width: 100%;
+  }
+}

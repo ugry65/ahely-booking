@@ -29,7 +29,7 @@ export default async function MyDataPage({ searchParams }: { searchParams: Promi
     .maybeSingle<EditableProfile>();
 
   return <section className="stack">
-    <header className="page-heading"><div><p className="eyebrow">Saját profil</p><h1>Adataim</h1><p className="muted">Itt tarthatod naprakészen a kapcsolattartási és számlázási adataidat.</p></div></header>
+    <header className="page-heading profile-page-heading"><div><p className="eyebrow">Saját profil</p><h1>Adataim</h1><p className="muted">Itt tarthatod naprakészen a kapcsolattartási és számlázási adataidat.</p></div></header>
     {paramValue(params.hiba) || paramValue(params.uzenet) ? <p className={`message ${paramValue(params.hiba) ? "error" : "success"}`} role="status">{paramValue(params.hiba) ?? paramValue(params.uzenet)}</p> : null}
     {error || !data ? <p className="message error" role="alert">Az adatok betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : <div className="card wide-card" style={{ maxWidth: "48rem" }}><ProfileForm profile={data} /></div>}
   </section>;

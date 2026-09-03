@@ -1,0 +1,157 @@
+@media (max-width: 52rem) {
+  /* Díjazás: a pricing-editor-row csak ezen az admin oldalon szerepel. */
+  main > section.stack:has(.pricing-editor-row) .admin-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  main > section.stack:has(.pricing-editor-row) .admin-table td:last-child:not([colspan]) {
+    display: grid;
+    grid-template-columns: minmax(7rem, 38%) minmax(0, 1fr);
+    gap: .6rem;
+    padding: .48rem 0;
+    border-bottom: 1px solid #ece8df;
+  }
+
+  main > section.stack:has(.pricing-editor-row) .admin-table td[colspan] {
+    width: 100%;
+    min-width: 0;
+    padding-top: .75rem;
+  }
+
+  main > section.stack:has(.pricing-editor-row) .pricing-editor-row {
+    width: 100%;
+    min-width: 0;
+  }
+
+  main > section.stack:has(.pricing-editor-row) .pricing-editor-row > label,
+  main > section.stack:has(.pricing-editor-row) .pricing-editor-row > button,
+  main > section.stack:has(.pricing-editor-row) .pricing-editor-row > .button {
+    width: 100%;
+  }
+
+  /* Fő díjazási tábla. */
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(6):last-child) td:nth-child(1)::before { content: "Kliens"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(6):last-child) td:nth-child(2)::before { content: "Aktuális mód"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(6):last-child) td:nth-child(3)::before { content: "Ütemezett változások"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(6):last-child) td[colspan]::before { content: none; }
+
+  /* Jövőbeli díjazási idővonal. */
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(2):last-child) td:nth-child(1)::before { content: "Érvényes ettől"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(2):last-child) td:nth-child(2)::before { content: "Effektív mód"; }
+
+  /* Pricing policy előzmények. */
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(4):last-child) td:nth-child(1)::before { content: "Mód"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(4):last-child) td:nth-child(2)::before { content: "Érvényes ettől"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(4):last-child) td:nth-child(3)::before { content: "Érvényes eddig"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(4):last-child) td:nth-child(4)::before { content: "Rögzítve"; }
+
+  /* Fix óradíj előzmények. */
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(1)::before { content: "Óradíj"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(2)::before { content: "Érvényes ettől"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(3)::before { content: "Érvényes eddig"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(4)::before { content: "Indok"; }
+  main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(5)::before { content: "Rögzítve"; }
+
+  /* Közvetlen user-jogok és Helyiségcsoportok mobilon. */
+  .admin-permission-list,
+  .admin-permission-list details,
+  .admin-permission-list summary,
+  .admin-record-list,
+  .permission-matrix-row {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Desktopon belső, max. 32rem magas scroll-pane; mobilon ez levágta a lenyitott szerkesztőket. */
+  .admin-permission-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .admin-permission-list details {
+    overflow: visible;
+  }
+
+  .admin-permission-list summary {
+    padding: .8rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+  }
+
+  .admin-permission-list details[open] > summary {
+    margin-bottom: .65rem;
+  }
+
+  .permission-matrix-row {
+    padding: .8rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .7rem;
+  }
+
+  .permission-matrix-row > strong,
+  .permission-matrix-row > label,
+  .permission-matrix-row > button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .permission-matrix-row > button,
+  .admin-record-list .admin-editor-row > button {
+    width: 100%;
+  }
+
+  /* Lemondások: minden riportmező kártyán marad, oldalirányú görgetés nélkül. */
+  .cancellation-report .table-scroll {
+    overflow-x: visible;
+  }
+
+  .cancellation-table,
+  .cancellation-table tbody {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: .85rem;
+  }
+
+  .cancellation-table thead {
+    display: none;
+  }
+
+  .cancellation-table tr {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding: .8rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .75rem;
+    background: #fff;
+  }
+
+  .cancellation-table td {
+    display: grid;
+    grid-template-columns: minmax(7.6rem, 42%) minmax(0, 1fr);
+    gap: .65rem;
+    align-items: start;
+    min-width: 0;
+    padding: .45rem 0;
+    border-bottom: 1px solid #ece8df;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .cancellation-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .cancellation-table td::before {
+    content: attr(data-label);
+    color: #65716a;
+    font-size: .76rem;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+}
