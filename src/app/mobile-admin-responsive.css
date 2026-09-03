@@ -53,7 +53,7 @@
   main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(4)::before { content: "Indok"; }
   main > section.stack:has(.pricing-editor-row) table:has(th:nth-child(5):last-child) td:nth-child(5)::before { content: "Rögzítve"; }
 
-  /* Közvetlen user-jogok / Hozzáférések. */
+  /* Közvetlen user-jogok és Helyiségcsoportok mobilon. */
   .admin-permission-list,
   .admin-permission-list details,
   .admin-permission-list summary,
@@ -64,8 +64,15 @@
     max-width: 100%;
   }
 
+  /* Desktopon belső, max. 32rem magas scroll-pane; mobilon ez levágta a lenyitott szerkesztőket. */
+  .admin-permission-list {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
   .admin-permission-list details {
-    overflow: hidden;
+    overflow: visible;
   }
 
   .admin-permission-list summary {
