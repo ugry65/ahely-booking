@@ -1,6 +1,6 @@
 # Foglalási e-mail értesítések – transactional outbox döntés
 
-Állapot: **elfogadott technikai irány, implementáció és szolgáltatói UAT előtt**
+Állapot: **elfogadott technikai irány; az adatbázis-alapréteg implementálva a draft ágon, staging alkalmazás és szolgáltatói UAT előtt**
 
 Dátum: 2026-09-03
 
@@ -43,6 +43,7 @@ Javasolt mezők:
 | Mező | Szerep |
 | --- | --- |
 | `id uuid` | Stabil esemény- és Message-ID alap |
+| `correlation_id uuid` | Booking művelet audit/idempotencia-korrelációja |
 | `deduplication_key text unique` | Egy logikai üzleti művelethez legfeljebb egy e-mail-feladat |
 | `event_type text` | `booking.created`, `booking.updated`, `booking.cancelled` |
 | `scope text` | `single`, `occurrence`, `following`, `series` |
@@ -228,7 +229,7 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 
 ## 11. Implementációs sorrend
 
-1. adatbázis-migráció, claim/result RPC-k és pgTAP;
+1. adatbázis-migráció, claim/result RPC-k és pgTAP – **draft ágon elkészült, stagingre még nincs alkalmazva**;
 2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek;
 3. provider adapter, fake transport és sablonok;
 4. worker route, retry és alkalmazástesztek;
@@ -238,6 +239,19 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 8. valós staging UAT;
 9. külön release review, backup/rollback ellenőrzés;
 10. `main` merge és production `send` engedélyezés csak explicit tulajdonosi jóváhagyással.
+
+### 2026-09-03-i implementációs checkpoint
+
+Elkészült a `202609030001_booking_email_outbox.sql` migráció és a hozzá tartozó adatbázis-regressziós csomag:
+
+- célzott outbox és append-only delivery-attempt tábla, RLS-sel és közvetlen kliens/service-role tábla-hozzáférés nélkül;
+- idempotens belső enqueue helper deduplikációs ütközésvédelemmel;
+- service-role-only, `FOR UPDATE SKIP LOCKED` + lejáró lease alapú claim RPC;
+- lease-tokennel kerített sent/captured/retry/dead-letter eredményrögzítés;
+- legfeljebb 8 befejezett próbálkozás, eseménykori payload-immutabilitás és fizikai törlés tiltása;
+- 47 pgTAP ellenőrzés és külön két-workeres konkurencia-tesztscript.
+
+A migráció nincs alkalmazva stagingre vagy productionre. A helyi futtatókörnyezetben Supabase CLI/Postgres nem állt rendelkezésre, ezért a DB-tesztek tényleges futtatása a database CI vagy külön staging alkalmazás előtti friss lokális Supabase-környezet kötelező kapuja. Az alkalmazás 91 unit tesztje, typecheckje és production buildje PASS.
 
 ## 12. Nyitott külső függőségek
 

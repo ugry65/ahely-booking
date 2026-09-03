@@ -126,6 +126,12 @@ Választott irány: külön `booking_email_outbox`, egy logikai sorozatműveleth
 
 Részletes döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
+### Adatbázis-alapréteg – 2026-09-03
+
+A #111 draft ágon elkészült a külön outbox és append-only kézbesítési napló migrációja, az idempotens belső enqueue helper, valamint a service-role-only lease claim/result RPC. A regressziós csomag 47 pgTAP ellenőrzést és külön két-workeres `SKIP LOCKED` konkurenciatesztet tartalmaz.
+
+Az alkalmazásoldali 91 unit teszt, typecheck és production build PASS. A migráció még nincs stagingre alkalmazva; a helyi környezet Supabase CLI/Postgres hiánya miatt a pgTAP és konkurenciateszt tényleges futtatása továbbra is kötelező database CI/staging kapu. Nem történt valódi e-mail-küldés, main merge vagy production deploy.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány

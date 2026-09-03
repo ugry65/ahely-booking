@@ -341,7 +341,7 @@ Részletes forrás: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
 
 Aktuális állapot:
 - PWA issue #105 / draft PR #106: iPhone install/standalone/offline fallback PASS; Android/Chromium és hálózat-visszatérés UAT még nyitott;
-- kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; a külön, verziózott booking e-mail outbox, lease/retry/dead-letter, SMTP worker és legacy cutover technikai döntése dokumentálva, implementáció még nyitott;
+- kötelező e-mail issue #107 / draft PR #111: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; a külön, verziózott booking e-mail outbox adatbázis-alaprétege, lease/retry/dead-letter RPC-je és regressziós tesztforrása elkészült a draft ágon, de nincs stagingre alkalmazva; a booking RPC-integráció, worker, database CI és szolgáltatói UAT még nyitott;
 - migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
 - mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
 - a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
