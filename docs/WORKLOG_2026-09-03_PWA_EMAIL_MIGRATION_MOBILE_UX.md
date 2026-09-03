@@ -100,17 +100,17 @@ Tartós **transactional outbox**:
 
 A tulajdonos saját domain/tárhely szolgáltatója: **MediaCenter.hu**.
 
-Preferált feladó: saját A-Hely domainhez tartozó külön postafiók, például `foglalas@a-hely.com`.
+Véglegesített feladó és Reply-To cím: `foglalas@a-hely.com`.
 
-A MediaCenter SMTP használata megvizsgálandó/konfigurálandó. Szükséges technikai adatok:
+A MediaCenter E-mail Admin alapján igazolt SMTP-adatok:
 
-- SMTP host;
-- port;
-- TLS/STARTTLS/SMTPS mód;
-- felhasználónév;
-- alkalmazásjelszó/jelszó biztonságos secretként;
-- küldési limitek;
-- SPF/DKIM/DMARC ellenőrzés.
+- host: `pop3.mediacenter.hu` – a szolgáltató szerint nem elírás;
+- SSL/TLS port: `465`;
+- kötelező hitelesítés, felhasználónévként a teljes `foglalas@a-hely.com` cím;
+- a díjmentes SMTP limitje napi 100 levél, levélenként legfeljebb 10 címzett;
+- külön privát SMTP hozzáférés vásárolható.
+
+Nyitva marad a privát SMTP limit/ár, valamint az SPF/DKIM/DMARC és bounce-kezelés ellenőrzése. A napi 100-as korlát miatt a díjmentes SMTP csak igazolt terhelési tartalékkal fogadható el productionre.
 
 Jelszó vagy más SMTP secret nem kerülhet chatbe, repositoryba vagy klienskódba.
 

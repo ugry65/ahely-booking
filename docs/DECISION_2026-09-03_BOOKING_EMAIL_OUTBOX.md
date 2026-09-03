@@ -138,7 +138,22 @@ Elsődleges szolgáltatói irány a saját domaines MediaCenter.hu SMTP, provide
 - `CRON_SECRET`, Supabase szerveroldali kulcs;
 - környezetenkénti `BOOKING_EMAIL_MODE=disabled|capture|send`.
 
-Implementáció előtt a MediaCenter hivatalos adataiból igazolni kell a hostot, portot, TLS-módot, autentikációt, napi/óránkénti limiteket, engedélyezett From címet, SPF/DKIM/DMARC beállítást és bounce-kezelési lehetőséget.
+A MediaCenter E-mail Admin 2026-09-03-i beállítási oldala alapján igazolt nem titkos paraméterek:
+
+| Paraméter | Érték |
+| --- | --- |
+| `SMTP_HOST` | `pop3.mediacenter.hu` – a szolgáltató külön jelzi, hogy ez nem elírás |
+| `SMTP_PORT` | `465` |
+| `SMTP_SECURE` | `true` – közvetlen SSL/TLS |
+| `SMTP_USER` | `foglalas@a-hely.com` – teljes e-mail cím |
+| `BOOKING_EMAIL_FROM` | `A-Hely Foglalás <foglalas@a-hely.com>` |
+| `BOOKING_EMAIL_REPLY_TO` | `foglalas@a-hely.com` |
+| SMTP authentication | kötelező, a postafiók saját jelszavával |
+| díjmentes limit | naponta 100 levél, levélenként legfeljebb 10 címzett |
+
+A jelszó továbbra is kizárólag Vercel environment secret lehet. A booking értesítések mindig egy címzettnek mennek, ezért a 10 címzettes korlát nem probléma. A napi 100 levél viszont production kapacitási kockázat: a várt csúcsterhelés igazolása nélkül a díjmentes SMTP nem tekinthető végleges production megoldásnak. A MediaCenter szerint külön, bármely hálózatról egységesen használható privát SMTP hozzáférés vásárolható; ennek limitjeit és árát production döntés előtt be kell kérni.
+
+Nyitva marad az SPF/DKIM/DMARC állapot és a bounce-kezelési lehetőség ellenőrzése.
 
 SMTP mellett a DB-deduplikáció, lease és determinisztikus Message-ID megszünteti a normál párhuzamos/ismételt workerduplikációt. Marad azonban egy elosztott rendszeri rés: ha az SMTP szerver már átvette a levelet, de a worker a `sent` rögzítése előtt megszakad, a retry ritkán ismételt levelet okozhat. A foglalás és a kiküldési kötelezettség megőrzése érdekében nem jelölünk levelet elküldöttnek az SMTP-átadás előtt.
 
@@ -226,8 +241,8 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 
 ## 12. Nyitott külső függőségek
 
-- MediaCenter SMTP hivatalos kapcsolati és limitadatai;
-- a használni kívánt saját domaines From és Reply-To cím;
+- MediaCenter privát SMTP limitjei és ára, ha a napi 100 levél nem ad megfelelő tartalékot;
+- SPF/DKIM/DMARC és bounce-kezelés szolgáltatói ellenőrzése;
 - SMTP at-least-once ritka duplikációs résének üzleti elfogadása, vagy idempotens API-provider választása;
 - staging worker stabil elérési módja Vercel preview protection mellett;
 - riasztási címzett/csatorna és időküszöbök.

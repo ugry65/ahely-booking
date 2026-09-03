@@ -120,7 +120,7 @@ Ismétlődő/sorozatos műveletnél **egy összefoglaló e-mail** küldendő, ne
 
 Az e-mail küldési hiba nem veszélyeztetheti a már sikeres foglalási tranzakciót. Preferált technikai minta: tartós transactional outbox + külön retry-képes küldő folyamat + auditálható küldési státusz.
 
-Preferált feladó a saját A-Hely domain postafiókja; a jelenlegi vizsgált szolgáltató a MediaCenter.hu SMTP. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
+Feladó és Reply-To: `foglalas@a-hely.com`. A MediaCenter által igazolt SMTP host `pop3.mediacenter.hu` (nem elírás), SSL/TLS port 465, teljes e-mail címes felhasználónévvel és kötelező hitelesítéssel. A díjmentes szolgáltatás napi 100 levélre és levelenként 10 címzettre korlátozott; production előtt a terhelési tartalékot vagy a külön privát SMTP csomagot igazolni kell. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
 
 GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
