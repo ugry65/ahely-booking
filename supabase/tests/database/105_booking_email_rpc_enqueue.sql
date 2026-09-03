@@ -140,7 +140,7 @@ select is(
     '11000000-0000-0000-0000-000000000003',
     (select start_at + interval '1 hour' from public.bookings where id = current_setting('test.email_single_booking_id')::uuid),
     (select end_at + interval '1 hour' from public.bookings where id = current_setting('test.email_single_booking_id')::uuid),
-    'group',
+    'individual',
     'Új titkos megjegyzés',
     'a5000000-0000-0000-0000-000000000102',
     'Csoportos konzultáció'
