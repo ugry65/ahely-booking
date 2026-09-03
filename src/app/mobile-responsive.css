@@ -22,7 +22,7 @@
     padding-inline: 1rem;
   }
 
-  .profile-page-heading {
+  main > section:not(.booking-page) > .page-heading:first-child {
     padding-inline: 1rem;
   }
 
@@ -108,5 +108,74 @@
   .table-scroll table {
     width: max-content;
     min-width: 100%;
+  }
+
+  .admin-table {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-table thead {
+    display: none;
+  }
+
+  .admin-table tbody {
+    display: grid;
+    gap: .8rem;
+  }
+
+  .admin-table tr {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    padding: .85rem;
+    border: 1px solid #d8d4c8;
+    border-radius: .75rem;
+    background: #fff;
+  }
+
+  .admin-table td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 38%) minmax(0, 1fr);
+    gap: .6rem;
+    align-items: start;
+    min-width: 0;
+    padding: .48rem 0;
+    border-bottom: 1px solid #ece8df;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-table td:last-child {
+    display: block;
+    padding-top: .75rem;
+    border-bottom: 0;
+  }
+
+  .admin-table td::before {
+    color: #65716a;
+    font-size: .78rem;
+    font-weight: 800;
+  }
+
+  .admin-table td:nth-child(1)::before { content: "Név"; }
+  .admin-table td:nth-child(2)::before { content: "E-mail"; }
+  .admin-table td:nth-child(3)::before { content: "Telefonszám"; }
+  .admin-table td:nth-child(4)::before { content: "Helyiségcsoport"; }
+  .admin-table td:nth-child(5)::before { content: "Ismétlés"; }
+  .admin-table td:nth-child(6)::before { content: "Szerepkör"; }
+  .admin-table td:nth-child(7)::before { content: "Állapot"; }
+  .admin-table td:nth-child(8)::before { content: none; }
+
+  .admin-table td:last-child .button {
+    width: 100%;
+  }
+
+  .admin-table td[colspan] {
+    display: block;
+  }
+
+  .admin-table td[colspan]::before {
+    content: none;
   }
 }
