@@ -453,3 +453,13 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 ## 8. Release-biztonsági megjegyzés
 
 Ez a dokumentum nem jelent production GO-t. A fenti fejlesztések egy része draft PR/feature branch állapotban van. `main` merge vagy production deploy külön, explicit jóváhagyás nélkül továbbra is tilos.
+
+---
+
+## 9. Staging capture UAT – egyedi foglalás
+
+2026-09-04-én a `feature/107-booking-email-outbox` Vercel Preview ág staging Supabase runtime-változókat és explicit `BOOKING_EMAIL_MODE=capture` beállítást kapott, SMTP-konfiguráció nélkül. A cache nélküli redeploy commitja `51096f1`, állapota `READY`, a Vercel build PASS.
+
+Az első egyedi életciklus-UAT eredménye: két create kontrollesemény, valamint ugyanahhoz a második foglaláshoz pontosan egy update és egy cancel értesítés jött létre. Mind a négy rekord `pending`; delivery attempt és worker run még nincs, valós e-mail nem ment ki. A teszt előtti 135 legacy rekord sértetlen; a négy UAT booking művelet a kanonikus RPC-k elvárt működéseként négy új legacy audit-eseményt hozott létre.
+
+A Vercel által nem visszaolvasható `CRON_SECRET` kézi mozgatásának elkerülésére az admin e-mail monitor capture-only indítógombot kap. A szerver action aktív admin jogosultságot követel, kizárólag `capture` runtime-ot fogad el, és nulla `sent` eredményt követel. `send`, `disabled`, hibás konfiguráció vagy workerhiba esetén biztonságos, titokmentes hibával áll le. A helyi teljes csomag 23 tesztfájl / 134 teszt, typecheck és production build PASS.

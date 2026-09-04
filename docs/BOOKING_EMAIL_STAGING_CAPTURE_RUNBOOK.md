@@ -100,7 +100,7 @@ Minden sor után előbb az audit/outbox egyezést kell ellenőrizni, és csak ut
 4. Admin által végzett létrehozás, módosítás és lemondás másik booking owner részére.
 5. Ismétlődő sorozat létrehozása: egy összefoglaló rekord.
 6. Egy előfordulás, az adott és következő alkalmak, majd teljes sorozat módosítása/lemondása: logikai műveletenként egy rekord.
-7. Minden tesztcsoport után a védett worker route egyszeri `POST` meghívása ugyanazzal a Preview-scope `CRON_SECRET` értékkel.
+7. Minden tesztcsoport után a védett worker route egyszeri `POST` meghívása ugyanazzal a Preview-scope `CRON_SECRET` értékkel, vagy a staging admin `/admin/email-ertesitesek` oldalán a capture-only indítógomb használata. Az admin indítás szerveroldalon újra ellenőrzi az aktív admin jogosultságot és a `capture` módot; `send` vagy `disabled` módban fail-closed módon megtagadja a futást.
 8. Az admin `/admin/email-ertesitesek` nézet ellenőrzése címzett- és tartalomszivárgás nélkül.
 
 Elvárt állapot:

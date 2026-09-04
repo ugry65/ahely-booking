@@ -267,6 +267,8 @@ A 2026-09-04-i automatikus staging deploy #14 sikeresen alkalmazta a `2026083018
 
 A 2026-09-04-i staging infrastruktúra-döntés szerint a jóváhagyott pontos commit dedikált `staging` branchre történő, force nélküli promóciója automatikus dry-run → staging DB deploy → nulla függő migráció utóellenőrzést indít. Előfeltétel a zöld Application CI és Database CI, az elvárt dry-run és a projektgazda kifejezett staging-jóváhagyása. A staging secret csak a GitHub `staging` Environmentben használható; PR nem kap remote adatbázis-hozzáférést. Ez nem main merge és nem production deploy. Részletes döntés: `docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md`.
 
+A staging Preview branch-scope runtime konfigurációja 2026-09-04-én elkészült `capture` módban, SMTP-változók nélkül. A cache nélküli redeploy `READY`, a build és TypeScript ellenőrzés PASS. Az első egyedi create/update/cancel UAT pontosan egy-egy új `booking.created`, `booking.updated`, `booking.cancelled` rekordot adott ugyanahhoz a tesztfoglaláshoz; egy további create kontrollrekorddal összesen négy `pending` értesítés vár feldolgozásra. Valós e-mail nem ment ki. A teszt előtti 135 legacy outbox rekord változatlan, az UAT booking műveletei külön négy új kanonikus legacy audit-eseményt hoztak létre. A titok kézi visszaolvasása helyett a staging admin e-mail monitor capture-only indítást kap: minden futás újra ellenőrzi az aktív admin jogosultságot és a `capture` módot, `send` vagy `disabled` esetén fail-closed módon megtagadja az indítást.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;

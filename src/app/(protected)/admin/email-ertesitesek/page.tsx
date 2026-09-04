@@ -11,6 +11,7 @@ import {
   type BookingEmailWorkerRun,
 } from "@/lib/booking-email/monitor";
 import { createClient } from "@/lib/supabase/server";
+import { runBookingEmailCapture } from "./actions";
 
 function problemLabel(value: BookingEmailProblemItem["problem_kind"]): string {
   return ({
@@ -25,8 +26,9 @@ function runCounts(run: BookingEmailWorkerRun): string {
   return `${run.claimed_count} / ${run.sent_count} / ${run.captured_count} / ${run.retry_count} / ${run.dead_letter_count}`;
 }
 
-export default async function BookingEmailMonitorPage() {
+export default async function BookingEmailMonitorPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   await requireAdmin();
+  const params = await searchParams;
   const supabase = await createClient();
   const [summaryResponse, problemsResponse, runsResponse] = await Promise.all([
     supabase.rpc("admin_booking_email_monitor").returns<BookingEmailMonitorSummary[]>(),
@@ -49,6 +51,16 @@ export default async function BookingEmailMonitorPage() {
     </header>
 
     <p className="message">Ez a nézet csak összesített állapotot és biztonságos hibaleírást mutat. Címzett, levéltörzs, SMTP-jelszó és nyers szolgáltatói válasz nem jelenik meg. Kézi újraküldés még nincs engedélyezve.</p>
+
+    {params.hiba ? <p className="message error" role="alert">{params.hiba}</p> : null}
+    {params.uzenet ? <p className="message success" role="status">{params.uzenet}</p> : null}
+
+    {process.env.BOOKING_EMAIL_MODE?.trim() === "capture" ? <section className="card wide-card stack">
+      <div><p className="eyebrow">Staging UAT</p><h2>Capture feldolgozás</h2><p className="muted">A függő értesítéseket rendereli és auditáltan capture állapotban lezárja. SMTP-kapcsolatot nem nyit és valódi levelet nem küld.</p></div>
+      <form action={runBookingEmailCapture}>
+        <button type="submit">Capture feldolgozás indítása</button>
+      </form>
+    </section> : null}
 
     {summaryResponse.error ? <p className="message error" role="alert">Az e-mail-kézbesítési összesítő betöltése nem sikerült.</p> : null}
     {problemsResponse.error ? <p className="message error" role="alert">A problémalista betöltése nem sikerült.</p> : null}
