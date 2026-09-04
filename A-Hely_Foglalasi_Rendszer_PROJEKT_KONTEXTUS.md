@@ -349,6 +349,7 @@ Aktuális állapot:
 - a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
 - valós Android Chrome smoke UAT továbbra is szükséges, iPhone PASS nem automatikus Android PASS;
 - a stagingben `Mhely` néven szereplő inaktív csoportnak nincs aktuális user- vagy szobakapcsolata, de audit-előzménye van; támogatott törlő RPC/UI nincs, ezért nem töröltük. Alapértelmezett ajánlás az inaktiválás; külön végleges törlés csak explicit döntéssel, dependency-ellenőrzött és auditált tranzakcióként készülhet.
+- a 2026-09-04-i staging promóciós döntés megszünteti a mindennapos GitHub Actions kézi indítást: zöld Application/Database CI, elvárt dry-run és kifejezett staging-jóváhagyás után a pontos commit force nélkül a dedikált `staging` branchre kerül; ez automatikus dry-run → staging DB deploy → utóellenőrzést indít. A remote secret kizárólag a GitHub `staging` Environmentben használható, PR nem kapja meg. Main merge és production deploy változatlanul külön, kifejezett jóváhagyást igényel. Részletesen: `docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md`.
 
 ## Nem MVP / későbbi fejlesztés
 - bankkártyás fizetés

@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "supabase/**"
+      - ".github/workflows/staging-database-deploy.yml"
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
       - "scripts/test-room-access-concurrency.sh"

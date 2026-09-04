@@ -265,6 +265,8 @@ A #111 draft ágon elkészült az append-only worker-futásaudit és az admin-on
 
 A 2026-09-04-i read-only staging audit szerint a 135 legacy `outbox_events` rekord változatlanul megvan, az új booking-email táblák még nincsenek telepítve, a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md` rögzíti a branch-scope Preview konfigurációt, a négy függő migrációt, az SMTP nélküli capture UAT-t, a reconciliation és rollback kapukat. Ez előkészítés, nem staging deploy és nem production GO.
 
+A 2026-09-04-i staging infrastruktúra-döntés szerint a jóváhagyott pontos commit dedikált `staging` branchre történő, force nélküli promóciója automatikus dry-run → staging DB deploy → nulla függő migráció utóellenőrzést indít. Előfeltétel a zöld Application CI és Database CI, az elvárt dry-run és a projektgazda kifejezett staging-jóváhagyása. A staging secret csak a GitHub `staging` Environmentben használható; PR nem kap remote adatbázis-hozzáférést. Ez nem main merge és nem production deploy. Részletes döntés: `docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md`.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;

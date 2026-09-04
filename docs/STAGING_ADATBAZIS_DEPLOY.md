@@ -17,7 +17,7 @@ A workflow egyetlen érzékeny értéket használ:
 
 - `SUPABASE_STAGING_DB_URL`
 
-Ezt GitHub Environment (`staging`) vagy repository secretként kell beállítani. Az értékhez a Supabase Dashboard **Connect** párbeszédablakából a PostgreSQL URI használható. GitHub-hosted runnerhez az IPv4-kompatibilis **Session pooler** connection string javasolt.
+Ezt a GitHub `staging` Environment secretjeként kell beállítani, nem általános repository secretként. Az értékhez a Supabase Dashboard **Connect** párbeszédablakából a PostgreSQL URI használható. GitHub-hosted runnerhez az IPv4-kompatibilis **Session pooler** connection string javasolt.
 
 A URI-ban szereplő adatbázis-jelszó nem kerülhet issue-ba, PR-ba, repository-fájlba vagy chatbe. Ha a jelszó URL-speciális karaktert tartalmaz, a connection stringnek percent-encoded formátumúnak kell lennie.
 
@@ -25,10 +25,28 @@ A URI-ban szereplő adatbázis-jelszó nem kerülhet issue-ba, PR-ba, repository
 
 `.github/workflows/staging-database-deploy.yml`
 
-A workflow kizárólag kézzel (`workflow_dispatch`) indítható, és két módja van:
+A kanonikus telepítési út a dedikált `staging` branch frissítése. A branchre kerülő minden új commit automatikusan:
 
-1. `dry-run` — migrációs státusz + `supabase db push --dry-run`; nem módosítja a staging sémát.
-2. `deploy` — ugyanazt a dry-runt lefuttatja, majd explicit választás esetén alkalmazza a függő migrációkat.
+1. ellenőrzi a migrációs státuszt;
+2. `supabase db push --dry-run` előnézetet futtat;
+3. sikeres előnézet után alkalmazza a függő migrációkat;
+4. újra ellenőrzi a migrációs listát és egy második dry-runnal igazolja, hogy nem maradt függő migráció.
+
+A `workflow_dispatch` megmarad diagnosztikai és helyreállítási tartalékként:
+
+1. `dry-run` — bármely kiválasztott, megbízható ref migrációs státuszát ellenőrzi, de nem módosít adatbázist;
+2. `deploy` — csak a `staging` branchről engedélyezett, és ugyanazt a dry-run → deploy → utóellenőrzés folyamatot hajtja végre.
+
+## Promóciós kapu
+
+A `staging` branch nem fejlesztési ág. Csak egy pontos, már review-zott commitra vihető előre, force push nélkül, ha:
+
+- az adott commit Application CI és Database CI ellenőrzése zöld;
+- a staging dry-run nem jelez váratlan migrációt vagy ütközést;
+- a projektgazda a staging telepítést kifejezetten jóváhagyta;
+- a promóció commit SHA-ja rögzített és visszakereshető.
+
+A GitHub `staging` Environment deployment-branch szabálya kizárólag a `staging` branchet engedje, a branch protection pedig tiltsa a force push-t és a jogosulatlan közvetlen frissítést. A környezethez nem szükséges minden futásnál kézi reviewer-kapu, mert az explicit jóváhagyást a kontrollált branch-promóció rögzíti.
 
 Seed adatot a workflow nem telepít automatikusan.
 
@@ -45,10 +63,11 @@ A workflow első `dry-run` futásának ezért kizárólag a repository fennmarad
 ## Kötelező ellenőrzés deploy után
 
 - local/remote migration history teljes egyezése;
+- a deploy utáni `supabase db push --dry-run` nem mutat függő migrációt;
 - Supabase Security Advisor ellenőrzés;
 - kritikus RLS/RPC sémák jelenléte;
 - csak ezután hozhatók létre staging UAT felhasználók és tesztadatok.
 
 ## Production
 
-Ez a workflow production adatbázist nem ismer és nem kezel. Production deployment külön workflow, külön secret és külön jóváhagyási kapu lesz, csak a funkcionális UAT és a backup/restore gate teljesülése után.
+Ez a workflow production adatbázist nem ismer és nem kezel. A `staging` branch frissítése semmilyen `main` merge-et vagy production telepítést nem indít. Production deployment külön, kézi workflow-val, külön secrettel és külön kifejezett jóváhagyási kapuval történhet, csak a funkcionális UAT és a backup/restore gate teljesülése után.
