@@ -445,7 +445,7 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
-6. #107 e-mail: outbox, worker, monitor és capture runbook elkészült; következő a staging migrációs dry-run, külön jóváhagyott staging deploy és SMTP nélküli capture UAT;
+6. #107 e-mail: outbox, worker, monitor, capture-only admin indító, staging deploy és a teljes SMTP nélküli capture UAT elkészült; következő a scheduler külön kapuja, a DNS/hitelesítési ellenőrzések lezárása és a kontrollált valós SMTP UAT;
 7. #108 migráció: forrásexportok beszerzése, mapping, dry-run importer és staging migráció;
 8. külön review/CI/UAT után feature-integráció;
 9. `main` merge és production csak explicit tulajdonosi jóváhagyással és a production readiness kapuk lezárása után.
@@ -456,10 +456,24 @@ Ez a dokumentum nem jelent production GO-t. A fenti fejlesztések egy része dra
 
 ---
 
-## 9. Staging capture UAT – egyedi foglalás
+## 9. Staging capture UAT – teljes eredmény
 
 2026-09-04-én a `feature/107-booking-email-outbox` Vercel Preview ág staging Supabase runtime-változókat és explicit `BOOKING_EMAIL_MODE=capture` beállítást kapott, SMTP-konfiguráció nélkül. A cache nélküli redeploy commitja `51096f1`, állapota `READY`, a Vercel build PASS.
 
-Az első egyedi életciklus-UAT eredménye: két create kontrollesemény, valamint ugyanahhoz a második foglaláshoz pontosan egy update és egy cancel értesítés jött létre. Mind a négy rekord `pending`; delivery attempt és worker run még nincs, valós e-mail nem ment ki. A teszt előtti 135 legacy rekord sértetlen; a négy UAT booking művelet a kanonikus RPC-k elvárt működéseként négy új legacy audit-eseményt hozott létre.
+Az első egyedi életciklus-UAT eredménye: két create kontrollesemény, valamint ugyanahhoz a második foglaláshoz pontosan egy update és egy cancel értesítés jött létre. A teszt előtti 135 legacy rekord sértetlen; az UAT booking műveletei a kanonikus RPC-k elvárt működéseként külön új legacy audit-eseményeket hoztak létre.
 
 A Vercel által nem visszaolvasható `CRON_SECRET` kézi mozgatásának elkerülésére az admin e-mail monitor capture-only indítógombot kap. A szerver action aktív admin jogosultságot követel, kizárólag `capture` runtime-ot fogad el, és nulla `sent` eredményt követel. `send`, `disabled`, hibás konfiguráció vagy workerhiba esetén biztonságos, titokmentes hibával áll le. A helyi teljes csomag 23 tesztfájl / 134 teszt, typecheck és production build PASS.
+
+A `bc68e22` commitot a GitHub Application checks #591, Database tests #540 és az automatikus Vercel Preview build is sikeresen ellenőrizte. Az admin capture indítóval végrehajtott teljes staging UAT eredménye:
+
+- egyedi create/update/cancel: PASS;
+- admin által más booking owner részére végzett create/update/cancel: PASS, mindhárom címzett a booking owner, az actor és recipient eltér;
+- teljes sorozat create/update/cancel: logikai műveletenként egy `series` összefoglaló rekord, PASS;
+- egyetlen előfordulás update/cancel: műveletenként egy `occurrence` rekord, PASS;
+- „ezt és a következő alkalmakat” update/cancel: műveletenként egy `following` rekord, PASS;
+- két külön felhasználói sorozatlétrehozás két külön series ID-t és két külön create rekordot adott, tehát nem rendszerduplikáció;
+- összesen 16 outbox rekord és 16 delivery attempt, mind `captured`;
+- `sent=0`, retry=0, dead-letter=0, provider Message-ID=0, pending/stale=0;
+- az üres soron megismételt worker `success`, `claimed=0`, `captured=0` eredménnyel zárult, és nem hozott létre új delivery attemptet: idempotens no-op PASS.
+
+SMTP-konfiguráció és SMTP-kapcsolat nem volt, valós e-mail nem ment ki. A capture UAT lezárása nem jelent production GO-t; scheduler, DNS/hitelesítési véglegesítés és valós SMTP UAT továbbra is külön kapu.

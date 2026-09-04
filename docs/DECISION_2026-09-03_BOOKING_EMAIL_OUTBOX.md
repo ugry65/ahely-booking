@@ -281,6 +281,12 @@ A staging projekt olvasási auditja megerősítette, hogy a 135 legacy `outbox_e
 
 A 2026-09-04-i publikus DNS-audit szerint a MediaCenter MX-ek és egy érvényes, `~all` SPF rekord jelen vannak, az SPF azonban nem ajánlott `ptr` mechanizmust is tartalmaz. DMARC rekord nem található. A `default` DKIM selector alatt nincs rekord, de a tényleges DKIM-állapot csak a szolgáltatói selector vagy kontrollált levélfejléc alapján dönthető el. DNS-módosítás nem történt.
 
+### 2026-09-04-i teljes staging capture UAT
+
+A branch-scope Vercel Preview `BOOKING_EMAIL_MODE=capture` konfigurációval, SMTP-változók nélkül futott. A `bc68e22` admin-only capture indító commitján Application checks #591, Database tests #540 és Vercel Preview PASS. Az egyedi, admin owner-routing, teljes `series`, egyetlen `occurrence` és `following` create/update/cancel üzleti utak logikai műveletenként pontosan egy értesítési rekordot adtak. Adminműveletnél a recipient minden esetben a booking owner volt, nem az admin actor.
+
+Az eredmény összesen 16 outbox rekord és 16 append-only delivery attempt, mind `captured`; `sent=0`, retry=0, dead-letter=0, provider Message-ID=0, pending/stale=0. Egy külön üres workerfutás `success`, `claimed=0`, `captured=0` eredménnyel, új delivery attempt nélkül igazolta az idempotens no-op viselkedést. SMTP-kapcsolat és valós e-mail-küldés nem történt. A capture kapu lezárult; scheduler, DNS/hitelesítési véglegesítés és kontrollált valós SMTP UAT továbbra is külön döntési kapu.
+
 ## 12. Nyitott külső függőségek
 
 - MediaCenter privát SMTP limitjei és ára, ha a napi 100 levél nem ad megfelelő tartalékot;

@@ -170,3 +170,20 @@ A projektgazda kifejezett staging-jóváhagyása, a sikeres dry-run #13, valamin
 A workflow local/remote migration history egyezést és „Remote database is up to date” utó-dry-runt adott. A megismételt automatikus futás #15 no-opként szintén PASS lett. A közvetlen read-only ellenőrzés szerint az új outbox, delivery-attempt és worker-run táblák léteznek, üresek, az `authenticated` szerepkörnek nincs rajtuk közvetlen tábla-hozzáférése, a szükséges service-role worker execute jogok megvannak.
 
 Ez csak a staging séma telepítését zárja le. A runtime `disabled`; scheduler, runtime secret, capture UAT és valós SMTP UAT nem történt. Main merge és production deploy nem történt.
+
+## 11. Capture UAT eredmény – 2026-09-04
+
+A pontos branch-scope Preview runtime `BOOKING_EMAIL_MODE=capture` módban, SMTP-változók nélkül elkészült. A kézi secret-mozgatást kiváltó admin-only capture indító `bc68e22` commitján Application checks #591, Database tests #540 és Vercel Preview PASS.
+
+A teljes UAT eredménye:
+
+- egyedi create/update/cancel: PASS;
+- admin által más booking owner részére végzett create/update/cancel: PASS; a recipient minden esetben a booking owner, nem az admin actor;
+- teljes sorozat create/update/cancel: műveletenként egy `series` összefoglaló rekord, PASS;
+- egyetlen előfordulás update/cancel: műveletenként egy `occurrence` rekord, PASS;
+- „ezt és a következő alkalmakat” update/cancel: műveletenként egy `following` rekord, PASS;
+- összesen 16 outbox rekord és 16 append-only delivery attempt, mind `captured`;
+- `sent=0`, retry=0, dead-letter=0, provider Message-ID=0, pending/stale=0;
+- egy külön üres workerfutás `success`, `claimed=0`, `captured=0` eredményt és nulla új delivery attemptet adott: idempotens no-op PASS.
+
+A 135 UAT előtti legacy `outbox_events` rekord sértetlen maradt; az UAT során végzett booking műveletek elvárt új kanonikus legacy audit-eseményeket hoztak létre. SMTP-kapcsolat és valós e-mail-küldés nem történt. A capture kapu lezárult; a 8. fejezetben felsorolt scheduler-, DNS/hitelesítési és valós SMTP-kapuk külön jóváhagyást igényelnek. Main merge és production deploy nem történt.
