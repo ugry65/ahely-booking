@@ -261,6 +261,8 @@ Ugyanezen a draft ágon elkészült a szigorú `payload_version=1` alkalmazásol
 
 A verzióra rögzített Nodemailer SMTP-kliens és a belső Node.js worker Route Handler is bekötésre került. A végpont legalább 32 bájtos `CRON_SECRET` Bearer tokent követel, a service-role kulcs és az SMTP-titkok kizárólag szerveroldali változók. A `BOOKING_EMAIL_MODE` alapértéke `disabled`, ekkor a worker nem claimel; a `capture` és `send` mód csak explicit konfigurációval aktív. A worker kis batchben claimel, payloadot és scope-ot validál, majd sent/captured/retry/dead-letter eredményt rögzít biztonságos hibával. A helyi teljes csomag 22 fájl / 125 teszt, typecheck, build és dependency audit PASS; a végleges kódcommiton Application checks #581, Database tests #530 és Vercel PASS. Valós SMTP-küldés vagy staging DB-módosítás nem történt.
 
+A #111 draft ágon elkészült az append-only worker-futásaudit és az admin-only `/admin/email-ertesitesek` kézbesítési monitor is. A worker `capture`/`send` futása start/finish heartbeatot és titokmentes összesítést rögzít; a `disabled` mód továbbra sem érinti az adatbázist. A monitor kizárólag minimalizált állapotot mutat: darabszámokat, esedékességet, stale lease/futást, utolsó küldést és heartbeatot, biztonságos hibát, valamint belső auditazonosítót. Címzett, e-mail cím, booking payload, levéltartalom, provider Message-ID és secret nem kerül a read modelbe. Kézi retry nincs. A commit `1660e61` helyben 23 tesztfájl / 134 teszt, typecheck és build PASS; GitHub Application checks #583, Database tests #532 (52 fájl / 749 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. Staging DB-alkalmazás vagy valós küldés továbbra sem történt.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;
@@ -671,6 +673,7 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 19. **SystemSettings** – globális paraméterek (pl. névláthatóság, default limitek).
 20. **BookingEmailOutbox** – egy logikai booking művelethez egy verziózott, deduplikált, retryzható értesítési feladat.
 21. **BookingEmailDeliveryAttempt** – append-only kézbesítési próbálkozás és biztonságos hibastátusz.
+22. **BookingEmailWorkerRun** – egyszer lezárható, címzett- és payloadmentes worker heartbeat/futásaudit.
 
 A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelentés nem veszhet el.
 

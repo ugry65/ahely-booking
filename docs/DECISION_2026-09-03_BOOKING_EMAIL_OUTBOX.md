@@ -175,7 +175,7 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 
 ## 8. Adatvédelem és jogosultság
 
-- Mindkét új tábla RLS-e bekapcsolt és kliensoldalról deny-by-default.
+- Mindhárom célzott tábla (`booking_email_outbox`, `booking_email_delivery_attempts`, `booking_email_worker_runs`) RLS-e bekapcsolt és kliensoldalról deny-by-default.
 - `anon` és `authenticated` nem kap közvetlen SELECT/INSERT/UPDATE/DELETE jogot.
 - A booking RPC csak insertet végezhet; a worker kizárólag szűk claim/result RPC-ket használ.
 - `SECURITY DEFINER` funkcióknál üres `search_path`, explicit qualification, `PUBLIC`/`anon`/`authenticated` execute revoke és kizárólag szükséges grant kötelező.
@@ -233,7 +233,7 @@ A staging audit idején csak a Vault extension volt bekapcsolva; `pg_cron` és `
 2. booking RPC-k egyszeri/sorozatos enqueue módosítása és regressziótesztek – **draft ágon elkészült**;
 3. provider adapter, fake transport és sablonok – **a draft ágon elkészült**;
 4. worker route, retry és alkalmazástesztek – **a draft ágon elkészült; staging konfiguráció és valós küldés még nincs**;
-5. admin monitor/read model és riasztási heartbeat;
+5. admin monitor/read model és riasztási heartbeat – **a draft ágon elkészült; staging adat még nincs**;
 6. `capture` módú staging deploy és DB/e-mail reconciliation;
 7. MediaCenter SMTP paraméterek + DNS hitelesítés;
 8. valós staging UAT;
@@ -265,7 +265,15 @@ A következő draft szeletben bekerült a verzióra rögzített Nodemailer SMTP-
 
 A `BOOKING_EMAIL_MODE` hiányában `disabled`, és ebben az állapotban az autorizált végpont sem hoz létre Supabase-klienst, nem claimel és nem küld. `capture` és `send` módban a worker 10-es alap batchsel, 300 másodperces lease-szel dolgozik; mindkettő szabályozott envből módosítható. A providerhiba-osztályozás 1/5/15/60/240/720/1440 perces retryt vagy dead lettert eredményez, a nyolcadik próbálkozás után nincs új retry. Payload/scope eltérés küldés nélkül dead letter. Sikeres SMTP-átadás utáni completion-hiba nem indít azonnali második küldést, a lease-alapú helyreállítás megmarad.
 
-A helyi teljes csomag **22 tesztfájl / 125 teszt, typecheck és Next.js build PASS**, a production dependency audit nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. A valós Route Handler smoke teszt token nélkül 401-et, érvényes tokennel `disabled` módban 200-at és nulla claimet adott. Scheduler-bejegyzés, worker heartbeat/monitor, runtime secret, staging alkalmazás és valós levélküldés továbbra is nyitott; main merge és production deploy nem történt.
+A helyi teljes csomag **22 tesztfájl / 125 teszt, typecheck és Next.js build PASS**, a production dependency audit nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. A valós Route Handler smoke teszt token nélkül 401-et, érvényes tokennel `disabled` módban 200-at és nulla claimet adott. Scheduler-bejegyzés, runtime secret, staging alkalmazás és valós levélküldés továbbra is nyitott; main merge és production deploy nem történt.
+
+### 2026-09-04-i admin monitor és heartbeat checkpoint
+
+A `20260903185410_booking_email_delivery_monitor.sql` migráció append-only, egyszer lezárható `booking_email_worker_runs` auditot és szűk service-role-only start/finish RPC-ket vezet be. A worker minden engedélyezett (`capture`/`send`) futást adatbázis-idővel indít, siker esetén pontos claim/sent/captured/retry/dead-letter összesítéssel zár, hiba esetén pedig csak generikus, titokmentes hibakódot és biztonságos leírást rögzít. A `disabled` mód továbbra sem hoz létre DB-klienst és nem ír megtévesztő heartbeatot. Ha a futás lezárása adatbázis-kiesés miatt nem sikerül, a `running` rekord 30 perc után külön stale jelzést ad.
+
+Elkészült az admin-only `/admin/email-ertesitesek` read model és reszponzív felület. Egyetlen címzettet, e-mail címet, booking payloadot, MIME-tartalmat, provider Message-ID-t vagy secretet sem ad vissza. Megjeleníti az esedékes/retry/dead-letter/stale lease darabszámokat, a legrégebbi esedékes rekord idejét, az utolsó küldést, a worker sikeres/hibás heartbeatját, az ismétlődő SMTP auth hibát, a minimalizált problémalistát és a worker futáselőzményt. A kezdeti beépített jelzési küszöb 15 perc a régi esedékes rekordra, 30 perc a heartbeat/stale futásra és 3 SMTP auth hiba 24 órán belül. A nézet csak megfigyel: kézi retry nem készült, mert az külön indoklással auditált admin műveletet igényel.
+
+A helyi alkalmazásellenőrzés **23 tesztfájl / 134 teszt, typecheck és Next.js build PASS**. A GitHub commit `1660e61` eredménye: Application checks #583 PASS, Database tests #532 friss migrációs rebuildből **52 fájl / 749 pgTAP teszt PASS**, minden konkurenciateszt és schema lint PASS, Vercel preview PASS. A migráció nincs stagingre vagy productionre alkalmazva; scheduler, runtime secret, capture UAT és valós SMTP-küldés továbbra is nyitott.
 
 ## 12. Nyitott külső függőségek
 

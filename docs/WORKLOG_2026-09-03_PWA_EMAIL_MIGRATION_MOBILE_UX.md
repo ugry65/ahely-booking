@@ -171,7 +171,15 @@ A #111 draft ágon elkészült a szerveroldali kézbesítési futtató:
 
 A helyi teljes ellenőrzés **22 tesztfájl / 125 teszt PASS**, typecheck és Next.js production build PASS; `pnpm audit --prod` nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint), valamint Vercel PASS. A lokális, valódi Route Handler smoke teszt jogosulatlan GET-re 401-et, autorizált `disabled` GET-re 200-at és nulla claim/küldés eredményt adott.
 
-Vercel Cron konfiguráció szándékosan nem került még a repositoryba: az csak production deployon fut, a perces ütem csomagfüggő, miközben az elsődleges architektúraterv továbbra is Supabase Cron + `pg_net`. Scheduler, heartbeat/admin monitor, runtime secret, staging DB-alkalmazás és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
+Vercel Cron konfiguráció szándékosan nem került még a repositoryba: az csak production deployon fut, a perces ütem csomagfüggő, miközben az elsődleges architektúraterv továbbra is Supabase Cron + `pg_net`. Scheduler, runtime secret, staging DB-alkalmazás és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
+
+### Admin kézbesítési monitor és worker heartbeat – 2026-09-04
+
+A #111 draft ágon elkészült az append-only `booking_email_worker_runs` audit és a service-role-only start/finish RPC. Minden engedélyezett worker-futás rögzíti az indulást, majd siker esetén a claim/sent/captured/retry/dead-letter összesítést, hiba esetén kizárólag generikus, biztonságos hibát. A `disabled` mód változatlanul nem hoz létre Supabase-klienst és nem ír heartbeatot. A befejezetlen futás 30 perc után stale monitorjel.
+
+Az új `/admin/email-ertesitesek` oldal admin-only RPC-kon át, közvetlen tábla-hozzáférés nélkül mutatja az esedékes, retry, dead-letter és stale állapotokat, az utolsó küldést, a worker heartbeatot, az ismétlődő SMTP auth hibát, a minimalizált problémalistát és a futáselőzményt. Címzett, e-mail cím, booking payload, levéltartalom, provider Message-ID, nyers provider válasz és secret nem része a read modelnek. A reszponzív táblák mobilon kártyanézetté alakulnak. Kézi retry szándékosan nincs, mert ahhoz külön auditált admin művelet szükséges.
+
+A helyi teljes ellenőrzés **23 tesztfájl / 134 teszt PASS**, typecheck és Next.js production build PASS. A `1660e61` commiton Application checks #583 PASS, Database tests #532 friss migrációs rebuildből **52 fájl / 749 pgTAP teszt PASS**, minden konkurenciateszt és schema lint PASS, Vercel PASS. A monitor migrációja nincs stagingre vagy productionre alkalmazva; scheduler, runtime secret, capture UAT és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
 
 ---
 
