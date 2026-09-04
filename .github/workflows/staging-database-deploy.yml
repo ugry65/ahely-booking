@@ -137,3 +137,14 @@ jobs:
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
         run: supabase db push --db-url "$STAGING_DB_URL" --include-all --dry-run
+
+      - name: Record deployment evidence
+        if: ${{ github.event_name == 'push' || inputs.mode == 'deploy' }}
+        run: |
+          {
+            echo "### Staging database deployment"
+            printf -- '- Commit: %s\n' "$GITHUB_SHA"
+            printf -- '- Ref: %s\n' "$GITHUB_REF_NAME"
+            printf -- '- Trigger: %s\n' "$GITHUB_EVENT_NAME"
+            echo "- Post-deploy migration dry-run: passed"
+          } >> "$GITHUB_STEP_SUMMARY"
