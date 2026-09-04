@@ -187,6 +187,8 @@ A Supabase staging projekt olvasási auditja megerősítette az `ACTIVE_HEALTHY`
 
 Elkészült a `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md`: branch-scope Vercel Preview env-szerződés, SMTP nélküli `capture` mód, migrációs dry-run/deploy kapu, cutover snapshot, create/update/cancel/admin/sorozat reconciliation, megállási feltételek és adatmegőrző rollback. GitHub Actions dry-run, staging deploy, scheduler-aktiválás, secret-módosítás és valós e-mail-küldés ebben a lépésben nem történt.
 
+A publikus DNS-audit megerősítette a MediaCenter MX-eket és az érvényes, `~all` SPF rekordot. Az SPF nem ajánlott `ptr` mechanizmust is használ; DMARC rekord nincs. A `default` DKIM selector hiányzik, de a DKIM teljes állapota a tényleges MediaCenter selector vagy kontrollált próbaüzenet fejléce nélkül nem állapítható meg. DNS-módosítás nem történt.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány

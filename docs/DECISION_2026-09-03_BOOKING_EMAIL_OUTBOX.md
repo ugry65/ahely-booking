@@ -279,10 +279,13 @@ A helyi alkalmazásellenőrzés **23 tesztfájl / 134 teszt, typecheck és Next.
 
 A staging projekt olvasási auditja megerősítette, hogy a 135 legacy `outbox_events` rekord megvan, az új booking-email migrációk még nincsenek alkalmazva, a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A reprodukálható, SMTP-küldés nélküli bevezetési sorrendet, környezeti scope-ot, reconciliation pontokat és megállási feltételeket a `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md` rögzíti. Staging deploy, scheduler-aktiválás és valós küldés nem történt.
 
+A 2026-09-04-i publikus DNS-audit szerint a MediaCenter MX-ek és egy érvényes, `~all` SPF rekord jelen vannak, az SPF azonban nem ajánlott `ptr` mechanizmust is tartalmaz. DMARC rekord nem található. A `default` DKIM selector alatt nincs rekord, de a tényleges DKIM-állapot csak a szolgáltatói selector vagy kontrollált levélfejléc alapján dönthető el. DNS-módosítás nem történt.
+
 ## 12. Nyitott külső függőségek
 
 - MediaCenter privát SMTP limitjei és ára, ha a napi 100 levél nem ad megfelelő tartalékot;
 - SPF/DKIM/DMARC és bounce-kezelés szolgáltatói ellenőrzése;
 - SMTP at-least-once ritka duplikációs résének üzleti elfogadása, vagy idempotens API-provider választása;
+- MediaCenter DKIM selector és javasolt DMARC/SPF modernizálás megerősítése; DMARC jelenleg hiányzik, az SPF `ptr` mechanizmust használ.
 - staging worker stabil elérési módja Vercel preview protection mellett;
 - riasztási címzett/csatorna és időküszöbök.

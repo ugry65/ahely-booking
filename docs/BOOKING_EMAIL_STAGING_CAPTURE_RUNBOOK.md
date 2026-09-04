@@ -145,3 +145,15 @@ Capture PASS után is külön döntés marad:
 - production backup, migráció és `send` aktiválás.
 
 Egyik kapu sem jelent automatikus `main` merge-et vagy production deployt.
+
+## 9. Publikus DNS audit – 2026-09-04
+
+Az olvasási audit eredménye:
+
+- az `a-hely.com` MX rekordjai a MediaCenter `posta.mediacenter.hu`–`posta5.mediacenter.hu` kiszolgálóira mutatnak;
+- egyetlen, szintaktikailag érvényes SPF rekord van, amely az MX-eket és MediaCenter IP-tartományokat engedélyezi, `~all` softfail lezárással;
+- az SPF rekord `ptr` mechanizmust is használ, amely elavult/nem ajánlott; ennek cseréjét a MediaCenterrel kell egyeztetni, nem önállóan átírni;
+- `_dmarc.a-hely.com` alatt nem található DMARC rekord;
+- a `default._domainkey.a-hely.com` DKIM selector alatt nem található rekord, de ez önmagában nem bizonyítja a DKIM hiányát, mert a szolgáltató más selectort használhat.
+
+A valós SMTP UAT előtt a MediaCentertől meg kell erősíteni a DKIM selectort és a javasolt DMARC/SPF beállítást. Alternatív bizonyíték egy kontrollált próbaüzenet teljes hitelesítési fejléce (`Authentication-Results`, `DKIM-Signature`) úgy, hogy abban címzett vagy egyéb személyes adat ne kerüljön repositoryba/chatbe.
