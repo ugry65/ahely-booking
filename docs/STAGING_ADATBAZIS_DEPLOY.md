@@ -50,6 +50,12 @@ A GitHub `staging` Environment deployment-branch szabálya kizárólag a `stagin
 
 Seed adatot a workflow nem telepít automatikusan.
 
+## Első automatikus promóció – 2026-09-04
+
+A `staging` branch első promóciója a jóváhagyott e-mail fejlesztési forrásállapotot telepítette. A workflow #14 a kötelező dry-run után alkalmazta a cutoff-guard és a három booking-email migrációt, majd local/remote migration history egyezést és nulla függő migrációt igazolt. A következő, evidence-lépést hozzáadó fast-forward workflow #15 futása no-opként szintén PASS lett.
+
+A promóció előtt az exact commit Application checks #588, Database tests #537 és Vercel ellenőrzése PASS volt. A közvetlen Supabase read-only ellenőrzés igazolta az új táblák jelenlétét, üres kezdeti állapotát, a közvetlen `authenticated` tábla-hozzáférés hiányát és a szükséges service-role worker jogokat. Seed, scheduler, runtime secret vagy e-mail-küldés nem történt.
+
 ## Első staging bootstrap
 
 A staging projekt első három migrációja az UAT-környezet létrehozásakor már alkalmazásra került. A remote migration history verziói a repository eredeti fájlverzióihoz lettek igazítva:

@@ -157,3 +157,16 @@ Az olvasási audit eredménye:
 - a `default._domainkey.a-hely.com` DKIM selector alatt nem található rekord, de ez önmagában nem bizonyítja a DKIM hiányát, mert a szolgáltató más selectort használhat.
 
 A valós SMTP UAT előtt a MediaCentertől meg kell erősíteni a DKIM selectort és a javasolt DMARC/SPF beállítást. Alternatív bizonyíték egy kontrollált próbaüzenet teljes hitelesítési fejléce (`Authentication-Results`, `DKIM-Signature`) úgy, hogy abban címzett vagy egyéb személyes adat ne kerüljön repositoryba/chatbe.
+
+## 10. Staging adatbázis-deploy checkpoint – 2026-09-04
+
+A projektgazda kifejezett staging-jóváhagyása, a sikeres dry-run #13, valamint a promóciós commit zöld Application CI, Database CI és Vercel ellenőrzése után az automatikus staging workflow #14 alkalmazta:
+
+- `20260830183000_booking_update_cutoff_guard.sql`;
+- `202609030001_booking_email_outbox.sql`;
+- `202609030002_enqueue_booking_emails_from_audit.sql`;
+- `20260903185410_booking_email_delivery_monitor.sql`.
+
+A workflow local/remote migration history egyezést és „Remote database is up to date” utó-dry-runt adott. A megismételt automatikus futás #15 no-opként szintén PASS lett. A közvetlen read-only ellenőrzés szerint az új outbox, delivery-attempt és worker-run táblák léteznek, üresek, az `authenticated` szerepkörnek nincs rajtuk közvetlen tábla-hozzáférése, a szükséges service-role worker execute jogok megvannak.
+
+Ez csak a staging séma telepítését zárja le. A runtime `disabled`; scheduler, runtime secret, capture UAT és valós SMTP UAT nem történt. Main merge és production deploy nem történt.
