@@ -263,6 +263,8 @@ A verzióra rögzített Nodemailer SMTP-kliens és a belső Node.js worker Route
 
 A #111 draft ágon elkészült az append-only worker-futásaudit és az admin-only `/admin/email-ertesitesek` kézbesítési monitor is. A worker `capture`/`send` futása start/finish heartbeatot és titokmentes összesítést rögzít; a `disabled` mód továbbra sem érinti az adatbázist. A monitor kizárólag minimalizált állapotot mutat: darabszámokat, esedékességet, stale lease/futást, utolsó küldést és heartbeatot, biztonságos hibát, valamint belső auditazonosítót. Címzett, e-mail cím, booking payload, levéltartalom, provider Message-ID és secret nem kerül a read modelbe. Kézi retry nincs. A commit `1660e61` helyben 23 tesztfájl / 134 teszt, typecheck és build PASS; GitHub Application checks #583, Database tests #532 (52 fájl / 749 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. Staging DB-alkalmazás vagy valós küldés továbbra sem történt.
 
+A 2026-09-04-i read-only staging audit szerint a 135 legacy `outbox_events` rekord változatlanul megvan, az új booking-email táblák még nincsenek telepítve, a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md` rögzíti a branch-scope Preview konfigurációt, a négy függő migrációt, az SMTP nélküli capture UAT-t, a reconciliation és rollback kapukat. Ez előkészítés, nem staging deploy és nem production GO.
+
 Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;

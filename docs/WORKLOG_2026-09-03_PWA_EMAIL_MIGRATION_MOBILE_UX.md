@@ -181,6 +181,12 @@ Az új `/admin/email-ertesitesek` oldal admin-only RPC-kon át, közvetlen tábl
 
 A helyi teljes ellenőrzés **23 tesztfájl / 134 teszt PASS**, typecheck és Next.js production build PASS. A `1660e61` commiton Application checks #583 PASS, Database tests #532 friss migrációs rebuildből **52 fájl / 749 pgTAP teszt PASS**, minden konkurenciateszt és schema lint PASS, Vercel PASS. A monitor migrációja nincs stagingre vagy productionre alkalmazva; scheduler, runtime secret, capture UAT és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
 
+### Staging capture kapuk előkészítése – 2026-09-04
+
+A Supabase staging projekt olvasási auditja megerősítette az `ACTIVE_HEALTHY` állapotot, a `20260829145720_allow_past_booking_creation` legutolsó remote migrációt és a 135 megőrzendő legacy `outbox_events` rekordot. Az új booking-email táblák még nincsenek telepítve; a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A repository négy függő migrációt tartalmaz: a booking update cutoff guardot és a három booking-email migrációt.
+
+Elkészült a `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md`: branch-scope Vercel Preview env-szerződés, SMTP nélküli `capture` mód, migrációs dry-run/deploy kapu, cutover snapshot, create/update/cancel/admin/sorozat reconciliation, megállási feltételek és adatmegőrző rollback. GitHub Actions dry-run, staging deploy, scheduler-aktiválás, secret-módosítás és valós e-mail-küldés ebben a lépésben nem történt.
+
 ---
 
 ## 4. Migráció – üzleti scope és biztonsági irány
@@ -437,7 +443,7 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
-6. #107 e-mail: a technikai terv elkészült; következő a booking e-mail outbox migráció/RPC tesztimplementációja, majd worker és MediaCenter SMTP paraméterek;
+6. #107 e-mail: outbox, worker, monitor és capture runbook elkészült; következő a staging migrációs dry-run, külön jóváhagyott staging deploy és SMTP nélküli capture UAT;
 7. #108 migráció: forrásexportok beszerzése, mapping, dry-run importer és staging migráció;
 8. külön review/CI/UAT után feature-integráció;
 9. `main` merge és production csak explicit tulajdonosi jóváhagyással és a production readiness kapuk lezárása után.

@@ -275,6 +275,10 @@ Elkészült az admin-only `/admin/email-ertesitesek` read model és reszponzív 
 
 A helyi alkalmazásellenőrzés **23 tesztfájl / 134 teszt, typecheck és Next.js build PASS**. A GitHub commit `1660e61` eredménye: Application checks #583 PASS, Database tests #532 friss migrációs rebuildből **52 fájl / 749 pgTAP teszt PASS**, minden konkurenciateszt és schema lint PASS, Vercel preview PASS. A migráció nincs stagingre vagy productionre alkalmazva; scheduler, runtime secret, capture UAT és valós SMTP-küldés továbbra is nyitott.
 
+### 2026-09-04 staging capture előkészítés
+
+A staging projekt olvasási auditja megerősítette, hogy a 135 legacy `outbox_events` rekord megvan, az új booking-email migrációk még nincsenek alkalmazva, a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A reprodukálható, SMTP-küldés nélküli bevezetési sorrendet, környezeti scope-ot, reconciliation pontokat és megállási feltételeket a `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md` rögzíti. Staging deploy, scheduler-aktiválás és valós küldés nem történt.
+
 ## 12. Nyitott külső függőségek
 
 - MediaCenter privát SMTP limitjei és ára, ha a napi 100 levél nem ad megfelelő tartalékot;
