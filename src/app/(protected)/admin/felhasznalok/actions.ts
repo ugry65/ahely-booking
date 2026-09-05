@@ -7,6 +7,7 @@ import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireEnv } from "@/lib/env";
+import { validateNewPassword } from "@/lib/password-policy";
 
 function uuid(value: FormDataEntryValue | null) {
   const text = String(value ?? "");
@@ -71,6 +72,24 @@ function validateProfile(input: ProfileInput) {
   return null;
 }
 
+function passwordInput(formData: FormData) {
+  return {
+    password: String(formData.get("defaultPassword") ?? ""),
+    confirmation: String(formData.get("defaultPasswordConfirmation") ?? ""),
+  };
+}
+
+function safeAuthCreateError(error: { code?: string; status?: number; name?: string; message?: string } | null, email: string) {
+  if (!error) return "A felhasználó létrehozása nem sikerült.";
+  const code = String(error.code ?? "").toLowerCase();
+  if (code.includes("email_exists") || code.includes("user_already_exists") || error.status === 422) {
+    return "Ez az e-mail-cím már létezik az Auth-rendszerben. Próbálj másik címet.";
+  }
+  const safeMessage = String(error.message ?? "").replaceAll(email, "[e-mail elrejtve]").slice(0, 180);
+  console.error("admin user creation failed", { status: error.status ?? null, code: error.code ?? null, name: error.name ?? null, message: safeMessage });
+  return "A felhasználó létrehozása a hitelesítési szolgáltatásban hibázott. A technikai hibát naplóztuk; próbáld újra, vagy jelezd az adminisztrátornak.";
+}
+
 export async function inviteUser(formData: FormData) {
   await requireAdmin();
 
@@ -80,18 +99,20 @@ export async function inviteUser(formData: FormData) {
   if (!email || !firstName || !lastName) {
     redirect(resultUrl("hiba", "A vezetéknév, keresztnév és e-mail megadása kötelező."));
   }
+  const password = passwordInput(formData);
+  const passwordError = validateNewPassword(password.password, password.confirmation);
+  if (passwordError) redirect(resultUrl("hiba", `Az alapértelmezett jelszó: ${passwordError.charAt(0).toLowerCase()}${passwordError.slice(1)}`));
 
   const admin = createAdminClient();
-  const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
   const { data, error } = await admin.auth.admin.createUser({
     email,
-    password: temporaryPassword,
+    password: password.password,
     email_confirm: true,
-    user_metadata: { first_name: firstName, last_name: lastName },
+    user_metadata: { first_name: firstName, last_name: lastName, must_change_password: true },
   });
 
-  if (error || !data.user) redirect(resultUrl("hiba", "A felhasználó létrehozása nem sikerült. Ellenőrizd, hogy az e-mail cím nem szerepel-e már a rendszerben."));
-  redirect(resultUrl("uzenet", "A felhasználó létrejött. Aktiváló/jelszóbeállító linket külön tudsz küldeni neki."));
+  if (error || !data.user) redirect(resultUrl("hiba", safeAuthCreateError(error, email)));
+  redirect(resultUrl("uzenet", "A felhasználó létrejött. Az első belépéskor kötelező lesz megváltoztatnia a jelszavát."));
 }
 
 export async function updateUserProfile(formData: FormData) {
@@ -236,7 +257,7 @@ export async function importUsersCsv(formData: FormData) {
   for (const item of prepared) {
     if (existing.has(item.email)) { skipped += 1; continue; }
     const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
-    const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName } });
+    const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName, must_change_password: true } });
     if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`); else created += 1;
   }
 

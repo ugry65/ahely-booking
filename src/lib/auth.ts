@@ -11,6 +11,7 @@ export type ActiveProfile = {
   email: string;
   role: "admin" | "user";
   is_active: boolean;
+  must_change_password: boolean;
   onboarding_completed_at: string | null;
 };
 
@@ -25,12 +26,16 @@ export async function requireActiveProfile(): Promise<ActiveProfile> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id,first_name,last_name,email,role,is_active,onboarding_completed_at")
+    .select("id,first_name,last_name,email,role,is_active,must_change_password,onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle<ActiveProfile>();
 
   if (!profile?.is_active) {
     redirect("/belepes?hiba=inaktiv");
+  }
+
+  if (profile.must_change_password) {
+    redirect("/jelszo-csere");
   }
 
   if (profile.role !== "admin" && !profile.onboarding_completed_at) {

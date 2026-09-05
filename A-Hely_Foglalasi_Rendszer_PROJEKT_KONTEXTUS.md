@@ -23,6 +23,8 @@ A 2026-09-03-i PWA/e-mail/migráció/mobil UX döntések és UAT-eredmények kö
 
 **Normál user:** csak az engedélyezett helyiségeket és foglalásokat látja; foglalhat, saját foglalását szabály szerint módosíthatja/törölheti; ismétlődő foglalás csak engedélyezett keretek között. A havi elszámolási dashboard userenként ki- és bekapcsolható. Más foglalók nevének láthatósága **globális admin beállítás**, nem userenkénti kapcsoló; kikapcsolva más user neve és stabil azonosító színe sem kerülhet ki normál usernek.
 
+Új felhasználó létrehozásakor az admin legalább 12 karakteres kezdőjelszót ad meg. Az első sikeres belépés után kötelező a jelszó cseréje; a kezdőjelszó nem kerül alkalmazásadatbázisba, auditba vagy naplóba. A jelszócsere lezárása auditált, és a védelem közvetlen URL-lel sem kerülhető meg.
+
 ## Helyiségek
 - Tréningterem
 - 1.Szoba-családi

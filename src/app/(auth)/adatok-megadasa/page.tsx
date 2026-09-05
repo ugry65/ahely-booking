@@ -9,6 +9,7 @@ type Profile = {
   email: string;
   role: "admin" | "user";
   is_active: boolean;
+  must_change_password: boolean;
   onboarding_completed_at: string | null;
 };
 
@@ -21,11 +22,12 @@ export default async function OnboardingPage({ searchParams }: { searchParams: P
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name,last_name,email,role,is_active,onboarding_completed_at")
+    .select("first_name,last_name,email,role,is_active,must_change_password,onboarding_completed_at")
     .eq("id", userId)
     .maybeSingle<Profile>();
 
   if (!profile?.is_active) redirect("/belepes?hiba=inaktiv");
+  if (profile.must_change_password) redirect("/jelszo-csere");
   if (profile.role === "admin" || profile.onboarding_completed_at) redirect("/foglalasok");
 
   return (

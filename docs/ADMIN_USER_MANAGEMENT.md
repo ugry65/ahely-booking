@@ -64,6 +64,14 @@ Szabályok:
 - a tényleges jelszóbeállítás a Supabase recovery folyamaton történik;
 - első jelszóbeállítás után a user automatikusan a kötelező adatkitöltésre kerül.
 
+## Admin által megadott kezdőjelszó
+
+Az admin új felhasználó létrehozásakor legalább 12 karakteres kezdőjelszót ad meg és megerősít. A jelszó csak az Auth-szolgáltatásnak kerül átadásra; a `profiles` táblában nem tároljuk, auditba és alkalmazásnaplóba nem kerül.
+
+Az új felhasználó `must_change_password` jelzővel jön létre. Sikeres belépés után a rendszer kizárólag a jelszócsere oldalt engedi elérni, és a foglalási vagy adminfelület közvetlen URL-ről sem használható. A saját új jelszó sikeres mentése auditáltan kikapcsolja ezt a jelzőt; ezután a normál usernél továbbra is kötelező az első adatkitöltés.
+
+Az Auth-felhasználó létrehozásának hibája nem jelenik meg nyers technikai tartalommal. A rendszer a duplikált e-mailt elkülöníti, egyéb hibát biztonságosan naplóz és érthető adminüzenetet ad.
+
 ## Felhasználói lista és szerepkör
 
 A `Felhasználók` adminoldal elsődleges nézete áttekinthető lista. Legalább a következők látszanak:
