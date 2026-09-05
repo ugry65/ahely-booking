@@ -12,7 +12,7 @@ A checklist célja annak bizonyítása, hogy a jelenlegi rendszer a Skedda kivá
 
 Ez a dokumentum a 2026-08-22–26 között elkészült funkciókkal kibővített UAT-készlet. Production indulás előtt továbbra is kötelező a backup/restore automatizálás, sikeres restore-drill, production monitoring/alert teszt és minden production blocker lezárása.
 
-A Befizetések UI nem aktív scope. Automatikus booking confirmation e-mail nem go-live blocker.
+A Befizetések UI nem aktív scope. A 2026-09-02-i új üzleti döntés szerint a booking create/update/cancel e-mail kötelező production gate; részletes terv: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## 2. Tesztelési elv
 
@@ -150,7 +150,7 @@ Szükséges tesztkonfiguráció:
 **Elvárt eredmény:** nem jön létre duplikált booking.
 
 ### UAT-BOOK-12 – Sikeres/sikertelen UI-visszajelzés
-**Elvárt eredmény:** sikeres booking egyértelműen visszajelzett és azonnal megjelenik; sikertelen booking nem jelenik meg sikeresként. Booking confirmation e-mail hiánya nem hiba.
+**Elvárt eredmény:** sikeres booking egyértelműen visszajelzett és azonnal megjelenik; sikertelen booking nem jelenik meg sikeresként. Sikeres művelethez az e-mail-kötelezettség ugyanabban a tranzakcióban outboxba kerül, de a külső SMTP-hiba nem fordítja vissza a foglalást.
 
 ### UAT-BOOK-13 – Foglalás címe
 **Elvárt eredmény:** megadott `Foglalás címe` mentődik és jogosult admin riportban később visszakereshető.

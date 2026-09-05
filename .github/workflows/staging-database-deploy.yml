@@ -1,6 +1,9 @@
 name: Staging database deploy
 
 on:
+  push:
+    branches:
+      - staging
   workflow_dispatch:
     inputs:
       mode:
@@ -40,6 +43,14 @@ jobs:
         run: |
           if [ -z "$STAGING_DB_URL" ]; then
             echo "Missing repository/environment secret: SUPABASE_STAGING_DB_URL" >&2
+            exit 1
+          fi
+
+      - name: Require staging ref for deploy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'deploy' }}
+        run: |
+          if [ "$GITHUB_REF_NAME" != "staging" ]; then
+            echo "Manual staging deploy is allowed only from the staging branch." >&2
             exit 1
           fi
 
@@ -110,13 +121,30 @@ jobs:
         run: supabase db push --db-url "$STAGING_DB_URL" --include-all --dry-run
 
       - name: Apply pending migrations to staging
-        if: ${{ inputs.mode == 'deploy' }}
+        if: ${{ github.event_name == 'push' || inputs.mode == 'deploy' }}
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
         run: supabase db push --db-url "$STAGING_DB_URL" --include-all
 
       - name: Verify migration status after deploy
-        if: ${{ inputs.mode == 'deploy' }}
+        if: ${{ github.event_name == 'push' || inputs.mode == 'deploy' }}
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
         run: supabase migration list --db-url "$STAGING_DB_URL"
+
+      - name: Verify no pending migrations remain
+        if: ${{ github.event_name == 'push' || inputs.mode == 'deploy' }}
+        env:
+          STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        run: supabase db push --db-url "$STAGING_DB_URL" --include-all --dry-run
+
+      - name: Record deployment evidence
+        if: ${{ github.event_name == 'push' || inputs.mode == 'deploy' }}
+        run: |
+          {
+            echo "### Staging database deployment"
+            printf -- '- Commit: %s\n' "$GITHUB_SHA"
+            printf -- '- Ref: %s\n' "$GITHUB_REF_NAME"
+            printf -- '- Trigger: %s\n' "$GITHUB_EVENT_NAME"
+            echo "- Post-deploy migration dry-run: passed"
+          } >> "$GITHUB_STEP_SUMMARY"

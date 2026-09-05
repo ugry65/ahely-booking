@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-import { importUsersCsv, inviteUser, sendPasswordReset, setUserGroupMembership, setUserRepeatPermission, setUserRole, updateUserProfile } from "./actions";
+import { importUsersCsv, inviteUser, sendPasswordReset, setTemporaryPassword, setUserGroupMembership, setUserRepeatPermission, setUserRole, updateUserProfile } from "./actions";
 import { updateGlobalBookingNameVisibility } from "./visibility-actions";
 
 type ManagedProfile = {
@@ -22,6 +22,7 @@ type ManagedProfile = {
   billing_house_number: string | null;
   tax_number: string | null;
   onboarding_completed_at: string | null;
+  must_change_password: boolean;
 };
 type AccessGroup = { id: string; name: string; is_active: boolean };
 type GroupMember = { group_id: string; user_id: string };
@@ -48,7 +49,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const supabase = await createClient();
   const [profilesResult, visibilityResult, accessResult] = await Promise.all([
     supabase.from("profiles")
-      .select("id,first_name,last_name,email,phone,role,is_active,can_repeat_bookings,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at")
+      .select("id,first_name,last_name,email,phone,role,is_active,can_repeat_bookings,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at,must_change_password")
       .order("last_name").order("first_name").returns<ManagedProfile[]>(),
     supabase.from("app_settings").select("value").eq("key", "show_other_booker_names").maybeSingle<{ value: boolean }>(),
     supabase.rpc("admin_room_access_overview"),
@@ -92,13 +93,25 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
         </div>
 
         <section className="stack"><h3>Törzs- és számlázási adatok</h3><form action={updateUserProfile} className="admin-editor-row"><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="isActive" value="false" /><label>Vezetéknév<input name="lastName" defaultValue={selectedProfile.last_name} required /></label><label>Keresztnév<input name="firstName" defaultValue={selectedProfile.first_name} required /></label><label>E-mail<input value={selectedProfile.email} readOnly aria-readonly="true" /></label><BillingFields profile={selectedProfile} /><label className="inline-check"><input type="checkbox" name="isActive" value="true" defaultChecked={selectedProfile.is_active} /> Aktív</label><button type="submit">Adatok mentése</button></form>
+          <p className="muted form-help">Jelszóállapot: {selectedProfile.must_change_password ? "a következő belépéskor kötelező jelszócsere" : "nincs előírt jelszócsere"}.</p>
           <form action={sendPasswordReset}><input type="hidden" name="userId" value={selectedProfile.id} /><button type="submit" className="button secondary" disabled={!selectedProfile.is_active}>{selectedProfile.onboarding_completed_at ? "Jelszó-visszaállító link küldése" : "Aktiváló / jelszóbeállító link küldése"}</button></form>
+          <p className="muted form-help">A levél biztonságos, egyszer használható hivatkozást tartalmaz; jelszót nem küldünk e-mailben.</p>
+        </section>
+
+        <section className="stack"><h3>Ideiglenes jelszó beállítása</h3>
+          <form action={setTemporaryPassword} className="admin-editor-row">
+            <input type="hidden" name="userId" value={selectedProfile.id} />
+            <label>Ideiglenes jelszó<input name="defaultPassword" type="password" autoComplete="new-password" minLength={12} required /></label>
+            <label>Ideiglenes jelszó még egyszer<input name="defaultPasswordConfirmation" type="password" autoComplete="new-password" minLength={12} required /></label>
+            <button type="submit" disabled={!selectedProfile.is_active}>Ideiglenes jelszó mentése</button>
+          </form>
+          <p className="muted form-help">Legalább 12 karakter. A jelszó nem kerül adatbázisba vagy naplóba, és a felhasználónak a következő belépéskor kötelező lecserélnie. Az ideiglenes jelszót csak külön, biztonságos csatornán add át.</p>
         </section>
       </section> : null}
 
       <section className="card wide-card stack"><h2>Naptári névláthatóság</h2><p className="muted">Kikapcsolva a normál user másoknál csak a „Foglalt” jelzést látja; az admin mindig látja a nevet.</p><form action={updateGlobalBookingNameVisibility} className="admin-editor-row compact"><input type="hidden" name="visible" value="false" /><label className="inline-check"><input type="checkbox" name="visible" value="true" defaultChecked={showOtherBookerNames} /> Más foglalók neve látható</label><button type="submit">Mentés</button></form></section>
 
-      <div className="admin-grid"><section className="card stack"><h2>Új felhasználó</h2><form action={inviteUser} className="stack"><label>Vezetéknév<input name="lastName" required /></label><label>Keresztnév<input name="firstName" required /></label><label>E-mail<input name="email" type="email" autoComplete="email" required /></label><button type="submit">Felhasználó létrehozása</button></form><p className="muted">Létrehozáskor nem küldünk automatikusan levelet.</p></section>
+      <div className="admin-grid"><section className="card stack"><h2>Új felhasználó</h2><form action={inviteUser} className="stack"><label>Vezetéknév<input name="lastName" required /></label><label>Keresztnév<input name="firstName" required /></label><label>E-mail<input name="email" type="email" autoComplete="email" required /></label><label>Kezdőjelszó<input name="defaultPassword" type="password" autoComplete="new-password" minLength={12} required /></label><label>Kezdőjelszó még egyszer<input name="defaultPasswordConfirmation" type="password" autoComplete="new-password" minLength={12} required /></label><button type="submit">Felhasználó létrehozása</button></form><p className="muted">A létrehozás után a user automatikusan biztonságos jelszóbeállító linket kap. A kezdőjelszó nem szerepel a levélben; ha külön átadod, az első belépés után kötelező megváltoztatni.</p></section>
         <section className="card stack"><h2>Felhasználók importja</h2><p className="muted">CSV: név + e-mail. Az import nem küld automatikus aktiváló levelet.</p><form action={importUsersCsv} className="stack"><label>CSV fájl<input name="file" type="file" accept=".csv,text/csv" required /></label><button type="submit">CSV importálása</button></form><p className="muted form-help">Kötelező oszlopok: <code>last_name, first_name, email</code>.</p></section></div>
     </section>
   );
