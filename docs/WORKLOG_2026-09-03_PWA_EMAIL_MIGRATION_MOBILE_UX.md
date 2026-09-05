@@ -477,3 +477,13 @@ A `bc68e22` commitot a GitHub Application checks #591, Database tests #540 és a
 - az üres soron megismételt worker `success`, `claimed=0`, `captured=0` eredménnyel zárult, és nem hozott létre új delivery attemptet: idempotens no-op PASS.
 
 SMTP-konfiguráció és SMTP-kapcsolat nem volt, valós e-mail nem ment ki. A capture UAT lezárása nem jelent production GO-t; scheduler, DNS/hitelesítési véglegesítés és valós SMTP UAT továbbra is külön kapu.
+
+---
+
+## 10. Admin jelszókezelés – 2026-09-05
+
+Az új user admin általi létrehozása után a rendszer automatikusan biztonságos, egyszer használható jelszóbeállító linket küld. A levél jelszót nem tartalmaz. A már létrejött usert levélküldési hiba nem törli; a szerkesztőből a link újraküldhető.
+
+Aktív usernél az admin külön új reset linket küldhet, vagy egyedi, legalább 12 karakteres ideiglenes jelszót állíthat be. Az ideiglenes jelszó előtt egy admin-only, auditált RPC bekapcsolja a `must_change_password` jelzőt; maga a jelszó nem kerül RPC-be, alkalmazásadatbázisba, auditba vagy naplóba. A következő belépés csak a kötelező jelszócsere után folytatható.
+
+A helyi ellenőrzés 25 tesztfájl / 140 teszt, TypeScript és production build PASS. A database pgTAP teszt és a staging UAT a feature branch publikálása után külön kapu; main merge és production deploy nem történt.

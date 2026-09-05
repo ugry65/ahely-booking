@@ -1,6 +1,6 @@
 # Admin felhasználókezelés – üzleti és technikai szabályok
 
-Állapot: elfogadott üzleti döntés; frissítve 2026-08-22.
+Állapot: elfogadott üzleti döntés; frissítve 2026-09-05.
 Kapcsolódó issue-k: #72, #73, #75.
 
 ## Felhasználó létrehozása
@@ -10,7 +10,7 @@ Az admin egy új felhasználónál csak a következő adatokat köteles megadni:
 - keresztnév;
 - e-mail cím.
 
-A felhasználó létrehozásakor a rendszer nem küld automatikusan levelet. Az admin a user sorában külön `Aktiváló / jelszóbeállító link küldése` művelettel indítja az első belépést.
+A felhasználó létrehozásakor a rendszer automatikusan biztonságos, egyszer használható jelszóbeállító linket küld. A levél nem tartalmazza az admin által megadott kezdőjelszót. Ha a levélküldés hibázik, a user létrejötte megmarad, az admin pedig a szerkesztőből újraküldheti a linket.
 
 ## Kötelező első belépési adatkitöltés
 
@@ -71,6 +71,17 @@ Az admin új felhasználó létrehozásakor legalább 12 karakteres kezdőjelsz�
 Az új felhasználó `must_change_password` jelzővel jön létre. Sikeres belépés után a rendszer kizárólag a jelszócsere oldalt engedi elérni, és a foglalási vagy adminfelület közvetlen URL-ről sem használható. A saját új jelszó sikeres mentése auditáltan kikapcsolja ezt a jelzőt; ezután a normál usernél továbbra is kötelező az első adatkitöltés.
 
 Az Auth-felhasználó létrehozásának hibája nem jelenik meg nyers technikai tartalommal. A rendszer a duplikált e-mailt elkülöníti, egyéb hibát biztonságosan naplóz és érthető adminüzenetet ad.
+
+## Elfelejtett jelszó adminisztrátori kezelése
+
+Aktív usernél az admin két biztonságos lehetőség közül választhat:
+
+1. új, egyszer használható jelszóbeállító/visszaállító linket küld;
+2. legalább 12 karakteres egyedi ideiglenes jelszót állít be és megerősít.
+
+Az ideiglenes jelszó beállítása előtt az adatbázis auditáltan bekapcsolja a `must_change_password` jelzőt. Ez fail-closed sorrend: ha az Auth-jelszó frissítése később hibázik, a kötelező jelszócsere előírása akkor is megmarad. A jelszó kizárólag a szerveroldali Auth Admin API-nak kerül átadásra; RPC, alkalmazásadatbázis, audit és napló nem kapja meg. Az admin az ideiglenes jelszót csak külön, biztonságos csatornán adhatja át.
+
+Közös, több usernél újrahasznált alapjelszó és jelszó e-mailben történő továbbítása tilos. Az e-mail kizárólag egyszer használható recovery hivatkozást tartalmazhat.
 
 ## Felhasználói lista és szerepkör
 

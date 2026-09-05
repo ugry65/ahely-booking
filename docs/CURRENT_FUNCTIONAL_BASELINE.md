@@ -119,11 +119,11 @@ Minimum admin által megadandó:
 - keresztnév;
 - e-mail.
 
-Létrehozáskor nincs automatikus aktiváló levél. Az admin külön indítja az `Aktiváló / jelszóbeállító link küldése` műveletet.
+Létrehozáskor a rendszer automatikusan biztonságos, egyszer használható jelszóbeállító linket küld. A levélben jelszó nem szerepelhet. Sikertelen levélküldés nem görgeti vissza a már létrejött Auth usert; az admin a szerkesztőből újraküldheti a linket.
 
 ## 4.2 Aktiválás és jelszó
 
-Onboarding előtt a művelet aktiváló/jelszóbeállító link; onboarding után jelszó-visszaállító link. Csak aktív admin indíthatja aktív usernek. Token, jelszó és reset URL nem kerülhet alkalmazás-audit payloadba.
+Onboarding előtt a művelet aktiváló/jelszóbeállító link; onboarding után jelszó-visszaállító link. Csak aktív admin indíthatja aktív usernek. Az admin emellett legalább 12 karakteres egyedi ideiglenes jelszót is beállíthat; ez a következő belépéskor kötelező jelszócserét kapcsol be. Közös alapjelszó és jelszó e-mailes továbbítása tilos. Token, jelszó és reset URL nem kerülhet alkalmazás-audit payloadba.
 
 ## 4.3 Első belépési onboarding
 
