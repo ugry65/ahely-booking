@@ -23,3 +23,7 @@ additional_redirect_urls = ["http://localhost:3000"]
 jwt_expiry = 3600
 enable_signup = false
 enable_anonymous_sign_ins = false
+
+[auth.email.template.recovery]
+subject = "Jelszó beállítása – A-Hely"
+content_path = "./supabase/templates/recovery.html"
