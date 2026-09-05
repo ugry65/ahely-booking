@@ -8,7 +8,7 @@
   <body>
     <h2>Jelszó beállítása vagy visszaállítása</h2>
     <p>Az A-Hely foglalási rendszerében jelszóbeállítást vagy jelszó-visszaállítást kezdeményeztek ehhez az e-mail-címhez.</p>
-    <p><a href="{{ .ConfirmationURL }}">Jelszó beállítása</a></p>
+    <p><a href="{{ .RedirectTo }}&token_hash={{ .TokenHash }}&type=recovery">Jelszó beállítása</a></p>
     <p>A hivatkozás biztonsági okból egyszer használható és csak korlátozott ideig érvényes.</p>
     <p>Ha nem te kezdeményezted ezt a műveletet, hagyd figyelmen kívül ezt a levelet.</p>
     <p>Üdvözlettel,<br />A-Hely</p>
