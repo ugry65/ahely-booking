@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAllBookedDryRun, IGNORED_ALLBOOKED_PRICING_FIELDS } from "./allbooked-migration";
+import {
+  ALLBOOKED_ROOM_MAPPING,
+  approvedBudapestLocalToIso,
+  buildAllBookedDryRun,
+  IGNORED_ALLBOOKED_PRICING_FIELDS,
+  validatePappDalmaImport,
+} from "./allbooked-migration";
 
 const header = [
   "Scheduled start",
@@ -138,5 +144,30 @@ describe("buildAllBookedDryRun", () => {
     const result = buildAllBookedDryRun(`${header}\n${row({ "Duration (minutes)": "90" })}\n`, { "Forrás tér": "Forrás tér" });
     expect(result.valid).toBe(false);
     expect(result.issues[0].code).toBe("duration_mismatch");
+  });
+});
+
+describe("approved Papp Dalma staging import gate", () => {
+  it("accepts exactly the approved 21 booking distribution", () => {
+    const dates = ["03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17"];
+    const rows = Array.from({ length: 21 }, (_, index) => {
+      const duration = index >= 19 ? 90 : 60;
+      const day = dates[index % dates.length];
+      const hour = 8 + Math.floor(index / dates.length) * 2;
+      const endHour = duration === 60 ? hour + 1 : hour + 1;
+      const endMinute = duration === 60 ? "00" : "30";
+      return row({
+        "Scheduled start": `2026-09-${day} ${String(hour).padStart(2, "0")}:00`,
+        End: `2026-09-${day} ${String(endHour).padStart(2, "0")}:${endMinute}`,
+        "Duration (minutes)": String(duration),
+      });
+    });
+    const result = buildAllBookedDryRun([header, ...rows].join("\n"), ALLBOOKED_ROOM_MAPPING);
+    expect(validatePappDalmaImport(result).valid).toBe(true);
+  });
+
+  it("converts only the approved CEST wall-time range", () => {
+    expect(approvedBudapestLocalToIso("2026-09-03 09:30")).toBe("2026-09-03T09:30:00+02:00");
+    expect(() => approvedBudapestLocalToIso("2026-10-25 02:30")).toThrow(/tartományon/);
   });
 });
