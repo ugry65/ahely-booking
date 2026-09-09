@@ -13,6 +13,11 @@ create table public.allbooked_migration_bookings (
     check (source_system = 'allbooked')
 );
 
+create index allbooked_migration_bookings_user_id_idx
+  on public.allbooked_migration_bookings(user_id);
+create index allbooked_migration_bookings_imported_by_idx
+  on public.allbooked_migration_bookings(imported_by);
+
 alter table public.allbooked_migration_bookings enable row level security;
 revoke all on table public.allbooked_migration_bookings from public, anon, authenticated, service_role;
 
