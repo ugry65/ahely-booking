@@ -105,7 +105,7 @@ export function MigrationDryRunForm() {
         <p className="muted">Csak a production Supabase cél engedélyezett. Az import `individual` foglalásokat és a Forrás tér csoportjogot hozza létre; legacy árat és payment státuszt nem vesz át, e-mailt nem küld.</p>
         <label>Megerősítés<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder={IMPORT_CONFIRMATION} autoComplete="off" /></label>
         <button type="button" className="danger" disabled={busy || !file || confirmation !== IMPORT_CONFIRMATION} onClick={runImport}>
-          {busy ? "Import és reconciliation folyamatban…" : "Import stagingre"}
+          {busy ? "Import és reconciliation folyamatban…" : "Import productionre"}
         </button>
       </section> : null}
 
