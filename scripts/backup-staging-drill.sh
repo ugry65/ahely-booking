@@ -67,7 +67,11 @@ psql "$STAGING_DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select json_build_object(
   'profiles', (select count(*) from public.profiles),
   'rooms', (select count(*) from public.rooms),
   'user_room_permissions', (select count(*) from public.user_room_permissions),
+  'access_groups', (select count(*) from public.access_groups),
+  'access_group_members', (select count(*) from public.access_group_members),
+  'access_group_rooms', (select count(*) from public.access_group_rooms),
   'booking_series', (select count(*) from public.booking_series),
+  'booking_series_occurrences', (select count(*) from public.booking_series_occurrences),
   'bookings_total', (select count(*) from public.bookings),
   'bookings_active', (select count(*) from public.bookings where status = 'active'),
   'bookings_cancelled', (select count(*) from public.bookings where status = 'cancelled'),
@@ -76,7 +80,12 @@ psql "$STAGING_DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select json_build_object(
   'monthly_settlements', (select count(*) from public.monthly_settlements),
   'settlement_revisions', (select count(*) from public.settlement_revisions),
   'settlement_booking_lines', (select count(*) from public.settlement_booking_lines),
-  'migration_history_rows', (select count(*) from supabase_migrations.schema_migrations)
+  'migration_history_rows', (select count(*) from supabase_migrations.schema_migrations),
+  'migration_sample_auth_users', (select count(*) from auth.users where lower(email) = 'pappdalma17@gmail.com'),
+  'migration_sample_profiles', (select count(*) from public.profiles where lower(email) = 'pappdalma17@gmail.com'),
+  'migration_sample_bookings', (select count(*) from public.bookings b join public.profiles p on p.id = b.user_id where lower(p.email) = 'pappdalma17@gmail.com'),
+  'migration_sample_direct_permissions', (select count(*) from public.user_room_permissions urp join public.profiles p on p.id = urp.user_id where lower(p.email) = 'pappdalma17@gmail.com'),
+  'migration_sample_access_groups', (select count(*) from public.access_group_members agm join public.profiles p on p.id = agm.user_id where lower(p.email) = 'pappdalma17@gmail.com')
 )" > "$payload_dir/control-counts.json"
 
 jq -e 'type == "object"' "$payload_dir/control-counts.json" >/dev/null
