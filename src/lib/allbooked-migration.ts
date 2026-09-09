@@ -43,6 +43,60 @@ export type AllBookedDryRunResult = {
   };
 };
 
+export const ALLBOOKED_ROOM_MAPPING: Record<string, string> = {
+  "Tréningterem": "Tréningterem",
+  "1.Szoba-családi": "1.Szoba-családi",
+  "2.Szoba": "2.Szoba",
+  "3.Szoba": "3.Szoba",
+  "4.Szoba": "4.Szoba",
+  "5.Szoba": "5.Szoba",
+  "6.Szoba": "6.Szoba",
+  "Gyerek szoba": "Gyerek szoba",
+  "Pitypang szoba": "Pitypang szoba",
+  "Csoport szoba": "Csoport szoba",
+  "Forrás tér": "Forrás tér",
+};
+
+export const PAPP_DALMA_IMPORT_CONFIRMATION = "IMPORT-PAPP-DALMA-STAGING";
+
+export function validatePappDalmaImport(result: AllBookedDryRunResult) {
+  const user = result.users[0];
+  const durations = result.bookings.reduce((counts, booking) => {
+    counts.set(booking.durationMinutes, (counts.get(booking.durationMinutes) ?? 0) + 1);
+    return counts;
+  }, new Map<number, number>());
+  const serviceDates = result.bookings.map((booking) => booking.startLocal.slice(0, 10)).sort();
+  const valid = result.valid
+    && result.summary.sourceRows === 21
+    && result.users.length === 1
+    && result.bookings.length === 21
+    && user?.email === "pappdalma17@gmail.com"
+    && user.firstName === "Dalma"
+    && user.lastName === "Papp"
+    && user.phone === "+36307337981"
+    && JSON.stringify(user.accessTags) === JSON.stringify(["Forrás"])
+    && result.bookings.every((booking) => booking.holderEmail === user.email && booking.roomSource === "Forrás tér" && booking.roomTarget === "Forrás tér" && booking.bookingTitle === null)
+    && result.summary.totalMinutes === 1320
+    && durations.get(60) === 19
+    && durations.get(90) === 2
+    && durations.size === 2
+    && serviceDates[0] === "2026-09-03"
+    && serviceDates.at(-1) === "2026-09-17"
+    && JSON.stringify(result.ignoredPricingFields) === JSON.stringify([...IGNORED_ALLBOOKED_PRICING_FIELDS]);
+  return { valid, user };
+}
+
+export function approvedBudapestLocalToIso(value: string) {
+  const match = /^(2026-09-(?:0[3-9]|1[0-7])) (\d{2}):(\d{2})$/.exec(value.trim());
+  if (!match) throw new Error("Az időpont kívül esik a jóváhagyott migrációs tartományon.");
+  const hour = Number(match[2]);
+  const minute = Number(match[3]);
+  if (hour > 23 || minute > 59) throw new Error("Érvénytelen helyi időpont.");
+  // 2026-09-03..17 alatt Europe/Budapest CEST (UTC+02:00); a szűk
+  // tartomány kizárja a DST-átmenet kétértelmű vagy nem létező időpontjait.
+  return `${match[1]}T${match[2]}:${match[3]}:00+02:00`;
+}
+
 const REQUIRED_COLUMNS = [
   "Scheduled start",
   "End",
