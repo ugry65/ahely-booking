@@ -34,6 +34,26 @@ work_dir="$(mktemp -d)"
 cleanup() { rm -rf "$work_dir"; }
 trap cleanup EXIT
 
+# Supabase CLI selects its pg_dump image from config.toml, not from the remote
+# server. The repo's local development baseline is PostgreSQL 15, while the
+# approved staging project is PostgreSQL 17. Keep that difference isolated to
+# this temporary backup workspace and fail closed if staging changes version.
+server_version_num="$(psql "$STAGING_DB_URL" -X -A -t -v ON_ERROR_STOP=1 -c 'show server_version_num')"
+server_major="$((server_version_num / 10000))"
+if [ "$server_major" -ne 17 ]; then
+  echo "Unexpected staging PostgreSQL major version: $server_major (expected 17)" >&2
+  exit 1
+fi
+
+dump_project_dir="$work_dir/dump-project"
+mkdir -p "$dump_project_dir/supabase"
+cp "$script_dir/../supabase/config.toml" "$dump_project_dir/supabase/config.toml"
+sed -i -E 's/^major_version = [0-9]+$/major_version = 17/' "$dump_project_dir/supabase/config.toml"
+if ! grep -qx 'major_version = 17' "$dump_project_dir/supabase/config.toml"; then
+  echo "Could not prepare the PostgreSQL 17 staging dump client" >&2
+  exit 1
+fi
+
 payload_dir="$work_dir/payload"
 mkdir -p "$payload_dir"
 
@@ -49,11 +69,11 @@ encrypted_checksum="$work_dir/${artifact_base}.tar.gz.age.sha256"
 
 printf 'Creating STAGING DRILL logical backup at %s (%s)\n' "$utc_timestamp" "$budapest_timestamp"
 
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/roles.sql" --role-only
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/schema.sql"
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/data.sql" --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-schema.sql" --schema supabase_migrations
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-history.sql" --use-copy --data-only --schema supabase_migrations
+supabase --workdir "$dump_project_dir" db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/roles.sql" --role-only
+supabase --workdir "$dump_project_dir" db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/schema.sql"
+supabase --workdir "$dump_project_dir" db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/data.sql" --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
+supabase --workdir "$dump_project_dir" db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-schema.sql" --schema supabase_migrations
+supabase --workdir "$dump_project_dir" db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-history.sql" --use-copy --data-only --schema supabase_migrations
 
 for backup_file in roles.sql schema.sql data.sql migration-schema.sql migration-history.sql; do
   if [ ! -s "$payload_dir/$backup_file" ]; then
