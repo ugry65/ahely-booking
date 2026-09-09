@@ -1,22 +1,60 @@
 button,
-input[type="submit"] {
+input[type="submit"],
+a.button {
   transition: filter 120ms ease, opacity 120ms ease, transform 80ms ease;
 }
 
 button:active:not(:disabled),
-input[type="submit"]:active:not(:disabled) {
+input[type="submit"]:active:not(:disabled),
+a.button:active:not([aria-busy="true"]) {
   transform: translateY(1px);
   filter: brightness(0.92);
 }
 
 button.is-submitting,
-input[type="submit"].is-submitting {
+input[type="submit"].is-submitting,
+a.button.is-submitting {
   cursor: wait;
   opacity: 0.72;
   filter: saturate(0.72);
 }
 
 button[aria-busy="true"],
-input[type="submit"][aria-busy="true"] {
+input[type="submit"][aria-busy="true"],
+a.button[aria-busy="true"] {
   pointer-events: none;
+}
+
+body.user-editor-modal-open {
+  overflow: hidden;
+}
+
+body.user-editor-modal-open::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(19, 33, 28, 0.48);
+  backdrop-filter: blur(2px);
+}
+
+.user-editor-modal {
+  position: fixed;
+  top: 5vh;
+  left: 50%;
+  z-index: 1001;
+  width: min(1120px, calc(100vw - 32px));
+  max-height: 90vh;
+  margin: 0;
+  overflow: auto;
+  transform: translateX(-50%);
+  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.28);
+}
+
+@media (max-width: 720px) {
+  .user-editor-modal {
+    top: 12px;
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
 }
