@@ -19,10 +19,23 @@ describe("form submit feedback", () => {
     expect(source).toContain('"Folyamatban…"');
   });
 
+  it("shows pending feedback for plain primary clicks on internal button links", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.tsx"), "utf8");
+    expect(source).toContain('document.addEventListener("click", handleNavigationClick, true)');
+    expect(source).toContain('event.target.closest("a.button")');
+    expect(source).toContain('url.origin !== window.location.origin');
+    expect(source).toContain('link.setAttribute("aria-busy", "true")');
+    expect(source).toContain('link.classList.add("is-submitting")');
+    expect(source).toContain('link.textContent = link.dataset.pendingLabel ?? DEFAULT_PENDING_LABEL');
+    expect(source).toContain('!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey');
+    expect(source).toContain('link.hasAttribute("download")');
+  });
+
   it("keeps a visible pressed and pending state in CSS", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.css"), "utf8");
     expect(css).toContain(":active:not(:disabled)");
-    expect(css).toContain(".is-submitting");
-    expect(css).toContain('[aria-busy="true"]');
+    expect(css).toContain("a.button:active:not([aria-busy=\"true\"])");
+    expect(css).toContain("a.button.is-submitting");
+    expect(css).toContain('a.button[aria-busy="true"]');
   });
 });
