@@ -1,0 +1,22 @@
+button,
+input[type="submit"] {
+  transition: filter 120ms ease, opacity 120ms ease, transform 80ms ease;
+}
+
+button:active:not(:disabled),
+input[type="submit"]:active:not(:disabled) {
+  transform: translateY(1px);
+  filter: brightness(0.92);
+}
+
+button.is-submitting,
+input[type="submit"].is-submitting {
+  cursor: wait;
+  opacity: 0.72;
+  filter: saturate(0.72);
+}
+
+button[aria-busy="true"],
+input[type="submit"][aria-busy="true"] {
+  pointer-events: none;
+}
