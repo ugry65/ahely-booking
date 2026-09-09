@@ -43,6 +43,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: ./scripts/test-staging-db-url-guard.sh
       - run: ./scripts/test-staging-backup-trigger.sh
+      - run: ./scripts/test-staging-backup-drill.sh
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build
