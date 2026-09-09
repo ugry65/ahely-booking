@@ -19,6 +19,7 @@ on:
       - ".github/workflows/staging-database-deploy.yml"
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
+      - ".github/workflows/staging-backup-drill.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -40,6 +41,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: ./scripts/test-staging-db-url-guard.sh
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build

@@ -18,7 +18,7 @@ require_env() {
   fi
 }
 
-for command_name in supabase psql age rclone sha256sum tar jq date; do
+for command_name in supabase psql age rclone sha256sum tar jq date python3; do
   require_command "$command_name"
 done
 
@@ -26,6 +26,9 @@ require_env STAGING_DB_URL
 require_env BACKUP_AGE_RECIPIENT
 require_env BACKUP_GDRIVE_REMOTE
 require_env BACKUP_B2_REMOTE
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+"$script_dir/lib/validate-staging-db-url.sh" "$STAGING_DB_URL"
 
 work_dir="$(mktemp -d)"
 cleanup() { rm -rf "$work_dir"; }
