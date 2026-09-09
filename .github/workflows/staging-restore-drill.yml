@@ -1,0 +1,98 @@
+name: Staging isolated restore drill
+
+on:
+  push:
+    branches: [staging]
+    paths:
+      - ".github/staging-restore-drill.trigger"
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Írd be: RESTORE-STAGING"
+        required: true
+        default: ""
+        type: string
+      artifact:
+        description: "A staging drill .tar.gz.age artifact pontos neve"
+        required: true
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-isolated-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  staging-isolated-restore-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: staging
+    env:
+      STAGING_DRILL_AGE_IDENTITY: ${{ secrets.STAGING_DRILL_AGE_IDENTITY }}
+      BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+      BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+
+      RCLONE_CONFIG_GDRIVE_TYPE: drive
+      RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
+      RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+      RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+      RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
+
+      RCLONE_CONFIG_B2_TYPE: b2
+      RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_DAILY_ACCOUNT_ID }}
+      RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_DAILY_APPLICATION_KEY }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve and validate staging restore request
+        env:
+          INPUT_CONFIRMATION: ${{ inputs.confirmation }}
+          INPUT_ARTIFACT: ${{ inputs.artifact }}
+        run: |
+          confirmation="$INPUT_CONFIRMATION"
+          artifact="$INPUT_ARTIFACT"
+          if [ "$GITHUB_EVENT_NAME" = "push" ]; then
+            confirmation="$(sed -n 's/^confirmation=//p' .github/staging-restore-drill.trigger)"
+            artifact="$(sed -n 's/^artifact=//p' .github/staging-restore-drill.trigger)"
+          fi
+          bash ./scripts/lib/validate-staging-restore-trigger.sh \
+            "$GITHUB_EVENT_NAME" "$GITHUB_REF_NAME" "$confirmation" "$artifact"
+          printf 'STAGING_DRILL_ARTIFACT=%s\n' "$artifact" >> "$GITHUB_ENV"
+
+      - name: Validate required restore configuration
+        run: |
+          required=(
+            STAGING_DRILL_AGE_IDENTITY
+            BACKUP_GDRIVE_REMOTE
+            BACKUP_B2_REMOTE
+            RCLONE_CONFIG_GDRIVE_CLIENT_ID
+            RCLONE_CONFIG_GDRIVE_CLIENT_SECRET
+            RCLONE_CONFIG_GDRIVE_TOKEN
+            RCLONE_CONFIG_B2_ACCOUNT
+            RCLONE_CONFIG_B2_KEY
+          )
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing staging restore configuration: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+
+      - name: Install restore dependencies
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends age rclone jq postgresql-client
+
+      - name: Run isolated staging restore drill
+        run: bash ./scripts/restore-staging-drill.sh
