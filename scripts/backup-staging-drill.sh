@@ -18,7 +18,7 @@ require_env() {
   fi
 }
 
-for command_name in supabase psql age rclone sha256sum tar jq date python3; do
+for command_name in docker psql age rclone sha256sum tar jq date python3; do
   require_command "$command_name"
 done
 
@@ -49,11 +49,7 @@ encrypted_checksum="$work_dir/${artifact_base}.tar.gz.age.sha256"
 
 printf 'Creating STAGING DRILL logical backup at %s (%s)\n' "$utc_timestamp" "$budapest_timestamp"
 
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/roles.sql" --role-only
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/schema.sql"
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/data.sql" --use-copy --data-only -x "storage.buckets_vectors" -x "storage.vector_indexes"
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-schema.sql" --schema supabase_migrations
-supabase db dump --db-url "$STAGING_DB_URL" -f "$payload_dir/migration-history.sql" --use-copy --data-only --schema supabase_migrations
+"$script_dir/lib/dump-staging-postgres17.sh" "$STAGING_DB_URL" "$payload_dir"
 
 for backup_file in roles.sql schema.sql data.sql migration-schema.sql migration-history.sql; do
   if [ ! -s "$payload_dir/$backup_file" ]; then
@@ -96,7 +92,7 @@ jq -e 'type == "object"' "$payload_dir/control-counts.json" >/dev/null
 )
 
 jq -n \
-  --arg backupVersion "2" \
+  --arg backupVersion "3" \
   --arg environment "staging-drill" \
   --arg utcTimestamp "$utc_timestamp" \
   --arg budapestTimestamp "$budapest_timestamp" \

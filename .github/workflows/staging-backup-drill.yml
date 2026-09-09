@@ -55,11 +55,6 @@ jobs:
             "$GITHUB_REF_NAME" \
             "$CONFIRMATION"
 
-      - name: Install Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: 2.116.0
-
       - name: Install backup dependencies
         run: |
           sudo apt-get update
@@ -85,8 +80,8 @@ jobs:
             fi
           done
 
-      - name: Make staging backup script executable
-        run: chmod +x ./scripts/backup-staging-drill.sh
+      - name: Make staging backup scripts executable
+        run: chmod +x ./scripts/backup-staging-drill.sh ./scripts/lib/dump-staging-postgres17.sh
 
       - name: Run encrypted dual-target staging backup drill
         run: ./scripts/backup-staging-drill.sh
