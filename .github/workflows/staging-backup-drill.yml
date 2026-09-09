@@ -62,6 +62,10 @@ jobs:
 
       - name: Install backup dependencies
         run: |
+          # Chrome is preinstalled and unrelated to this job. Its runner image
+          # repository can briefly publish a Release/Packages hash mismatch,
+          # which must not make the backup dependency install nondeterministic.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends age rclone jq postgresql-client
 
