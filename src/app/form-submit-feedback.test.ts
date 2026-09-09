@@ -31,6 +31,20 @@ describe("form submit feedback", () => {
     expect(source).toContain('link.hasAttribute("download")');
   });
 
+  it("renders the selected user editor as an accessible modal", () => {
+    const source = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.tsx"), "utf8");
+    const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.css"), "utf8");
+    expect(source).toContain('USER_EDITOR_EYEBROW = "Felhasználó szerkesztése"');
+    expect(source).toContain('section.classList.remove("user-editor-modal")');
+    expect(source).toContain('editor.classList.add("user-editor-modal")');
+    expect(source).toContain('editor.setAttribute("role", "dialog")');
+    expect(source).toContain('editor.setAttribute("aria-modal", "true")');
+    expect(source).toContain('new MutationObserver(() => syncUserEditorModal())');
+    expect(css).toContain('body.user-editor-modal-open::before');
+    expect(css).toContain('.user-editor-modal');
+    expect(css).toContain('max-height: 90vh');
+  });
+
   it("keeps a visible pressed and pending state in CSS", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.css"), "utf8");
     expect(css).toContain(":active:not(:disabled)");
