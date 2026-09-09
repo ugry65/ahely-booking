@@ -20,10 +20,12 @@ describe("production health anti-pause endpoint", () => {
     expect(route).toContain("{ ok: true }");
   });
 
-  it("schedules two daily production cron checks", () => {
+  it("schedules four daily production cron checks", () => {
     const config = fs.readFileSync(path.join(process.cwd(), "vercel.json"), "utf8");
-    expect(config.match(/\/api\/internal\/production-health/g)?.length).toBe(2);
+    expect(config.match(/\/api\/internal\/production-health/g)?.length).toBe(4);
+    expect(config).toContain('"15 0 * * *"');
     expect(config).toContain('"15 6 * * *"');
+    expect(config).toContain('"15 12 * * *"');
     expect(config).toContain('"15 18 * * *"');
   });
 });
