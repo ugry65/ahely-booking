@@ -235,8 +235,19 @@ begin
       end if;
       v_existing_count := v_existing_count + 1;
     else
-      perform public.assert_booking_request(p_actor_id, v_room_id, p_user_id,
-        (v_item ->> 'startAt')::timestamptz, (v_item ->> 'endAt')::timestamptz, 'individual');
+      if exists (
+        select 1
+        from public.bookings existing_booking
+        where existing_booking.room_id = v_room_id
+          and existing_booking.status = 'active'
+          and existing_booking.time_range && tstzrange(
+            (v_item ->> 'startAt')::timestamptz,
+            (v_item ->> 'endAt')::timestamptz,
+            '[)'
+          )
+      ) then
+        raise exception 'A migrált időpontra aktív foglalási ütközés található.' using errcode = '23P01';
+      end if;
       insert into public.bookings(room_id, user_id, created_by, start_at, end_at, use_type, status, note, booking_title, idempotency_key)
       values (v_room_id, p_user_id, p_actor_id, (v_item ->> 'startAt')::timestamptz, (v_item ->> 'endAt')::timestamptz,
         'individual', 'active', null, null, gen_random_uuid()) returning id into v_booking_id;
