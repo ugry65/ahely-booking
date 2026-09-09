@@ -1,6 +1,10 @@
 name: Staging backup drill
 
 on:
+  push:
+    branches: [staging]
+    paths:
+      - ".github/staging-backup-drill.trigger"
   workflow_dispatch:
     inputs:
       confirmation:
@@ -46,17 +50,10 @@ jobs:
         env:
           CONFIRMATION: ${{ inputs.confirmation }}
         run: |
-          if [ "$CONFIRMATION" != "STAGING-BACKUP" ]; then
-            echo "Staging backup drill requires confirmation input: STAGING-BACKUP" >&2
-            exit 1
-          fi
-
-      - name: Validate staging-only ref
-        run: |
-          if [ "$GITHUB_REF_NAME" != "staging" ]; then
-            echo "This drill may run only from the staging branch." >&2
-            exit 1
-          fi
+          ./scripts/lib/validate-staging-backup-trigger.sh \
+            "$GITHUB_EVENT_NAME" \
+            "$GITHUB_REF_NAME" \
+            "$CONFIRMATION"
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
