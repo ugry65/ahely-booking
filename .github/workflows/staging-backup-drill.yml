@@ -53,8 +53,8 @@ jobs:
 
       - name: Validate staging-only ref
         run: |
-          if [ "$GITHUB_REF_NAME" != "test/staging-backup-migration-restore-drill" ]; then
-            echo "This drill may run only from test/staging-backup-migration-restore-drill." >&2
+          if [ "$GITHUB_REF_NAME" != "staging" ]; then
+            echo "This drill may run only from the staging branch." >&2
             exit 1
           fi
 
