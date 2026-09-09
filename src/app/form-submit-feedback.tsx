@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 
 const DEFAULT_PENDING_LABEL = "Folyamatban…";
+const USER_EDITOR_EYEBROW = "Felhasználó szerkesztése";
 
 function pendingLabel(button: HTMLButtonElement | HTMLInputElement) {
   if (button instanceof HTMLInputElement) return button.dataset.pendingLabel ?? DEFAULT_PENDING_LABEL;
@@ -28,6 +29,29 @@ function eligibleNavigationLink(event: MouseEvent) {
   return link;
 }
 
+function syncUserEditorModal() {
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>("section.card.wide-card.stack"));
+  const editor = candidates.find((section) => section.querySelector(".eyebrow")?.textContent?.trim() === USER_EDITOR_EYEBROW) ?? null;
+
+  for (const section of candidates) {
+    if (section !== editor) {
+      section.classList.remove("user-editor-modal");
+      section.removeAttribute("role");
+      section.removeAttribute("aria-modal");
+    }
+  }
+
+  if (!editor) {
+    document.body.classList.remove("user-editor-modal-open");
+    return;
+  }
+
+  editor.classList.add("user-editor-modal");
+  editor.setAttribute("role", "dialog");
+  editor.setAttribute("aria-modal", "true");
+  document.body.classList.add("user-editor-modal-open");
+}
+
 export function FormSubmitFeedback() {
   useEffect(() => {
     const handleSubmit = (event: SubmitEvent) => {
@@ -38,9 +62,6 @@ export function FormSubmitFeedback() {
       const originalLabel = submitter instanceof HTMLInputElement ? submitter.value : submitter.textContent ?? "";
       submitter.dataset.originalLabel = originalLabel;
 
-      // A submit eseményt és a FormData összeállítását nem zavarjuk meg: a vizuális
-      // állapotot a következő frame-ben kapcsoljuk be. Server action/redirect után
-      // az oldal újrarenderelése visszaállítja a gomb normál állapotát.
       window.requestAnimationFrame(() => {
         submitter.disabled = true;
         submitter.setAttribute("aria-busy", "true");
@@ -63,9 +84,15 @@ export function FormSubmitFeedback() {
       });
     };
 
+    syncUserEditorModal();
+    const observer = new MutationObserver(() => syncUserEditorModal());
+    observer.observe(document.body, { childList: true, subtree: true });
+
     document.addEventListener("submit", handleSubmit, true);
     document.addEventListener("click", handleNavigationClick, true);
     return () => {
+      observer.disconnect();
+      document.body.classList.remove("user-editor-modal-open");
       document.removeEventListener("submit", handleSubmit, true);
       document.removeEventListener("click", handleNavigationClick, true);
     };
