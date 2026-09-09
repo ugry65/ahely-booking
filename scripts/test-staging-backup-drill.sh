@@ -39,6 +39,7 @@ MOCK
 cat > "$mock_bin/age" <<'MOCK'
 #!/usr/bin/env bash
 set -Eeuo pipefail
+printf '%s\n' "$*" > "$MOCK_AGE_LOG"
 output=""
 input=""
 while [ "$#" -gt 0 ]; do
@@ -76,8 +77,10 @@ chmod +x "$mock_bin/psql" "$mock_bin/supabase" "$mock_bin/age" "$mock_bin/rclone
 output="$({
   PATH="$mock_bin:$PATH" \
   MOCK_REMOTE_DIR="$remote_dir" \
+  MOCK_AGE_LOG="$test_dir/age.log" \
   STAGING_DB_URL='postgresql://postgres:secret@db.fvwapntzhavhgazeflri.supabase.co:5432/postgres' \
   BACKUP_AGE_RECIPIENT='age1test' \
+  STAGING_DRILL_AGE_RECIPIENT='age1stagingtest' \
   BACKUP_GDRIVE_REMOTE='gdrive:backups' \
   BACKUP_B2_REMOTE='b2:backups' \
   GITHUB_SHA='0123456789abcdef0123456789abcdef01234567' \
@@ -86,6 +89,8 @@ output="$({
 
 grep -q 'STAGING DRILL backup verified on both targets' <<< "$output"
 grep -q 'CONTROL_COUNTS=' <<< "$output"
+test "$(grep -o -- '--recipient' "$test_dir/age.log" | wc -l)" -eq 2
+grep -q -- '--recipient age1test --recipient age1stagingtest' "$test_dir/age.log"
 test "$(find "$remote_dir" -type f -name '*.tar.gz.age' | wc -l)" -eq 2
 test "$(find "$remote_dir" -type f -name '*.tar.gz.age.sha256' | wc -l)" -eq 2
 test "$(find "$remote_dir" -type f -name '*.tar.gz' | wc -l)" -eq 0
