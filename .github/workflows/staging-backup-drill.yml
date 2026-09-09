@@ -29,6 +29,7 @@ jobs:
     env:
       STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
       BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+      STAGING_DRILL_AGE_RECIPIENT: ${{ vars.STAGING_DRILL_AGE_RECIPIENT }}
       BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
       BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
 
@@ -74,6 +75,7 @@ jobs:
           required=(
             STAGING_DB_URL
             BACKUP_AGE_RECIPIENT
+            STAGING_DRILL_AGE_RECIPIENT
             BACKUP_GDRIVE_REMOTE
             BACKUP_B2_REMOTE
             RCLONE_CONFIG_GDRIVE_CLIENT_ID
