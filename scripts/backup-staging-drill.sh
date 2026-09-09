@@ -47,7 +47,7 @@ fi
 
 dump_project_dir="$work_dir/dump-project"
 mkdir -p "$dump_project_dir/supabase"
-cp "$script_dir/../supabase/config.toml" "$dump_project_dir/supabase/config.toml"
+cp -a "$script_dir/../supabase/." "$dump_project_dir/supabase/"
 sed -i -E 's/^major_version = [0-9]+$/major_version = 17/' "$dump_project_dir/supabase/config.toml"
 if ! grep -qx 'major_version = 17' "$dump_project_dir/supabase/config.toml"; then
   echo "Could not prepare the PostgreSQL 17 staging dump client" >&2
