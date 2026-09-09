@@ -13,9 +13,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-const PRODUCTION_PROJECT_REF = "fvwapntzhavhgazeflri";
+const PRODUCTION_PROJECT_REF = "yasrmxwjojepessivhmc";
 
-function assertStagingTarget() {
+function assertProductionTarget() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
   const ref = process.env.VERCEL_GIT_COMMIT_REF;
   let hostname = "";
@@ -35,7 +35,7 @@ function safeImportError(error: { code?: string; message?: string } | null) {
 export async function POST(request: Request) {
   const actor = await requireAdmin();
   try {
-    assertStagingTarget();
+    assertProductionTarget();
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Tiltott importcél." }, { status: 403 });
   }
