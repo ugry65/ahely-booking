@@ -173,7 +173,7 @@ select lives_ok(
   $$select public.create_booking_series(
     '11000000-0000-0000-0000-000000000005',
     '00000000-0000-0000-0000-000000000112',
-    '2026-08-31 09:00+02', '2026-08-31 10:00+02', 'monthly', null, 3, '{}',
+    '2026-10-31 09:00+02', '2026-10-31 10:00+02', 'monthly', null, 3, '{}',
     'abort_all', 'individual', null, '28000000-0000-0000-0000-000000000114'
   )$$,
   'Admin hónapvégi havi sorozatot hozhat létre'
@@ -183,7 +183,7 @@ select is(
   (select array_agg(service_date order by occurrence_index)
    from public.booking_series_occurrences
    where series_id = (select id from public.booking_series where idempotency_key = '28000000-0000-0000-0000-000000000114')),
-  array[date '2026-08-31', date '2026-09-30', date '2026-10-31'],
+  array[date '2026-10-31', date '2026-11-30', date '2026-12-31'],
   'A havi RPC is helyesen kezeli a hónapvégi napokat'
 );
 
