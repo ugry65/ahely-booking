@@ -20,6 +20,7 @@ on:
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
       - ".github/workflows/staging-backup-drill.yml"
+      - ".github/workflows/staging-restore-drill.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -44,6 +45,7 @@ jobs:
       - run: ./scripts/test-staging-db-url-guard.sh
       - run: ./scripts/test-staging-backup-trigger.sh
       - run: bash ./scripts/test-staging-backup-drill.sh
+      - run: bash ./scripts/test-staging-restore-trigger.sh
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build

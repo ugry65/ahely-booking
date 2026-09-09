@@ -24,6 +24,7 @@ done
 
 require_env STAGING_DB_URL
 require_env BACKUP_AGE_RECIPIENT
+require_env STAGING_DRILL_AGE_RECIPIENT
 require_env BACKUP_GDRIVE_REMOTE
 require_env BACKUP_B2_REMOTE
 
@@ -131,7 +132,11 @@ jq -n \
 )
 
 tar -czf "$plain_bundle" -C "$payload_dir" .
-age --recipient "$BACKUP_AGE_RECIPIENT" --output "$encrypted_bundle" "$plain_bundle"
+age \
+  --recipient "$BACKUP_AGE_RECIPIENT" \
+  --recipient "$STAGING_DRILL_AGE_RECIPIENT" \
+  --output "$encrypted_bundle" \
+  "$plain_bundle"
 
 if [ ! -s "$encrypted_bundle" ]; then
   echo "Encrypted staging drill artifact is empty" >&2
