@@ -83,7 +83,7 @@ output="$({
   BACKUP_GDRIVE_REMOTE='gdrive:backups' \
   BACKUP_B2_REMOTE='b2:backups' \
   GITHUB_SHA='0123456789abcdef0123456789abcdef01234567' \
-  ./scripts/backup-production-drill.sh
+  bash ./scripts/backup-production-drill.sh
 } 2>&1)"
 
 grep -q 'PRODUCTION DRILL backup verified on both targets' <<< "$output"
