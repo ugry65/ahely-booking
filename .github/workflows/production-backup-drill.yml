@@ -1,6 +1,10 @@
 name: Production backup drill
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/production-backup-drill.trigger"
   workflow_dispatch:
     inputs:
       confirmation:
