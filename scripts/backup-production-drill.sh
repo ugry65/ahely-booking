@@ -28,7 +28,7 @@ require_env BACKUP_GDRIVE_REMOTE
 require_env BACKUP_B2_REMOTE
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-"$script_dir/lib/validate-production-db-url.sh" "$PRODUCTION_DB_URL"
+bash "$script_dir/lib/validate-production-db-url.sh" "$PRODUCTION_DB_URL"
 
 work_dir="$(mktemp -d)"
 cleanup() { rm -rf "$work_dir"; }
