@@ -74,6 +74,7 @@ MOCK
 
 chmod +x "$mock_bin/psql" "$mock_bin/supabase" "$mock_bin/age" "$mock_bin/rclone"
 
+set +e
 output="$({
   PATH="$mock_bin:$PATH" \
   MOCK_REMOTE_DIR="$remote_dir" \
@@ -85,6 +86,12 @@ output="$({
   GITHUB_SHA='0123456789abcdef0123456789abcdef01234567' \
   bash ./scripts/backup-production-drill.sh
 } 2>&1)"
+status=$?
+set -e
+if [ "$status" -ne 0 ]; then
+  printf '%s\n' "$output" >&2
+  exit "$status"
+fi
 
 grep -q 'PRODUCTION DRILL backup verified on both targets' <<< "$output"
 grep -q 'CONTROL_COUNTS=' <<< "$output"
