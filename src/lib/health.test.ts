@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { runHealthCheck } from "@/lib/health";
+import { runHealthCheck } from "./health";
 
 function clock(...values: number[]) {
   let index = 0;
