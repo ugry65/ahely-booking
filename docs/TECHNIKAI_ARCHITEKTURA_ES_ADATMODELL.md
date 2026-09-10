@@ -3,6 +3,7 @@
 Verzió: 1.0
 
 Dátum: 2026-08-16
+Jogosultsági leírás helyesbítése: 2026-08-30, a már elfogadott [2026-08-22-i modell](ACCESS_AND_REPEAT_DECISIONS_2026-08-22.md) szerint.
 
 Státusz: fejlesztési alap
 
@@ -59,7 +60,7 @@ flowchart TD
 7. Kritikus írásoknál az adatbázisfüggvény újra ellenőrzi a szerepkört, a tulajdonost, a helyiségjogot, az időablakot és a speciális szabályokat.
 8. Minden író végpont idempotenciakulcsot fogad; ismételt kérés nem duplikálhat foglalást, befizetést vagy korrekciót.
 
-A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és az aktív csoportokból örökölt jogosultságok adatbázis-szintű ellenőrzése után hozhat létre. A közvetlen és csoportos `can_book` / `can_repeat` értékeket a JOIN-barát, `STABLE` `effective_room_permissions(user_id)` segédfüggvény egyesíti; a foglalási write-validátor és a naptár read-model ugyanebből az egyetlen forrásból dolgozik.
+A helyiségkatalógus olvashatósága és a foglalási jogosultság külön réteg. Aktív user láthatja az alap helyiségkatalógust, de foglalást csak a `user_room_permissions` és az aktív csoportokból örökölt jogosultságok adatbázis-szintű ellenőrzése után hozhat létre. A közvetlen és aktív csoportos `can_book` értékeket a JOIN-barát, `STABLE` `effective_room_permissions(user_id)` segédfüggvény egyesíti. Az effektív repeat normál usernél ebből a foglalási jogból, a kanonikus `profiles.can_repeat_bookings` flagből és a Tréningterem-kizárásból számolódik; csoport vagy legacy per-room flag önmagában nem ad repeat jogot. A foglalási write-validátor és a naptár read-model ugyanebből a jogosultsági modellből dolgozik. Legacy kompatibilitás: [RECURRING_PERMISSION_RULES](RECURRING_PERMISSION_RULES.md).
 
 A naptár-read model egy kérésben legfeljebb 62 napos időintervallumot szolgál ki. Ez technikai erőforrás-korlát: lefedi a havi és kéthavi naptárnézetet, miközben megakadályozza a teljes foglalási történet egyetlen, korlátlan lekérdezéssel történő kiolvasását. Hosszabb riportok és exportok külön, célzott végpontot kapnak.
 
@@ -115,9 +116,9 @@ erDiagram
 
 | Tábla | Szerep | Fontos mezők |
 | --- | --- | --- |
-| `profiles` | üzleti userprofil az `auth.users` mellett | név, e-mail, státusz, role, dashboard, névláthatóság, előrefoglalási override |
+| `profiles` | üzleti userprofil az `auth.users` mellett | név, e-mail, státusz, role, dashboard, névláthatóság, előrefoglalási override, kanonikus `can_repeat_bookings` |
 | `rooms` | helyiségtörzs | név, aktív, sorrend, `is_training_room` |
-| `user_room_permissions` | közvetlen user-helyiségjog | user, room, `can_book`, `can_repeat` |
+| `user_room_permissions` | közvetlen user-helyiség foglalási kivételjog | user, room, `can_book`; `can_repeat` csak legacy kompatibilitási jelző |
 | `access_groups` | ismétlődő jogosultságcsomag | név, aktív |
 | `access_group_members` | csoporttagság | group, user |
 | `access_group_rooms` | csoport helyiségjoga | group, room, foglalás/ismétlés |

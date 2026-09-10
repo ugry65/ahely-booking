@@ -1,6 +1,6 @@
 begin;
 
-select plan(33);
+select plan(37);
 
 select has_function(
   'public',
@@ -47,6 +47,50 @@ insert into public.access_group_members (group_id, user_id) values
   ('13000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000022');
 insert into public.access_group_rooms (group_id, room_id, can_book) values
   ('13000000-0000-0000-0000-000000000031', '11000000-0000-0000-0000-000000000003', true);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', 'Múltbeli user foglalás',
+      '14000000-0000-0000-0000-000000000029'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 2) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 2) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'Normál user múltbeli időpontra is foglalhat'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where idempotency_key = '14000000-0000-0000-0000-000000000029'),
+  1::bigint,
+  'A normál user múltbeli foglalása pontosan egyszer létrejött'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000021', true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000004',
+      '00000000-0000-0000-0000-000000000023',
+      %L::timestamptz, %L::timestamptz, 'individual', 'Múltbeli admin foglalás',
+      '14000000-0000-0000-0000-000000000030'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 2) + time '16:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date - 2) + time '17:00') at time zone 'Europe/Budapest'
+  ),
+  'Admin múltbeli időpontra, más aktív user nevében is foglalhat'
+);
+reset role;
+select is(
+  (select count(*) from public.bookings where idempotency_key = '14000000-0000-0000-0000-000000000030'),
+  1::bigint,
+  'Az admin múltbeli foglalása pontosan egyszer létrejött'
+);
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);

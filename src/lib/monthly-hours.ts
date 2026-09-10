@@ -17,6 +17,7 @@ export type MonthlyBookingDetail = {
   user_name: string;
   booking_date: string;
   room_name: string;
+  booking_title: string | null;
   start_time: string;
   end_time: string;
   total_minutes: number;
@@ -57,11 +58,11 @@ export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
 }
 
 export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string {
-  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Mettől", "Meddig", "Óra"];
+  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Foglalás címe", "Mettől", "Meddig", "Óra"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
-      row.month, row.user_name, row.booking_date, row.room_name,
+      row.month, row.user_name, row.booking_date, row.room_name, row.booking_title ?? "",
       row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours),
     ].map(csvCell).join(";"));
   }

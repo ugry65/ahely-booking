@@ -120,8 +120,8 @@ Az admin továbbra is bypassolja a normál user 90 napos és Tréningterem 10 na
 
 A technikai implementáció, teljes CI, staging migráció, adatmegőrzési ellenőrzés és független review lezárt. A sorozathossz üzleti döntése is lezárt: 400 alkalom / 366 nap marad.
 
-Merge előtt még szükséges:
-- rövid, célzott végső UI/UAT elfogadás;
-- ezt követően külön, explicit merge-engedély.
+Történeti státusz helyesbítése (2026-08-30): a [PR #77 végső UI UAT szakasza](https://github.com/ugry65/ahely-booking/pull/77) szerint az oszlop-SELECT grant javítása után a projektgazda 2026-08-22-én elfogadta a böngészős UAT-t: **PASS**. A korábbi „végső UI/UAT még szükséges” megjegyzés tehát elavult, nem új tesztfeladat.
+
+Ez a helyesbítés a korábbi elfogadást vezeti át; nem ad új merge-engedélyt egy jelenlegi branchre vagy productionre.
 
 A PR merge-je automatikusan nem engedélyezett pusztán az UAT elfogadásával.

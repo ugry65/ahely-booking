@@ -21,6 +21,7 @@ A teljes, regresszióvédett foglalási UI/UX baseline forrása: `docs/BOOKING_U
 - Az egyszeri és ismétlődő foglalás ugyanabból az ablakból indul.
 - Ismétlődési lehetőség csak olyan helyiségnél aktív, amelyhez a backend `list_repeatable_rooms` alapján az adott user jogosult.
 - Az ismétlődés gyakorisága: napi, heti, kétheti, havi.
+- A sorozat ugyanebben az ablakban lezárható alkalmak száma vagy végdátum alapján, Skedda-szerű választással.
 - Az ismétlődő foglalás továbbra is a meglévő `create_booking_series` backend folyamatot használja; az üzleti és jogosultsági szabályokat a UI nem írja felül.
 - Normál szobáknál a használat mindig Egyéni, ezért nincs Egyéni/Csoportos választó.
 - Egyéni/Csoportos választó csak Tréningteremnél jelenik meg.

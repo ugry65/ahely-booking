@@ -1,6 +1,6 @@
 # Admin riportok – elszámolás és lemondások
 
-Dátum: 2026-08-22
+Dátum: 2026-08-22; frissítve: 2026-08-26
 
 Ez a dokumentum az A-Hely admin riportjainak elfogadott üzleti szabályait rögzíti.
 
@@ -16,8 +16,9 @@ Ez a dokumentum az A-Hely admin riportjainak elfogadott üzleti szabályait rög
 - Az összesítő CSV legalább: `Hónap`, `Felhasználó`, `Összes óra`.
 - Az óraszám CSV-ben magyar decimális vesszővel kerül kiadásra, hogy a magyar Excel ne dátumként értelmezze például a `4.50` értéket.
 - Admin ellenőrzéshez ugyanazokra a kijelölt hónapokra tételes aktív foglalási lista kérhető le összes userre vagy egy kiválasztott userre.
-- A tételes aktív lista legalább: hónap, user, dátum, helyiség, kezdés, befejezés, óraszám.
-- A tételes aktív foglalási listához külön CSV export kötelező.
+- A tételes aktív lista legalább: hónap, user, dátum, helyiség, kezdés, befejezés, óraszám, **Foglalás címe**.
+- A `Foglalás címe` különösen Tréningterem admin foglalásnál üzletileg fontos, mert ebből azonosítható, hogy kinek/milyen csoportnak történt a foglalás.
+- A tételes aktív foglalási listához külön CSV export kötelező, amely a `Foglalás címe` mezőt is tartalmazza.
 - Ha bármely kiválasztott hónap lekérdezése hibázik, hiányos összesítő vagy részletes CSV nem készülhet; a hiba legyen egyértelmű.
 
 ## Lemondások – külön admin monitoring

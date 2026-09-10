@@ -6,6 +6,7 @@ const valid = { roomId: "11000000-0000-0000-0000-000000000002", date: "2026-09-1
 describe("recurring booking form", () => {
   it("darabszámos sorozatot normalizál, továbbviszi a címet és deduplikálja a kivételdátumokat", () => expect(parseRecurringBookingForm(valid)).toMatchObject({ ok: true, value: { occurrenceCount: 6, endsOn: null, exceptionDates: ["2026-09-17", "2026-09-24"], note: "Sorozat", bookingTitle: "Heti konzultáció" } }));
   it("végdátumos sorozatnál nullázza a darabszámot", () => expect(parseRecurringBookingForm({ ...valid, endMode: "date", endsOn: "2027-09-10", occurrenceCount: "6" })).toMatchObject({ ok: true, value: { endsOn: "2027-09-10", occurrenceCount: null } }));
+  it("teljesen múltbeli sorozatot is elfogad", () => expect(parseRecurringBookingForm({ ...valid, date: "2020-01-10", endMode: "date", endsOn: "2020-01-24", occurrenceCount: "", exceptionDates: "" })).toMatchObject({ ok: true, value: { date: "2020-01-10", endsOn: "2020-01-24" } }));
   it("elutasítja a 366 napon túli végdátumot és a 400 feletti darabszámot", () => {
     expect(parseRecurringBookingForm({ ...valid, endMode: "date", endsOn: "2027-09-12" }).ok).toBe(false);
     expect(parseRecurringBookingForm({ ...valid, occurrenceCount: "401" }).ok).toBe(false);

@@ -43,6 +43,62 @@ jobs:
             exit 1
           fi
 
+      - name: Prepare historical staging migration aliases
+        shell: bash
+        run: |
+          set -euo pipefail
+          dir="supabase/migrations"
+
+          # The staging project was originally deployed while several 2026-08-21/22
+          # migrations still had timestamp-based versions. Production and the
+          # repository now use canonical sequence versions for the same migration
+          # names. Do not mutate staging migration metadata: translate only this
+          # ephemeral Actions checkout so Supabase CLI can reconcile the histories.
+          alias_migration() {
+            local canonical="$1"
+            local staging="$2"
+            if [ ! -f "$dir/$canonical" ]; then
+              echo "Missing canonical migration: $canonical" >&2
+              exit 1
+            fi
+            cp "$dir/$canonical" "$dir/$staging"
+            rm "$dir/$canonical"
+          }
+
+          # Historical staging-only migration already applied remotely. The empty
+          # local marker prevents the CLI from treating that remote version as
+          # unknown; it can never execute because that version is already applied.
+          : > "$dir/20260821054450_repeat_booking_business_rules.sql"
+
+          alias_migration "202608210002_calendar_booking_actions.sql" "20260821060345_calendar_booking_actions.sql"
+          alias_migration "202608210003_series_training_room_update_guard.sql" "20260821060408_series_training_room_update_guard.sql"
+          alias_migration "202608210004_calendar_management_read_model.sql" "20260821062518_calendar_management_read_model.sql"
+          alias_migration "202608210005_user_billing_admin.sql" "20260821111306_user_billing_admin.sql"
+          alias_migration "202608210006_global_booking_name_visibility.sql" "20260821111328_global_booking_name_visibility.sql"
+          alias_migration "202608210007_required_first_login_profile.sql" "20260821111357_required_first_login_profile.sql"
+          alias_migration "202608210008_admin_profile_billing_name.sql" "20260821111421_admin_profile_billing_name.sql"
+
+          alias_migration "202608220001_remove_closed_calendar_exceptions.sql" "20260822101208_remove_closed_calendar_exceptions.sql"
+          alias_migration "202608220002_complete_room_catalog.sql" "20260822111732_complete_room_catalog.sql"
+          alias_migration "202608220003_normalize_staging_room_ids.sql" "20260822112119_normalize_staging_room_ids.sql"
+          alias_migration "202608220004_booking_title.sql" "20260822112314_booking_title.sql"
+          alias_migration "202608220005_update_own_profile_data.sql" "20260822113459_update_own_profile_data.sql"
+          alias_migration "202608220006_booking_title_compatibility.sql" "20260822124120_booking_title_compatibility.sql"
+          alias_migration "202608220007_remove_ambiguous_booking_overloads.sql" "20260822131638_remove_ambiguous_booking_overloads.sql"
+          alias_migration "202608220008_admin_booking_audit_reports.sql" "20260822131657_admin_booking_audit_reports.sql"
+          alias_migration "202608220009_restore_legacy_booking_rpc_contracts.sql" "20260822150301_restore_legacy_booking_rpc_contracts.sql"
+          alias_migration "202608220010_preserve_legacy_booking_side_effects.sql" "20260822150316_preserve_legacy_booking_side_effects.sql"
+          alias_migration "202608220011_preserve_legacy_create_validation_contract.sql" "20260822150327_preserve_legacy_create_validation_contract.sql"
+          alias_migration "202608220012_harden_update_own_profile_data_grants.sql" "20260822150851_harden_update_own_profile_data_grants.sql"
+          alias_migration "202608220013_room_group_business_model.sql" "20260822154855_room_group_business_model.sql"
+          alias_migration "202608220014_admin_user_role_guard.sql" "20260822161722_admin_user_role_guard.sql"
+          alias_migration "202608220015_stable_user_calendar_colors.sql" "20260822161744_stable_user_calendar_colors.sql"
+          alias_migration "202608220016_user_level_repeat_permission.sql" "20260822174747_user_level_repeat_permission.sql"
+          alias_migration "202608220017_remove_direct_repeat_promotion_trigger.sql" "20260822182757_remove_direct_repeat_promotion_trigger.sql"
+          alias_migration "202608220018_profile_repeat_select_grant.sql" "20260822191437_profile_repeat_select_grant.sql"
+          alias_migration "202608220019_admin_advance_booking_limits.sql" "20260822200005_admin_advance_booking_limits.sql"
+          alias_migration "202608220020_recurring_series_max_span.sql" "20260822201228_202608220020_recurring_series_max_span.sql"
+
       - name: Show migration status
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}

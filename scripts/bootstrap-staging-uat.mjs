@@ -22,11 +22,14 @@ if (password.length < 12) throw new Error('Az UAT_SHARED_PASSWORD legalább 12 k
 const client = createClient(url, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
+const adminClient = createClient(url, serviceRoleKey, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+});
 
 if (mode === 'bootstrap') {
-  const { exceptionDate } = await bootstrapUat(client, resetEmail, password);
-  console.log(`UAT bootstrap kész. Kivételdátum: ${exceptionDate}.`);
+  await bootstrapUat(client, adminClient, resetEmail, password);
+  console.log('UAT bootstrap kész.');
 }
 
-await verifyUat(client, resetEmail);
+await verifyUat(client, adminClient, resetEmail, password);
 console.log('UAT staging konfiguráció ellenőrzése sikeres.');
