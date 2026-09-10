@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/internal/production-health",
+      "schedule": "15 0 * * *"
+    },
+    {
+      "path": "/api/internal/production-health",
+      "schedule": "15 6 * * *"
+    },
+    {
+      "path": "/api/internal/production-health",
+      "schedule": "15 12 * * *"
+    },
+    {
+      "path": "/api/internal/production-health",
+      "schedule": "15 18 * * *"
+    }
+  ]
+}

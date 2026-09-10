@@ -1,14 +1,17 @@
 # A-Hely foglalási rendszer – Backup és restore stratégia
 
-Verzió: 1.0
+Verzió: 2.0
 
-Dátum: 2026-08-18
+Eredeti baseline: 2026-08-18
+Frissítve: 2026-09-08
 
-Státusz: fejlesztési baseline
+Státusz: **aktuális production baseline**
+
+Kötelező kiegészítő döntés: `DECISION_2026-09-08_SUPABASE_FREE_AND_BACKUP_BASELINE.md`.
 
 ## 1. Cél és prioritás
 
-A foglalási adatok az A-Hely működésének és a későbbi havi elszámolásnak elsődleges forrásai. Foglalási, jogosultsági vagy elszámolási adat elvesztése nem elfogadható. A mentési rendszer célja ezért nem pusztán backup-fájlok létrehozása, hanem rendszeresen bizonyított visszaállíthatóság.
+A foglalási adatok az A-Hely működésének és a havi elszámolásnak elsődleges forrásai. Foglalási, jogosultsági vagy elszámolási adat elvesztése nem elfogadható. A mentési rendszer célja nem pusztán backup-fájlok létrehozása, hanem több, egymástól független példány és bizonyított visszaállíthatóság.
 
 Prioritási sorrend:
 
@@ -19,152 +22,148 @@ Prioritási sorrend:
 5. jogosultságbiztonság;
 6. költség és üzemeltetési egyszerűség.
 
-## 2. Döntés: két egymástól független mentési réteg
+## 2. Költségbaseline: Supabase Free
 
-Productionben két külön védelmi réteget használunk.
+A production Supabase környezet **Free planon** készül és üzemel. A Supabase Pro, a menedzselt napi backup és a PITR **nem production előfeltétel és nem kötelező release-gate**.
 
-### 2.1. Menedzselt Supabase backup
+A korábbi 1.0 dokumentum azon mondata, amely szerint productionhöz legalább automatikus menedzselt Supabase backupot adó csomag szükséges, **SUPERSEDED**.
 
-Productionhöz legalább olyan Supabase csomag szükséges, amely hivatalos automatikus napi adatbázis-backupot biztosít. A 2026-08-18-i Supabase dokumentáció szerint a Pro csomag napi backupot és 7 napos retentiont ad; a Free csomagban hivatalos automatikus backup nem része a szolgáltatásnak.
+Az adatbiztonságot a saját, kétcélos, ellenőrzött backup/restore rendszer biztosítja. A Pro/PITR későbbi opcionális upgrade lehet, de erre a rendszer biztonságos működése nem épülhet.
 
-A Point-in-Time Recovery (PITR) technikailag erősebb, de jelenlegi ára az A-Hely várható terheléséhez aránytalan. Ezért induláskor nem kötelező. Később külön kockázat- és költségértékeléssel bekapcsolható.
+## 3. Elfogadott kétcélos backup architektúra
 
-### 2.2. Elkülönített logikai off-site backup
+A production PostgreSQL logikai backupja automatikusan, naponta négyszer készül, Europe/Budapest idő szerint:
 
-A Supabase saját backupjától függetlenül naponta készül logikai mentés a Supabase CLI támogatott exportfolyamatával:
+- 08:00;
+- 12:00;
+- 16:00;
+- 20:00.
 
-- `roles.sql` – adatbázis-szerepkörök;
-- `schema.sql` – alkalmazási séma;
-- `data.sql` – üzleti adatok;
-- `manifest.json` – mentés ideje, környezet, alkalmazás commit SHA, fájlméretek és SHA-256 ellenőrzőösszegek.
+Két egymástól független off-site cél kötelező:
 
-A mentés nem kerülhet a Git repository-ba, GitHub Actions logba vagy alkalmazáslogba. A cél egy productiontől és Supabase-től elkülönített, titkosított objektumtár vagy más off-site tárhely.
+1. **Google Drive** – könnyen elérhető első off-site példány;
+2. **Backblaze B2** – szolgáltatói szinten független második példány, Object Lock / törlés elleni védelemmel.
 
-A konkrét off-site szolgáltató külön implementációs döntés lesz. Elvárás: alacsony havi költség, titkosítás, verziózás/retention támogatás, API-alapú feltöltés, és olyan hozzáférési modell, amelyben a production alkalmazás nem tud backupot törölni.
+A backup-rendszer alapelvei:
 
-## 3. RPO, RTO és retention
+- önálló, időbélyegzett restore-pontok;
+- korábbi mentés nem írható felül;
+- konzisztens PostgreSQL logikai dump;
+- titkosított kezelés;
+- manifest + SHA-256 ellenőrzőösszeg;
+- feltöltés utáni read-back/integritásellenőrzés mindkét célon;
+- fail-closed működés részleges feltöltési hiba esetén;
+- többgenerációs retention;
+- Backblaze B2 Object Lock;
+- backup nem kerülhet Git repository-ba, alkalmazáslogba vagy publikus artifactba.
 
-### RPO – megengedett adatvesztési ablak
+## 4. Bizonyított állapot
 
-Induló cél: **legfeljebb 24 óra** a napi logikai backup alapján.
+A backup/restore architektúra és a kétcélos integritási mechanika implementálása és tesztelése megtörtént.
 
-A menedzselt Supabase backup ettől független második helyreállítási lehetőség. Ha a későbbi működés alapján 24 óra túl nagy üzleti kockázatnak bizonyul, a logikai backup gyakorisága növelhető vagy PITR vezethető be.
+Bizonyított eredmények:
 
-### RTO – helyreállítási cél
+- dual-target integrity: checksum + read-back mindkét célon működik;
+- health endpoint: valódi read-only DB-ellenőrzés, információszivárgás nélkül;
+- 2026-09-01-i izolált end-to-end restore-drill sikeres volt;
+- a restore során production és staging környezet nem került felülírásra;
+- a recovery kulcs nem került CI-ba;
+- a restore-folyamat a korábbi hibát feltárta, majd a javított v2 formátummal bizonyítottan végrehajthatóvá vált.
 
-Induló cél: **4 órán belül legyen végrehajtható és ellenőrizhető egy adatbázis-helyreállítás** dokumentált runbook alapján, feltéve hogy a Supabase/Vercel szolgáltatások elérhetők.
+A korábbi független review release-hardening megállapításai (workflow trigger, least-privilege credential, merge/aktiválási státusz, retention scheduling, monitoring alert/recovery drill) külön üzemeltetési/release tételek. Ezek **nem nyitják újra** a Free-plan vagy a kétcélos backup architekturális döntést.
 
-Ez nem SLA, hanem belső műszaki cél, amelyet restore-drillel kell validálni.
+## 5. RPO, RTO és retention
+
+### RPO
+
+A napi négyszeri ütemezés nappal kb. 4 órás backup-RPO-t céloz. A 20:00–08:00 közötti hosszabb éjszakai intervallum tudatosan elfogadott kompromisszum, amelyet a tényleges használati adatok alapján később felül kell vizsgálni, ha éjszakai aktivitás érdemben nő.
+
+### RTO
+
+Belső műszaki cél: dokumentált runbook alapján 4 órán belül végrehajtható és ellenőrizhető helyreállítás, feltéve hogy a szükséges platformok elérhetők.
 
 ### Retention
 
-Induló off-site retention:
+Kötelező többgenerációs megőrzés:
 
-- napi backup: 35 nap;
-- havi egy kijelölt backup: 13 hónap;
-- törlés csak lifecycle/retention szabály alapján;
-- a backup-fiókhoz és retention-beállításhoz minimális jogosultság szükséges.
+- rövid távon a napon belüli restore-pontok;
+- hosszabb távú napi és havi restore-pontok;
+- B2 oldalon megfelelő Object Lock időtartam;
+- lifecycle/retention szabály alapú törlés;
+- production alkalmazás ne tudja a backup retentiont gyengíteni vagy a teljes mentési készletet törölni.
 
-Az üzleti adatmegőrzési cél továbbra is 2 év; ez nem azonos a backup-retentionnel. A hosszú távú üzleti adatoknak az elsődleges adatbázisban, auditálható módon kell megmaradniuk.
+## 6. Mentési folyamat
 
-## 4. Mentési folyamat
-
-A támogatott logikai mentési folyamat a Supabase CLI hivatalos mintáját követi.
-
-1. Kapcsolódás production adatbázishoz read-only jellegű dump művelettel, dedikált secretből.
-2. Szerepkörök exportja `--role-only` módban.
+1. Kapcsolódás production adatbázishoz kizárólag dump célra, dedikált secretből.
+2. Szerepkörök exportja.
 3. Séma exportja.
-4. Adatok exportja `--data-only --use-copy` módban.
-5. A Supabase által javasolt, nem hordozható storage vector belső táblák kizárása, ha jelen vannak.
-6. SHA-256 ellenőrzőösszeg és manifest készítése.
-7. Titkosított feltöltés az off-site tárhelyre.
-8. Feltöltés utáni integritásellenőrzés.
-9. Sikertelenség esetén a workflow hibával álljon meg; a hibát személyes adat nélkül kell jelezni.
+4. Üzleti adatok exportja.
+5. Nem hordozható belső táblák dokumentált kizárása, ahol szükséges.
+6. Manifest és SHA-256 ellenőrzőösszegek készítése.
+7. Titkosítás.
+8. Feltöltés Google Drive célra.
+9. Feltöltés Backblaze B2 célra.
+10. Read-back és integritásellenőrzés mindkét célon.
+11. Siker csak akkor, ha minden kötelező lépés igazolt.
+12. Hiba esetén fail-closed leállás és személyes adat nélküli hibajelzés.
 
 A backup workflow soha nem írhat production üzleti táblába.
 
-## 5. Restore runbook
+## 7. Restore runbook
 
-Visszaállítást alapértelmezetten **nem az éles adatbázisra**, hanem külön restore/staging projektbe végzünk. Production in-place restore csak tényleges incidensnél, dokumentált döntéssel történhet.
+Restore alapértelmezetten **nem az éles adatbázisra**, hanem külön izolált restore/sandbox környezetbe történik. Production in-place restore kizárólag tényleges incidensnél, explicit jóváhagyással végezhető.
 
-### 5.1. Előkészítés
+Kötelező ellenőrzések restore után:
 
-1. Azonosítsd a kívánt backup időpontját és manifestjét.
-2. Ellenőrizd mindhárom SQL-fájl SHA-256 értékét.
-3. Rögzítsd az alkalmazás commit SHA-ját és az adatbázis-migráció állapotát.
-4. Hozz létre vagy jelölj ki külön Supabase restore/staging projektet production-adatok nyilvános elérése nélkül.
-5. Állítsd be a szükséges extensionöket és környezeti konfigurációt.
-
-### 5.2. Visszatöltés
-
-A restore a Supabase támogatott sorrendjét követi:
-
-1. `roles.sql`;
-2. `schema.sql`;
-3. `SET session_replication_role = replica`;
-4. `data.sql`;
-5. szükség esetén migrációtörténet visszatöltése;
-6. Realtime publication és nem adatbázisban tárolt szolgáltatásbeállítások külön helyreállítása.
-
-A restore során `ON_ERROR_STOP=1` és lehetőség szerint egy tranzakció használata kötelező; részlegesen sikerült restore nem tekinthető sikeresnek.
-
-### 5.3. Kötelező restore-ellenőrzések
-
-Restore csak akkor minősül sikeresnek, ha legalább az alábbiak igazoltak:
-
-- alkalmazási migrációk konzisztensen jelen vannak;
-- kritikus táblák és constraint-ek léteznek;
-- aktív foglalások száma és mintavételes rekordjai egyeznek a backup forrásával;
+- migrációs állapot konzisztens;
+- kritikus táblák, constraint-ek és triggerek léteznek;
+- foglalási adatok és mintavételes rekordok egyeznek;
 - booking exclusion constraint aktív;
-- RLS engedélyezve van a védett táblákon;
-- `require_active_admin()` és a kritikus RPC-k elérhetők;
-- auditnapló rekordjai megmaradtak;
-- havi óraszám read-model fut a restaurált adatokon;
-- alkalmazás smoke teszt sikeres a restore/staging környezet ellen;
-- production secret vagy e-mail küldés nincs bekapcsolva a restore környezetben.
+- RLS engedélyezve van;
+- kritikus RPC-k elérhetők;
+- auditnapló megmaradt;
+- havi read-model működik;
+- alkalmazás smoke teszt sikeres;
+- restore környezetben production e-mail/secrets nincsenek aktív állapotban.
 
-## 6. Restore-drill gyakoriság
+## 8. Restore-drill gyakoriság
 
-- fejlesztési fázisban: minden backup/restore mechanizmust érintő jelentős változás után;
-- production indulás előtt: kötelező teljes restore-próba;
-- production üzemben: legalább negyedévente;
-- minden sikertelen drillből GitHub issue készül, és a következő release előtt javítani kell a blokkoló problémát.
+- backup/restore mechanizmust érintő jelentős változás után;
+- production indulás előtt kötelező teljes restore-próba;
+- production üzemben rendszeres, dokumentált restore-drill;
+- sikertelen drillből javítási feladat készül és blokkoló hiba production release előtt lezárandó.
 
-A drill eredménye rövid jegyzőkönyvben rögzítendő: backup azonosító, dátum, restore cél, időtartam, ellenőrzések, eltérések, döntés.
+A 2026-09-01-i első izolált end-to-end restore-drill megtörtént és sikeres volt.
 
-## 7. Titkok és hozzáférések
+## 9. Titkok és hozzáférések
 
-A backuphoz szükséges production adatbázis URL/jelszó és off-site tárhely credential kizárólag secret store-ban lehet.
+- production DB credential és backup tárhely credential csak secret store-ban lehet;
+- secret nem kerülhet repository-ba vagy logba;
+- napi backup kulcsok least-privilege elvűek;
+- Object Lock/retention konfigurációhoz szükséges emelt jogosultság külön kezelendő;
+- restore credential külön, magasabb jogosultságú és csak drill/incidens során használható;
+- alkalmazás runtime service-role kulcsa nem használható backup tárhely törlésére vagy retention módosítására.
 
-- secret nem kerülhet repository-ba;
-- secret nem jelenhet meg workflow outputban vagy logban;
-- a backup credential csak olvasási/dump és feltöltési minimumjogot kapjon;
-- a restore credential külön, magasabb jogosultságú és csak restore-drill/incidens során használható;
-- az alkalmazás runtime service-role kulcsa nem használható backup tárhely törlésére vagy retention módosítására.
+## 10. Supabase Free automatikus pause
 
-## 8. Mi nincs még implementálva ebben a baseline-ban
+Az inaktivitás miatti Supabase Free pause availability-kockázat, **nem backup-probléma**.
 
-Ez a dokumentum a biztonsági és üzemeltetési döntést rögzíti. Külön fejlesztési szelet szükséges az alábbiakhoz:
+Külön production health-check szükséges, amely rendszeresen valódi, biztonságos, read-only DB lekérdezést hajt végre. Ez egyszerre ellenőrzi a Supabase/PostgreSQL elérhetőséget és legitim adatbázis-aktivitást biztosít.
 
-- napi GitHub Actions vagy más scheduler alapú production dump;
-- off-site tárhely konkrét kiválasztása és bekötése;
-- titkosítási/kulcskezelési implementáció;
-- lifecycle retention automatizálása;
-- automatikus manifest és checksum ellenőrzés;
-- staging/restore projekt létrehozási folyamat;
-- automatikus restore-smoke teszt;
-- riasztás sikertelen backup esetén.
+A health-check nem módosíthat üzleti adatot és nem helyettesíti a backup/restore rendszert.
 
-Ezeket nem szabad élesnek tekinteni addig, amíg legalább egy teljes, dokumentált restore-drill nem sikerült.
+## 11. Release-kapu
 
-## 9. Merge- és release-kapu
+A backup/restore architektúrát nem kell újratervezni és nem kell Supabase Pro-val kiváltani.
 
-A backup/restore kritikus adatbiztonsági terület. Minden érdemi implementációhoz kötelező:
+Production bekapcsolás előtt a tényleges üzemeltetési láncban ellenőrizendő:
 
-1. automatikus ellenőrzés, ahol technikailag lehetséges;
-2. zöld CI ugyanazon head SHA-n;
-3. független Claude code/architecture review;
-4. blokkoló megállapítások javítása és célzott újra-review;
-5. production bekapcsolás előtt sikeres restore-drill.
+1. ütemezett backup workflow aktív a megfelelő branch/environment környezetben;
+2. production secretek csak biztonságos triggerből érhetők el;
+3. napi backup credential least-privilege;
+4. Google Drive + Backblaze B2 írás és read-back működik;
+5. retention/Object Lock védelmek aktívak;
+6. monitoring/heartbeat és alert/recovery teszt működik;
+7. restore runbook aktuális és a drill bizonyíték megőrzött.
 
-A teljes pénzügyi modul fejlesztése előtt legalább a napi off-site backup és egy sikeres restore-drill legyen kész.
+Ezek release-hardening ellenőrzések, nem új architekturális vagy előfizetési döntések.

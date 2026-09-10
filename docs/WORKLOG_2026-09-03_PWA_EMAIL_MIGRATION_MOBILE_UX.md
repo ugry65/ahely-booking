@@ -100,23 +100,94 @@ Tartós **transactional outbox**:
 
 A tulajdonos saját domain/tárhely szolgáltatója: **MediaCenter.hu**.
 
-Preferált feladó: saját A-Hely domainhez tartozó külön postafiók, például `foglalas@a-hely.com`.
+Véglegesített feladó és Reply-To cím: `foglalas@a-hely.com`.
 
-A MediaCenter SMTP használata megvizsgálandó/konfigurálandó. Szükséges technikai adatok:
+A MediaCenter E-mail Admin alapján igazolt SMTP-adatok:
 
-- SMTP host;
-- port;
-- TLS/STARTTLS/SMTPS mód;
-- felhasználónév;
-- alkalmazásjelszó/jelszó biztonságos secretként;
-- küldési limitek;
-- SPF/DKIM/DMARC ellenőrzés.
+- host: `pop3.mediacenter.hu` – a szolgáltató szerint nem elírás;
+- SSL/TLS port: `465`;
+- kötelező hitelesítés, felhasználónévként a teljes `foglalas@a-hely.com` cím;
+- a díjmentes SMTP limitje napi 100 levél, levélenként legfeljebb 10 címzett;
+- külön privát SMTP hozzáférés vásárolható.
+
+Nyitva marad a privát SMTP limit/ár, valamint az SPF/DKIM/DMARC és bounce-kezelés ellenőrzése. A napi 100-as korlát miatt a díjmentes SMTP csak igazolt terhelési tartalékkal fogadható el productionre.
 
 Jelszó vagy más SMTP secret nem kerülhet chatbe, repositoryba vagy klienskódba.
 
 ### GitHub
 
 Issue: **#107 – kötelező foglalási e-mail értesítések**.
+
+### Technikai forrásaudit és döntés – 2026-09-03
+
+A repository és a staging read-only auditja alapján a meglévő `outbox_events` általános outbox nem használható közvetlenül booking e-mail worker forrásaként: sorozatoknál alkalmanként külön eseményt tárol, nincs teljes eseménykori levél-snapshotja, lease/dead-letter/próbálkozásnaplója, és stagingen 135 korábbi, feldolgozatlan eseményt tartalmaz. Ezeket nem szabad utólag automatikusan kiküldeni.
+
+Választott irány: külön `booking_email_outbox`, egy logikai sorozatművelethez egy rekord, verziózott minimális payload, DB-deduplikáció, lease-alapú worker claim, append-only delivery attempt napló, exponenciális retry és dead letter. Az SMTP worker Node.js/Next.js környezetben, provider adapterrel készül; a percenkénti scheduler elsődleges terve Supabase Cron + `pg_net`, environmentenként Vaultban tartott URL/token mellett.
+
+Részletes döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
+
+### Adatbázis-alapréteg – 2026-09-03
+
+A #111 draft ágon elkészült a külön outbox és append-only kézbesítési napló migrációja, az idempotens belső enqueue helper, valamint a service-role-only lease claim/result RPC. A regressziós csomag 47 pgTAP ellenőrzést és külön két-workeres `SKIP LOCKED` konkurenciatesztet tartalmaz.
+
+Az alkalmazásoldali 91 unit teszt, typecheck és production build PASS. A GitHub Database tests #520 friss resetből 685/685 pgTAP PASS eredményt adott; az új két-workeres outbox claim konkurenciateszt, minden korábbi konkurenciateszt és a schema lint is PASS. A migráció még nincs stagingre alkalmazva. Nem történt valódi e-mail-küldés, main merge vagy production deploy.
+
+### Booking RPC enqueue-integráció – 2026-09-03
+
+A `202609030002_enqueue_booking_emails_from_audit.sql` migráció a kanonikus booking RPC-k meglévő, idempotencia-kulccsal korrelált auditját használja. A `DEFERRABLE INITIALLY DEFERRED` constraint trigger csak a logikai művelet minden booking-, cím- és admin díjazási mellékhatása után készíti el az outbox eseménykori payloadját, de még ugyanabban a tranzakcióban. Egyedi és `occurrence` művelethez egy booking-snapshot, `following`/`series` művelethez egy összefoglaló rekord készül; adminműveletnél is a booking owner a címzett. A payload nem tartalmaz foglalási megjegyzést.
+
+A regressziós csomag további 29 pgTAP ellenőrzést tartalmaz create/update/cancel, admin owner-routing, title utáni snapshot, sorozat create, occurrence/following scope, idempotens retry, rollback és későbbi profil/booking változás elleni immutabilitás lefedésére. A GitHub Database tests #525 friss resetből **714/714 pgTAP PASS** eredményt adott; minden booking-, scope-, hozzáférés- és outbox-konkurenciateszt, valamint a schema lint PASS. Application checks #576 PASS. Staging/production DB alkalmazás, valódi e-mail-küldés, main merge és production deploy nem történt.
+
+### Magyar sablon és provider-szerződés – 2026-09-03
+
+Elkészült a `src/lib/booking-email` providerfüggetlen alkalmazásréteg:
+
+- szigorú, ismeretlen mezőt és verziót elutasító `payload_version=1` parser;
+- magyar text és mobilbarát inline-stílusú HTML create/update/cancel sablon;
+- `single`, `occurrence`, `following` és `series` megjelenítés;
+- admin által végzett művelet jelzése, update előtte/utána blokk és opcionális lemondási ok;
+- minden dinamikus HTML-adat escape-elése és CR/LF header-injection tiltása;
+- `Europe/Budapest` időzóna és DST-kezelés;
+- determinisztikus RFC Message-ID az outbox ID-ból;
+- hálózat nélküli capture transport és Nodemailer-kompatibilis kliensadapter;
+- SMTP hálózati/4xx retry, auth/5xx dead-letter osztályozás nyers provider válasz továbbadása nélkül.
+
+A helyi teljes csomag 20 fájl / **109 teszt PASS**, TypeScript és Next.js production build PASS. A végleges commiton Application checks #578, Database tests #527 (714/714 pgTAP + minden konkurenciateszt + schema lint) és Vercel PASS. Nodemailer dependency/konfiguráció, worker route, scheduler, SMTP secret és valódi küldés még nem készült; staging/production módosítás nem történt.
+
+### Védett worker és SMTP runtime – 2026-09-03
+
+A #111 draft ágon elkészült a szerveroldali kézbesítési futtató:
+
+- verzióra rögzített Nodemailer `9.1.1` és típuscsomag;
+- Node.js `/api/internal/booking-email-worker` Route Handler;
+- timing-safe Bearer auth, legalább 32 bájtos `CRON_SECRET` követelménnyel;
+- alapértelmezetten biztonságos `BOOKING_EMAIL_MODE=disabled`, amely nem hoz létre DB-klienst és nem claimel;
+- explicit `capture` és `send` mód, service-role-only claim/complete RPC adapterrel;
+- 10-es alap batch, 300 másodperces lease és a döntési dokumentum szerinti retry ütem;
+- payload- és scope-validáció küldés előtt, több címzettet vagy header injectiont lehetővé tevő cím elutasítása;
+- nyers SMTP/provider hiba, e-mail tartalom és secret nélküli HTTP-válaszok;
+- SMTP-átadás utáni DB completion-hibánál nincs azonnali újraküldés;
+- fájl- és URL-beolvasás tiltása a Nodemailer transporton.
+
+A helyi teljes ellenőrzés **22 tesztfájl / 125 teszt PASS**, typecheck és Next.js production build PASS; `pnpm audit --prod` nem talált ismert sérülékenységet. A végleges kódcommiton Application checks #581, Database tests #530 (714/714 pgTAP, minden konkurenciateszt és schema lint), valamint Vercel PASS. A lokális, valódi Route Handler smoke teszt jogosulatlan GET-re 401-et, autorizált `disabled` GET-re 200-at és nulla claim/küldés eredményt adott.
+
+Vercel Cron konfiguráció szándékosan nem került még a repositoryba: az csak production deployon fut, a perces ütem csomagfüggő, miközben az elsődleges architektúraterv továbbra is Supabase Cron + `pg_net`. Scheduler, runtime secret, staging DB-alkalmazás és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
+
+### Admin kézbesítési monitor és worker heartbeat – 2026-09-04
+
+A #111 draft ágon elkészült az append-only `booking_email_worker_runs` audit és a service-role-only start/finish RPC. Minden engedélyezett worker-futás rögzíti az indulást, majd siker esetén a claim/sent/captured/retry/dead-letter összesítést, hiba esetén kizárólag generikus, biztonságos hibát. A `disabled` mód változatlanul nem hoz létre Supabase-klienst és nem ír heartbeatot. A befejezetlen futás 30 perc után stale monitorjel.
+
+Az új `/admin/email-ertesitesek` oldal admin-only RPC-kon át, közvetlen tábla-hozzáférés nélkül mutatja az esedékes, retry, dead-letter és stale állapotokat, az utolsó küldést, a worker heartbeatot, az ismétlődő SMTP auth hibát, a minimalizált problémalistát és a futáselőzményt. Címzett, e-mail cím, booking payload, levéltartalom, provider Message-ID, nyers provider válasz és secret nem része a read modelnek. A reszponzív táblák mobilon kártyanézetté alakulnak. Kézi retry szándékosan nincs, mert ahhoz külön auditált admin művelet szükséges.
+
+A helyi teljes ellenőrzés **23 tesztfájl / 134 teszt PASS**, typecheck és Next.js production build PASS. A `1660e61` commiton Application checks #583 PASS, Database tests #532 friss migrációs rebuildből **52 fájl / 749 pgTAP teszt PASS**, minden konkurenciateszt és schema lint PASS, Vercel PASS. A monitor migrációja nincs stagingre vagy productionre alkalmazva; scheduler, runtime secret, capture UAT és valós SMTP UAT még nyitott. Main merge vagy production deploy nem történt.
+
+### Staging capture kapuk előkészítése – 2026-09-04
+
+A Supabase staging projekt olvasási auditja megerősítette az `ACTIVE_HEALTHY` állapotot, a `20260829145720_allow_past_booking_creation` legutolsó remote migrációt és a 135 megőrzendő legacy `outbox_events` rekordot. Az új booking-email táblák még nincsenek telepítve; a Vault aktív, a `pg_cron` és `pg_net` nincs engedélyezve. A repository négy függő migrációt tartalmaz: a booking update cutoff guardot és a három booking-email migrációt.
+
+Elkészült a `docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md`: branch-scope Vercel Preview env-szerződés, SMTP nélküli `capture` mód, migrációs dry-run/deploy kapu, cutover snapshot, create/update/cancel/admin/sorozat reconciliation, megállási feltételek és adatmegőrző rollback. GitHub Actions dry-run, staging deploy, scheduler-aktiválás, secret-módosítás és valós e-mail-küldés ebben a lépésben nem történt.
+
+A publikus DNS-audit megerősítette a MediaCenter MX-eket és az érvényes, `~all` SPF rekordot. Az SPF nem ajánlott `ptr` mechanizmust is használ; DMARC rekord nincs. A `default` DKIM selector hiányzik, de a DKIM teljes állapota a tényleges MediaCenter selector vagy kontrollált próbaüzenet fejléce nélkül nem állapítható meg. DNS-módosítás nem történt.
 
 ---
 
@@ -374,7 +445,7 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 3. #109 valós Android Chrome smoke UAT;
 4. #110 lezárása csak teljes mobil UAT után;
 5. #105 PWA Android/Chromium és network-return UAT;
-6. #107 e-mail: MediaCenter SMTP paraméterek + outbox technikai terv/implementáció + tesztek;
+6. #107 e-mail: outbox, worker, monitor, capture-only admin indító, staging deploy és a teljes SMTP nélküli capture UAT elkészült; következő a scheduler külön kapuja, a DNS/hitelesítési ellenőrzések lezárása és a kontrollált valós SMTP UAT;
 7. #108 migráció: forrásexportok beszerzése, mapping, dry-run importer és staging migráció;
 8. külön review/CI/UAT után feature-integráció;
 9. `main` merge és production csak explicit tulajdonosi jóváhagyással és a production readiness kapuk lezárása után.
@@ -382,3 +453,37 @@ Az `Mhely` csoportot a vizsgálat során nem töröltük. Az inaktivált állapo
 ## 8. Release-biztonsági megjegyzés
 
 Ez a dokumentum nem jelent production GO-t. A fenti fejlesztések egy része draft PR/feature branch állapotban van. `main` merge vagy production deploy külön, explicit jóváhagyás nélkül továbbra is tilos.
+
+---
+
+## 9. Staging capture UAT – teljes eredmény
+
+2026-09-04-én a `feature/107-booking-email-outbox` Vercel Preview ág staging Supabase runtime-változókat és explicit `BOOKING_EMAIL_MODE=capture` beállítást kapott, SMTP-konfiguráció nélkül. A cache nélküli redeploy commitja `51096f1`, állapota `READY`, a Vercel build PASS.
+
+Az első egyedi életciklus-UAT eredménye: két create kontrollesemény, valamint ugyanahhoz a második foglaláshoz pontosan egy update és egy cancel értesítés jött létre. A teszt előtti 135 legacy rekord sértetlen; az UAT booking műveletei a kanonikus RPC-k elvárt működéseként külön új legacy audit-eseményeket hoztak létre.
+
+A Vercel által nem visszaolvasható `CRON_SECRET` kézi mozgatásának elkerülésére az admin e-mail monitor capture-only indítógombot kap. A szerver action aktív admin jogosultságot követel, kizárólag `capture` runtime-ot fogad el, és nulla `sent` eredményt követel. `send`, `disabled`, hibás konfiguráció vagy workerhiba esetén biztonságos, titokmentes hibával áll le. A helyi teljes csomag 23 tesztfájl / 134 teszt, typecheck és production build PASS.
+
+A `bc68e22` commitot a GitHub Application checks #591, Database tests #540 és az automatikus Vercel Preview build is sikeresen ellenőrizte. Az admin capture indítóval végrehajtott teljes staging UAT eredménye:
+
+- egyedi create/update/cancel: PASS;
+- admin által más booking owner részére végzett create/update/cancel: PASS, mindhárom címzett a booking owner, az actor és recipient eltér;
+- teljes sorozat create/update/cancel: logikai műveletenként egy `series` összefoglaló rekord, PASS;
+- egyetlen előfordulás update/cancel: műveletenként egy `occurrence` rekord, PASS;
+- „ezt és a következő alkalmakat” update/cancel: műveletenként egy `following` rekord, PASS;
+- két külön felhasználói sorozatlétrehozás két külön series ID-t és két külön create rekordot adott, tehát nem rendszerduplikáció;
+- összesen 16 outbox rekord és 16 delivery attempt, mind `captured`;
+- `sent=0`, retry=0, dead-letter=0, provider Message-ID=0, pending/stale=0;
+- az üres soron megismételt worker `success`, `claimed=0`, `captured=0` eredménnyel zárult, és nem hozott létre új delivery attemptet: idempotens no-op PASS.
+
+SMTP-konfiguráció és SMTP-kapcsolat nem volt, valós e-mail nem ment ki. A capture UAT lezárása nem jelent production GO-t; scheduler, DNS/hitelesítési véglegesítés és valós SMTP UAT továbbra is külön kapu.
+
+---
+
+## 10. Admin jelszókezelés – 2026-09-05
+
+Az új user admin általi létrehozása után a rendszer automatikusan biztonságos, egyszer használható jelszóbeállító linket küld. A levél jelszót nem tartalmaz. A már létrejött usert levélküldési hiba nem törli; a szerkesztőből a link újraküldhető.
+
+Aktív usernél az admin külön új reset linket küldhet, vagy egyedi, legalább 12 karakteres ideiglenes jelszót állíthat be. Az ideiglenes jelszó előtt egy admin-only, auditált RPC bekapcsolja a `must_change_password` jelzőt; maga a jelszó nem kerül RPC-be, alkalmazásadatbázisba, auditba vagy naplóba. A következő belépés csak a kötelező jelszócsere után folytatható.
+
+A helyi ellenőrzés 25 tesztfájl / 140 teszt, TypeScript és production build PASS. A database pgTAP teszt és a staging UAT a feature branch publikálása után külön kapu; main merge és production deploy nem történt.

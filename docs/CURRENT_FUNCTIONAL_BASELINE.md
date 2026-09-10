@@ -56,7 +56,6 @@ A rendszer fő feladatai:
 Nem része az aktuális aktív scope-nak:
 - bankkártyás fizetés;
 - befizetések kézi könyvelésének UI-ja;
-- automatikus booking confirmation e-mail mint go-live feltétel;
 - közvetlen számlázó-integráció;
 - komplex pénzügyi dashboard;
 - natív mobilapp;
@@ -120,11 +119,11 @@ Minimum admin által megadandó:
 - keresztnév;
 - e-mail.
 
-Létrehozáskor nincs automatikus aktiváló levél. Az admin külön indítja az `Aktiváló / jelszóbeállító link küldése` műveletet.
+Létrehozáskor a rendszer automatikusan biztonságos, egyszer használható jelszóbeállító linket küld. A levélben jelszó nem szerepelhet. Sikertelen levélküldés nem görgeti vissza a már létrejött Auth usert; az admin a szerkesztőből újraküldheti a linket.
 
 ## 4.2 Aktiválás és jelszó
 
-Onboarding előtt a művelet aktiváló/jelszóbeállító link; onboarding után jelszó-visszaállító link. Csak aktív admin indíthatja aktív usernek. Token, jelszó és reset URL nem kerülhet alkalmazás-audit payloadba.
+Onboarding előtt a művelet aktiváló/jelszóbeállító link; onboarding után jelszó-visszaállító link. Csak aktív admin indíthatja aktív usernek. Az admin emellett legalább 12 karakteres egyedi ideiglenes jelszót is beállíthat; ez a következő belépéskor kötelező jelszócserét kapcsol be. Közös alapjelszó és jelszó e-mailes továbbítása tilos. Token, jelszó és reset URL nem kerülhet alkalmazás-audit payloadba.
 
 ## 4.3 Első belépési onboarding
 
@@ -252,15 +251,33 @@ Mentés nélküli bezárás (X, Mégse, backdrop) nem hagyhat fantom `Új foglal
 
 ## 7.1 Foglalási siker-visszajelzés és e-mail
 
-Az automatikus foglalási visszaigazoló e-mail **nem go-live blocker és nem része az első production verzió kötelező funkcióinak**.
+A 2026-09-02-i üzleti döntés felülírja a korábbi opcionális e-mail állapotot. Minden sikeres create/update/cancel foglalási művelet után a foglalás tulajdonosa kötelező e-mailt kap, admin által végzett műveletnél is. Sorozatos vagy `following`/`series` scope művelethez egy összefoglaló e-mail tartozik.
 
-Kötelező viszont:
+A foglalási tranzakció és az értesítési kötelezettség transactional outboxban együtt rögzül. Külső e-mail-szolgáltatói hiba a foglalást nem gördítheti vissza; az értesítés retryzható és auditálható marad. Részletes technikai döntés: `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
+
+A #111 draft ágon a kanonikus create/update/cancel és sorozatos/scope RPC-k korrelált auditjából egy tranzakció végéig halasztott, belső trigger készít pontosan egy változtathatatlan outbox rekordot. Ez a title- és admin díjazási mellékhatások lezárása után, de még ugyanabban a booking tranzakcióban fut. A GitHub Database tests #525 friss resetből 714/714 pgTAP, minden konkurenciateszt és schema lint PASS eredményt adott; staging alkalmazás és valós e-mail-küldés még nem történt.
+
+Ugyanezen a draft ágon elkészült a szigorú `payload_version=1` alkalmazásoldali validáció, a magyar text/HTML create/update/cancel és sorozat-összefoglaló renderer, az adminjelzés, HTML/header-injection védelem, `Europe/Budapest` DST-formázás, valamint a providerfüggetlen transport adapter.
+
+A verzióra rögzített Nodemailer SMTP-kliens és a belső Node.js worker Route Handler is bekötésre került. A végpont legalább 32 bájtos `CRON_SECRET` Bearer tokent követel, a service-role kulcs és az SMTP-titkok kizárólag szerveroldali változók. A `BOOKING_EMAIL_MODE` alapértéke `disabled`, ekkor a worker nem claimel; a `capture` és `send` mód csak explicit konfigurációval aktív. A worker kis batchben claimel, payloadot és scope-ot validál, majd sent/captured/retry/dead-letter eredményt rögzít biztonságos hibával. A helyi teljes csomag 22 fájl / 125 teszt, typecheck, build és dependency audit PASS; a végleges kódcommiton Application checks #581, Database tests #530 és Vercel PASS. Valós SMTP-küldés vagy staging DB-módosítás nem történt.
+
+A #111 draft ágon elkészült az append-only worker-futásaudit és az admin-only `/admin/email-ertesitesek` kézbesítési monitor is. A worker `capture`/`send` futása start/finish heartbeatot és titokmentes összesítést rögzít; a `disabled` mód továbbra sem érinti az adatbázist. A monitor kizárólag minimalizált állapotot mutat: darabszámokat, esedékességet, stale lease/futást, utolsó küldést és heartbeatot, biztonságos hibát, valamint belső auditazonosítót. Címzett, e-mail cím, booking payload, levéltartalom, provider Message-ID és secret nem kerül a read modelbe. Kézi retry nincs. A commit `1660e61` helyben 23 tesztfájl / 134 teszt, typecheck és build PASS; GitHub Application checks #583, Database tests #532 (52 fájl / 749 pgTAP, minden konkurenciateszt és schema lint) és Vercel PASS. Staging DB-alkalmazás vagy valós küldés továbbra sem történt.
+
+A 2026-09-04-i automatikus staging deploy #14 sikeresen alkalmazta a `20260830183000` cutoff-guard és a `202609030001`, `202609030002`, `20260903185410` booking-email migrációkat. A local/remote history egyezik, a deploy utáni dry-run és a megismételt no-op deploy #15 szerint a remote adatbázis naprakész. Közvetlen read-only ellenőrzés igazolta, hogy az outbox, delivery-attempt és worker-run táblák léteznek, mindhárom üres, az `authenticated` szerepkörnek nincs közvetlen tábla-hozzáférése, a szükséges service-role worker execute jogok pedig jelen vannak. E-mailt ez a lépés nem küldött. A scheduler, runtime secret, capture UAT és valós SMTP UAT továbbra is nyitott; ez nem production GO.
+
+A 2026-09-04-i staging infrastruktúra-döntés szerint a jóváhagyott pontos commit dedikált `staging` branchre történő, force nélküli promóciója automatikus dry-run → staging DB deploy → nulla függő migráció utóellenőrzést indít. Előfeltétel a zöld Application CI és Database CI, az elvárt dry-run és a projektgazda kifejezett staging-jóváhagyása. A staging secret csak a GitHub `staging` Environmentben használható; PR nem kap remote adatbázis-hozzáférést. Ez nem main merge és nem production deploy. Részletes döntés: `docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md`.
+
+A staging Preview branch-scope runtime konfigurációja 2026-09-04-én elkészült `capture` módban, SMTP-változók nélkül. A cache nélküli redeploy `READY`, a build és TypeScript ellenőrzés PASS. A titok kézi visszaolvasása helyett a staging admin e-mail monitor capture-only indítást kapott: minden futás újra ellenőrzi az aktív admin jogosultságot és a `capture` módot, `send` vagy `disabled` esetén fail-closed módon megtagadja az indítást. A `bc68e22` commiton Application checks #591, Database tests #540 és Vercel Preview PASS.
+
+A teljes SMTP nélküli staging capture UAT PASS. Az egyedi create/update/cancel, az admin által más booking owner részére végzett create/update/cancel, valamint a `series`, `occurrence` és `following` ismétlődő hatókörök logikai műveletenként pontosan egy összefoglaló értesítési rekordot adtak. Adminműveletnél mindhárom rekord címzettje a booking owner volt, nem az admin. Összesen 16 outbox rekord és 16 append-only delivery attempt keletkezett; mind a 16 `captured`, `sent=0`, retry/dead-letter/provider Message-ID nincs, függő vagy stale rekord nincs. Az üres soron megismételt workerfutás `success`, `claimed=0`, `captured=0` eredménnyel zárult, és nem hozott létre új delivery attemptet, így az idempotens no-op viselkedés is PASS. A teszt előtti 135 legacy outbox rekord sértetlen maradt; az UAT booking műveletei külön, elvárt kanonikus legacy audit-eseményeket hoztak létre. Valós e-mail nem ment ki. Scheduler és valós SMTP UAT továbbra is külön kapu; ez nem production GO.
+
+Továbbra is kötelező:
 - sikeres mentés után a UI egyértelműen jelezze a sikert;
 - a foglalás azonnal jelenjen meg a naptárban és a releváns saját-foglalási nézetben;
 - sikertelen vagy visszagördített foglalás nem jelenhet meg sikeresként;
 - technikai hiba esetén érthető hibaüzenet jelenjen meg, félkész foglalás nélkül.
 
-Booking confirmation e-mail későbbi opcionális fejlesztés.
+Az e-mail funkció production gate: stagingen valós create/update/cancel, adminművelet, sorozat-összefoglalás, retry és kézbesítési napló UAT szükséges.
 
 ---
 
@@ -662,6 +679,9 @@ Egy új implementációnak legalább az alábbi logikai entitásokat kell reprez
 17. **SettlementBookingLine** – foglalásszintű történeti pénzügyi sor.
 18. **AuditLog** – append-only kritikus eseménytörténet.
 19. **SystemSettings** – globális paraméterek (pl. névláthatóság, default limitek).
+20. **BookingEmailOutbox** – egy logikai booking művelethez egy verziózott, deduplikált, retryzható értesítési feladat.
+21. **BookingEmailDeliveryAttempt** – append-only kézbesítési próbálkozás és biztonságos hibastátusz.
+22. **BookingEmailWorkerRun** – egyszer lezárható, címzett- és payloadmentes worker heartbeat/futásaudit.
 
 A konkrét táblanevek változhatnak, de a történeti és jogosultsági jelentés nem veszhet el.
 
@@ -800,7 +820,7 @@ Automatikus teszt mellett manuálisan is igazolandó legalább:
 - részletes CSV;
 - lemondási riport;
 - payment UI közvetlen régi URL-je nem használható és a Havi órákra/aktív admin oldalra irányít;
-- sikeres foglalás UI-visszajelzés és azonnali megjelenés; e-mail hiánya nem hiba.
+- sikeres foglalás UI-visszajelzés és azonnali megjelenés; a kötelező booking e-mail külön transactional outboxból, retryzhatóan kézbesítendő.
 
 ---
 
@@ -810,7 +830,6 @@ Nem szabad kész feature-ként értelmezni:
 - saját foglalások teljes naptárnézetének további fejlesztése;
 - ismétlődő kivételdátum Skedda-szerű naptárválasztójának UX finomítása;
 - mobil scroll régi, 18:00 körüli megakadás-megjegyzése: aktuális reprodukció vagy célzott végső lezárás nincs igazolva (UAT-UX-05); **nem bizonyított jelenlegi hiba, és nem kívánt/reprodukálásra előírt viselkedés**;
-- automatikus booking confirmation e-mail;
 - közvetlen számlázó-integráció;
 - befizetések aktív UI-ja;
 - teljes statisztikai/vezetői dashboard.

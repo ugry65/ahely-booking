@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { requireEnv } from "@/lib/env";
+import { validateNewPassword } from "@/lib/password-policy";
 import { createClient } from "@/lib/supabase/server";
 
 function destination(path: string, key: string, value: string) {
@@ -27,13 +28,17 @@ export async function login(formData: FormData) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_active,role,onboarding_completed_at")
+    .select("is_active,role,must_change_password,onboarding_completed_at")
     .eq("id", data.user.id)
-    .maybeSingle<{ is_active: boolean; role: "admin" | "user"; onboarding_completed_at: string | null }>();
+    .maybeSingle<{ is_active: boolean; role: "admin" | "user"; must_change_password: boolean; onboarding_completed_at: string | null }>();
 
   if (!profile?.is_active) {
     await supabase.auth.signOut({ scope: "local" });
     redirect(destination("/belepes", "hiba", "A hozzáférés nem aktív. Kérjük, fordulj az adminisztrátorhoz."));
+  }
+
+  if (profile.must_change_password) {
+    redirect("/jelszo-csere");
   }
 
   if (profile.role !== "admin" && !profile.onboarding_completed_at) {
@@ -66,9 +71,8 @@ export async function requestPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
-  if (password.length < 12) {
-    redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó legalább 12 karakter legyen."));
-  }
+  const passwordError = validateNewPassword(password, password);
+  if (passwordError) redirect(destination("/jelszo-visszaallitas", "hiba", passwordError));
 
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
@@ -77,6 +81,13 @@ export async function updatePassword(formData: FormData) {
 
   if (error) {
     redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó módosítása nem sikerült."));
+  }
+
+  const { error: flagError } = await supabase.rpc("complete_own_password_change", {
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (flagError) {
+    redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó frissült, de az első belépési állapot lezárása nem sikerült. Kérjük, próbáld újra."));
   }
 
   if (userId) {
@@ -92,4 +103,23 @@ export async function updatePassword(formData: FormData) {
   }
 
   redirect(destination("/belepes", "uzenet", "A jelszó frissült, most már bejelentkezhetsz."));
+}
+
+export async function changeInitialPassword(formData: FormData) {
+  const password = String(formData.get("password") ?? "");
+  const confirmation = String(formData.get("confirmation") ?? "");
+  const passwordError = validateNewPassword(password, confirmation);
+  if (passwordError) redirect(destination("/jelszo-csere", "hiba", passwordError));
+
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  if (!claims?.claims?.sub) redirect("/belepes");
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) redirect(destination("/jelszo-csere", "hiba", "A jelszó módosítása nem sikerült."));
+  const { error: flagError } = await supabase.rpc("complete_own_password_change", { p_correlation_id: crypto.randomUUID() });
+  if (flagError) redirect(destination("/jelszo-csere", "hiba", "A jelszó módosult, de az első belépési állapot lezárása nem sikerült. Kérjük, próbáld újra."));
+
+  const { data: profile } = await supabase.from("profiles").select("role,onboarding_completed_at").eq("id", claims.claims.sub).maybeSingle<{ role: "admin" | "user"; onboarding_completed_at: string | null }>();
+  if (profile?.role !== "admin" && !profile?.onboarding_completed_at) redirect("/adatok-megadasa");
+  redirect("/foglalasok");
 }

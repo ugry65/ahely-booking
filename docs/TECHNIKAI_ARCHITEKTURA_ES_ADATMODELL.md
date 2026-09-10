@@ -165,7 +165,9 @@ Minden pénzösszeg egész HUF (`bigint`), lebegőpontos pénzérték nincs. Az 
 | Tábla | Szerep |
 | --- | --- |
 | `audit_logs` | append-only üzleti audit: actor, művelet, rekord, előtte/utána, indok, correlation ID |
-| `outbox_events` | tranzakciósan rögzített, újrapróbálható e-mail esemény |
+| `outbox_events` | meglévő általános/legacy domain outbox; közvetlen booking e-mail-küldésre nem használható |
+| `booking_email_outbox` | egy logikai booking művelethez egy tranzakciósan rögzített, verziózott és deduplikált e-mail-feladat |
+| `booking_email_delivery_attempts` | append-only kézbesítési próbálkozásnapló biztonságos hibakóddal és korrelációval |
 | `system_error_logs` | releváns technikai hibák személyesadat-minimalizálással |
 | `retention_candidates` | 2 éves megőrzés után jelölt rekordok és 30/15/5/1 napos értesítés |
 | `retention_approvals` | admin jóváhagyás; automatikus végleges törlés nincs |
@@ -225,7 +227,7 @@ A `main` branch védett. Production deploy csak staging ellenőrzés, jóváhagy
 9. befizetés, korrekció, audit;
 10. admin/user UI;
 11. XLSX export;
-12. e-mail outbox;
+12. külön booking e-mail outbox, worker, retry/dead-letter és monitorozás;
 13. backup automatizálás és restore-próba;
 14. teljes FS-elfogadási teszt és staging.
 

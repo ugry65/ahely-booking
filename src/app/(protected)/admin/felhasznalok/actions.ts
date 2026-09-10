@@ -7,6 +7,7 @@ import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireEnv } from "@/lib/env";
+import { validateNewPassword } from "@/lib/password-policy";
 
 function uuid(value: FormDataEntryValue | null) {
   const text = String(value ?? "");
@@ -71,6 +72,52 @@ function validateProfile(input: ProfileInput) {
   return null;
 }
 
+function passwordInput(formData: FormData) {
+  return {
+    password: String(formData.get("defaultPassword") ?? ""),
+    confirmation: String(formData.get("defaultPasswordConfirmation") ?? ""),
+  };
+}
+
+function safeAuthCreateError(error: { code?: string; status?: number; name?: string; message?: string } | null, email: string) {
+  if (!error) return "A felhasználó létrehozása nem sikerült.";
+  const code = String(error.code ?? "").toLowerCase();
+  if (code.includes("email_exists") || code.includes("user_already_exists") || error.status === 422) {
+    return "Ez az e-mail-cím már létezik az Auth-rendszerben. Próbálj másik címet.";
+  }
+  const safeMessage = String(error.message ?? "").replaceAll(email, "[e-mail elrejtve]").slice(0, 180);
+  console.error("admin user creation failed", { status: error.status ?? null, code: error.code ?? null, name: error.name ?? null, message: safeMessage });
+  return "A felhasználó létrehozása a hitelesítési szolgáltatásban hibázott. A technikai hibát naplóztuk; próbáld újra, vagy jelezd az adminisztrátornak.";
+}
+
+function safeAuthUpdateError(error: { code?: string; status?: number; name?: string; message?: string } | null) {
+  if (error) {
+    console.error("admin temporary password update failed", {
+      status: error.status ?? null,
+      code: error.code ?? null,
+      name: error.name ?? null,
+    });
+  }
+  return "Az ideiglenes jelszó beállítása a hitelesítési szolgáltatásban nem sikerült. A felhasználónak küldj jelszó-visszaállító linket.";
+}
+
+async function sendPasswordSetupEmail(userId: string) {
+  const supabase = await createClient();
+  const { data: email, error: auditError } = await supabase.rpc("admin_audit_password_reset_request", {
+    p_user_id: userId,
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (auditError || typeof email !== "string") {
+    return { error: safeRpcMessage(auditError, "A jelszóbeállító link nem küldhető.") };
+  }
+
+  const siteUrl = requireEnv("SITE_URL");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
+  });
+  return error ? { error: "A jelszóbeállító e-mail elküldése nem sikerült." } : { email };
+}
+
 export async function inviteUser(formData: FormData) {
   await requireAdmin();
 
@@ -80,18 +127,24 @@ export async function inviteUser(formData: FormData) {
   if (!email || !firstName || !lastName) {
     redirect(resultUrl("hiba", "A vezetéknév, keresztnév és e-mail megadása kötelező."));
   }
+  const password = passwordInput(formData);
+  const passwordError = validateNewPassword(password.password, password.confirmation);
+  if (passwordError) redirect(resultUrl("hiba", `Az alapértelmezett jelszó: ${passwordError.charAt(0).toLowerCase()}${passwordError.slice(1)}`));
 
   const admin = createAdminClient();
-  const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
   const { data, error } = await admin.auth.admin.createUser({
     email,
-    password: temporaryPassword,
+    password: password.password,
     email_confirm: true,
-    user_metadata: { first_name: firstName, last_name: lastName },
+    user_metadata: { first_name: firstName, last_name: lastName, must_change_password: true },
   });
 
-  if (error || !data.user) redirect(resultUrl("hiba", "A felhasználó létrehozása nem sikerült. Ellenőrizd, hogy az e-mail cím nem szerepel-e már a rendszerben."));
-  redirect(resultUrl("uzenet", "A felhasználó létrejött. Aktiváló/jelszóbeállító linket külön tudsz küldeni neki."));
+  if (error || !data.user) redirect(resultUrl("hiba", safeAuthCreateError(error, email)));
+  const emailResult = await sendPasswordSetupEmail(data.user.id);
+  if (emailResult.error) {
+    redirect(resultUrl("hiba", `A felhasználó létrejött, de ${emailResult.error.toLocaleLowerCase("hu-HU")} A szerkesztőben újraküldheted a linket.`));
+  }
+  redirect(resultUrl("uzenet", "A felhasználó létrejött, és megkapta a biztonságos jelszóbeállító linket. A kezdőjelszót nem küldtük el e-mailben."));
 }
 
 export async function updateUserProfile(formData: FormData) {
@@ -157,22 +210,33 @@ export async function sendPasswordReset(formData: FormData) {
   const userId = uuid(formData.get("userId"));
   if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító.", formData));
 
+  const result = await sendPasswordSetupEmail(userId);
+  if (result.error) redirect(resultUrl("hiba", result.error, formData));
+  redirect(resultUrl("uzenet", `A biztonságos jelszóbeállító/visszaállító link elküldve: ${result.email}`, formData));
+}
+
+export async function setTemporaryPassword(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  if (!userId) redirect(resultUrl("hiba", "Érvénytelen felhasználói azonosító.", formData));
+
+  const password = passwordInput(formData);
+  const passwordError = validateNewPassword(password.password, password.confirmation);
+  if (passwordError) redirect(resultUrl("hiba", `Az ideiglenes jelszó: ${passwordError.charAt(0).toLowerCase()}${passwordError.slice(1)}`, formData));
+
   const supabase = await createClient();
-  const correlationId = crypto.randomUUID();
-  const { data: email, error: auditError } = await supabase.rpc("admin_audit_password_reset_request", {
+  const { error: prepareError } = await supabase.rpc("admin_require_password_change", {
     p_user_id: userId,
-    p_correlation_id: correlationId,
+    p_correlation_id: crypto.randomUUID(),
   });
-  if (auditError || typeof email !== "string") {
-    redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető."), formData));
+  if (prepareError) {
+    redirect(resultUrl("hiba", safeRpcMessage(prepareError, "Az ideiglenes jelszó előkészítése nem sikerült."), formData));
   }
 
-  const siteUrl = requireEnv("SITE_URL");
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
-  });
-  if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
-  redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, { password: password.password });
+  if (error) redirect(resultUrl("hiba", safeAuthUpdateError(error), formData));
+  redirect(resultUrl("uzenet", "Az ideiglenes jelszó beállítva. A felhasználónak a következő belépéskor kötelező megváltoztatnia.", formData));
 }
 
 function parseCsv(text: string) {
@@ -236,7 +300,7 @@ export async function importUsersCsv(formData: FormData) {
   for (const item of prepared) {
     if (existing.has(item.email)) { skipped += 1; continue; }
     const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
-    const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName } });
+    const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName, must_change_password: true } });
     if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`); else created += 1;
   }
 

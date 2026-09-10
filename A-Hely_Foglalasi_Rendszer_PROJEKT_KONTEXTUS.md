@@ -16,11 +16,14 @@ A 2026-08-26-i Claude-review és az arra adott tulajdonosi döntések kötelező
 
 A 2026-09-03-i PWA/e-mail/migráció/mobil UX döntések és UAT-eredmények kötelező kiegészítő forrása:
 - `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+- `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## Szerepkörök
 **Admin:** userek, helyiségek, jogosultságok, árak, foglalási szabályok, foglalások, elszámolás, export és beállítások kezelése.
 
 **Normál user:** csak az engedélyezett helyiségeket és foglalásokat látja; foglalhat, saját foglalását szabály szerint módosíthatja/törölheti; ismétlődő foglalás csak engedélyezett keretek között. A havi elszámolási dashboard userenként ki- és bekapcsolható. Más foglalók nevének láthatósága **globális admin beállítás**, nem userenkénti kapcsoló; kikapcsolva más user neve és stabil azonosító színe sem kerülhet ki normál usernek.
+
+Új felhasználó létrehozásakor az admin legalább 12 karakteres kezdőjelszót ad meg. A létrehozás után a user automatikusan biztonságos, egyszer használható jelszóbeállító linket kap; jelszót nem küldünk e-mailben. Az első sikeres belépés után kötelező a jelszó cseréje; a kezdőjelszó nem kerül alkalmazásadatbázisba, auditba vagy naplóba. Az admin aktív usernek új reset linket küldhet, vagy egyedi ideiglenes jelszót állíthat be, amely ismét kötelező jelszócserét kapcsol be. A jelszócsere lezárása auditált, és a védelem közvetlen URL-lel sem kerülhető meg.
 
 ## Helyiségek
 - Tréningterem
@@ -119,9 +122,11 @@ Ismétlődő/sorozatos műveletnél **egy összefoglaló e-mail** küldendő, ne
 
 Az e-mail küldési hiba nem veszélyeztetheti a már sikeres foglalási tranzakciót. Preferált technikai minta: tartós transactional outbox + külön retry-képes küldő folyamat + auditálható küldési státusz.
 
-Preferált feladó a saját A-Hely domain postafiókja; a jelenlegi vizsgált szolgáltató a MediaCenter.hu SMTP. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
+Feladó és Reply-To: `foglalas@a-hely.com`. A MediaCenter által igazolt SMTP host `pop3.mediacenter.hu` (nem elírás), SSL/TLS port 465, teljes e-mail címes felhasználónévvel és kötelező hitelesítéssel. A díjmentes szolgáltatás napi 100 levélre és levelenként 10 címzettre korlátozott; production előtt a terhelési tartalékot vagy a külön privát SMTP csomagot igazolni kell. SMTP jelszó/secrets csak biztonságos runtime/GitHub environment secretként kezelhetők, chatbe/repositoryba nem kerülhetnek.
 
-GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
+A #111 draft ágon elkészült az outbox, a booking RPC-k tranzakcióvégi enqueue-integrációja, a magyar renderer, a verzióra rögzített Nodemailer-kliens, a Bearer tokennel védett Node.js worker Route Handler, az append-only worker heartbeat audit és az admin-only, érzékeny adatot nem visszaadó kézbesítési monitor. A runtime alapértéke `BOOKING_EMAIL_MODE=disabled`, amely nem claimel, nem küld és nem ír heartbeatot. A 2026-09-04-i automatikus staging deploy #14 sikeresen alkalmazta a cutoff-guard és a három booking-email migrációt; a local/remote history egyezik, a deploy utáni dry-run szerint a remote adatbázis naprakész. A branch-scope Preview konfiguráció `capture` módban, SMTP-változók nélkül elkészült. Az admin-only capture indító `bc68e22` commitján Application checks #591, Database tests #540 és Vercel Preview PASS. A teljes SMTP nélküli capture UAT 16/16 `captured` rekorddal, nulla sent/retry/dead-letter/provider Message-ID eredménnyel PASS; egyedi, admin-owner-routing, `series`, `occurrence`, `following` és üres no-op futás is igazolt. Scheduler és valós SMTP UAT még nyitott; main merge és production deploy nem történt.
+
+GitHub issue: #107. Részletek: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md`.
 
 ## Migráció – 2026-09-03-i scope döntés
 A jelenlegi AllBooked/Skedda rendszerből a migráció során kötelezően át kell emelni:
@@ -306,7 +311,7 @@ A független review után akkor véglegesen elfogadott:
 
 **Megjegyzés:** a booking e-mailre vonatkozó 2026-08-26-i döntést a 2026-09-03-i tulajdonosi döntés felülírta; lásd a fenti „Foglalási e-mail státusz” részt és a 2026-09-03-i munkanaplót.
 
-A kanonikus baseline a korábbi állapotot tartalmazhatja, ezért e-mail kérdésben a 2026-09-03-i újabb projektkontextus/döntési dokumentum az irányadó, amíg a baseline következő szinkronja meg nem történik. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
+A kanonikus baseline 2026-09-03-án szinkronizálva lett a kötelező booking e-mail döntéssel. A Fix óradíj dedikált admin RPC/UI-ja és auditált backend útja elkészült; az automatikus DB/regressziós tesztek zöldek. A funkció staging manuális UAT-ja a 2026-08-30-i átvezetés szerint már elfogadott (UAT-PRICING-05/06); sem az RPC/UI, sem ennek a célzott UAT-ja nem nyitott hiány. A teljes production readiness ettől külön kapu marad.
 
 A jövőbeli díjazási tervek megtartása tudatos működés: egy korábbi kezdőhónap módosítása nem törli a későbbre már beütemezett változásokat. Ezeket az admin teljes idővonalként látja.
 
@@ -340,12 +345,13 @@ Részletes forrás: `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md`.
 
 Aktuális állapot:
 - PWA issue #105 / draft PR #106: iPhone install/standalone/offline fallback PASS; Android/Chromium és hálózat-visszatérés UAT még nyitott;
-- kötelező e-mail issue #107: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; transactional outbox technikai irány;
+- kötelező e-mail issue #107 / draft PR #111: minden create/update/delete után a booking owner kap levelet, admin műveletnél is; sorozatnál 1 összefoglaló e-mail; elkészült a verziózott outbox, lease/retry/dead-letter RPC, a booking műveletek tranzakcióvégi enqueue-integrációja, a magyar text/HTML renderer, a verzióra rögzített Nodemailer-kliens, a Bearer tokennel védett Node.js worker Route Handler, az append-only heartbeat audit, az admin-only kézbesítési monitor, a capture-only admin indító és a staging capture runbook; helyben 23 tesztfájl / 134 teszt, typecheck és build PASS; a 2026-09-04-i automatikus staging deploy #14 alkalmazta a cutoff-guard és a három booking-email migrációt, az utóellenőrzés és a megismételt no-op deploy #15 PASS; az admin indító commitján Application checks #591, Database tests #540 és Vercel PASS; a teljes SMTP nélküli staging capture UAT 16/16 rekorddal és idempotens üres futással PASS; scheduler és valós SMTP UAT még nyitott;
 - migráció issue #108: migráció hónapjának teljes adatai + minden jövőbeli adat; dry-run/idempotens/staging + reconciliation kötelező;
 - mobil UX issue #109 / draft PR #110: Adataim/Foglalásaim/Felhasználók/Havi órák és fizetendő/Díjazás/Hozzáférések/Helyiségek reszponzív javításai folyamatban; iPhone-on a Havi órák hónapválasztó és a Helyiségcsoportok levágási hibája célzottan PASS;
 - a #109 hátralévő forrásauditjában a Beállítások oldalhoz nem kellett külön javítás; a Lemondások összesítő és tételes táblái mobil kártyanézetet, a záró hónap pedig iOS-biztos Év + Hónap választót kapott; a Lemondások célzott iPhone UAT PASS („Működik”), valós Android Chrome UAT még szükséges;
 - valós Android Chrome smoke UAT továbbra is szükséges, iPhone PASS nem automatikus Android PASS;
 - a stagingben `Mhely` néven szereplő inaktív csoportnak nincs aktuális user- vagy szobakapcsolata, de audit-előzménye van; támogatott törlő RPC/UI nincs, ezért nem töröltük. Alapértelmezett ajánlás az inaktiválás; külön végleges törlés csak explicit döntéssel, dependency-ellenőrzött és auditált tranzakcióként készülhet.
+- a 2026-09-04-i staging promóciós döntés megszünteti a mindennapos GitHub Actions kézi indítást: zöld Application/Database CI, elvárt dry-run és kifejezett staging-jóváhagyás után a pontos commit force nélkül a dedikált `staging` branchre kerül; ez automatikus dry-run → staging DB deploy → utóellenőrzést indít. A remote secret kizárólag a GitHub `staging` Environmentben használható, PR nem kapja meg. Main merge és production deploy változatlanul külön, kifejezett jóváhagyást igényel. Részletesen: `docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md`.
 
 ## Nem MVP / későbbi fejlesztés
 - bankkártyás fizetés
@@ -364,7 +370,7 @@ Aktuális állapot:
 Az új fejlesztési beszélgetés első feladata:
 1. **kötelezően** áttekinteni ezt a projektkontextust és a `docs/CURRENT_FUNCTIONAL_BASELINE.md` aktuális verzióját; a régi FS v1.0 csak történeti/SUPERSEDED forrás;
 2. kötelezően áttekinteni a `docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md` és `docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md` dokumentumokat, amíg tartalmuk teljesen be nem olvad a release-baseline-ba;
-3. kötelezően áttekinteni a `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` dokumentumot, amíg a PWA/e-mail/migráció/mobil UX változások teljesen be nem olvadnak a kanonikus baseline-ba;
+3. kötelezően áttekinteni a `docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md` és e-mail feladatnál a `docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md` dokumentumot;
 4. foglalási/UI feladat esetén kötelezően áttekinteni a `docs/BOOKING_UI_UX_BASELINE.md` és `docs/skedda-mobile-calendar-ux.md` fájlokat;
 5. production infrastruktúra feladat esetén kötelezően áttekinteni a `docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md` és `docs/PRODUCTION_READINESS_CHECKLIST.md` fájlokat;
 6. az aktuális technikai architektúra- és adatmodelldokumentumot áttekinteni;

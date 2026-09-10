@@ -1,6 +1,7 @@
 # Fejlesztési szabályok
 
 - Az FS és a projektkontextus elsődleges forrás; üzleti szabályt feltételezésből ne módosíts.
+- **Supabase/backup/restore/production-költség témában kötelező elolvasni a `docs/DECISION_2026-09-08_SUPABASE_FREE_AND_BACKUP_BASELINE.md` dokumentumot. A production baseline Supabase Free; Pro/PITR nem kötelező release-feltétel. A Google Drive + Backblaze B2 kétcélos backup/restore architektúra eldöntött és tesztelt terület, csak explicit új tulajdonosi döntésre nyitható újra.**
 - Foglalási, pénzügyi és jogosultsági írás csak szerveroldali vagy adatbázis-függvényen keresztül történhet.
 - Kritikus művelet legyen tranzakciós, auditált és idempotens.
 - Foglalást, befizetést, elszámolási sort és auditrekordot alkalmazáskódból fizikailag törölni tilos.
