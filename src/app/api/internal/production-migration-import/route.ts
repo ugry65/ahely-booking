@@ -9,18 +9,17 @@ import {
   PAPP_DALMA_IMPORT_CONFIRMATION,
   validatePappDalmaImport,
 } from "@/lib/allbooked-migration";
+import { isProductionMigrationTarget } from "@/lib/production-migration-target";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
-const PRODUCTION_PROJECT_REF = "yasrmxwjojepessivhmc";
-
 function assertProductionTarget() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-  const ref = process.env.VERCEL_GIT_COMMIT_REF;
-  let hostname = "";
-  try { hostname = new URL(url).hostname; } catch { /* rejected below */ }
-  if (hostname !== `${PRODUCTION_PROJECT_REF}.supabase.co` || (ref && ref !== "staging")) {
+  if (!isProductionMigrationTarget({
+    supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    vercelEnvironment: process.env.VERCEL_ENV,
+    gitCommitRef: process.env.VERCEL_GIT_COMMIT_REF,
+  })) {
     throw new Error("Az író AllBooked import kizárólag a main branch production Supabase projektjén engedélyezett.");
   }
 }
