@@ -19,6 +19,8 @@ on:
       - ".github/workflows/staging-database-deploy.yml"
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
+      - ".github/workflows/production-backup-drill.yml"
+      - ".github/workflows/production-restore-drill.yml"
   push:
     branches: [main]
   workflow_dispatch:
@@ -40,6 +42,10 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: bash ./scripts/test-production-db-url-guard.sh
+      - run: bash ./scripts/test-production-backup-trigger.sh
+      - run: bash ./scripts/test-production-backup-drill.sh
+      - run: bash ./scripts/test-production-restore-trigger.sh
       - run: pnpm test
       - run: pnpm typecheck
       - run: pnpm build
