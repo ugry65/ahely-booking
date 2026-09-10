@@ -96,7 +96,7 @@ fi
 grep -q 'PRODUCTION DRILL backup verified on both targets' <<< "$output"
 grep -q 'CONTROL_COUNTS=' <<< "$output"
 test "$(grep -o -- '--recipient' "$test_dir/age.log" | wc -l)" -eq 1
-grep -q -- '--recipient age1test --recipient age1stagingtest' "$test_dir/age.log"
+grep -q -- '--recipient age1productiontest' "$test_dir/age.log"
 test "$(find "$remote_dir" -type f -name '*.tar.gz.age' | wc -l)" -eq 2
 test "$(find "$remote_dir" -type f -name '*.tar.gz.age.sha256' | wc -l)" -eq 2
 test "$(find "$remote_dir" -type f -name '*.tar.gz' | wc -l)" -eq 0
