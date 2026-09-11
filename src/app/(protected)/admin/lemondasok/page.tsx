@@ -51,10 +51,21 @@ export default async function CancellationsPage({ searchParams }: { searchParams
     {summaryResponse.error ? <p className="message error" role="alert">A lemondási statisztika betöltése nem sikerült.</p> : null}
     <section className="card wide-card stack">
       <div><h2>Userenkénti lemondási statisztika</h2><p className="muted">A „lemondási arány” csak azt méri, amikor a foglalást maga a user mondta le. Admin által törölt foglalás nem növeli ezt az arányt. A „törölt foglalás/óra” viszont minden lemondott foglalást megmutat.</p></div>
-      <div className="table-scroll"><table>
+      <div className="cancellation-summary-table-desktop table-scroll"><table>
         <thead><tr><th>Felhasználó</th><th>Összes foglalás</th><th>Törölt foglalás</th><th>Törölt óra</th><th>User saját törlése</th><th>Lemondási arány</th></tr></thead>
         <tbody>{rows.map((row) => <tr key={row.user_id}><td>{row.user_name}</td><td>{row.total_bookings}</td><td>{row.cancelled_count}</td><td>{hours(row.cancelled_hours)}</td><td>{row.user_cancelled_count}</td><td>{Number(row.cancellation_rate).toLocaleString("hu-HU", { maximumFractionDigits: 1 })}%</td></tr>)}</tbody>
       </table></div>
+      <div className="cancellation-summary-list-mobile" aria-label="Userenkénti lemondási statisztika mobil nézete">
+        {rows.map((row) => <article className="report-mobile-card" key={row.user_id}>
+          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>Lemondási arány: {Number(row.cancellation_rate).toLocaleString("hu-HU", { maximumFractionDigits: 1 })}%</span></div>
+          <dl className="report-mobile-details">
+            <div><dt>Összes foglalás</dt><dd>{row.total_bookings}</dd></div>
+            <div><dt>Törölt foglalás</dt><dd>{row.cancelled_count}</dd></div>
+            <div><dt>Törölt óra</dt><dd>{hours(row.cancelled_hours)}</dd></div>
+            <div><dt>User saját törlése</dt><dd>{row.user_cancelled_count}</dd></div>
+          </dl>
+        </article>)}
+      </div>
       {!rows.length && !summaryResponse.error ? <p className="muted">A kiválasztott időszakban nincs foglalási adat.</p> : null}
     </section>
 
@@ -68,10 +79,23 @@ export default async function CancellationsPage({ searchParams }: { searchParams
         <a className="button secondary" href={`/admin/lemondasok/reszletek-export?${detailExportQuery.toString()}`}>Részletes CSV</a>
       </form>
       {detailsResponse.error ? <p className="message error" role="alert">A tételes lemondások betöltése nem sikerült.</p> : null}
-      <div className="table-scroll"><table>
+      <div className="cancellation-detail-table-desktop table-scroll"><table>
         <thead><tr><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Mettől</th><th>Meddig</th><th>Óra</th><th>Lemondás ideje</th><th>Mennyivel előtte</th><th>Lemondta</th><th>Indok</th></tr></thead>
         <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.cancelled_hours)}</td><td>{cancellationTimestamp(row.cancelled_at)}</td><td>{leadTimeLabel(row.minutes_before_start)}</td><td>{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</td><td>{row.cancellation_reason ?? "–"}</td></tr>)}</tbody>
       </table></div>
+      <div className="cancellation-detail-list-mobile" aria-label="Tételes lemondások mobil nézete">
+        {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
+          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.booking_date}</span></div>
+          <dl className="report-mobile-details">
+            <div><dt>Helyiség</dt><dd>{row.room_name}</dd></div>
+            <div><dt>Időtartam</dt><dd>{time(row.start_time)}–{time(row.end_time)} · {hours(row.cancelled_hours)} óra</dd></div>
+            <div><dt>Lemondás ideje</dt><dd>{cancellationTimestamp(row.cancelled_at)}</dd></div>
+            <div><dt>Mennyivel előtte</dt><dd>{leadTimeLabel(row.minutes_before_start)}</dd></div>
+            <div><dt>Lemondta</dt><dd>{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</dd></div>
+            <div><dt>Indok</dt><dd>{row.cancellation_reason ?? "–"}</dd></div>
+          </dl>
+        </article>)}
+      </div>
       {!details.length && !detailsResponse.error ? <p className="muted">A kiválasztott feltételekkel nincs lemondott foglalás.</p> : null}
     </section>
   </section>;
