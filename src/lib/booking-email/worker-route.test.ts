@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import { handleBookingEmailWorkerRequest } from "./worker-route";
 
-function request(token?: string): Request {
+function request(token?: string, method = "POST"): Request {
   return new Request("https://booking.example/api/internal/booking-email-worker", {
-    method: "POST",
+    method,
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   });
 }
@@ -20,6 +20,21 @@ describe("booking e-mail worker Route Handler", () => {
     expect(await response.json()).toEqual({ error: "unauthorized" });
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(createRuntime).not.toHaveBeenCalled();
+  });
+
+  it("Vercel Cron GET kérésnél helyes Bearer tokennel lefuttatja a workert", async () => {
+    const run = vi.fn().mockResolvedValue({
+      mode: "send", claimed: 1, sent: 1, captured: 0, retry: 0, deadLetter: 0,
+    });
+    const response = await handleBookingEmailWorkerRequest(request("correct", "GET"), {
+      getCronSecret: () => "correct",
+      createRuntime: () => ({ mode: "send", run }),
+    });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      mode: "send", claimed: 1, sent: 1, captured: 0, retry: 0, deadLetter: 0,
+    });
+    expect(run).toHaveBeenCalledOnce();
   });
 
   it("hiányzó CRON_SECRET esetén biztonságos 503-at ad", async () => {
