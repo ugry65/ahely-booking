@@ -1,0 +1,5 @@
+@media (min-width: 52.01rem) {
+  .desktop-app-nav {
+    margin-inline: clamp(.75rem, 2vw, 2rem);
+  }
+}
