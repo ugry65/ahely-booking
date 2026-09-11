@@ -1,0 +1,71 @@
+.desktop-calendar-header {
+  margin-inline: clamp(.75rem, 2vw, 2rem);
+  padding: .7rem .8rem .8rem;
+  border: 1px solid #ddd8cc;
+  border-radius: .75rem;
+  background: #faf8f3;
+}
+
+.calendar-header-main {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  flex: 1 1 38rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.calendar-date-nav {
+  gap: .35rem;
+  flex: 0 0 auto;
+}
+
+.calendar-date-nav .button {
+  min-width: 2.5rem;
+  min-height: 2.35rem;
+  padding: .4rem .65rem;
+}
+
+.calendar-date-nav .button:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+.calendar-date-title {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.calendar-date-jump {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  flex: 0 0 auto;
+}
+
+.calendar-date-jump input {
+  width: 9.7rem;
+  min-height: 2.35rem;
+  padding: .35rem .5rem;
+}
+
+.calendar-date-jump .button {
+  min-height: 2.35rem;
+  padding: .35rem .7rem;
+}
+
+@media (max-width: 70rem) and (min-width: 52.01rem) {
+  .desktop-calendar-header {
+    align-items: flex-start;
+  }
+
+  .calendar-header-main {
+    flex-basis: 100%;
+  }
+
+  .calendar-date-jump {
+    margin-left: auto;
+  }
+}
