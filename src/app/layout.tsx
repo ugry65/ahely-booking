@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import "./globals.css";
+import "./desktop-app-nav.css";
 import "./skedda-mobile.css";
 import "./mobile-hour-grid.css";
 import "./mobile-responsive.css";
