@@ -1,0 +1,146 @@
+name: Production database backup
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Kézi production backuphoz írd be: BACKUP"
+        required: true
+        default: ""
+        type: string
+  schedule:
+    - cron: "0 8 * * *"
+      timezone: "Europe/Budapest"
+    - cron: "0 12 * * *"
+      timezone: "Europe/Budapest"
+    - cron: "0 16 * * *"
+      timezone: "Europe/Budapest"
+    - cron: "0 20 * * *"
+      timezone: "Europe/Budapest"
+
+permissions:
+  contents: read
+
+# Shared with retention maintenance so creation and deletion cannot overlap.
+concurrency:
+  group: production-backup-storage-maintenance
+  cancel-in-progress: false
+
+jobs:
+  production-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+
+    steps:
+      - name: Require explicitly enabled production schedule
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          SCHEDULE_ENABLED: ${{ vars.PRODUCTION_BACKUP_SCHEDULE_ENABLED }}
+        run: |
+          if [ "$SCHEDULE_ENABLED" != "true" ]; then
+            echo "Production backup schedule is not explicitly enabled." >&2
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate trigger and resolve backup slot
+        id: trigger
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          slot="$(bash ./scripts/lib/validate-production-backup-schedule-trigger.sh "$GITHUB_EVENT_NAME" "$GITHUB_REF_NAME" "$CONFIRMATION" "$EVENT_SCHEDULE")"
+          echo "slot=$slot" >> "$GITHUB_OUTPUT"
+
+      - name: Start scheduled-backup heartbeat
+        id: heartbeat_start
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          BACKUP_SLOT: ${{ steps.trigger.outputs.slot }}
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+          BACKUP_HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
+          BACKUP_HEARTBEAT_16_URL: ${{ secrets.BACKUP_HEARTBEAT_16_URL }}
+          BACKUP_HEARTBEAT_20_URL: ${{ secrets.BACKUP_HEARTBEAT_20_URL }}
+        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh start "$BACKUP_SLOT"
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@ab058987d8d6c725971f6cf9d0b5c98467e30bd1 # v1
+        with:
+          version: 2.116.0
+
+      - name: Install backup dependencies
+        run: |
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends age rclone jq postgresql-client
+
+      - name: Validate required production backup configuration
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+          BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+          RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
+          RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_DAILY_ACCOUNT_ID }}
+          RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_DAILY_APPLICATION_KEY }}
+        run: |
+          required=(
+            PRODUCTION_DB_URL
+            BACKUP_AGE_RECIPIENT
+            BACKUP_GDRIVE_REMOTE
+            BACKUP_B2_REMOTE
+            RCLONE_CONFIG_GDRIVE_CLIENT_ID
+            RCLONE_CONFIG_GDRIVE_CLIENT_SECRET
+            RCLONE_CONFIG_GDRIVE_TOKEN
+            RCLONE_CONFIG_B2_ACCOUNT
+            RCLONE_CONFIG_B2_KEY
+          )
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing production backup configuration: $name" >&2
+              exit 1
+            fi
+          done
+
+      - name: Run encrypted dual-target production backup
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+          BACKUP_GDRIVE_REMOTE: ${{ vars.BACKUP_GDRIVE_REMOTE }}
+          BACKUP_B2_REMOTE: ${{ vars.BACKUP_B2_REMOTE }}
+          RCLONE_CONFIG_GDRIVE_TYPE: drive
+          RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
+          RCLONE_CONFIG_GDRIVE_CLIENT_ID: ${{ secrets.BACKUP_GDRIVE_CLIENT_ID }}
+          RCLONE_CONFIG_GDRIVE_CLIENT_SECRET: ${{ secrets.BACKUP_GDRIVE_CLIENT_SECRET }}
+          RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BACKUP_GDRIVE_RCLONE_TOKEN }}
+          # Daily backup gets only the bucket-restricted key. Object Lock and
+          # retention administration credentials must never enter this step.
+          RCLONE_CONFIG_B2_TYPE: b2
+          RCLONE_CONFIG_B2_ACCOUNT: ${{ secrets.BACKUP_B2_DAILY_ACCOUNT_ID }}
+          RCLONE_CONFIG_B2_KEY: ${{ secrets.BACKUP_B2_DAILY_APPLICATION_KEY }}
+        run: bash ./scripts/backup-production.sh
+
+      - name: Report scheduled-backup success
+        if: ${{ success() && github.event_name == 'schedule' }}
+        env:
+          BACKUP_SLOT: ${{ steps.trigger.outputs.slot }}
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+          BACKUP_HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
+          BACKUP_HEARTBEAT_16_URL: ${{ secrets.BACKUP_HEARTBEAT_16_URL }}
+          BACKUP_HEARTBEAT_20_URL: ${{ secrets.BACKUP_HEARTBEAT_20_URL }}
+        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh success "$BACKUP_SLOT"
+
+      - name: Report scheduled-backup failure
+        if: ${{ (failure() || cancelled()) && github.event_name == 'schedule' && steps.heartbeat_start.outcome == 'success' }}
+        env:
+          BACKUP_SLOT: ${{ steps.trigger.outputs.slot }}
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+          BACKUP_HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
+          BACKUP_HEARTBEAT_16_URL: ${{ secrets.BACKUP_HEARTBEAT_16_URL }}
+          BACKUP_HEARTBEAT_20_URL: ${{ secrets.BACKUP_HEARTBEAT_20_URL }}
+        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh fail "$BACKUP_SLOT"
