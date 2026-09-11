@@ -29,6 +29,30 @@ for (const slot of ["08", "12", "16", "20"]) {
 assert.match(workflow, /success\(\) && github\.event_name == 'schedule'/);
 assert.match(workflow, /\(failure\(\) \|\| cancelled\(\)\).*steps\.heartbeat_start\.outcome == 'success'/);
 
+const heartbeatTestJob = workflow.match(
+  /  heartbeat-failure-recovery-test:\n([\s\S]*?)\n  production-backup:/,
+)?.[1];
+assert.ok(heartbeatTestJob, "The isolated heartbeat failure-recovery job must exist");
+assert.match(
+  heartbeatTestJob,
+  /github\.event_name == 'workflow_dispatch' && inputs\.confirmation == 'HEARTBEAT-TEST'/,
+);
+assert.match(heartbeatTestJob, /id: heartbeat_test_fail/);
+assert.match(heartbeatTestJob, /steps\.heartbeat_test_fail\.outcome == 'success'/);
+assert.match(heartbeatTestJob, /run: sleep 60/);
+assert.match(heartbeatTestJob, /if: \$\{\{ always\(\) \}\}/);
+assert.match(heartbeatTestJob, /for attempt in 1 2 3/);
+assert.match(heartbeatTestJob, /notify-production-backup-heartbeat\.sh success 08/);
+assert.doesNotMatch(
+  heartbeatTestJob,
+  /SUPABASE|PRODUCTION_DB_URL|GDRIVE|BACKUP_B2|backup-production\.sh/,
+  "The heartbeat drill must not receive database or backup-storage access",
+);
+assert.match(
+  workflow,
+  /production-backup:\n\s+if: \$\{\{ github\.event_name != 'workflow_dispatch' \|\| inputs\.confirmation != 'HEARTBEAT-TEST' \}\}/,
+);
+
 for (const file of readdirSync(".github/workflows").filter((name) => name.endsWith(".yml"))) {
   const candidate = readFileSync(`.github/workflows/${file}`, "utf8");
   if (candidate.includes("environment: production")) {

@@ -27,7 +27,44 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  heartbeat-failure-recovery-test:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirmation == 'HEARTBEAT-TEST' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Mark the live 08:00 heartbeat as failed
+        id: heartbeat_test_fail
+        env:
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh fail 08
+
+      - name: Hold the controlled failure state for alert delivery
+        if: ${{ steps.heartbeat_test_fail.outcome == 'success' }}
+        run: sleep 60
+
+      - name: Recover the live 08:00 heartbeat
+        if: ${{ always() }}
+        env:
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+        run: |
+          for attempt in 1 2 3; do
+            if bash ./scripts/lib/notify-production-backup-heartbeat.sh success 08; then
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              echo "Recovery heartbeat attempt $attempt failed; retrying." >&2
+              sleep 10
+            fi
+          done
+          echo "Recovery heartbeat failed after 3 attempts. Follow the production heartbeat drill runbook immediately." >&2
+          exit 1
+
   production-backup:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.confirmation != 'HEARTBEAT-TEST' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
