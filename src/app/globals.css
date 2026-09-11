@@ -160,7 +160,7 @@ tfoot th { font-weight: 800; }
   .users-list-mobile { display: grid; gap: .75rem; }
   .user-mobile-details > div { grid-template-columns: minmax(6.75rem, 34%) minmax(0, 1fr); gap: .5rem; }
   .user-setting-row { grid-template-columns: 1fr; }
-  .page-heading { align-items: stretch; flex-direction: column; }
+  .page-heading { align-items: center; flex-direction: column; }
   .date-nav { justify-content: stretch; }
   .date-nav .button { flex: 1; }
   .booking-layout { grid-template-columns: 1fr; }
