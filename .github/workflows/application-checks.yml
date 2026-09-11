@@ -11,6 +11,9 @@ on:
       - "next.config.ts"
       - "proxy.ts"
       - "docs/BACKUP_RESTORE_*.md"
+      - "docs/ARCHITECTURE_OVERRIDE_2026-09-08_FREE_BACKUP.md"
+      - "docs/DECISION_2026-09-08_SUPABASE_FREE_AND_BACKUP_BASELINE.md"
+      - "docs/PRODUCTION_BACKUP_SCHEDULE_RELEASE_READINESS_2026-09-11.md"
       - "docs/STAGING_ADATBAZIS_DEPLOY.md"
       - "docs/PRODUCTION_ADATBAZIS_DEPLOY.md"
       - "docs/STAGING_WEB_ES_UAT_BOOTSTRAP.md"
@@ -20,6 +23,7 @@ on:
       - ".github/workflows/production-database-deploy.yml"
       - ".github/workflows/staging-uat-bootstrap.yml"
       - ".github/workflows/production-backup-drill.yml"
+      - ".github/workflows/production-backup.yml"
       - ".github/workflows/production-restore-drill.yml"
   push:
     branches: [main]
@@ -45,6 +49,10 @@ jobs:
       - run: bash ./scripts/test-production-db-url-guard.sh
       - run: bash ./scripts/test-production-backup-trigger.sh
       - run: bash ./scripts/test-production-backup-drill.sh
+      - run: bash ./scripts/test-production-backup-schedule-trigger.sh
+      - run: bash ./scripts/test-production-backup-heartbeat.sh
+      - run: node ./scripts/test-production-backup-schedule.mjs
+      - run: bash ./scripts/test-backup-production.sh
       - run: bash ./scripts/test-production-restore-trigger.sh
       - run: pnpm test
       - run: pnpm typecheck
