@@ -73,13 +73,30 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
         <div className="page-heading"><div><h2>Felhasználói lista</h2><p className="muted">A helyiségcsoportokból kapott foglalási jogok mellett az egyedi user–szoba kivételek továbbra is megmaradnak.</p></div>
           <form method="get" className="admin-editor-row compact"><label>Keresés<input name="q" defaultValue={params.q ?? ""} placeholder="Név, e-mail vagy telefon" /></label><button type="submit">Keresés</button>{query ? <Link className="button secondary" href="/admin/felhasznalok">Törlés</Link> : null}</form>
         </div>
-        <div style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Név</th><th>E-mail</th><th>Telefonszám</th><th>Helyiségcsoport</th><th>Ismétlés</th><th>Szerepkör</th><th>Állapot</th><th /></tr></thead><tbody>
+        <div className="users-table-desktop" style={{ overflowX: "auto" }}><table className="admin-table"><thead><tr><th>Név</th><th>E-mail</th><th>Telefonszám</th><th>Helyiségcsoport</th><th>Ismétlés</th><th>Szerepkör</th><th>Állapot</th><th /></tr></thead><tbody>
           {filteredProfiles.map((profile) => {
             const profileGroups = groupsForUser(profile.id);
             return <tr key={profile.id}><td><strong>{fullName(profile)}</strong></td><td>{profile.email}</td><td>{profile.phone || "—"}</td><td>{profileGroups.length ? profileGroups.map((group) => group.name).join(", ") : "—"}</td><td>{profile.role === "admin" ? "Admin" : profile.can_repeat_bookings ? "Igen" : "Nem"}</td><td>{profile.role === "admin" ? "Adminisztrátor" : "Normál felhasználó"}</td><td>{profile.is_active ? "Aktív" : "Inaktív"}</td><td><Link className="button secondary" href={`/admin/felhasznalok?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), user: profile.id }).toString()}`}>Szerkesztés</Link></td></tr>;
           })}
           {!filteredProfiles.length ? <tr><td colSpan={8} className="muted">Nincs a keresésnek megfelelő felhasználó.</td></tr> : null}
         </tbody></table></div>
+        <div className="users-list-mobile" aria-label="Felhasználók mobil nézete">
+          {filteredProfiles.map((profile) => {
+            const profileGroups = groupsForUser(profile.id);
+            return <article className="user-mobile-card" key={profile.id}>
+              <div className="user-mobile-card-heading"><h3>{fullName(profile)}</h3><span className={profile.is_active ? "user-status active" : "user-status"}>{profile.is_active ? "Aktív" : "Inaktív"}</span></div>
+              <dl className="user-mobile-details">
+                <div><dt>E-mail</dt><dd><a href={`mailto:${profile.email}`}>{profile.email}</a></dd></div>
+                <div><dt>Telefonszám</dt><dd>{profile.phone || "—"}</dd></div>
+                <div><dt>Helyiségcsoport</dt><dd>{profileGroups.length ? profileGroups.map((group) => group.name).join(", ") : "—"}</dd></div>
+                <div><dt>Ismétlődő foglalás</dt><dd>{profile.role === "admin" ? "Admin" : profile.can_repeat_bookings ? "Igen" : "Nem"}</dd></div>
+                <div><dt>Szerepkör</dt><dd>{profile.role === "admin" ? "Adminisztrátor" : "Normál felhasználó"}</dd></div>
+              </dl>
+              <Link className="button secondary user-mobile-edit" href={`/admin/felhasznalok?${new URLSearchParams({ ...(params.q ? { q: params.q } : {}), user: profile.id }).toString()}`}>Szerkesztés</Link>
+            </article>;
+          })}
+          {!filteredProfiles.length ? <p className="muted user-mobile-empty">Nincs a keresésnek megfelelő felhasználó.</p> : null}
+        </div>
       </section>
 
       {selectedProfile ? <section className="card wide-card stack">

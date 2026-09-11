@@ -74,10 +74,21 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
         <a className="button secondary" href={`/admin/havi-orak/reszletek-export?${detailExportQuery.toString()}`}>Részletes CSV</a>
       </form>
       {detailsError ? <p className="message error" role="alert">A tételes foglalások betöltése nem sikerült teljes körűen. Az adatokat ne használd ellenőrzésre, amíg a hiba fennáll.</p> : null}
-      <div className="table-scroll"><table>
+      <div className="monthly-detail-table-desktop table-scroll"><table>
         <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Mettől</th><th>Meddig</th><th>Óra</th></tr></thead>
         <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.total_hours)}</td></tr>)}</tbody>
       </table></div>
+      <div className="monthly-detail-list-mobile" aria-label="Tételes aktív foglalások mobil nézete">
+        {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
+          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.month}</span></div>
+          <dl className="report-mobile-details">
+            <div><dt>Dátum</dt><dd>{row.booking_date}</dd></div>
+            <div><dt>Helyiség</dt><dd>{row.room_name}</dd></div>
+            <div><dt>Időtartam</dt><dd>{time(row.start_time)}–{time(row.end_time)}</dd></div>
+            <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
+          </dl>
+        </article>)}
+      </div>
       {!details.length && !detailsError ? <p className="muted">A kiválasztott feltételekkel nincs aktív foglalás.</p> : null}
     </section>
   </section>;
