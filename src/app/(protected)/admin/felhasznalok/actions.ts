@@ -7,6 +7,7 @@ import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireEnv } from "@/lib/env";
+import { authCreateErrorMessage, generateTemporaryPassword } from "@/lib/admin-user-invite";
 
 function uuid(value: FormDataEntryValue | null) {
   const text = String(value ?? "");
@@ -82,7 +83,7 @@ export async function inviteUser(formData: FormData) {
   }
 
   const admin = createAdminClient();
-  const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+  const temporaryPassword = generateTemporaryPassword();
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password: temporaryPassword,
@@ -90,7 +91,7 @@ export async function inviteUser(formData: FormData) {
     user_metadata: { first_name: firstName, last_name: lastName },
   });
 
-  if (error || !data.user) redirect(resultUrl("hiba", "A felhasználó létrehozása nem sikerült. Ellenőrizd, hogy az e-mail cím nem szerepel-e már a rendszerben."));
+  if (error || !data.user) redirect(resultUrl("hiba", authCreateErrorMessage(error)));
   redirect(resultUrl("uzenet", "A felhasználó létrejött. Aktiváló/jelszóbeállító linket külön tudsz küldeni neki."));
 }
 
@@ -235,7 +236,7 @@ export async function importUsersCsv(formData: FormData) {
   let created = 0; let skipped = 0; const failures: string[] = [];
   for (const item of prepared) {
     if (existing.has(item.email)) { skipped += 1; continue; }
-    const temporaryPassword = `${crypto.randomUUID()}${crypto.randomUUID()}Aa1!`;
+    const temporaryPassword = generateTemporaryPassword();
     const createdUser = await admin.auth.admin.createUser({ email: item.email, password: temporaryPassword, email_confirm: true, user_metadata: { first_name: item.firstName, last_name: item.lastName } });
     if (createdUser.error || !createdUser.data.user) failures.push(`${item.line}. sor (${item.email})`); else created += 1;
   }
