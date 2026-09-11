@@ -128,7 +128,7 @@ tfoot th { font-weight: 800; }
   main > section:not(.booking-page) {
     width: calc(100vw - .75rem);
     margin-left: calc((100% - 100vw) / 2 + .375rem);
-    padding-inline: max(1rem, calc((100vw - 72rem) / 2));
+    padding-inline: 1rem;
   }
 }
 
