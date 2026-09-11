@@ -124,10 +124,11 @@ tfoot th { font-weight: 800; }
 
 
 @media (min-width: 52.01rem) {
-  /* Match the calendar's laptop layout: non-calendar protected pages use the full viewport width. */
+  /* Keep non-calendar content aligned with the centered desktop navigation. */
   main > section:not(.booking-page) {
     width: calc(100vw - .75rem);
     margin-left: calc((100% - 100vw) / 2 + .375rem);
+    padding-inline: max(1rem, calc((100vw - 72rem) / 2));
   }
 }
 
@@ -141,7 +142,7 @@ tfoot th { font-weight: 800; }
 
 @media (max-width: 52rem) {
   main { width: 100%; padding: .5rem 0 0; }
-  main > section:not(.booking-page) { width: 100%; margin-left: 0; }
+  main > section:not(.booking-page) { width: 100%; margin-left: 0; padding-inline: 1rem; }
   main > nav { margin: 0 1rem; padding: .7rem 0; gap: .65rem; font-size: .9rem; }
   main > nav span { display: none; }
   main > nav button { padding: .55rem .7rem; }
