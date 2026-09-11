@@ -27,7 +27,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  heartbeat-failure-recovery-test:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirmation == 'HEARTBEAT-TEST' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Send controlled 08:00 failure and recovery heartbeats
+        env:
+          BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+        run: |
+          bash ./scripts/lib/notify-production-backup-heartbeat.sh fail 08
+          sleep 60
+          bash ./scripts/lib/notify-production-backup-heartbeat.sh success 08
+
   production-backup:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.confirmation != 'HEARTBEAT-TEST' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
