@@ -62,6 +62,32 @@ A workflow IANA `Europe/Budapest` időzónát használ. Az automatikus teszt iga
 
 A GitHub Actions validáció és a független review eredménye az új PR head SHA-jához kötve külön rögzítendő.
 
+## Kontrollált 08:00 heartbeat failure–recovery drill runbook
+
+A `HEARTBEAT-TEST` a **valós production 08:00 Healthchecks.io monitort** módosítja; nem dummy checket használ. Kizárólag előre bejelentett karbantartási ablakban és a riasztási címzett tudtával futtatható.
+
+Várható hatás:
+
+- a `/fail` ping valós failure-riasztást válthat ki;
+- 60 másodperc után a recovery pingnek vissza kell állítania a monitort `Up` állapotba;
+- failure- és recovery e-mail érkezhet a konfigurált címzetthez;
+- adatbázis-backup, Google Drive/B2 művelet és schedule-aktiválás nem történhet.
+
+Előfeltételek:
+
+1. az aktuális PR head CI-je zöld és független review-ja jóváhagyott;
+2. a GitHub `production` Environment védelme csak engedélyezett branchből enged secret-hozzáférést;
+3. a Healthchecks felületen a 08:00 monitor a drill előtt `Up`;
+4. az operátor rendelkezik Healthchecks-hozzáféréssel és készen áll az azonnali kézi recoveryre.
+
+Végrehajtás és ellenőrzés:
+
+1. a `Production database backup` workflow kézi indításakor a confirmation pontosan `HEARTBEAT-TEST`;
+2. ellenőrizni kell, hogy kizárólag a `heartbeat-failure-recovery-test` job futott, a `production-backup` job pedig `skipped`;
+3. a futás után a 08:00 monitor legyen `Up`, és a failure/recovery események, valamint az értesítések legyenek dokumentálva;
+4. ha a monitor nem áll vissza `Up` állapotba, azonnal küldendő egy normál success ping a Healthchecks felületén megjelenített ping URL-re ellenőrzött kliensből; a URL-t tilos chatbe, ticketbe vagy naplóba másolni;
+5. ha a kézi success ping sem állítja helyre, a schedule nem aktiválható, az esetet incidensként kell rögzíteni, és a Healthchecks-konfigurációt ki kell vizsgálni.
+
 ## Aktiválási runbook – jelen PR-ban nem végrehajtandó
 
 1. CI legyen zöld az aktuális head SHA-n.
