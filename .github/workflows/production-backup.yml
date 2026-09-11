@@ -1,6 +1,9 @@
 name: Production database backup
 
 on:
+  push:
+    branches:
+      - ops/heartbeat-failure-recovery-test
   workflow_dispatch:
     inputs:
       confirmation:
@@ -28,7 +31,7 @@ concurrency:
 
 jobs:
   heartbeat-failure-recovery-test:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.confirmation == 'HEARTBEAT-TEST' }}
+    if: ${{ (github.event_name == 'push' && github.ref_name == 'ops/heartbeat-failure-recovery-test') || (github.event_name == 'workflow_dispatch' && inputs.confirmation == 'HEARTBEAT-TEST') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     environment: production
@@ -45,7 +48,7 @@ jobs:
           bash ./scripts/lib/notify-production-backup-heartbeat.sh success 08
 
   production-backup:
-    if: ${{ github.event_name != 'workflow_dispatch' || inputs.confirmation != 'HEARTBEAT-TEST' }}
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.confirmation != 'HEARTBEAT-TEST') }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: production
