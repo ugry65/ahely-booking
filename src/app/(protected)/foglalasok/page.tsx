@@ -1,11 +1,12 @@
-import Link from "next/link";
 import { requireActiveProfile } from "@/lib/auth";
 import { budapestLocalToIso, isValidDate } from "@/lib/booking-form";
 import { createClient } from "@/lib/supabase/server";
 import { CalendarBookingGrid, type BookableRoom, type CalendarBooking } from "./calendar-booking-grid";
+import { CalendarDateNavigation } from "./calendar-date-navigation";
 import { MobileDateStrip } from "./mobile-date-strip";
 import { QuickBookingDialog, type BookingUser } from "./quick-booking-dialog";
 import "./calendar-booking-actions.css";
+import "./calendar-header.css";
 
 type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage">;
 type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "booking_title" | "series_id" | "updated_at" | "can_manage">;
@@ -55,18 +56,19 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
     <section className="booking-page stack">
       <MobileDateStrip selectedDate={selectedDate} />
       <header className="desktop-calendar-header" aria-label="Naptár vezérlők">
-        <div style={{ display: "flex", alignItems: "center", gap: ".65rem", flexWrap: "wrap" }}>
-          <nav className="date-nav" aria-label="Naptári nap választása" style={{ gap: ".3rem" }}>
-            <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, -1)}`} aria-label="Előző nap">←</Link>
-            <Link className="button secondary" href={`/foglalasok?datum=${today}`}>Ma</Link>
-            <Link className="button secondary" href={`/foglalasok?datum=${shiftDate(selectedDate, 1)}`} aria-label="Következő nap">→</Link>
-          </nav>
-          <h1 style={{ margin: 0, fontSize: "clamp(1.05rem, 1.6vw, 1.35rem)", lineHeight: 1.15, whiteSpace: "nowrap" }}>{dateTitle(selectedDate)}</h1>
+        <div className="calendar-header-main">
+          <CalendarDateNavigation
+            previousDate={shiftDate(selectedDate, -1)}
+            today={today}
+            nextDate={shiftDate(selectedDate, 1)}
+            selectedDate={selectedDate}
+          />
+          <h1 className="calendar-date-title">{dateTitle(selectedDate)}</h1>
           <div id="calendar-selection-actions-slot" className="calendar-selection-actions-slot" />
         </div>
-        <form method="get" style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-          <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" style={{ width: "9.7rem", minHeight: "2.25rem", padding: ".35rem .5rem" }} />
-          <button type="submit" className="button secondary" style={{ minHeight: "2.25rem", padding: ".35rem .65rem" }}>Mutasd</button>
+        <form method="get" className="calendar-date-jump">
+          <input type="date" name="datum" defaultValue={selectedDate} aria-label="Ugrás dátumra" />
+          <button type="submit" className="button secondary">Mutasd</button>
         </form>
       </header>
 
