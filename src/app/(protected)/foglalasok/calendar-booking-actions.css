@@ -113,12 +113,13 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
     z-index: 30;
   }
   .calendar-scroll {
-    height: calc(100dvh - 5.5rem);
+    height: calc(100dvh - 4.25rem);
     min-height: 28rem;
     overflow: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
     touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 4rem;
   }
   .calendar-corner,
   .room-heading {
