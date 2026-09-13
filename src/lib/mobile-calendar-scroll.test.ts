@@ -19,9 +19,10 @@ const mobileNavCss = readFileSync(
 );
 
 describe("mobile booking calendar scroll", () => {
-  it("keeps the mobile calendar in one touch-scroll container", () => {
-    expect(css).toContain("height: calc(100dvh - 3.75rem)");
-    expect(css).toContain("overflow: auto");
+  it("leaves vertical scrolling to the page and horizontal scrolling to the calendar", () => {
+    expect(css).toContain("height: auto");
+    expect(css).toContain("overflow-x: auto");
+    expect(css).toContain("overflow-y: clip");
     expect(css).toContain("overscroll-behavior: auto");
     expect(css).toContain("padding-bottom: 10rem");
     expect(css).toContain("touch-action: pan-x pan-y");
@@ -29,7 +30,7 @@ describe("mobile booking calendar scroll", () => {
   });
 
   it("keeps the room and time headers visible while scrolling to 22:00", () => {
-    expect(css).toMatch(/\.calendar-corner,\s*\.room-heading\s*\{[^}]*position: sticky;[^}]*top: 0;/);
+    expect(css).toMatch(/\.calendar-corner,\s*\.room-heading\s*\{[^}]*position: sticky;[^}]*top: 7\.25rem;/);
     expect(css).toMatch(/\.time-axis\s*\{[^}]*position: sticky;[^}]*left: 0;/);
   });
 
