@@ -9,8 +9,16 @@ const css = readFileSync(
   new URL("../app/(protected)/foglalasok/calendar-booking-actions.css", import.meta.url),
   "utf8",
 );
+const mobileNavCss = readFileSync(
+  new URL("../app/skedda-mobile.css", import.meta.url),
+  "utf8",
+);
 
 describe("mobile booking calendar scroll", () => {
+  it("keeps the compact mobile navigation visible while scrolling", () => {
+    expect(mobileNavCss).toMatch(/\.mobile-app-nav\s*\{[^}]*position: sticky;[^}]*top: 0;[^}]*z-index: 50;/);
+  });
+
   it("keeps the mobile calendar in one touch-scroll container", () => {
     expect(css).toContain("height: calc(100dvh - 5.5rem)");
     expect(css).toContain("overflow: auto");
