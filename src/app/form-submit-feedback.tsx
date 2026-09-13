@@ -30,12 +30,17 @@ function resetAllPending() {
     .forEach(restorePendingElement);
 }
 
-function schedulePendingState(element: PendingElement) {
+function schedulePendingState(element: PendingElement, shouldApply: () => boolean = () => true) {
   element.dataset.pendingScheduled = "true";
   element.dataset.originalLabel = element instanceof HTMLInputElement ? element.value : element.textContent ?? "";
 
   window.requestAnimationFrame(() => {
     if (!element.isConnected) return;
+    if (!shouldApply()) {
+      delete element.dataset.originalLabel;
+      delete element.dataset.pendingScheduled;
+      return;
+    }
     if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) element.disabled = true;
     element.setAttribute("aria-busy", "true");
     element.classList.add("is-submitting");
@@ -108,7 +113,7 @@ export function FormSubmitFeedback() {
         event.preventDefault();
         return;
       }
-      schedulePendingState(submitter);
+      schedulePendingState(submitter, () => !event.defaultPrevented);
     };
 
     const handleNavigationClick = (event: MouseEvent) => {

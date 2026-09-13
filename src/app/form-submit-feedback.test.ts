@@ -14,6 +14,8 @@ describe("form submit feedback", () => {
     const source = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.tsx"), "utf8");
     expect(source).toContain('document.addEventListener("submit", handleSubmit, true)');
     expect(source).toContain('element.dataset.pendingScheduled = "true"');
+    expect(source).toContain("schedulePendingState(submitter, () => !event.defaultPrevented)");
+    expect(source).toContain("if (!shouldApply())");
     expect(source).toContain("event.preventDefault()");
     expect(source).toContain("element.disabled = true");
     expect(source).toContain('element.setAttribute("aria-busy", "true")');
