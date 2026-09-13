@@ -152,6 +152,12 @@ Kiindulási javaslat:
 
 A végleges technikai architektúrát a fejlesztés elején rögzíteni kell.
 
+## 2026-09-13-i Auth password reset production baseline
+
+A production jelszó-visszaállítás teljes folyamata sikeresen tesztelt, regresszióvédett baseline. A hiteles Supabase Auth URL/redirect, Vercel `SITE_URL`, custom Resend SMTP és magyar Auth e-mail-sablon beállításokat, valamint a kötelező hétpontos regressziós ellenőrzést a `docs/DECISION_2026-09-13_AUTH_PASSWORD_RESET_EMAIL.md` dokumentum rögzíti.
+
+A Supabase Auth custom SMTP és az alkalmazás booking e-mail Resend transportja két külön rendszer. Production Auth/SMTP/environment konfiguráció a döntési dokumentum rögzítése miatt nem módosítható automatikusan.
+
 ## Fejlesztési munkamód
 1. FS
 2. Technikai architektúra
