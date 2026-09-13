@@ -109,22 +109,26 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
   }
   .mobile-date-toolbar {
     position: sticky;
-    top: 0;
+    top: 3rem;
     z-index: 30;
   }
   .calendar-scroll {
-    height: calc(100dvh - 3.75rem);
-    min-height: 28rem;
-    overflow: auto;
+    height: auto;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: clip;
     overscroll-behavior: auto;
     touch-action: pan-x pan-y;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 10rem;
   }
+  .calendar-card {
+    overflow: visible;
+  }
   .calendar-corner,
   .room-heading {
     position: sticky;
-    top: 0;
+    top: 7.25rem;
   }
   .room-heading {
     z-index: 8;
