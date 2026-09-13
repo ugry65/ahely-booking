@@ -5,6 +5,10 @@ const component = readFileSync(
   new URL("../app/(protected)/foglalasok/calendar-booking-grid.tsx", import.meta.url),
   "utf8",
 );
+const quickBooking = readFileSync(
+  new URL("../app/(protected)/foglalasok/quick-booking-dialog.tsx", import.meta.url),
+  "utf8",
+);
 const css = readFileSync(
   new URL("../app/(protected)/foglalasok/calendar-booking-actions.css", import.meta.url),
   "utf8",
@@ -16,10 +20,10 @@ const mobileNavCss = readFileSync(
 
 describe("mobile booking calendar scroll", () => {
   it("keeps the mobile calendar in one touch-scroll container", () => {
-    expect(css).toContain("height: calc(100dvh - 4.25rem)");
+    expect(css).toContain("height: calc(100dvh - 3.75rem)");
     expect(css).toContain("overflow: auto");
     expect(css).toContain("overscroll-behavior: auto");
-    expect(css).toContain("padding-bottom: 4rem");
+    expect(css).toContain("padding-bottom: 10rem");
     expect(css).toContain("touch-action: pan-x pan-y");
     expect(css).toContain("-webkit-overflow-scrolling: touch");
   });
@@ -31,7 +35,13 @@ describe("mobile booking calendar scroll", () => {
 
   it("keeps the compact mobile navigation sticky", () => {
     expect(mobileNavCss).toMatch(/\.mobile-app-nav\s*\{[^}]*position: sticky;[^}]*top: 0;[^}]*z-index: 50;/);
-    expect(mobileNavCss).toContain("min-height: 3.25rem");
+    expect(mobileNavCss).toContain("min-height: 3rem");
+  });
+
+  it("keeps the quick-booking action above mobile browser controls", () => {
+    expect(css).toContain(".quick-booking-fab");
+    expect(css).toContain("bottom: calc(5rem + env(safe-area-inset-bottom)) !important");
+    expect(quickBooking).toContain('className="quick-booking-fab"');
   });
 
   it("cancels a pending long press when native scrolling starts", () => {
