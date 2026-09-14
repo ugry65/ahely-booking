@@ -17,7 +17,7 @@
     background: #fff;
   }
   .mobile-app-brand { font-size: 1.05rem; text-decoration: none; }
-  .mobile-app-menu { position: relative; }
+  .mobile-app-menu { position: relative; margin: 0; padding: 0; border: 0; }
   .mobile-app-menu summary {
     display: grid;
     place-items: center;
