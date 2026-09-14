@@ -10,7 +10,7 @@ export default async function MigrationAdminPage() {
         <div>
           <p className="eyebrow">Adminisztráció</p>
           <h1>Migráció</h1>
-          <p className="muted">AllBooked forrásadat ellenőrzése és kontrollált production import előkészítése.</p>
+          <p className="muted">AllBooked/Skedda ügyfelek és foglalásaik egyenkénti, kontrollált átmigrálása.</p>
         </div>
       </header>
       <MigrationDryRunForm />

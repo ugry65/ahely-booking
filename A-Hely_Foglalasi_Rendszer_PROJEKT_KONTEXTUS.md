@@ -158,6 +158,10 @@ A production jelszó-visszaállítás teljes folyamata sikeresen tesztelt, regre
 
 A Supabase Auth custom SMTP és az alkalmazás booking e-mail Resend transportja két külön rendszer. Production Auth/SMTP/environment konfiguráció a döntési dokumentum rögzítése miatt nem módosítható automatikusan.
 
+## 2026-09-14-i AllBooked/Skedda ügyfélmigráció baseline
+
+A valódi ügyfeleket az AllBooked/Skedda rendszerből ügyfelenként, az adott ügyfél foglalásaival együtt kell átmigrálni. A Papp Dalma-próba bizonyította az alapfolyamatot; az admin `Migráció` menü ennek általánosított, tranzakciós és idempotens változatát biztosítja. Egy fájlban pontosan egy ügyfél lehet, a Tréningterem használati típusát kötelező kézzel besorolni, legacy pénzügyi adat és megjegyzés nem migrálható. Operátori és regressziós szabályok: `docs/ALLBOOKED_CUSTOMER_MIGRATION.md`.
+
 ## Fejlesztési munkamód
 1. FS
 2. Technikai architektúra
