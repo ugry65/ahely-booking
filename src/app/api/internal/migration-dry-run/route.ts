@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireAdmin } from "@/lib/auth";
-import { ALLBOOKED_ROOM_MAPPING, buildAllBookedDryRun } from "@/lib/allbooked-migration";
+import { ALLBOOKED_ROOM_MAPPING, buildAllBookedDryRun, validateAllBookedCustomerImport } from "@/lib/allbooked-migration";
 
 export const runtime = "nodejs";
 
@@ -18,8 +18,9 @@ export async function POST(request: Request) {
   }
 
   const result = buildAllBookedDryRun(await file.text(), ALLBOOKED_ROOM_MAPPING);
-  return NextResponse.json(result, {
-    status: result.valid ? 200 : 422,
+  const importApproval = validateAllBookedCustomerImport(result);
+  return NextResponse.json({ ...result, importApproval }, {
+    status: importApproval.valid ? 200 : 422,
     headers: { "Cache-Control": "no-store" },
   });
 }
