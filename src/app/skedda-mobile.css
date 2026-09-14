@@ -3,27 +3,30 @@
 @media (max-width: 52rem) {
   .desktop-app-nav { display: none; }
   .mobile-app-nav {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
     margin: 0;
-    padding: .7rem 1rem;
+    min-height: 3rem;
+    padding: .1rem .75rem;
     border-bottom: 1px solid #d8d4c8;
     background: #fff;
   }
   .mobile-app-brand { font-size: 1.05rem; text-decoration: none; }
-  .mobile-app-menu { position: relative; }
+  .mobile-app-menu { position: relative; margin: 0; padding: 0; border: 0; }
   .mobile-app-menu summary {
     display: grid;
     place-items: center;
-    width: 2.7rem;
-    height: 2.7rem;
+    width: 2rem;
+    height: 2rem;
     border-radius: 50%;
     background: #eef1ef;
     color: #235c43;
-    font-size: 1.35rem;
+    font-size: 1rem;
     cursor: pointer;
     list-style: none;
   }

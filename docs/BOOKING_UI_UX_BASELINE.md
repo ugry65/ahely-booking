@@ -122,17 +122,20 @@ A részletes UAT státuszok forrása továbbra is `docs/FUNKCIONALIS_UAT_CHECKLI
 
 Ezeket nem szabad összekeverni a már elfogadott baseline elemekkel:
 
-- mobil függőleges görgetés 18:00 körüli időszakos „megakadása” kivizsgálandó; a kívánt állapot az egyetlen folyamatos scroll 07:00–22:00 között;
 - saját foglalások naptárnézetének teljes megvalósítása;
 - ismétlődő foglalás kivételdátumainak Skedda-szerű naptárválasztója;
 - további pixel/spacing finomítások a Skedda képernyőkihasználásához.
+
+A mobil függőleges görgetés 18:00 körüli megakadásának és a dátum-/helyiségfejléc eltűnésének korábbi javítása a `37ab8fd` merge-ben már valós mobil UAT-on megfelelt, de az csak a `feature/82-pricing-modes` ágba került. A production `main` számára visszaállított baseline: egyetlen, 07:00–22:00 között folyamatosan görgethető mobil naptárkonténer, benne függőlegesen sticky dátum-/helyiségfejléc és vízszintesen sticky időtengely; a scroll minden függőben lévő long-press szándékot megszakít.
 
 ## 10. Regresszióvédelmi szabály
 
 Minden, a foglalási naptárt, mobil CSS-t, foglalási modált vagy navigációt érintő PR előtt és után ellenőrizni kell legalább:
 
 - bal órasáv sticky maradt-e;
+- dátum- és helyiségfejléc függőleges görgetés közben sticky maradt-e 22:00-ig;
 - mobil scroll működik-e a teljes naptáron;
+- gyors mobil görgetés nem akad-e meg 18:00 körül függő long-press miatt;
 - long press nem vált-e vissza azonnali kijelölésre;
 - ujjfelengedés után megnyílik-e a foglalási modál;
 - a `+` gyorsfoglalás megmaradt-e;
