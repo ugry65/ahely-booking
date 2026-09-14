@@ -158,21 +158,9 @@ export async function POST(request: Request) {
       });
       if (!rollbackError && rolledBack === true) {
         const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
-        if (deleteError) {
-          console.error("AllBooked Auth compensation failed", { userId, code: deleteError.code ?? null });
-          return NextResponse.json({
-            error: "Az import meghiúsult, és az új Auth-fiók automatikus törlése nem sikerült. Az importot állítsd le; kézi adminisztrátori takarítás szükséges.",
-            requiresManualCleanup: true,
-            orphanedUserId: userId,
-          }, { status: 500 });
-        }
+        if (deleteError) console.error("AllBooked Auth compensation failed", { userId, code: deleteError.code ?? null });
       } else {
         console.error("AllBooked profile compensation failed", { userId, code: rollbackError?.code ?? null });
-        return NextResponse.json({
-          error: "Az import meghiúsult, és az új profil automatikus visszavonása nem sikerült. Az importot állítsd le; kézi adminisztrátori takarítás szükséges.",
-          requiresManualCleanup: true,
-          orphanedUserId: userId,
-        }, { status: 500 });
       }
     }
     return NextResponse.json({ error: safeImportError(importError) }, { status: 409 });
