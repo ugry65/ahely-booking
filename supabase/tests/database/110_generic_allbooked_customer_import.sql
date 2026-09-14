@@ -1,6 +1,6 @@
 begin;
 
-select plan(33);
+select plan(36);
 
 select has_function('public','admin_import_allbooked_customer',array['uuid','uuid','text','text','text','text','text[]','jsonb','uuid'],'Az általános ügyfélimport függvény létezik');
 select ok(not has_function_privilege('authenticated','public.admin_import_allbooked_customer(uuid,uuid,text,text,text,text,text[],jsonb,uuid)','EXECUTE'),'Az authenticated nem hívhatja az importot');
@@ -51,6 +51,20 @@ reset role;
 select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000112'),3::bigint,'Az újrafuttatás nem duplikál foglalást');
 select is((select count(*) from public.audit_logs where action='allbooked.booking_imported' and entity_id in (select booking_id::text from public.allbooked_migration_bookings where user_id='00000000-0000-0000-0000-000000000112')),3::bigint,'Az újrafuttatás nem duplikál foglalásauditot');
 
+create temp table altered_payload(data jsonb);
+insert into altered_payload
+select jsonb_set(data, '{0,bookingTitle}', '"Megváltozott foglalás"'::jsonb) from generic_payload;
+grant select on altered_payload to service_role;
+set local role service_role;
+select throws_ok(
+  $$select public.admin_import_allbooked_customer(
+    '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
+    'Egy','Ugyfel','+36301234567',array['Forrás tér','Tréningterem'],(select data from pg_temp.altered_payload),
+    '11000000-0000-0000-0000-000000000009')$$,
+  'P0001','Az idempotens újrafuttatás eltérő meglévő foglalást talált.','Az azonos fingerprint eltérő payloadja fail-closed módon elutasított'
+);
+reset role;
+
 set local role service_role;
 select throws_ok(
   $$select public.admin_import_allbooked_customer(
@@ -96,6 +110,15 @@ reset role;
 select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000113'),0::bigint,'Ütközés után nem maradt részleges foglalás');
 select is((select count(*) from public.access_group_members where user_id='00000000-0000-0000-0000-000000000113'),0::bigint,'Ütközés után nem maradt részleges jogosultság');
 select is((select count(*) from public.allbooked_migration_bookings where user_id='00000000-0000-0000-0000-000000000113'),0::bigint,'Ütközés után nem maradt ledgerrekord');
+
+set local role service_role;
+select lives_ok(
+  $$select public.admin_rollback_empty_allbooked_profile(
+    '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000113','ugyfel-ketto@example.invalid')$$,
+  'Az üres, üzleti adat nélküli profil kompenzáló törlése sikeres'
+);
+reset role;
+select is((select count(*) from public.profiles where id='00000000-0000-0000-0000-000000000113'),0::bigint,'A kompenzáló törlés után nem marad üres profil');
 
 select ok(not has_function_privilege('authenticated','public.admin_void_papp_dalma_test_import(uuid,text,uuid)','EXECUTE'),'Az authenticated nem vonhatja vissza a próbaimportot');
 select ok(has_function_privilege('service_role','public.admin_void_papp_dalma_test_import(uuid,text,uuid)','EXECUTE'),'A próbaimport-visszavonás service role művelet');
