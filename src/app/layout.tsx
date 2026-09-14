@@ -3,8 +3,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./skedda-mobile.css";
 import "./mobile-hour-grid.css";
-import "./form-submit-feedback.css";
-import { FormSubmitFeedback } from "./form-submit-feedback";
 
 export const metadata: Metadata = {
   title: "A-Hely foglalás",
@@ -14,10 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="hu">
-      <body>
-        <FormSubmitFeedback />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

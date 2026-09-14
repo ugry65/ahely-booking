@@ -2,11 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   ALLBOOKED_ROOM_MAPPING,
-  customerImportConfirmation,
   approvedBudapestLocalToIso,
   buildAllBookedDryRun,
   IGNORED_ALLBOOKED_PRICING_FIELDS,
-  validateAllBookedCustomerImport,
   validatePappDalmaImport,
 } from "./allbooked-migration";
 
@@ -96,7 +94,6 @@ describe("buildAllBookedDryRun", () => {
       durationMinutes: 60,
       bookingTitle: null,
     });
-    expect(result.bookings[0].sourceFingerprint).toBe("922e5d7ca0e6068333c953c2f1a0d01fafada1d9fd4a975fb471118bc6155955");
     expect(result.ignoredPricingFields).toEqual([...IGNORED_ALLBOOKED_PRICING_FIELDS]);
     expect(JSON.stringify(result)).not.toContain("1 700,00");
     expect(result.users[0].accessTags).not.toContain("1700");
@@ -147,58 +144,6 @@ describe("buildAllBookedDryRun", () => {
     const result = buildAllBookedDryRun(`${header}\n${row({ "Duration (minutes)": "90" })}\n`, { "Forrás tér": "Forrás tér" });
     expect(result.valid).toBe(false);
     expect(result.issues[0].code).toBe("duration_mismatch");
-  });
-
-  it("rejects bookings outside the supported half-hour grid", () => {
-    const result = buildAllBookedDryRun(`${header}\n${row({ "Scheduled start": "2026-09-03 09:15", End: "2026-09-03 10:15" })}\n`, ALLBOOKED_ROOM_MAPPING);
-    expect(result.valid).toBe(false);
-    expect(result.issues[0].code).toBe("unsupported_time_grid");
-  });
-
-  it("rejects a booking title longer than the database limit", () => {
-    const result = buildAllBookedDryRun(`${header}\n${row({ "Booking title": "x".repeat(101) })}\n`, ALLBOOKED_ROOM_MAPPING);
-    expect(result.valid).toBe(false);
-    expect(result.issues[0].code).toBe("booking_title_too_long");
-  });
-});
-
-describe("generic single-customer AllBooked import gate", () => {
-  it("accepts one customer, derives canonical access groups and requires an exact confirmation", () => {
-    const csv = [
-      header,
-      row(),
-      row({
-        "Scheduled start": "2026-10-08 11:30",
-        End: "2026-10-08 13:00",
-        "Duration (minutes)": "90",
-        Spaces: "1.Szoba-családi",
-      }),
-      row({
-        "Scheduled start": "2026-10-09 14:00",
-        End: "2026-10-09 15:00",
-        Spaces: "Tréningterem",
-      }),
-    ].join("\n");
-    const result = buildAllBookedDryRun(csv, ALLBOOKED_ROOM_MAPPING);
-    const approval = validateAllBookedCustomerImport(result);
-
-    expect(approval.valid).toBe(true);
-    expect(approval.user?.email).toBe("pappdalma17@gmail.com");
-    expect(approval.requiredAccessGroups).toEqual(["Forrás tér", "Másik Hely", "Tréningterem"]);
-    expect(approval.trainingBookings).toHaveLength(1);
-    expect(approval.confirmation).toBe("IMPORT pappdalma17@gmail.com 3");
-  });
-
-  it("rejects a file containing more than one customer", () => {
-    const csv = [header, row(), row({ "Holder email": "masik@example.com", "Holder first name": "Másik" })].join("\n");
-    const approval = validateAllBookedCustomerImport(buildAllBookedDryRun(csv, ALLBOOKED_ROOM_MAPPING));
-
-    expect(approval.valid).toBe(false);
-    expect(approval.issues).toContain("Egy CSV pontosan egy foglaló adatait tartalmazhatja.");
-  });
-
-  it("builds a case-normalized, customer-specific confirmation phrase", () => {
-    expect(customerImportConfirmation("Customer@Example.COM", 12)).toBe("IMPORT customer@example.com 12");
   });
 });
 

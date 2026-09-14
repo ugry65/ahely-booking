@@ -57,65 +57,6 @@ export const ALLBOOKED_ROOM_MAPPING: Record<string, string> = {
   "Forrás tér": "Forrás tér",
 };
 
-export const ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING: Record<string, string> = {
-  "Gyerek szoba": "A-Hely",
-  "Pitypang szoba": "A-Hely",
-  "Csoport szoba": "A-Hely",
-  "1.Szoba-családi": "Másik Hely",
-  "2.Szoba": "Másik Hely",
-  "3.Szoba": "Másik Hely",
-  "4.Szoba": "Másik Hely",
-  "5.Szoba": "Másik Hely",
-  "6.Szoba": "Másik Hely",
-  "Tréningterem": "Tréningterem",
-  "Forrás tér": "Forrás tér",
-};
-
-export const MAX_ALLBOOKED_CUSTOMER_BOOKINGS = 2_000;
-
-export type AllBookedCustomerImportApproval = {
-  valid: boolean;
-  user: NormalizedAllBookedUser | null;
-  requiredAccessGroups: string[];
-  trainingBookings: NormalizedAllBookedBooking[];
-  confirmation: string | null;
-  issues: string[];
-};
-
-export function customerImportConfirmation(email: string, bookingCount: number) {
-  return `IMPORT ${email.toLowerCase()} ${bookingCount}`;
-}
-
-export function validateAllBookedCustomerImport(result: AllBookedDryRunResult): AllBookedCustomerImportApproval {
-  const user = result.users.length === 1 ? result.users[0] : null;
-  const issues: string[] = [];
-  if (!result.valid) issues.push("A CSV dry-run hibát tartalmaz.");
-  if (!user) issues.push("Egy CSV pontosan egy foglaló adatait tartalmazhatja.");
-  if (result.bookings.length < 1) issues.push("Legalább egy foglalás szükséges az ügyfélmigrációhoz.");
-  if (result.bookings.length > MAX_ALLBOOKED_CUSTOMER_BOOKINGS) {
-    issues.push(`Egy ügyfélnél legfeljebb ${MAX_ALLBOOKED_CUSTOMER_BOOKINGS} foglalás importálható egyszerre.`);
-  }
-  if (user && result.bookings.some((booking) => booking.holderEmail !== user.email)) {
-    issues.push("A foglalások nem ugyanahhoz az ügyfélhez tartoznak.");
-  }
-
-  const requiredAccessGroups = [...new Set(result.bookings.map((booking) => ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING[booking.roomTarget]))]
-    .filter((group): group is string => Boolean(group))
-    .sort((left, right) => left.localeCompare(right, "hu"));
-  if (result.bookings.some((booking) => !ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING[booking.roomTarget])) {
-    issues.push("Legalább egy helyiséghez nincs kanonikus helyiségcsoport.");
-  }
-
-  return {
-    valid: issues.length === 0,
-    user,
-    requiredAccessGroups,
-    trainingBookings: result.bookings.filter((booking) => booking.roomTarget === "Tréningterem"),
-    confirmation: user ? customerImportConfirmation(user.email, result.bookings.length) : null,
-    issues,
-  };
-}
-
 export const PAPP_DALMA_IMPORT_CONFIRMATION = "IMPORT-PAPP-DALMA-PRODUCTION";
 
 export function validatePappDalmaImport(result: AllBookedDryRunResult) {
@@ -338,7 +279,7 @@ export function buildAllBookedDryRun(
       issues.push({ line, code: "unsupported_addons", message: "Az első migrációs scope-ban Add-On nem támogatott." });
       continue;
     }
-    if (!isLocalDateTime(startLocal) || !isLocalDateTime(endLocal) || !Number.isInteger(durationMinutes) || durationMinutes < 60 || durationMinutes % 30 !== 0) {
+    if (!isLocalDateTime(startLocal) || !isLocalDateTime(endLocal) || !Number.isInteger(durationMinutes) || durationMinutes <= 0) {
       issues.push({ line, code: "invalid_time", message: "Hibás kezdés, befejezés vagy időtartam." });
       continue;
     }
@@ -346,14 +287,6 @@ export function buildAllBookedDryRun(
     const endMs = localToUtcMs(endLocal);
     if (startMs === null || endMs === null || endMs <= startMs || (endMs - startMs) / 60_000 !== durationMinutes) {
       issues.push({ line, code: "duration_mismatch", message: "A kezdés/befejezés és a Duration (minutes) nem egyezik." });
-      continue;
-    }
-    if (!/(?:00|30)$/.test(startLocal) || !/(?:00|30)$/.test(endLocal) || startLocal.slice(0, 10) !== endLocal.slice(0, 10)) {
-      issues.push({ line, code: "unsupported_time_grid", message: "Csak azonos napon belüli, egész vagy félórás foglalás importálható." });
-      continue;
-    }
-    if (bookingTitle && bookingTitle.length > 100) {
-      issues.push({ line, code: "booking_title_too_long", message: "A foglalás címe legfeljebb 100 karakter lehet." });
       continue;
     }
     if (note) {
@@ -375,9 +308,7 @@ export function buildAllBookedDryRun(
     }
     users.set(email, normalizedUser);
 
-    // Versioned separately from the historical Papp Dalma trial fingerprints,
-    // so a formally voided trial can never block a later real customer import.
-    const sourceFingerprint = fingerprint(["allbooked-customer-v2", email, roomSource, startLocal, endLocal, bookingType]);
+    const sourceFingerprint = fingerprint([email, roomSource, startLocal, endLocal, bookingType]);
     if (fingerprints.has(sourceFingerprint)) {
       issues.push({ line, code: "duplicate_booking", message: "Duplikált forrásfoglalás a normalizált kulcs alapján." });
       continue;

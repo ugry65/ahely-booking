@@ -48,26 +48,6 @@ Az import:
 
 A számlázási adatokat nem kell importálni: ezeket a user saját maga adja meg az első belépéskor.
 
-### AllBooked/Skedda ügyfél és foglalások egyenkénti migrációja
-
-Az általános CSV user-importtól külön adminfolyamat szolgál a régi AllBooked/Skedda rendszerből érkező ügyfelek átvételére. Egy exportfájl pontosan egy ügyfél adatait és 1–2000 foglalását tartalmazhatja. Az admin a `Migráció` menüben előbb írásmentes dry-runt futtat, majd csak PASS eredmény és az ügyfélhez generált pontos megerősítő szöveg után indíthat production importot.
-
-Az import:
-
-- tranzakciós és idempotens;
-- ellenőrzi az Auth user és a profil azonosságát;
-- a foglalások helyiségeiből vezeti le az `A-Hely`, `Másik Hely`, `Tréningterem` és `Forrás tér` csoportjogokat;
-- a normál helyiségeket mindig `Egyéni` használattal tölti be;
-- minden Tréningterem-foglaláshoz kötelező adminisztrátori `Egyéni` vagy `Csoportos` besorolást kér;
-- aktív időpontütközésnél vagy nem biztonságosan üres célusernél teljes egészében leáll;
-- forrás-ujjlenyomat-ledgerrel védi az újrafuttatást a duplikációtól;
-- megőrzi a foglalási megnevezést, de megjegyzést, legacy árat és fizetési státuszt nem vesz át;
-- minden létrehozott profil-, jogosultság- és foglalásváltozást auditál;
-- siker után tételes reconciliation eredményt jelenít meg;
-- nem küld automatikusan aktiváló e-mailt és nem ad automatikusan ismétlődő foglalási jogot.
-
-Az aktiváló linket és az esetleg szükséges ismétlődési jogot az admin az ellenőrzött import után, külön művelettel állítja be. A részletes operátori folyamat: `docs/ALLBOOKED_CUSTOMER_MIGRATION.md`.
-
 ## Aktiváló és jelszó-visszaállító link adminból
 
 Az admin aktív userenként külön linkküldő műveletet kap.
