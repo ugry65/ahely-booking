@@ -1,0 +1,52 @@
+name: Supabase production availability health-check
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+      timezone: "Europe/Budapest"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-production-availability-healthcheck
+  cancel-in-progress: true
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends postgresql-client
+
+      - name: Validate dedicated read-only connection
+        env:
+          SUPABASE_HEALTHCHECK_DB_URL: ${{ secrets.SUPABASE_HEALTHCHECK_DB_URL }}
+        run: |
+          if [ -z "${SUPABASE_HEALTHCHECK_DB_URL:-}" ]; then
+            echo "Missing SUPABASE_HEALTHCHECK_DB_URL production secret." >&2
+            exit 1
+          fi
+          case "$SUPABASE_HEALTHCHECK_DB_URL" in
+            postgres://*|postgresql://*) ;;
+            *)
+              echo "SUPABASE_HEALTHCHECK_DB_URL must be a PostgreSQL connection URI." >&2
+              exit 1
+              ;;
+          esac
+
+      - name: Execute read-only database probe
+        env:
+          SUPABASE_HEALTHCHECK_DB_URL: ${{ secrets.SUPABASE_HEALTHCHECK_DB_URL }}
+        run: |
+          if ! PGCONNECT_TIMEOUT=15 psql "$SUPABASE_HEALTHCHECK_DB_URL" \
+            -X -v ON_ERROR_STOP=1 -Atqc "select 1;" >/dev/null; then
+            echo "Supabase production read-only health-check failed." >&2
+            exit 1
+          fi
+          echo "Supabase production read-only health-check passed."
