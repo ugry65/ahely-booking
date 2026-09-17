@@ -38,6 +38,8 @@ describe("form submit feedback", () => {
     expect(source).toContain("PENDING_RESET_TIMEOUT_MS = 30_000");
     expect(source).toContain('window.addEventListener("pageshow", resetAllPending)');
     expect(source).toContain('window.addEventListener("popstate", resetAllPending)');
+    expect(source).toContain("const handleRouteMutation = () =>");
+    expect(source).toContain("const observer = new MutationObserver(handleRouteMutation)");
     expect(source).toContain('window.addEventListener("error", resetAllPending)');
     expect(source).toContain('window.addEventListener("unhandledrejection", resetAllPending)');
   });
