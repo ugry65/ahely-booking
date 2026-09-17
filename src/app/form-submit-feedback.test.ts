@@ -52,7 +52,8 @@ describe("form submit feedback", () => {
     expect(source).toContain('editor.setAttribute("aria-modal", "true")');
     expect(source).toContain('editor.setAttribute("aria-labelledby", title.id)');
     expect(source).toContain('event.key !== "Escape"');
-    expect(source).toContain("new MutationObserver(syncUserEditorModal)");
+    expect(source).toContain("const handleRouteMutation = () =>");
+    expect(source).toContain("new MutationObserver(handleRouteMutation)");
     expect(css).toContain("body.user-editor-modal-open::before");
     expect(css).toContain(".user-editor-modal");
     expect(css).toContain("max-height: 90vh");
