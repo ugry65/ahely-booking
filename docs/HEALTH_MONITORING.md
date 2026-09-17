@@ -62,26 +62,24 @@ Production read-only ellenőrzés, 2026-09-17:
 |---|---|---|
 | Staging migration és 200/503 smoke | Külön staging-ellenőrzés szükséges | Nem tekintjük production bizonyítéknak |
 | Production deploy és publikus endpoint smoke | **PASS** | Védett production deploy; publikus `/api/health` HTTP 200 |
-| Külső HTTP monitor | **OPEN** | UptimeRobot vagy más külső monitor létrehozása szükséges |
-| Kontrollált DOWN/UP alert és recovery drill | **OPEN** | A külső monitor létrehozása után futtatható |
+| Külső HTTP monitor | **PASS** | UptimeRobot HTTP monitor, 5 perces ellenőrzés |
+| Kontrollált DOWN/UP alert és recovery drill | **PASS** | Szándékos 404 teszt; Down e-mail, majd URL-visszaállítás és Up recovery |
 | Négy backup heartbeat monitor és riasztás igazolása | **OPEN** | A négy monitor és az élő riasztási/recovery bizonyíték dokumentálandó |
 
-A production adatbázis-migráció és a publikus health endpoint smoke lezárult. A külső monitorok és a hozzájuk tartozó alert/recovery bizonyítékok üzemeltetési lépések; ezeket a repository nem tudja automatikusan létrehozni vagy hitelesen helyettesíteni.
+A production adatbázis-migráció, a publikus health endpoint smoke és a külső HTTP monitor DOWN/UP tesztje lezárult. A backup heartbeat monitorok külön rendszert képeznek; azok végső bizonyítékát külön kell rögzíteni.
 
-## Külső monitor ajánlott beállítása
+## Külső monitor
 
-Első production irány: **UptimeRobot Free**.
+Production monitor:
 
-Javasolt HTTP monitor:
-
+- név: `A-Hely production health`;
 - URL: `https://ahely-booking.vercel.app/api/health`;
-- method: GET;
+- típus: HTTP/S;
 - interval: 5 perc;
-- elvárt HTTP státusz: 200;
-- opcionális keyword: `"ok":true`;
-- értesítési címzett: a production üzemeltetője.
+- értesítés: e-mail;
+- aktuális állapot: Up.
 
-A monitor létrehozása után kontrollált DOWN/UP teszt szükséges. A teszt nem módosíthat production adatot; kizárólag a monitorozási és értesítési láncot igazolja.
+A kontrollált teszt során a monitor ideiglenesen egy nem létező URL-t kapott, amely HTTP 404 hibát adott. Az UptimeRobot Down e-mailt küldött, majd az eredeti URL visszaállítása után a monitor Up állapotba került. A teszt nem módosította a production alkalmazást vagy adatbázist.
 
 ## Backup heartbeat monitorok
 
@@ -91,5 +89,7 @@ A backup schedule és a négy heartbeat monitor külön rendszer a Supabase heal
 - `backup-12`;
 - `backup-16`;
 - `backup-20`.
+
+A backup workflow mai, kézi ellenőrzés alapján a 12:52, 16:36 és 19:52 időpontú futások sikeresek voltak. A négy heartbeat monitor végső állapot- és riasztási bizonyítéka még külön rögzítendő.
 
 A korábbi backup release-readiness dokumentum történeti állapotot rögzít, ezért megőrzendő. Az ott szereplő production schedule-aktiválási kapu továbbra is külön kezelendő, és production environment változót nem módosítunk automatikusan.
