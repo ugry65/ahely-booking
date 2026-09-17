@@ -1,3 +1,5 @@
+> **Történeti dokumentum – aktuális státusz:** Ez a 2026-09-11-i release-readiness pillanatképe. A benne szereplő `main`, `staging`, PR-head és PENDING/BLOCKED állapotok az akkori állapotot rögzítik; nem szabad őket a jelenlegi `main` közvetlen állapotaként értelmezni. A production backup schedule aktiválása továbbra is külön explicit jóváhagyást igényel. A 2026-09-14-i, különálló read-only Supabase availability health-check a PR #164-ben került lezárásra, és nem azonos a backup schedule aktiválásával. A történeti runbook és bizonyítékok megőrzendők.
+
 # Production backup schedule – release-readiness
 
 Dátum: 2026-09-11
