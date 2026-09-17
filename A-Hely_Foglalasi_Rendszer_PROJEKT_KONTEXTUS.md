@@ -1,3 +1,5 @@
+> **Aktuális státusz – 2026-09-17:** Ez a projektkontextus tartós referencia, de a korábbi fejlesztési sorrendek és dátumozott döntések történeti állapotot rögzítenek. A jelenlegi `main` tartalmazza a generic AllBooked ügyfél-importot (PR #163) és a külön read-only Supabase availability health-checket (PR #164). A health-check production GitHub Environment secretje 2026-09-17-én kézzel be lett állítva, és a health-check manuális futása sikeresen igazolta a kapcsolatot; a 2026-09-14-i audit ezt még korábbi, nyitott teendőként rögzítette. A pooler frissítéséhez szükséges Pause/Resume műveletet a projektgazda kézzel végezte el. Production adatbázis-, Auth- és egyéb environment-módosítást Codex nem végzett. A részletes aktuális státuszt az auditdokumentáció és a repository jelenlegi `main` állapota alapján kell értelmezni.
+
 # A-Hely saját foglalási rendszer – projektkontextus
 
 ## Cél
