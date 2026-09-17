@@ -1,3 +1,5 @@
+> **Dokumentum státusza – 2026-09-17:** Ez a fájl UAT-futási jegyzőkönyv-sablon és történeti nyilvántartás. Az üres mezők és a `NEM FUTOTT` értékek azt jelentik, hogy ebben a dokumentumban nincs rögzített manuális UAT-bizonyíték; automatikus CI-tesztek ezt nem helyettesítik. A dokumentumot csak tényleges, környezethez, commit SHA-hoz és tesztelőhöz kötött manuális UAT után szabad PASS/elfogadási állapotra frissíteni. A kapcsolódó checklist marad az UAT elsődleges tesztforrása.
+
 # A-Hely foglalási rendszer – UAT futási jegyzőkönyv
 
 Kapcsolódó checklist: `docs/FUNKCIONALIS_UAT_CHECKLIST.md`
