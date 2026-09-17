@@ -1,3 +1,5 @@
+> **Dokumentum státusza – 2026-09-17:** Ez a backlog történeti fejlesztési pillanatképe. A benne szereplő régi commit-, issue- és release-gate állapotok nem mindenütt tükrözik a jelenlegi `main` állapotát. Aktuális forrás: a `main` branch és az aktuális auditdokumentáció. A teljes funkcionális UAT és a production release-gate továbbra is külön, bizonyíték-alapú lezárást igényel. A PR #163 (AllBooked import) és PR #164 (Supabase availability health-check) már merge-elve van; ezek állapotát a jelenlegi audit dokumentálja. Történeti fejezetek tartalma változatlanul megőrzendő.
+
 # Implementációs backlog
 
 Az issue-k sorrendje függőségi sorrend. Kritikus issue csak automatikus teszt és független review után zárható.
