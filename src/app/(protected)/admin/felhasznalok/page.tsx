@@ -31,11 +31,17 @@ function BillingFields({ profile }: { profile: ManagedProfile }) {
   return <>
     <label>Telefonszám<input name="phone" type="tel" defaultValue={profile.phone ?? ""} /></label>
     <label>Ügyféltípus<select name="customerType" defaultValue={profile.customer_type ?? "private"}><option value="private">Magánszemély</option><option value="business">Vállalkozó</option></select></label>
-    <label>Számlázási név<input name="billingName" defaultValue={profile.billing_name ?? ""} /></label>
-    <label>Számlázási irányítószám<input name="billingPostalCode" defaultValue={profile.billing_postal_code ?? ""} /></label>
-    <label>Számlázási település<input name="billingCity" defaultValue={profile.billing_city ?? ""} /></label>
-    <label>Számlázási utca<input name="billingStreet" defaultValue={profile.billing_street ?? ""} /></label>
-    <label>Számlázási házszám<input name="billingHouseNumber" defaultValue={profile.billing_house_number ?? ""} /></label>
+    <fieldset className="admin-billing-fields">
+      <legend>Számlázási adatok</legend>
+      <label>Számlázási név<input name="billingName" defaultValue={profile.billing_name ?? ""} /></label>
+      <fieldset className="billing-address-fields">
+        <legend>Számlázási cím</legend>
+        <label>Irányítószám<input name="billingPostalCode" defaultValue={profile.billing_postal_code ?? ""} /></label>
+        <label>Település<input name="billingCity" defaultValue={profile.billing_city ?? ""} /></label>
+        <label>Utca<input name="billingStreet" defaultValue={profile.billing_street ?? ""} /></label>
+        <label>Házszám<input name="billingHouseNumber" defaultValue={profile.billing_house_number ?? ""} /></label>
+      </fieldset>
+    </fieldset>
     <label>Adószám<input name="taxNumber" defaultValue={profile.tax_number ?? ""} /><span className="muted form-help">Vállalkozó esetén kötelező.</span></label>
   </>;
 }
