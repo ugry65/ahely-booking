@@ -134,7 +134,11 @@ export function FormSubmitFeedback() {
     };
 
     syncUserEditorModal();
-    const observer = new MutationObserver(syncUserEditorModal);
+    const handleRouteMutation = () => {
+      resetAllPending();
+      syncUserEditorModal();
+    };
+    const observer = new MutationObserver(handleRouteMutation);
     observer.observe(document.body, { childList: true, subtree: true });
 
     document.addEventListener("submit", handleSubmit, true);
