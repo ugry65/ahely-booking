@@ -1,6 +1,6 @@
 # AllBooked/Skedda ügyfélmigráció – operátori runbook
 
-Állapot: kötelező production eljárás; 2026-09-14.
+Állapot: kötelező production eljárás; 2026-09-18.
 
 ## Cél és hatókör
 
@@ -35,11 +35,9 @@ Az import nem vesz át:
 
 ## Papp Dalma próbaimport kivezetése
 
-A 2026-09-03–17. közötti, 19×60 és 2×90 perces, összesen 21 Forrás tér-foglalás kizárólag migrációs próba volt. A valódi ügyfélmigráció megkezdése előtt az admin a `Migráció` oldalon, friss sikeres backup után egyszer futtatja a `Papp Dalma próbaimport visszavonása` műveletet a pontos `REMOVE-PAPP-DALMA-TEST-DATA` megerősítéssel.
+A Papp Dalma-féle migrációs próbaadatok kivezetése a projektgazda 2026-09-18-i visszajelzése szerint az éles rendszerben megtörtént. Az éles rendszerben jelenleg nincs hozzá aktív foglalás, ezért ezt a műveletet nem kell újra végrehajtani.
 
-A művelet csak akkor futhat, ha az Auth/profil azonosság, a 21 tétel, a dátumtartomány, az időtartamok, a helyiség és az üzletiadat-mentesség pontosan egyezik a bizonyított próbával. A foglalások `voided` állapotba kerülnek, ezért a naptárban, havi órákban és lemondási riportban sem aktív, sem lemondott üzleti tételként nem jelennek meg. A próba-csoportjog törlődik, a profil inaktív, üres importállapotba kerül. A megváltoztathatatlan ledger és auditbizonyíték megmarad; ez nem ügyféladatként használt foglalás, hanem a végrehajtott próba visszakövethetősége.
-
-Papp Dalma későbbi valódi exportja az általános, verziózott ujjlenyomatú importtal újra betölthető. A valódi import ismét aktiválja és frissíti a meglévő profilt; a régi 21 voidolt tétel nem keveredik az új reconciliation eredményébe.
+A korábbi kontrollminta adatai: 2026-09-03–17. között 19×60 és 2×90 perces, összesen 21 Forrás tér-foglalás. A kivezetés a próbaadatokat nem üzleti foglalásként kezeli; a későbbi valódi Papp Dalma-export az általános migrációs folyamattal külön betölthető.
 
 ## Fail-closed működés
 
