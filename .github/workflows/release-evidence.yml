@@ -1,0 +1,21 @@
+name: Release evidence
+on:
+  pull_request:
+  push:
+    branches: [main, staging]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-consistency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test scripts/test-release-evidence.mjs
+      - run: node scripts/check-release-evidence.mjs

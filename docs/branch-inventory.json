@@ -1,0 +1,1303 @@
+{
+  "checkedAt": "2026-09-18",
+  "main": "bfb1f346c8b93c6e1f6184ac5892591cec3b9889",
+  "staging": "c71f790e20e979898ac38f934ddb243747d008bc",
+  "scope": "Two complete recursive blob trees; not merge-base diff",
+  "differences": [
+    {
+      "path": ".env.example",
+      "main": "83c7de954bc0f878634db9f94b524bfebd385968",
+      "staging": "e1751f6435b5d87f99da94cbc769928039684fbe"
+    },
+    {
+      "path": ".github/production-backup-drill.trigger",
+      "main": "819cdd68ab034b804a2d3b287eee0be24ec0cdfb",
+      "staging": null
+    },
+    {
+      "path": ".github/production-database-deploy.trigger",
+      "main": "99d14278ac4194a2af4ea8f16a8da0586f85d3c4",
+      "staging": null
+    },
+    {
+      "path": ".github/staging-backup-drill.trigger",
+      "main": null,
+      "staging": "38cb4de4d77055fa307c397de6171f4d9ef2794c"
+    },
+    {
+      "path": ".github/staging-restore-drill.trigger",
+      "main": null,
+      "staging": "270f0c03ef89aedb6482665012575120bdab441d"
+    },
+    {
+      "path": ".github/workflows/application-checks.yml",
+      "main": "f9b28e7fba775a7b3b25823d4fba9b132491e011",
+      "staging": "9ebfa6de0fa30b2130f4e4e7c8dad99e9acb8f58"
+    },
+    {
+      "path": ".github/workflows/database-tests.yml",
+      "main": "1bfaea5d7b28045c611589f9d839fc3d277644bb",
+      "staging": "978d89e5184642149128dbc29f8160add22434ed"
+    },
+    {
+      "path": ".github/workflows/production-backup-drill.yml",
+      "main": "846fc10a1f2b0059ec8866d6a28ca53123576b7c",
+      "staging": null
+    },
+    {
+      "path": ".github/workflows/production-backup.yml",
+      "main": "c4510d8b00409764d62b1a1c27238c2ef5470bd9",
+      "staging": null
+    },
+    {
+      "path": ".github/workflows/production-database-deploy.yml",
+      "main": "85f737910865356267d5f575131a27673afd0fb5",
+      "staging": "61c972a03f7a6849d73e44158fe108c6441551a5"
+    },
+    {
+      "path": ".github/workflows/production-restore-drill.yml",
+      "main": "ab8930667a53631f9180d009de8838511881bb02",
+      "staging": null
+    },
+    {
+      "path": ".github/workflows/staging-backup-drill.yml",
+      "main": null,
+      "staging": "75dc77f1cbc0c88973ba5e2ff1fffefdcc68a40e"
+    },
+    {
+      "path": ".github/workflows/staging-database-deploy.yml",
+      "main": "98dbf3599dd53eabb863180e4bd6a266778b021d",
+      "staging": "889b405e2e6383e671ca1ed8f52900f022a6c29a"
+    },
+    {
+      "path": ".github/workflows/staging-restore-drill.yml",
+      "main": null,
+      "staging": "8b491623981548ce7b9172ea8f3f9d4c424a9f4d"
+    },
+    {
+      "path": ".github/workflows/supabase-availability-healthcheck.yml",
+      "main": "9d006fcc2f3bbb0f5e6840e616585f7e0b8ccbe5",
+      "staging": null
+    },
+    {
+      "path": "A-Hely_Foglalasi_Rendszer_PROJEKT_KONTEXTUS.md",
+      "main": "35fad18638fb1ae41dde4388fccafbd661b15a99",
+      "staging": "1a61b1ee839f0cf007b093a3b4aea33a02ce10db"
+    },
+    {
+      "path": "AGENTS.md",
+      "main": "6d21cbfeefdb7453979b4db602aa2ad4091db8b1",
+      "staging": "3bac1576e81c9a9a58d5d8714cbd7b3cce8e152d"
+    },
+    {
+      "path": "docs/ACCESS_AND_REPEAT_DECISIONS_2026-08-22.md",
+      "main": "1f2bda5e592d7cb4c68dac276b9f79c6fe591199",
+      "staging": "992b0c786ee26446f224ecc9cf40e44caf6355ad"
+    },
+    {
+      "path": "docs/ADMIN_REPORTING_RULES.md",
+      "main": "d42978b1486257e11601dfd99c2a056498d809ba",
+      "staging": "6b65004544bd759c0b5ef1881f866a4f194060de"
+    },
+    {
+      "path": "docs/ADMIN_USER_MANAGEMENT.md",
+      "main": "ccaee915bfa65f856dcec9c29e27e3c0c30a0f61",
+      "staging": "58a4b9232762944643cf29ec86301b4f91a9681f"
+    },
+    {
+      "path": "docs/ALLBOOKED_CUSTOMER_MIGRATION.md",
+      "main": "7ca09544d19c3396bcb0b45c36528f272eb289c9",
+      "staging": null
+    },
+    {
+      "path": "docs/ALLBOOKED_MIGRATION_MAPPING.md",
+      "main": null,
+      "staging": "4b8ee50e0814ed63ee569abb0390fd2b200b913b"
+    },
+    {
+      "path": "docs/ANTI_PAUSE_TECHNICAL_NOTE_2026-09-09.md",
+      "main": null,
+      "staging": "51833627fbd45c638e422de051854d7a39334cba"
+    },
+    {
+      "path": "docs/ANTI_PAUSE_UAT_CHECKLIST.md",
+      "main": null,
+      "staging": "86dd27f33627d58a5f67a488aaf9298d93319f28"
+    },
+    {
+      "path": "docs/ARCHITECTURE_OVERRIDE_2026-09-08_FREE_BACKUP.md",
+      "main": "a2ccc9a18123c175591aec9e43a56252859b38d4",
+      "staging": "7449b2007abdc1dcb6005a4c291a4c557a8f251c"
+    },
+    {
+      "path": "docs/AUDIT_2026-09-14_SYSTEM_AND_DOCUMENTATION_STATUS.md",
+      "main": "45e1a564f2e17b29e309fc71dbe967b83b371626",
+      "staging": null
+    },
+    {
+      "path": "docs/AUTH_EMAIL_TEMPLATES.md",
+      "main": null,
+      "staging": "171910cf609983fe94fbb6fef51621bb8be121a1"
+    },
+    {
+      "path": "docs/BACKUP_RESTORE_STRATEGIA.md",
+      "main": "1ba2f65f17df330da0c05b04c2be8c9ede35b45e",
+      "staging": "ee1c0ffd72f13911349a38a201b78ac1609c7d1f"
+    },
+    {
+      "path": "docs/BOOKING_EMAIL_RESEND_STAGING_UAT.md",
+      "main": null,
+      "staging": "351efd1af19616d003003ad3d321c5caeda97019"
+    },
+    {
+      "path": "docs/BOOKING_EMAIL_RESEND_STAGING_UAT_STATUS_2026-09-10.md",
+      "main": null,
+      "staging": "f1c6328255be2a16b8cbca061992b346f9881823"
+    },
+    {
+      "path": "docs/BOOKING_EMAIL_STAGING_CAPTURE_RUNBOOK.md",
+      "main": null,
+      "staging": "bce0906ab6a8422856a10a664bf39cd4b91f7fad"
+    },
+    {
+      "path": "docs/BOOKING_UI_UX_BASELINE.md",
+      "main": "4c5f193edffea4a0b4f422e2bde77e0b619ef93c",
+      "staging": "012059eeb1fb5b2611a0ccc77eaa9c2aacb95014"
+    },
+    {
+      "path": "docs/CLAUDE_BASELINE_REVIEW_RESOLUTION_2026-08-26.md",
+      "main": null,
+      "staging": "ad45b371362bab4002be6e0d128cabff87825258"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_3_CLOSURE_STATUS.md",
+      "main": null,
+      "staging": "97675aaf94cf65ad7f0a07adad9df939b5889772"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_3_RESOLUTION_2026-08-26.md",
+      "main": null,
+      "staging": "b5afa5b8eb4aec2f1fcf638c0dc5cc79d10140b5"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_4_CLOSURE_STATUS.md",
+      "main": null,
+      "staging": "7ec7545f2a26507294e50bf30c2442ee69a545f2"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_5_CLOSURE_STATUS.md",
+      "main": null,
+      "staging": "4bfc874492ba4d52d69aa0946d4eec914bd12438"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_6_FINAL_CLOSURE_STATUS.md",
+      "main": null,
+      "staging": "3b68b045f174715d908d2b56d9af8bde959e406b"
+    },
+    {
+      "path": "docs/CLAUDE_REVIEW_PR94_RESOLUTION_2026-08-31.md",
+      "main": null,
+      "staging": "94fcbb128bd9ad55233ecb0342cac5d18faf4091"
+    },
+    {
+      "path": "docs/CURRENT_FUNCTIONAL_BASELINE.md",
+      "main": null,
+      "staging": "5e2e8822d217539175f9d5b5406f4c52509707c9"
+    },
+    {
+      "path": "docs/DECISION_2026-08-25_FINANCIAL_SCOPE_AND_TRAINING_GROUP_RATE.md",
+      "main": null,
+      "staging": "5a06bb60892117d6a2cfb0ed508d421faa9e38e1"
+    },
+    {
+      "path": "docs/DECISION_2026-08-26_CLAUDE_REVIEW_FOLLOWUP.md",
+      "main": null,
+      "staging": "c4e553b834773ce2b31e1e514f3082e5fd59b511"
+    },
+    {
+      "path": "docs/DECISION_2026-08-31_BACKUP_MONITORING.md",
+      "main": null,
+      "staging": "1ce92c3859404c837ec1ddbe8d20c621f44548cb"
+    },
+    {
+      "path": "docs/DECISION_2026-09-03_BOOKING_EMAIL_OUTBOX.md",
+      "main": null,
+      "staging": "a8b208312ab18fdc02daf405a6d19d9cf1dd7cd9"
+    },
+    {
+      "path": "docs/DECISION_2026-09-04_STAGING_PROMOTION_AUTOMATION.md",
+      "main": null,
+      "staging": "6b2c7c94341f9a1aa207dfb3a8386416390bcaee"
+    },
+    {
+      "path": "docs/DECISION_2026-09-08_SUPABASE_FREE_AND_BACKUP_BASELINE.md",
+      "main": "8597f682570389b095561cd6dcb2590a4569a066",
+      "staging": "a845e90635b677600a109d6115c094bb24cbb1d0"
+    },
+    {
+      "path": "docs/DECISION_2026-09-10_BOOKING_EMAIL_RESEND.md",
+      "main": null,
+      "staging": "d8d05036adc66a633d03482953d3427300a8e7f2"
+    },
+    {
+      "path": "docs/DECISION_2026-09-13_AUTH_PASSWORD_RESET_EMAIL.md",
+      "main": "e5e1ef7a23e557f7e3db4e9efa9b7853680d8021",
+      "staging": null
+    },
+    {
+      "path": "docs/DECISION_2026-09-14_SUPABASE_AVAILABILITY_HEALTHCHECK.md",
+      "main": "f8a6211905437156a58b0486c835ebbc9fba7a04",
+      "staging": null
+    },
+    {
+      "path": "docs/DOCUMENTATION_CONSISTENCY_CHECK_2026-09-08.md",
+      "main": null,
+      "staging": "f326de3d48ea728bfcc7dca8787eb06ab55df873"
+    },
+    {
+      "path": "docs/FUNKCIONALIS_UAT_CHECKLIST.md",
+      "main": "e977cac5485c86b3ae0b197c9a668da568b16d8e",
+      "staging": "95a06ba9589609a6b3a51ae6cb89971bf3a7dfcb"
+    },
+    {
+      "path": "docs/HEALTH_MONITORING.md",
+      "main": "48f7286dba674c2b866af3925c9a89a13e546da4",
+      "staging": null
+    },
+    {
+      "path": "docs/IMPLEMENTATION_PLAN.md",
+      "main": "85ec20956c08a40bbac10a416e7ba4f3f97cc7f4",
+      "staging": "eff00115c25910f2277e3c881d4e2cef5c0c2617"
+    },
+    {
+      "path": "docs/ISSUE-82-PRICING-MODES.md",
+      "main": null,
+      "staging": "18d75b60d282d63da6c988a37cc545a44681834f"
+    },
+    {
+      "path": "docs/PRICING_MODES.md",
+      "main": null,
+      "staging": "a16431e1fe9d874056b0b99384d06f600110c561"
+    },
+    {
+      "path": "docs/PRODUCTION_ANTI_PAUSE_RUNBOOK.md",
+      "main": null,
+      "staging": "57dc045253364b0f381fc4b05f50fdb1ebdc0f00"
+    },
+    {
+      "path": "docs/PRODUCTION_BACKUP_SCHEDULE_RELEASE_READINESS_2026-09-11.md",
+      "main": "7940e5e1b4777aad6c1c1bf09e2775a24a298208",
+      "staging": null
+    },
+    {
+      "path": "docs/PRODUCTION_INFRASTRUCTURE_DECISIONS_2026-08-25.md",
+      "main": null,
+      "staging": "74bca2b0c324ca6c39f5d2e8b03d47a98efb0e5e"
+    },
+    {
+      "path": "docs/PRODUCTION_READINESS_CHECKLIST.md",
+      "main": null,
+      "staging": "d9a90823ad2096b9315c90a9f99c896d09eb39f3"
+    },
+    {
+      "path": "docs/PRODUCTION_READINESS_STATUS_2026-09-18.md",
+      "main": "2e74e7616a16db5cd6ebb22baeae2b2143b6de6b",
+      "staging": null
+    },
+    {
+      "path": "docs/RECURRING_SERIES_SCOPE_SEMANTICS.md",
+      "main": null,
+      "staging": "6bdc99e389d1039705b424bbdf868b1a90efc8dc"
+    },
+    {
+      "path": "docs/SERIES_SCOPE_SEMANTICS.md",
+      "main": null,
+      "staging": "afe16214ed75298a8980c417a5505953b0b38cad"
+    },
+    {
+      "path": "docs/STAGING_ADATBAZIS_DEPLOY.md",
+      "main": "568c989690d3c24871700f699fc15b099c0340b1",
+      "staging": "0d291bf0781089fc1f2ef78a94c2d7d2ddd39915"
+    },
+    {
+      "path": "docs/STAGING_WEB_ES_UAT_BOOTSTRAP.md",
+      "main": "510328fad69c5bd48038a98dd15d9b5823375511",
+      "staging": "3aedabe30326bee1f91de0480467a68d7698ece9"
+    },
+    {
+      "path": "docs/TECHNIKAI_ARCHITEKTURA_ES_ADATMODELL.md",
+      "main": "216be39d9d681a1874a137eb7062011822ac10ff",
+      "staging": "633416003b4ab83d54b55a4f81a15a670a4198b6"
+    },
+    {
+      "path": "docs/TRAINING_GROUP_PRICING_DECISION.md",
+      "main": null,
+      "staging": "d7802a37ca0a94e327df169adaf1524b8150253f"
+    },
+    {
+      "path": "docs/UAT_AUTH_RECOVERY_2026-09-09.md",
+      "main": null,
+      "staging": "c31f0fed9f97f3da25f84244e186591ba16d1357"
+    },
+    {
+      "path": "docs/UAT_AUTOMATIKUS_BIZONYITEK_MATRIX.md",
+      "main": "792b6a2e48884f28b9e8b056e60de6c178de339b",
+      "staging": "ddb2e37f4d40aa6b73563dcb14991109ba27b48b"
+    },
+    {
+      "path": "docs/UAT_BIZONYITEK_EGYEZTETES_2026-08-30.md",
+      "main": null,
+      "staging": "19d79724ebd000693998cc81ac2a5be23cd8c6da"
+    },
+    {
+      "path": "docs/UAT_CHECKPOINT_2026-08-30.md",
+      "main": null,
+      "staging": "ce21b0adbc6308b0a7dc53384d75425bbbab1dcb"
+    },
+    {
+      "path": "docs/UAT_DELTA_2026-08-31_PR94.md",
+      "main": null,
+      "staging": "43298b327da5d1eb456ee172f2ab11875ec4263a"
+    },
+    {
+      "path": "docs/UAT_EVIDENCE_AUDIT_2026-08-31.md",
+      "main": null,
+      "staging": "a426005a86a891e3e61673a861bb51b194c5896a"
+    },
+    {
+      "path": "docs/UAT_FUTASI_JEGYZOKONYV.md",
+      "main": "066d334395944fbf09c354f79466f1b2adbdd856",
+      "staging": "0a0e6ce9b65c1b9576e3ef99c5d96dbb57427668"
+    },
+    {
+      "path": "docs/WORKLOG_2026-09-03_PWA_EMAIL_MIGRATION_MOBILE_UX.md",
+      "main": null,
+      "staging": "77d04e1980a92f90e58d7b117c6dc9006ee8c416"
+    },
+    {
+      "path": "docs/skedda-mobile-calendar-ux.md",
+      "main": "b1d1f1a4fae79923da8385d111cd6587bfe9458c",
+      "staging": "821317606f2c0ba8734b2ecb1a3b15adae74d16e"
+    },
+    {
+      "path": "package.json",
+      "main": "f6cbefe9ae3252b2523c08c88d69234a39d18218",
+      "staging": "054388ce39c94cb74042c382d300a4235917cb34"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "main": "8363ce695f6ba14e0af093729e694e45bef37461",
+      "staging": "c85e05d8f881a0e029eb6fefcf1e6d51f9b41fdc"
+    },
+    {
+      "path": "scripts/backup-production-drill.sh",
+      "main": "b4cecf346c772f176ac63d55a5378d225c71f041",
+      "staging": null
+    },
+    {
+      "path": "scripts/backup-production.sh",
+      "main": "eb06a6628b3e08d5d7ac12d768623899a1071fa2",
+      "staging": null
+    },
+    {
+      "path": "scripts/backup-staging-drill.sh",
+      "main": null,
+      "staging": "fdc4241717c3b173674a49ca7a10bb9ba4751c51"
+    },
+    {
+      "path": "scripts/bootstrap-staging-uat.mjs",
+      "main": "a163f38c0df4ef8a2583510821324d4228dcd3c2",
+      "staging": "94e7c44eb2904529c00636e245faec05f1a961aa"
+    },
+    {
+      "path": "scripts/lib/notify-production-backup-heartbeat.sh",
+      "main": "deb15ad628bb2c779310ee42411450aee3d974a7",
+      "staging": null
+    },
+    {
+      "path": "scripts/lib/staging-uat-operations.mjs",
+      "main": "90c9cf3863652ea573e16f09b0ddf991f565a86c",
+      "staging": "5ce7644a3344784b84e7bd72d9fe75a0a56627db"
+    },
+    {
+      "path": "scripts/lib/staging-uat-operations.test.mjs",
+      "main": "002616f9562e20822e9cd6068b401d4cd00afbd7",
+      "staging": "9decbe8d0698bf10939d1d4b5650a7cd07dc39e5"
+    },
+    {
+      "path": "scripts/lib/validate-production-backup-schedule-trigger.sh",
+      "main": "e258eb27a81486842a72802f8257fbf0463782fb",
+      "staging": null
+    },
+    {
+      "path": "scripts/lib/validate-production-backup-trigger.sh",
+      "main": "b48f13efde307002af69e4210f1e26feba4defcd",
+      "staging": null
+    },
+    {
+      "path": "scripts/lib/validate-production-db-url.sh",
+      "main": "7636b59488a850fcfced618d15b6cc402edc6385",
+      "staging": null
+    },
+    {
+      "path": "scripts/lib/validate-production-restore-trigger.sh",
+      "main": "f76351106a0c0c9f2d72c0ba85542843cdd3e133",
+      "staging": null
+    },
+    {
+      "path": "scripts/lib/validate-staging-backup-trigger.sh",
+      "main": null,
+      "staging": "e563c9b2b5633a53cbdf79fac47761e8b78a8398"
+    },
+    {
+      "path": "scripts/lib/validate-staging-db-url.sh",
+      "main": null,
+      "staging": "6eab29ea8fcc2e6b467a6e500318670c6ea3c4e3"
+    },
+    {
+      "path": "scripts/lib/validate-staging-restore-trigger.sh",
+      "main": null,
+      "staging": "116b264325ad0ca8ccc839cc68f4ed8f7f1a12fa"
+    },
+    {
+      "path": "scripts/restore-production-drill.sh",
+      "main": "41e2b62450a4ed5a758647445884b010a868d7be",
+      "staging": null
+    },
+    {
+      "path": "scripts/restore-staging-drill.sh",
+      "main": null,
+      "staging": "41ef78b6f9736d8d484af4880a2fc50fc1b786c1"
+    },
+    {
+      "path": "scripts/test-backup-production.sh",
+      "main": "66917ccc0e5930310a698c31ee2929cb3e17975b",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-booking-email-outbox-concurrency.sh",
+      "main": null,
+      "staging": "e491fb332605623bb59d8daf0d6c455aef94ec7b"
+    },
+    {
+      "path": "scripts/test-database.sh",
+      "main": "035539a34f18ddf5d949dde8d403e2df4dec1153",
+      "staging": "f27e0146c9442935b849a59f07faedba85ceddc7"
+    },
+    {
+      "path": "scripts/test-production-backup-drill.sh",
+      "main": "1969de8ae38c85f5accea30eb3d008a7d6923938",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-backup-heartbeat.sh",
+      "main": "93cc759ef06731c7c2d581d46f7e832fe45ca65d",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-backup-schedule-trigger.sh",
+      "main": "b5dfa8a3c492ee799a02d487a31ce4ae6ac5d0b8",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-backup-schedule.mjs",
+      "main": "1f6a294c8484641cbadff0163703e30a5f5f5968",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-backup-trigger.sh",
+      "main": "cdcd8dc8021210e020e299c2a2efbfc56561001d",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-db-url-guard.sh",
+      "main": "de8ce328549568a4253c893e4bd2470ac123b483",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-production-restore-trigger.sh",
+      "main": "a6e2112de75fc79386ba25e52f1297c6279ec068",
+      "staging": null
+    },
+    {
+      "path": "scripts/test-staging-backup-drill.sh",
+      "main": null,
+      "staging": "72a69a08d993a71ac940500dd4f9b63375931eaa"
+    },
+    {
+      "path": "scripts/test-staging-backup-trigger.sh",
+      "main": null,
+      "staging": "abb3aacfa2bb51f306a536f9156bee8733309205"
+    },
+    {
+      "path": "scripts/test-staging-db-url-guard.sh",
+      "main": null,
+      "staging": "3a39b3847421ec372084b892ca4a50e9a8a99b3d"
+    },
+    {
+      "path": "scripts/test-staging-restore-trigger.sh",
+      "main": null,
+      "staging": "9dfed65f56ffe7f98c0c411e9a4fc99370a52a1f"
+    },
+    {
+      "path": "scripts/test-supabase-availability-healthcheck.mjs",
+      "main": "cbe97fdc7edc9878e30303b1aa7b597723c0762d",
+      "staging": null
+    },
+    {
+      "path": "src/app/(auth)/actions.ts",
+      "main": "691b59e8b57f8e14d14c4100b5cb3fcaa9f80673",
+      "staging": "19b71a944d34a8fe26534562629698a21a0638ba"
+    },
+    {
+      "path": "src/app/(auth)/adatok-megadasa/page.tsx",
+      "main": "0a6d25100bc5bdfcb961faea5391e1920d272120",
+      "staging": "c86e8af72942bcea0c2d3652b8e1376b38b1a916"
+    },
+    {
+      "path": "src/app/(auth)/jelszo-csere/page.tsx",
+      "main": null,
+      "staging": "2d87d302a03b83db3c942c8e775ef6eb9c4a1b2b"
+    },
+    {
+      "path": "src/app/(protected)/adataim/page.tsx",
+      "main": "cd452c7b51279e67141faff6ee0ba2350c6d2107",
+      "staging": "418eb7f87c6e1be1b4de1fa74e56cf195084195f"
+    },
+    {
+      "path": "src/app/(protected)/admin/befizetesek/actions.ts",
+      "main": null,
+      "staging": "5a92b5617de85eb8c1ea2b80b1592c91d2a324c3"
+    },
+    {
+      "path": "src/app/(protected)/admin/befizetesek/page.tsx",
+      "main": null,
+      "staging": "e22f4d673c0143c0afd27c37544f229d5c1d15bd"
+    },
+    {
+      "path": "src/app/(protected)/admin/dijazas/actions.ts",
+      "main": null,
+      "staging": "d89f90494fb849143fe1364f3c8ae95709b2d71c"
+    },
+    {
+      "path": "src/app/(protected)/admin/dijazas/page.tsx",
+      "main": null,
+      "staging": "d5e8626127ef1d85d2506b967c8c160959e54def"
+    },
+    {
+      "path": "src/app/(protected)/admin/email-ertesitesek/actions.ts",
+      "main": null,
+      "staging": "b725924518a2cea3740a7fd41dd58f29f71775d7"
+    },
+    {
+      "path": "src/app/(protected)/admin/email-ertesitesek/page.tsx",
+      "main": null,
+      "staging": "4ad3218093e1bc0fec6043aee768371719552216"
+    },
+    {
+      "path": "src/app/(protected)/admin/felhasznalok/actions.ts",
+      "main": "bf37ac8a56220ef48f481c5d46386bc770ee1a14",
+      "staging": "b86ebab513843084f1bbc61b0836335d2afa7873"
+    },
+    {
+      "path": "src/app/(protected)/admin/felhasznalok/page.tsx",
+      "main": "51f7bf3c10bcbb61f67031c3f1062d396925c56a",
+      "staging": "0acc2f5fdc232e7e5af35f8640582d3c68d980c5"
+    },
+    {
+      "path": "src/app/(protected)/admin/havi-orak/actions.ts",
+      "main": null,
+      "staging": "8dffa4e6f0530792d6c277e139f4bbad0a8a76c5"
+    },
+    {
+      "path": "src/app/(protected)/admin/havi-orak/month-multi-select.tsx",
+      "main": "890046868cd991e7e94720970cd75bf7a413f06d",
+      "staging": "a2d53e2f0a55539c0f661e247e807b2c46093ddb"
+    },
+    {
+      "path": "src/app/(protected)/admin/havi-orak/page.tsx",
+      "main": "a0a5382151f9ee414d5e04731fb4a6450fb7955f",
+      "staging": "c60802dc28146a5fbf0a0d04c94965e5eb0bad34"
+    },
+    {
+      "path": "src/app/(protected)/admin/havi-orak/settlement-close-form.tsx",
+      "main": null,
+      "staging": "593e80c64b001863a81bb0993925949933a033f3"
+    },
+    {
+      "path": "src/app/(protected)/admin/lemondasok/page.tsx",
+      "main": "6bdf03d83e5f63e810207c448c328449d44a8d79",
+      "staging": "8252ae83c71ed1473070b77c68a5db4baf826433"
+    },
+    {
+      "path": "src/app/(protected)/admin/migracio/dry-run-form.tsx",
+      "main": "854d0d7e3b468a7812fd22c56f35746e33a7fc64",
+      "staging": "5284fb30a2fad0547813e9a5b5d6db380ba9b22a"
+    },
+    {
+      "path": "src/app/(protected)/admin/migracio/page.tsx",
+      "main": "993d628ea86f523e56a551550adb298be0f1de40",
+      "staging": "9096d661a04988dac45c64f5b2e6f6aa631f214d"
+    },
+    {
+      "path": "src/app/(protected)/admin/responsive-month-field.tsx",
+      "main": null,
+      "staging": "3b7bbc8195f646ee884b685409cd9e7322a3a17e"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/actions.ts",
+      "main": "ad39012dae3844aa1fcdf827740a15c53c128d95",
+      "staging": "5e1639146af54127c821b0c8c75f212d25a6e532"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/calendar-booking-actions.css",
+      "main": "f8440235c2d674f29cb995abfff1328c2f4cf886",
+      "staging": "f542a24b1e51d1102bcbf7671f64f5f95c6e7e34"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/calendar-booking-grid.tsx",
+      "main": "cdacc99ed8efcb75a58a0528f32412ed2170c458",
+      "staging": "624a8bce5723f3414b8edc2a55afcb9308da2756"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/calendar-date-navigation.tsx",
+      "main": null,
+      "staging": "53378700de42909c9baf341134de3b7ca33923e7"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/calendar-header.css",
+      "main": null,
+      "staging": "fa632d5b2e57975a8c4193858fde45f05cff2458"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/calendar-header.test.ts",
+      "main": null,
+      "staging": "cdd7ef3290a29e1a5a245ff41d58510e0fe89510"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/ismetlod/actions.ts",
+      "main": "158f5dee680e863d810c10b4023ad29570e0cfef",
+      "staging": "1cf598f2329472a3046ef119e04f64e87915d692"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/ismetlod/page.tsx",
+      "main": "b6fd67077e004ffb88bc11ff7194bd633469a24a",
+      "staging": "af2a0847e58d687d9c754e6ea704924bbbb2a4f4"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/page.tsx",
+      "main": "9f8ce5947545405e13ff391acf06dced1c1a253f",
+      "staging": "8c693c29efd065d09c347108684ced798135d3b8"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/quick-booking-dialog.tsx",
+      "main": "e6a9adcd0d9665ee9b0599e66b34d136348ff963",
+      "staging": "0a2539a31e63b242d5a49338a1b187693d3673e4"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/recurring-end-fields.test.tsx",
+      "main": null,
+      "staging": "6743491ac4ec4d9bd62b6163d09ad5ebc0aa05d7"
+    },
+    {
+      "path": "src/app/(protected)/foglalasok/recurring-end-fields.tsx",
+      "main": null,
+      "staging": "4be7dc86fa9730072f786433a0bc4465c255d8a4"
+    },
+    {
+      "path": "src/app/(protected)/layout.tsx",
+      "main": "10fd4c21347b708cd9c750113b8a9ef61a953570",
+      "staging": "b7147f4c4bf33ef9b0570adadb95b3dfd14f2fcd"
+    },
+    {
+      "path": "src/app/(protected)/mobile-app-nav.tsx",
+      "main": "7ac74e012746a0950762d3f5184524a33d782e73",
+      "staging": "5cf0a696276391b8b75de62bff42fa0ba404e2e8"
+    },
+    {
+      "path": "src/app/api/health/route.ts",
+      "main": "b4cca3f9c6d27c4632c1c370b0b1d4f009a85a04",
+      "staging": null
+    },
+    {
+      "path": "src/app/api/internal/booking-email-worker/route.ts",
+      "main": null,
+      "staging": "09693a9cfcf8dde507c09242d201f0e8d0f1eed4"
+    },
+    {
+      "path": "src/app/api/internal/migration-dry-run/route.ts",
+      "main": "8964651b267a8ec70734d944b3806cf2365dcecd",
+      "staging": "9bfeca154625965208a1dbdc01cce45842fb611a"
+    },
+    {
+      "path": "src/app/api/internal/migration-import/route.ts",
+      "main": null,
+      "staging": "39ae49bb771e648535289e56abcf80d7fdd4b906"
+    },
+    {
+      "path": "src/app/api/internal/production-customer-migration-import/route.ts",
+      "main": "6a47b5033bd850de1016065fb3bda95868c85473",
+      "staging": null
+    },
+    {
+      "path": "src/app/api/internal/production-health/route.test.ts",
+      "main": null,
+      "staging": "132665e7338a6173e47fc7e91fa3ea4cca8f8258"
+    },
+    {
+      "path": "src/app/api/internal/production-health/route.ts",
+      "main": null,
+      "staging": "56f8a44f7496bd4cac80ad9dfbb8e7f396764335"
+    },
+    {
+      "path": "src/app/api/internal/production-migration-import/route.ts",
+      "main": "281c477284586fa644cc62ecdb45560f3758a667",
+      "staging": null
+    },
+    {
+      "path": "src/app/api/internal/void-papp-dalma-test-import/route.ts",
+      "main": "dfd5062e7bf5d31784c8107e9a8e9226cfb67a32",
+      "staging": null
+    },
+    {
+      "path": "src/app/auth/callback/route.ts",
+      "main": "cd062844a99cf801a3dfda24c7f0732e51979a26",
+      "staging": "93ec91266fbeae0c546ab6d204d74f3a8ea689c9"
+    },
+    {
+      "path": "src/app/desktop-app-nav.css",
+      "main": null,
+      "staging": "04dd8f81b858f0b81920a4d609a215ca0661e860"
+    },
+    {
+      "path": "src/app/desktop-app-nav.test.ts",
+      "main": null,
+      "staging": "665e4696e0143bcd6952bec36ad46de299cfa061"
+    },
+    {
+      "path": "src/app/form-submit-feedback.css",
+      "main": "732bb925528df9ac4854466045b2008c26eae027",
+      "staging": "a2ab3a82c607f0f35e8d6c976d7bc929b488a08b"
+    },
+    {
+      "path": "src/app/form-submit-feedback.test.ts",
+      "main": "8654d113567947190e7bba1bce547c5d58245d0e",
+      "staging": "5b62ca1bb7b48dfba9d9e9668b2b9ba5212847be"
+    },
+    {
+      "path": "src/app/form-submit-feedback.tsx",
+      "main": "f34edc1391fbdfa0751b3f856441221dea58a154",
+      "staging": "b69cae010dcd2d7fdd4db88eed319d27ae7e9924"
+    },
+    {
+      "path": "src/app/globals.css",
+      "main": "2ab3c7546a94a259c57cfc9e0f4b619d32096226",
+      "staging": "df109d098854ef04df1ee1e9c6bb15b39dedb416"
+    },
+    {
+      "path": "src/app/layout.tsx",
+      "main": "27651002eebc8623b7c8a1bc1c4ade7942cb86a4",
+      "staging": "56ead5cb7c2a6b96394b2e6418367bddc3015ff1"
+    },
+    {
+      "path": "src/app/mobile-admin-responsive.css",
+      "main": null,
+      "staging": "5b0efb304b77ae7eedbcd7800257e2fc7602457f"
+    },
+    {
+      "path": "src/app/mobile-responsive.css",
+      "main": null,
+      "staging": "bd6ddf45c94187166feb57868ff3bf0ba6f1bbb4"
+    },
+    {
+      "path": "src/app/mobile-responsive.test.ts",
+      "main": null,
+      "staging": "862936ac60385913c0ee3582b7cc52bcd22e79ae"
+    },
+    {
+      "path": "src/app/month-picker-responsive.css",
+      "main": null,
+      "staging": "0b9042f225e42ec85b71ba24b6f66c5bb8a21f58"
+    },
+    {
+      "path": "src/app/skedda-mobile.css",
+      "main": "fb7bf60f29656e5f76fb37577b6a30f8766f8c58",
+      "staging": "2e76ea8f7990f28156afc4de13e0e4d059d574fe"
+    },
+    {
+      "path": "src/lib/admin-user-invite.test.ts",
+      "main": "df2492e8c0a1d6b888048184ace8bf9d3c30bf44",
+      "staging": null
+    },
+    {
+      "path": "src/lib/admin-user-invite.ts",
+      "main": "a7955d0c90a374890ba4c1a6e68e23c9ef649d14",
+      "staging": null
+    },
+    {
+      "path": "src/lib/admin-user-password-management.test.ts",
+      "main": null,
+      "staging": "163ed54023da94a0035f3e0135bc681d83bec81a"
+    },
+    {
+      "path": "src/lib/allbooked-migration-ui.test.ts",
+      "main": "75f8fda83235f66045b94ea3eba5c907e7f35192",
+      "staging": null
+    },
+    {
+      "path": "src/lib/allbooked-migration.test.ts",
+      "main": "b553bdbbd3dc726c895b90fda2b6ed3d28d36af2",
+      "staging": "014a36a7d233c61d009f5021d02e3f6be4476023"
+    },
+    {
+      "path": "src/lib/allbooked-migration.ts",
+      "main": "6dd9d5161c489a0d26392b7850d2ad88dc5be3a9",
+      "staging": "fdff5dbcefe5662823542781ee1220f7fbf8ce85"
+    },
+    {
+      "path": "src/lib/auth-email-template.test.ts",
+      "main": null,
+      "staging": "f8cec2224cbafc024c7e8e5b00178467e31e9189"
+    },
+    {
+      "path": "src/lib/auth.ts",
+      "main": "853bfb7c5934b6f26671b8e40e78b26446565762",
+      "staging": "9b1b290a449df029f5908406398da5d566ba4e4b"
+    },
+    {
+      "path": "src/lib/booking-email/booking-email.test.ts",
+      "main": null,
+      "staging": "d5fec221cd5ad5c05599bfd1bc649e221e69cbfe"
+    },
+    {
+      "path": "src/lib/booking-email/monitor.test.ts",
+      "main": null,
+      "staging": "3bf4c2d4e257d52ff190225de41ec888c85ae18c"
+    },
+    {
+      "path": "src/lib/booking-email/monitor.ts",
+      "main": null,
+      "staging": "64d0476dd7ffad4b83698102528e7e73118a3c53"
+    },
+    {
+      "path": "src/lib/booking-email/provider.ts",
+      "main": null,
+      "staging": "4023b86181d6514dc8cc4c4b2bf1b8ad574f6014"
+    },
+    {
+      "path": "src/lib/booking-email/render.ts",
+      "main": null,
+      "staging": "2edd343a4abec5028701ab436bb495b9bb944b79"
+    },
+    {
+      "path": "src/lib/booking-email/schema.ts",
+      "main": null,
+      "staging": "b7ca050f9b03e92ef5b8dfee5f638edc15632ac2"
+    },
+    {
+      "path": "src/lib/booking-email/server.ts",
+      "main": null,
+      "staging": "bcf627000836c2fe3da397cd438ed8089e10ee36"
+    },
+    {
+      "path": "src/lib/booking-email/vercel-cron-config.test.ts",
+      "main": null,
+      "staging": "b622fb6899cb477780228e0b1765de74adfe0434"
+    },
+    {
+      "path": "src/lib/booking-email/worker-route.test.ts",
+      "main": null,
+      "staging": "b4ee64ebb66f84ccb624745c03822f4efd9bba39"
+    },
+    {
+      "path": "src/lib/booking-email/worker-route.ts",
+      "main": null,
+      "staging": "16481e7383f5081115da4c8310279a23f4ecc036"
+    },
+    {
+      "path": "src/lib/booking-email/worker.test.ts",
+      "main": null,
+      "staging": "70311d068bf54506943525590aa3fc0a55f2ce01"
+    },
+    {
+      "path": "src/lib/booking-email/worker.ts",
+      "main": null,
+      "staging": "785788ae90324280d7c5cd9a230cd3d2455f4e93"
+    },
+    {
+      "path": "src/lib/booking-form.test.ts",
+      "main": "08c13090a6ff36431e222a50c2b446de8c379c59",
+      "staging": "d40fea7c259266fee05c5e6e14ab03545ef680d9"
+    },
+    {
+      "path": "src/lib/health.test.ts",
+      "main": "3c1c938fd13b3f12dfa4859c1f16bd64b47347c2",
+      "staging": null
+    },
+    {
+      "path": "src/lib/health.ts",
+      "main": "8bcb365897ac9fda25a1e47497671455c65705a9",
+      "staging": null
+    },
+    {
+      "path": "src/lib/mobile-calendar-scroll.test.ts",
+      "main": "e1bcf98fb701ddbe9bc26462c1631fa2a4011ee0",
+      "staging": null
+    },
+    {
+      "path": "src/lib/mobile-month-input-layout.test.ts",
+      "main": "2af6d616328277a4bd3125ac7dd2a91cbc8c19ab",
+      "staging": null
+    },
+    {
+      "path": "src/lib/monthly-hours.test.ts",
+      "main": "4a57ad83d8f243095a636b64933f462fc829a39f",
+      "staging": "742a1afc71ba19820428f66f200b8de2dd8d6659"
+    },
+    {
+      "path": "src/lib/monthly-hours.ts",
+      "main": "fe597c610e62f5625cdba492c5969130d95a4488",
+      "staging": "770fb25f6acf5981ca9a5b29fd0848399274a07a"
+    },
+    {
+      "path": "src/lib/password-policy.test.ts",
+      "main": null,
+      "staging": "31cc1ea116048348e83779b714f7d311d097e128"
+    },
+    {
+      "path": "src/lib/password-policy.ts",
+      "main": null,
+      "staging": "75260205aa13f7d11b88d7225e3c01d0edefb9c2"
+    },
+    {
+      "path": "src/lib/pricing-months.test.ts",
+      "main": null,
+      "staging": "bbfd51384a7221482a87948a3526a36c912858ae"
+    },
+    {
+      "path": "src/lib/pricing-months.ts",
+      "main": null,
+      "staging": "ac9d24b40a357a7e64134b21902b64248b9121fe"
+    },
+    {
+      "path": "src/lib/production-migration-target.test.ts",
+      "main": "d377034d1eca9e276d36023efb1b7addf4bbc170",
+      "staging": null
+    },
+    {
+      "path": "src/lib/production-migration-target.ts",
+      "main": "33997714be4c4d93758be6c03ac2fdcb2309aae7",
+      "staging": null
+    },
+    {
+      "path": "src/lib/protected-layout-regression.test.ts",
+      "main": null,
+      "staging": "86ce0b7e9f375a1fea4004505c4d0654bceb40e7"
+    },
+    {
+      "path": "src/lib/recurring-booking-form.test.ts",
+      "main": "c7fb0c87abe0e323966e2c4624dc51919104d0cc",
+      "staging": "55735df0a55c7670162f20edbd0b8464c7cd414e"
+    },
+    {
+      "path": "supabase/config.toml",
+      "main": "00f524fb73eb4888a894000a5a2122db18001d26",
+      "staging": "192baed2c9319121c22466a2fe1c0643735cb6d8"
+    },
+    {
+      "path": "supabase/migrations/202608250001_user_pricing_policies.sql",
+      "main": null,
+      "staging": "1aa736053e9fabe2d0bedb6569823c3f68b02ab5"
+    },
+    {
+      "path": "supabase/migrations/202608250002_monthly_pricing_engine.sql",
+      "main": null,
+      "staging": "22ab56eaa2e51023c178eb701241b816c4cd8c25"
+    },
+    {
+      "path": "supabase/migrations/202608250003_admin_monthly_pricing_summary.sql",
+      "main": null,
+      "staging": "1225efb721b5655c185bd6d5e49aeba2d2e29f27"
+    },
+    {
+      "path": "supabase/migrations/202608250004_settlement_snapshot.sql",
+      "main": null,
+      "staging": "182fda204d530f0b9cb5d525ad6707925114a27e"
+    },
+    {
+      "path": "supabase/migrations/202608250005_admin_settlement_status.sql",
+      "main": null,
+      "staging": "7f89e9af9b512678971a8d7349be09877520c891"
+    },
+    {
+      "path": "supabase/migrations/202608250006_training_group_booking_rate.sql",
+      "main": null,
+      "staging": "fe80cccbbcdcfea9de2ba213ee4ec93f4566fca4"
+    },
+    {
+      "path": "supabase/migrations/202608250007_training_group_series_rate.sql",
+      "main": null,
+      "staging": "edb0794e3fd6ccbd38dc98615cf2e6dc76ccf389"
+    },
+    {
+      "path": "supabase/migrations/202608250008_payment_management.sql",
+      "main": null,
+      "staging": "d55e1bdaddc5e774b39b0a13517d8a55632632a7"
+    },
+    {
+      "path": "supabase/migrations/202608250009_payment_history.sql",
+      "main": null,
+      "staging": "7d033ce5cc36ed4ed432c78a2e0f3a70cbc9d2eb"
+    },
+    {
+      "path": "supabase/migrations/202608250010_harden_payment_idempotency.sql",
+      "main": null,
+      "staging": "3e6e411064ee0e1d3db644abf76fcf219f26c60b"
+    },
+    {
+      "path": "supabase/migrations/202608250011_monthly_booking_detail_title.sql",
+      "main": null,
+      "staging": "1d3448728897325838035c67cf04f755e559e1a2"
+    },
+    {
+      "path": "supabase/migrations/202608250012_atomic_training_group_rate_creation.sql",
+      "main": null,
+      "staging": "96b2a327bd60de82e91bee92241b8af611f6f039"
+    },
+    {
+      "path": "supabase/migrations/202608250013_security_hardening_internal_helpers.sql",
+      "main": null,
+      "staging": "ac380a605a4987ddb0b371b6f78d8bb917fed5ed"
+    },
+    {
+      "path": "supabase/migrations/202608250014_fixed_user_pricing_admin.sql",
+      "main": null,
+      "staging": "16b61bdc1cc26209f13b5229c3078e1727b32867"
+    },
+    {
+      "path": "supabase/migrations/202608250015_harden_pricing_configuration_api.sql",
+      "main": null,
+      "staging": "5f0901f4aa6dd8f1ab31951d50a5849b8907b33e"
+    },
+    {
+      "path": "supabase/migrations/202608260001_harden_pricing_policy_rpc.sql",
+      "main": null,
+      "staging": "3a037c5b84a5fc34b46ac5456cdd6315f81674cb"
+    },
+    {
+      "path": "supabase/migrations/202608260002_harden_settlement_booking_line_immutability.sql",
+      "main": null,
+      "staging": "8818a882c9a313211a5f1d9c4ea7799fc6a8f643"
+    },
+    {
+      "path": "supabase/migrations/20260826205749_protect_closed_settlement_line_inserts.sql",
+      "main": null,
+      "staging": "b5d4189d4a4be8de5a3201b6bdbd8d0df669db18"
+    },
+    {
+      "path": "supabase/migrations/20260829145720_allow_past_booking_creation.sql",
+      "main": null,
+      "staging": "01400c1429dcb45ceb2271ce4f42ba0306548bfb"
+    },
+    {
+      "path": "supabase/migrations/20260830183000_booking_update_cutoff_guard.sql",
+      "main": null,
+      "staging": "6e1ad75a209530417ddc9e8c3dcbef5e512c0207"
+    },
+    {
+      "path": "supabase/migrations/202609030001_booking_email_outbox.sql",
+      "main": null,
+      "staging": "cc6836e315bbd420f4610ffe9f9755cd75e4eb40"
+    },
+    {
+      "path": "supabase/migrations/202609030002_enqueue_booking_emails_from_audit.sql",
+      "main": null,
+      "staging": "ae84a1723f5bd8cfae14297b1074f4e5cd306a14"
+    },
+    {
+      "path": "supabase/migrations/20260903185410_booking_email_delivery_monitor.sql",
+      "main": null,
+      "staging": "802f6f9db537a5c731a0398a9085257486b0c6bc"
+    },
+    {
+      "path": "supabase/migrations/202609040001_first_login_password_change.sql",
+      "main": null,
+      "staging": "5323efc37cc3596fbc29c30442e56977edbfd279"
+    },
+    {
+      "path": "supabase/migrations/202609050001_admin_temporary_password.sql",
+      "main": null,
+      "staging": "e37224b9436aa80788d14edb3a412d58fc138774"
+    },
+    {
+      "path": "supabase/migrations/202609050002_precise_password_change_audit.sql",
+      "main": null,
+      "staging": "f0573488a905f18f4f030b742a67ee25fae0e4ac"
+    },
+    {
+      "path": "supabase/migrations/20260909182529_allbooked_staging_import.sql",
+      "main": "1fdff79d00f546c3e8e543b4e964b91c32401c18",
+      "staging": "7dcfaf743dc8f24860b7c544a86c9fb42fcab588"
+    },
+    {
+      "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",
+      "main": "bd0aa29d88d334ac205a70a9ddf50c371b0bcf85",
+      "staging": null
+    },
+    {
+      "path": "supabase/migrations/20260914120000_retire_legacy_papp_import_rpcs.sql",
+      "main": "7e448a730ce6f6c8301ae9f8fe494ec84a7fc5d0",
+      "staging": null
+    },
+    {
+      "path": "supabase/migrations/20260917100000_system_health_check.sql",
+      "main": "2338b5e426813ced8ae5afcf2e7901e740456833",
+      "staging": null
+    },
+    {
+      "path": "supabase/templates/recovery.html",
+      "main": null,
+      "staging": "6d823c31fc958034bc89f770aa1a9eb1cc245745"
+    },
+    {
+      "path": "supabase/tests/database/003_create_booking_rpc.sql",
+      "main": "81b4faba1a842cad4ab8fc44a345f0d16a5cdd39",
+      "staging": "055ed48bc26e37ed1e7ba430d238aacec230db88"
+    },
+    {
+      "path": "supabase/tests/database/009_recurring_booking_rpc.sql",
+      "main": "13dc50e3c2b46b4230f493baa2f715e72a0d13f4",
+      "staging": "786257f0054fac70896f201d71ab5b4ee949b66b"
+    },
+    {
+      "path": "supabase/tests/database/028_monthly_pricing_engine.sql",
+      "main": null,
+      "staging": "d0ead5c8f09e0686a466e6e5c0d2becb31143f3b"
+    },
+    {
+      "path": "supabase/tests/database/082_user_pricing_policies.sql",
+      "main": null,
+      "staging": "0fc711a88458a26090e8a20b7289383212a027ff"
+    },
+    {
+      "path": "supabase/tests/database/083_admin_monthly_pricing_summary.sql",
+      "main": null,
+      "staging": "3fe4943205646745ed202d2b4e3021ab39f30f76"
+    },
+    {
+      "path": "supabase/tests/database/084_settlement_snapshot.sql",
+      "main": null,
+      "staging": "fe861772ada4f46950b3bfcaa58afd7a30dde036"
+    },
+    {
+      "path": "supabase/tests/database/085_training_group_booking_rate.sql",
+      "main": null,
+      "staging": "fb9245674f0bbcf3aafc657b4eb0080b14e1899a"
+    },
+    {
+      "path": "supabase/tests/database/086_payment_management.sql",
+      "main": null,
+      "staging": "008a54c19583d10ef36f489241a0f8b8eccf427c"
+    },
+    {
+      "path": "supabase/tests/database/087_monthly_booking_detail_title.sql",
+      "main": null,
+      "staging": "6578e8171311429b5df341e4b24cf3828c52a6d9"
+    },
+    {
+      "path": "supabase/tests/database/088_atomic_training_group_rate_creation.sql",
+      "main": null,
+      "staging": "a108e2cefb2cc313616a122ec477e4424101f74f"
+    },
+    {
+      "path": "supabase/tests/database/089_security_hardening_internal_helpers.sql",
+      "main": null,
+      "staging": "0d2a5d15557e4bf7c149b1e82d0b35d6dd3f25c8"
+    },
+    {
+      "path": "supabase/tests/database/090_fixed_user_pricing_admin.sql",
+      "main": null,
+      "staging": "ddc30d345ee7eb0fbde1750342f2c5abbe12f8bf"
+    },
+    {
+      "path": "supabase/tests/database/091_fixed_user_pricing_hardening.sql",
+      "main": null,
+      "staging": "3fd5414e2f9f4307f2af3ada1168fabec99d7090"
+    },
+    {
+      "path": "supabase/tests/database/091_fixed_user_pricing_regressions.sql",
+      "main": null,
+      "staging": "02a45aba8eaa7b3c0311ad09117821fbf4810c3f"
+    },
+    {
+      "path": "supabase/tests/database/092_pricing_future_timeline.sql",
+      "main": null,
+      "staging": "4ca6996652fd040fb3e41f741924a2b0ce83ebee"
+    },
+    {
+      "path": "supabase/tests/database/100_series_scope_semantics.sql",
+      "main": null,
+      "staging": "ce7dbf7aa20e9bba7238da41c51ba67278d63301"
+    },
+    {
+      "path": "supabase/tests/database/101_booking_update_cutoff_and_rollback.sql",
+      "main": null,
+      "staging": "dd2295ef039763ebe97d39a01941f157045a08b4"
+    },
+    {
+      "path": "supabase/tests/database/102_booking_update_cutoff_service_bypass.sql",
+      "main": null,
+      "staging": "5743c91c1cc73a8b32d672bdf2beb60f24ad6c4f"
+    },
+    {
+      "path": "supabase/tests/database/103_booking_duration_and_touching_boundaries.sql",
+      "main": null,
+      "staging": "e4a75fad0dc12ca3370d9e3024ef2aec2d596862"
+    },
+    {
+      "path": "supabase/tests/database/104_booking_email_outbox.sql",
+      "main": null,
+      "staging": "39f78f0a3e81ee49d2e199e3607bf4d6573567b0"
+    },
+    {
+      "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
+      "main": null,
+      "staging": "dc188a256bc446e1a871c11e3683594ddea8eca5"
+    },
+    {
+      "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
+      "main": null,
+      "staging": "9755bcfd589abf298deedc8b35f570328ed4b331"
+    },
+    {
+      "path": "supabase/tests/database/107_admin_temporary_password.sql",
+      "main": null,
+      "staging": "aa8b3742e4339423d07245cc125d64517b558f56"
+    },
+    {
+      "path": "supabase/tests/database/108_password_change_audit_semantics.sql",
+      "main": null,
+      "staging": "29ba856ecc6bf807e84b5e8edd7dbce931d275ac"
+    },
+    {
+      "path": "supabase/tests/database/109_allbooked_staging_import.sql",
+      "main": "04eedce3a561fb7e638658231093d2490a8a9474",
+      "staging": "5a9c7b9905f95d288ae7678811f340e059cc2b2e"
+    },
+    {
+      "path": "supabase/tests/database/110_generic_allbooked_customer_import.sql",
+      "main": "b1a4cf9fce58712dab8a6b7767836bc6674f780b",
+      "staging": null
+    },
+    {
+      "path": "supabase/tests/database/110_system_health_check.sql",
+      "main": "f627b425db4aeede4777daf76f12fef649965a9d",
+      "staging": null
+    },
+    {
+      "path": "vercel.json",
+      "main": null,
+      "staging": "21d0103d69d8bf528efb85592fa014502eb72092"
+    }
+  ]
+}
