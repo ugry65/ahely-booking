@@ -1,4 +1,4 @@
-> **Dokumentum státusza – 2026-09-17:** Ez a fájl UAT-futási jegyzőkönyv-sablon és történeti nyilvántartás. Az üres mezők és a `NEM FUTOTT` értékek azt jelentik, hogy ebben a dokumentumban nincs rögzített manuális UAT-bizonyíték; automatikus CI-tesztek ezt nem helyettesítik. A dokumentumot csak tényleges, környezethez, commit SHA-hoz és tesztelőhöz kötött manuális UAT után szabad PASS/elfogadási állapotra frissíteni. A kapcsolódó checklist marad az UAT elsődleges tesztforrása.
+> **Dokumentum státusza – 2026-09-18:** Ez a fájl UAT-futási jegyzőkönyv-sablon és történeti nyilvántartás. Az üres mezők és a `NEM FUTOTT` értékek azt jelentik, hogy ebben a dokumentumban nincs rögzített manuális UAT-bizonyíték; automatikus CI-tesztek ezt nem helyettesítik. A dokumentumot csak tényleges, környezethez, commit SHA-hoz és tesztelőhöz kötött manuális UAT után szabad PASS/elfogadási állapotra frissíteni. A kapcsolódó checklist marad az UAT elsődleges tesztforrása.
 
 # A-Hely foglalási rendszer – UAT futási jegyzőkönyv
 
@@ -93,11 +93,15 @@ Kapcsolódó issue: #32
 
 | Téma | Döntés | Prioritás / issue |
 | --- | --- | --- |
-| Admin más user foglalásának módosítása/törlése UI-ból | NYITOTT | |
-| Admin más user számára történő foglalás | NYITOTT | |
-| Heti nézet szükséges-e a Skedda kiváltásához | NYITOTT | |
-| E-mail visszaigazolás szükséges-e az első éles verzióhoz | NYITOTT | |
-| Hiányzó admin központi beállítások | NYITOTT | |
+| Admin más user foglalásának módosítása/törlése UI-ból | KÓDSZINTEN RENDELKEZÉSRE ÁLL; célzott manuális UAT még szükséges | |
+| Admin más user számára történő foglalás | SZÜKSÉGES ÉS IMPLEMENTÁLT; célzott manuális UAT-bejegyzés szükséges | |
+| Heti nézet szükséges-e a Skedda kiváltásához | NEM BLOKKOLÓ az első éles verzióban; napi nézet elegendő | |
+| E-mail visszaigazolás szükséges-e az első éles verzióhoz | IGEN; korábban tesztelve a projektgazda szerint, külön dokumentált ellenőrzés szükséges | |
+| Hiányzó admin központi beállítások | JELENLEG NINCS ISMERT HIÁNYZÓ KÖZPONTI BEÁLLÍTÁS | |
+
+## Aktuális scope- és bizonyítékállapot
+
+A fenti döntések a projektgazda 2026-09-18-i megerősítése alapján kerültek rögzítésre. Ez a döntésfrissítés nem helyettesíti a még üres manuális UAT-sorok tényleges kitöltését; a manuális futásokat továbbra is környezethez, commit SHA-hoz és tesztelőhöz kötött bizonyítékkal kell lezárni.
 
 ## Elfogadási döntés
 
