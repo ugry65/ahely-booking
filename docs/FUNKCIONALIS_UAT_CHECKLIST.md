@@ -1,3 +1,5 @@
+> **Helyesbítés – 2026-09-18:** Az aktuális ág-, teszt- és kiadási állapot elsődleges belépési pontja: [RELEASE_EVIDENCE.md](RELEASE_EVIDENCE.md). Az alábbi korábbi dátumozott állapotok történetiek. A stagingen elfogadott tesztek nem minősíthetők el nem végzettnek a main hiányos dokumentációja miatt. A megőrzött staging checklist és jegyzőkönyv az új bizonyítékjegyzékből elérhető; jelen dokumentum régi scope-ja nem írja felül a későbbi elfogadásokat.
+
 # A-Hely foglalási rendszer – Funkcionális UAT checklist
 
 Verzió: 1.0

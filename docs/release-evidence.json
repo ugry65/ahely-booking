@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "baseline": {
+    "main": "bfb1f346c8b93c6e1f6184ac5892591cec3b9889",
+    "staging": "c71f790e20e979898ac38f934ddb243747d008bc"
+  },
+  "evidence": [
+    {
+      "path": "docs/evidence/2026-09-18-staging/UAT_FUTASI_JEGYZOKONYV.md",
+      "sha": "0a0e6ce9b65c1b9576e3ef99c5d96dbb57427668"
+    },
+    {
+      "path": "docs/evidence/2026-09-18-staging/FUNKCIONALIS_UAT_CHECKLIST.md",
+      "sha": "95a06ba9589609a6b3a51ae6cb89971bf3a7dfcb"
+    },
+    {
+      "path": "docs/evidence/2026-09-18-staging/BOOKING_EMAIL_RESEND_STAGING_UAT.md",
+      "sha": "351efd1af19616d003003ad3d321c5caeda97019"
+    },
+    {
+      "path": "docs/evidence/2026-09-18-staging/UAT_CHECKPOINT_2026-08-30.md",
+      "sha": "ce21b0adbc6308b0a7dc53384d75425bbbab1dcb"
+    }
+  ],
+  "features": [
+    {
+      "id": "main-release-foundations",
+      "required": true,
+      "state": "present",
+      "artifacts": [
+        {
+          "path": "src/app/api/health/route.ts",
+          "sha": "b4cca3f9c6d27c4632c1c370b0b1d4f009a85a04"
+        },
+        {
+          "path": "supabase/migrations/20260917100000_system_health_check.sql",
+          "sha": "2338b5e426813ced8ae5afcf2e7901e740456833"
+        },
+        {
+          "path": ".github/workflows/production-backup.yml",
+          "sha": "c4510d8b00409764d62b1a1c27238c2ef5470bd9"
+        },
+        {
+          "path": "src/app/api/internal/production-customer-migration-import/route.ts",
+          "sha": "6a47b5033bd850de1016065fb3bda95868c85473"
+        },
+        {
+          "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",
+          "sha": "bd0aa29d88d334ac205a70a9ddf50c371b0bcf85"
+        }
+      ]
+    },
+    {
+      "id": "booking-email",
+      "required": true,
+      "state": "absent",
+      "artifacts": [
+        {
+          "path": "scripts/test-booking-email-outbox-concurrency.sh",
+          "sha": null
+        },
+        {
+          "path": "src/app/api/internal/booking-email-worker/route.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/booking-email.test.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/monitor.test.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/monitor.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/provider.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/render.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/schema.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/server.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/vercel-cron-config.test.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/worker-route.test.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/worker-route.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/worker.test.ts",
+          "sha": null
+        },
+        {
+          "path": "src/lib/booking-email/worker.ts",
+          "sha": null
+        },
+        {
+          "path": "supabase/migrations/202609030001_booking_email_outbox.sql",
+          "sha": null
+        },
+        {
+          "path": "supabase/migrations/202609030002_enqueue_booking_emails_from_audit.sql",
+          "sha": null
+        },
+        {
+          "path": "supabase/migrations/20260903185410_booking_email_delivery_monitor.sql",
+          "sha": null
+        },
+        {
+          "path": "supabase/tests/database/104_booking_email_outbox.sql",
+          "sha": null
+        },
+        {
+          "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
+          "sha": null
+        },
+        {
+          "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
+          "sha": null
+        },
+        {
+          "path": "vercel.json",
+          "sha": null
+        }
+      ]
+    }
+  ],
+  "releaseBlockers": [
+    "Integrate tested staging functionality with current main changes; verify dependencies and migrations.",
+    "Record integrated candidate CI and independent review.",
+    "Verify production deployment SHA, database migration state and email runtime configuration/delivery."
+  ]
+}
