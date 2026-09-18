@@ -17,5 +17,5 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - run: node --test scripts/check-release-evidence.test.mjs
+      - run: node --test scripts/test-release-evidence.mjs
       - run: node scripts/check-release-evidence.mjs

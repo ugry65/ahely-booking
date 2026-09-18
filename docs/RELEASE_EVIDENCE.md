@@ -50,7 +50,7 @@ A main-only vizsgálat összekeverte a „mainből hiányzik” és a „nem ké
 ## Automatikus védelem és korlátai
 
 - `node scripts/check-release-evidence.mjs`: ellenőrzi a történeti másolatok SHA-ját és a nyilvántartott kódfájlok állapotát. Elavult állapot vagy részleges e-mail-integráció hibát ad.
-- `node --test scripts/check-release-evidence.test.mjs`: pozitív és negatív regressziós esetek.
+- `node --test scripts/test-release-evidence.mjs`: pozitív és negatív regressziós esetek.
 - `node scripts/check-release-evidence.mjs --release`: az előzőeken túl megköveteli a kiadáshoz szükséges funkciók jelenlétét és a nyitott kiadási blokkok lezárását. **Jelenleg szándékosan hibával áll meg.**
 - A `Release evidence` workflow minden PR-on és main/staging pushon lefuttatja a konzisztenciaellenőrzést. Ez nem automatikus élesítési engedély.
 - A GitHub branch protection required-check beállítása ebben a változtatásban nem módosult. A release ellenőrzés nem épül be automatikusan a meglévő deployment workflow-kba; az integrációs release kötelező ellenőrzési lépése.
