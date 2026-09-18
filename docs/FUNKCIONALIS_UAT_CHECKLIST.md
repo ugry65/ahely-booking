@@ -419,15 +419,16 @@ A napi foglalási naptár használhatóságát legalább az alábbi viewportokon
 
 ## 14. Kifejezetten ellenőrzendő potenciális funkcionális gap-ek
 
-A kódszintű áttekintés alapján ezekre a manuális UAT során külön figyelni kell:
+A következő pontokat a jelenlegi kód és a projektgazdai scope-döntések alapján kell kezelni:
 
-1. **Admin foglaláskezelés:** az adatbázis admin módosítás/törlés képessége implementált, de ellenőrizni kell, hogy a jelenlegi UI-ból egy admin más user foglalását ténylegesen kényelmesen tudja-e kezelni.
-2. **Admin nevében / user számára történő foglalás:** ellenőrizni kell, szükséges-e a Skedda-kiváltáshoz, és ha igen, van-e hozzá teljes UI-folyamat.
-3. **Heti nézet:** a jelenlegi implementációs terv szerint még nincs kész. Nem blokkoló, ha a jóváhagyott Skedda-kiváltási minimum a napi többhelyiséges nézet; üzleti UAT során döntendő.
-4. **E-mail visszaigazolás:** outbox-adatmodell van, de a worker/retry a backlog szerint nincs kész. A napi foglalási működéshez el kell dönteni, hogy ez Skedda-kiváltási blokkoló-e vagy későbbi kényelmi funkció.
-5. **Admin beállítások teljessége:** a fő jogosultság- és helyiségkezelés kész, de a még nem exponált központi paramétereket külön fel kell mérni.
+1. **Admin foglaláskezelés:** az adatbázis admin módosítás/törlés képessége implementált; célzott manuális UAT-tal kell igazolni, hogy az admin a felületről más user foglalását is kényelmesen tudja kezelni.
+2. **Admin más nevében / user számára történő foglalása:** szükséges és implementált. A foglalási felületen céluser választható; a szerveroldali és adatbázis-jogosultsági ellenőrzés adminra korlátozza. Célzott manuális UAT-bejegyzés még szükséges.
+3. **Heti nézet:** az első éles verzióhoz nem blokkoló; a napi többhelyiséges nézet a jóváhagyott minimum. A heti nézet későbbi fejlesztési lehetőség.
+4. **Foglalási visszaigazoló e-mail:** az első éles verzióhoz szükséges. A projektgazda korábbi UAT-visszajelzése szerint tesztelve és működőképes; a végleges UAT-jegyzőkönyvben külön e-mail-ellenőrzési bizonyítékot kell rögzíteni. Ez külön kezelendő a Supabase Auth jelszó-visszaállító e-mailjétől.
+5. **Admin központi beállítások:** jelenleg nincs ismert hiányzó központi beállítás, amely az első éles használatot blokkolná.
+6. **Tömeges migráció:** a jelenlegi migrációs eljárás egy ügyfél/fájl modellű. Több ügyfél egy fájlban történő importja jelenleg szándékosan elutasított; ez külön fejlesztés és regressziós tesztcsomag tárgya, nem első élesítési funkció.
 
-Egy ilyen gap nem automatikusan hiba: az UAT során az üzleti szükséglet alapján `P2`, `P3` vagy `NEM SZÜKSÉGES MOST` döntést kap.
+Egy ilyen gap nem automatikusan hiba: az UAT során az üzleti szükséglet és a tényleges bizonyíték alapján `P2`, `P3`, `NEM SZÜKSÉGES MOST` vagy `KÉSZ` döntést kap.
 
 ## 15. UAT jegyzőkönyv
 
