@@ -438,7 +438,11 @@ begin
 
   perform set_config('test.email_bridge_failure_booking_id', v_booking_id::text, true);
 
-  delete from public.profiles
+  -- Keep the profile row because bookings.user_id has a foreign key to it.
+  -- Blank only the notification address: this reaches the bridge's recipient
+  -- resolution failure without violating authoritative booking constraints.
+  update public.profiles
+  set email = ''
   where id = 'a5000000-0000-0000-0000-000000000003';
 
   set constraints booking_email_from_audit immediate;
