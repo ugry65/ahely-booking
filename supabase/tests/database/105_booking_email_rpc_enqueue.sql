@@ -460,10 +460,16 @@ select is(
   0::bigint,
   'Bridge-hiba esetén nem marad részleges e-mail outbox tétel'
 );
-select is(
-  (select count(*) from public.audit_logs where correlation_id = 'a5000000-0000-0000-0000-000000000108'),
-  1::bigint,
-  'Bridge-hiba mellett a booking auditnyoma megmarad'
+select ok(
+  exists (
+    select 1
+    from public.audit_logs
+    where correlation_id = 'a5000000-0000-0000-0000-000000000108'
+      and action = 'booking.created'
+      and entity_type = 'booking'
+      and entity_id = current_setting('test.email_bridge_failure_booking_id')
+  ),
+  'Bridge-hiba mellett a booking létrehozási auditnyoma megmarad'
 );
 
 select * from finish();
