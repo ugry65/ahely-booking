@@ -129,7 +129,7 @@
         },
         {
           "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
-          "sha": "313d44285f4efa5dde956e05b23b81501a34c808"
+          "sha": "146c6cf2e832ba22928c962c9a543e5504b55c8b"
         },
         {
           "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
