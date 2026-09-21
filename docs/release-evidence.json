@@ -143,7 +143,9 @@
     }
   ],
   "releaseBlockers": [
-    "Record integrated candidate CI and independent review.",
-    "Verify production deployment SHA, database migration state and email runtime configuration/delivery."
+    "Get independent security/data-integrity review and merge approval for the postmerge booking-email bridge warning PR.",
+    "Approve and verify any required staging and production database migrations separately; production booking-email migrations are not applied.",
+    "Verify live email mode and required runtime secret presence, resolve staging pending recipient backlog, and complete targeted real-provider staging UAT.",
+    "Obtain explicit project-owner approval before production email send activation."
   ]
 }

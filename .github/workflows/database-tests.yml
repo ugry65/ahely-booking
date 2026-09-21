@@ -12,6 +12,7 @@ on:
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
+      - "scripts/test-booking-email-bridge-warning.sh"
   push:
     branches: [main]
     paths:
@@ -24,6 +25,7 @@ on:
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
+      - "scripts/test-booking-email-bridge-warning.sh"
   workflow_dispatch:
 
 permissions:
@@ -55,6 +57,9 @@ jobs:
 
       - name: Run pgTAP database tests
         run: supabase test db
+
+      - name: Run booking email bridge warning integration test
+        run: bash ./scripts/test-booking-email-bridge-warning.sh
 
       - name: Run concurrent booking integration test
         run: ./scripts/test-booking-concurrency.sh

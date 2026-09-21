@@ -10,6 +10,7 @@ fi
 supabase db start
 supabase db reset
 supabase test db
+bash ./scripts/test-booking-email-bridge-warning.sh
 ./scripts/test-booking-concurrency.sh
 ./scripts/test-booking-mutation-concurrency.sh
 bash ./scripts/test-room-access-concurrency.sh

@@ -1,6 +1,6 @@
-# Kiadási bizonyítékok és ágak egyeztetése
+> **Friss ellenőrzés – 2026-09-21, PR #175 után:** main `930fd6a39056e1d652b1d055d506a2956ea3fdce`. A merge utáni három CI workflow PASS, négy legfrissebb Vercel deployment READY és ugyanezt a SHA-t mutatja. Az e-mail migrációk stagingen alkalmazva vannak; productionben egyik sem. A runtime mód és titkok élő értéke nem igazolt. Az alábbi 2026-09-18-i ág- és teendőlista **történeti pillanatkép**, nem a mai main állapota. A jelenlegi e-mail élesítési terv: [BOOKING_EMAIL_PRODUCTION_READINESS.md](BOOKING_EMAIL_PRODUCTION_READINESS.md). Ez nem production send engedély.\n\n# Kiadási bizonyítékok és ágak egyeztetése
 
-Ellenőrzés: 2026-09-18. Ez az aktuális státusz belépési pontja. A történeti dokumentumok dátumozott állításait az akkori környezetre kell értelmezni.
+Ellenőrzés: 2026-09-18. Az alábbi leltár történeti baseline. A történeti dokumentumok dátumozott állításait az akkori környezetre kell értelmezni.
 
 ## Rögzített forrásverziók
 
