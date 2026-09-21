@@ -42,3 +42,14 @@ A trigger csak új kanonikus audit INSERT eseményeket dolgoz fel, régi foglal�
 ## Integrációs regresszióvédelem
 
 A CI külön helyi upgrade-próbát futtat: a három e-mail migráció nélkül újraépíti a main sémát, utólag alkalmazza a három eredeti SQL-t, majd ismét futtatja a pgTAP teszteket. Ez az alkalmazási sorrendet vizsgálja, nem a production adatok másolata. Az ügyfélimport-teszt külön ellenőrzi, hogy import és próbaimport-visszavonás után sem keletkezik outbox értesítés.
+
+## Rögzített integrációs CI
+
+Vizsgált kód: `13744ace01e89f65177e187ba2ce1827fb8f3721`.
+
+- [Application checks #749](https://github.com/ugry65/ahely-booking/actions/runs/35581838051): PASS (167 alkalmazásteszt, typecheck, build, meglévő backup/health guardok).
+- [Database tests #588](https://github.com/ugry65/ahely-booking/actions/runs/35581838111): pgTAP PASS, minden konkurenciateszt PASS, late main upgrade PASS. A pgTAP friss sémán és main-upgrade után is sikeres.
+- [Release evidence #5](https://github.com/ugry65/ahely-booking/actions/runs/35581837995): PASS.
+- A DB lint átment; a változatlan create_booking függvényben egy nem olvasott v_existing_id változó figyelmeztetése megmaradt.
+- A fenti kódot követő lezáró változás csak e bizonyítékokat rögzíti és a meglévő test-database.sh eredeti futtatási jogosultságát őrzi meg. A végleges HEAD CI-je a PR #174 ellenőrzései között található.
+- Független kritikus SQL/security review még szükséges az AGENTS.md alapján. Merge / éles migráció / send aktiválás nem történt.
