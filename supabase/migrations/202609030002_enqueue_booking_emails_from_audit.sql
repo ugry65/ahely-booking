@@ -286,8 +286,14 @@ begin
   );
 
   return new;
+exception
+  when others then
+    -- Booking data is authoritative; notification failures must never abort
+    -- a successful booking transaction. The outbox is best-effort here and
+    -- operational monitoring is handled independently by the worker/monitor.
+    return new;
 end;
-$$;
+$;
 
 revoke all on function public.enqueue_booking_email_from_audit()
   from public, anon, authenticated, service_role;
