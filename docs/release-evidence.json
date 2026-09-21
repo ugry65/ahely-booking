@@ -117,7 +117,7 @@
         },
         {
           "path": "supabase/migrations/202609030002_enqueue_booking_emails_from_audit.sql",
-          "sha": "814647f860bb5337ca75c56c936e0da35e74985e"
+          "sha": "ca093a02e3f439ef49fd2355245b2a96053252d9"
         },
         {
           "path": "supabase/migrations/20260903185410_booking_email_delivery_monitor.sql",
