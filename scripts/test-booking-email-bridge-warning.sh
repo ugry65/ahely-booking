@@ -6,12 +6,8 @@ if ! command -v psql >/dev/null 2>&1; then
   exit 127
 fi
 
-database_url="${AHELY_TEST_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
-# This test writes a booking fixture, so it must never connect to a live DB.
-case "$database_url" in
-  postgresql://*@127.0.0.1:54322/*|postgresql://*@localhost:54322/*|postgres://*@127.0.0.1:54322/*|postgres://*@localhost:54322/*) ;;
-  *) echo "Hiba: a warning teszt kizárólag a helyi Supabase tesztadatbázison futtatható." >&2; exit 2 ;;
-esac
+# This test writes a booking fixture. Never accept a caller-supplied target.
+database_url="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
 
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
