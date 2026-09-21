@@ -6,6 +6,7 @@ on:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
+      - "scripts/test-booking-email-outbox-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -17,6 +18,7 @@ on:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
+      - "scripts/test-booking-email-outbox-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -74,6 +76,9 @@ jobs:
 
       - name: Run repeat permission compatibility concurrency test
         run: bash ./scripts/test-repeat-permission-concurrency.sh
+
+      - name: Run concurrent booking email claim test
+        run: bash ./scripts/test-booking-email-outbox-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning

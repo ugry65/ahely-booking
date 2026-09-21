@@ -15,7 +15,7 @@ Ellenőrzés: 2026-09-18. Ez az aktuális státusz belépési pontja. A történ
 | --- | --- | --- |
 | Korábbi funkcionális UAT | Augusztus 30-i egyeztetés: 50 PASS, 22 modul-elfogadás, 1 döntéssel lezárt, 22 bizonyíték-egyeztetendő, 3 akkori production blokk; nincs dokumentált FAIL. | Történeti staging eredmény, nem 22 új teszt és nem jelenlegi production GO. |
 | Foglalás / módosítás / lemondás / ismétlődés | Imre 2026-09-18-i közlése: valamennyi kipróbált lépés működött, értesítést kapott. Korábbi tételes jegyzőkönyv is rendelkezésre áll. | Felhasználói megerősítés; ebből új pontos futási időpontot, SHA-t vagy teszteset-számot nem képzünk. |
-| Booking e-mail capture | 16/16 captured; create/update/cancel, admin owner címzés, series/occurrence/following; üres sor ismételt feldolgozása no-op. | Capture nem valódi kézbesítés. A megvalósítás stagingen megvan, mainben hiányzik. |
+| Booking e-mail capture | 16/16 captured; create/update/cancel, admin owner címzés, series/occurrence/following; üres sor ismételt feldolgozása no-op. | Capture nem valódi kézbesítés. A történeti staging implementáció célzottan bekerült az integrációs jelöltbe; a main merge és production aktiválás külön kapu. |
 | Valós Resend kézbesítés | Szeptember 10-i jegyzőkönyv: create/update/cancel PASS, megfelelő címzett és tartalom. | A jegyzőkönyv még nyitottnak jelöl további eseteket; a későbbi felhasználói elfogadást külön forrásként kezeljük. Production aktiválás nincs ezzel bizonyítva. |
 | Admin más nevében | Elfogadott követelmény; staging capture tesztben az értesítés a booking ownerhez tartozik. | Nem új üzleti döntés és nem újra megvalósítandó funkció. |
 | Backup és monitoring | A beszélgetésben ütemezett sikeres backupok, restore-drill eredmények és DOWN/UP riasztás bizonyítékai szerepelnek. | Nem minősítjük újra hiányzónak egy régi dokumentum alapján. Az aktuális szolgáltatói állapotot ez a Git-audit nem kérdezte le. |
@@ -64,3 +64,9 @@ A main-only vizsgálat összekeverte a „mainből hiányzik” és a „nem ké
 4. Többügyfeles import továbbra is külön fejlesztés; a jelenlegi együgyfeles import korlátja nem változott.
 
 Ez a rendezés nem integrálja az e-mail kódot és nem jelent teljes élesítési GO-t.
+
+## 2026-09-21 — Célzott e-mail integráció
+
+Az integrációs ág a PR #173 utáni main (`eb91b00741ed9419c5f5de2223195b6927774935`) és a fenti staging célzott egyeztetése. Az e-mail modul, admin monitor, három eredeti migráció, tesztek, SMTP-függőségek és worker cron átvétele megtörtént. A régi production-health cron nem kerül vissza. A történeti UAT-források változatlanok. Az aktuális terv és ellenőrzési határok: [BOOKING_EMAIL_MAIN_INTEGRATION.md](BOOKING_EMAIL_MAIN_INTEGRATION.md).
+
+A korábbi „nem integrálja” megállapítás a szeptember 18-i dokumentációs PR-ra vonatkozik. Ez az integráció sem jelent production GO-t: CI, független review, merge és éles konfiguráció/deployment ellenőrzése szükséges.
