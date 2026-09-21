@@ -7,6 +7,7 @@ on:
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
+      - "scripts/test-booking-email-main-upgrade.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -19,6 +20,7 @@ on:
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
+      - "scripts/test-booking-email-main-upgrade.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -82,6 +84,9 @@ jobs:
 
       - name: Lint database schema
         run: supabase db lint --level warning
+
+      - name: Verify late email migration upgrade onto main schema
+        run: bash ./scripts/test-booking-email-main-upgrade.sh
 
       - name: Stop local Supabase services
         if: always()

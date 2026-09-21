@@ -35,6 +35,10 @@ A trigger csak új kanonikus audit INSERT eseményeket dolgoz fel, régi foglal�
 
 - Korábbi staging UAT és Resend kézbesítés: változatlan másolatok a `docs/evidence/2026-09-18-staging/` alatt; nem újratesztelendő üres sablonként.
 - Integrált jelölt helyi ellenőrzése: pnpm install --frozen-lockfile sikeres; 28 fájl / 167 Vitest teszt PASS; typecheck PASS.
-- Build, adatbázis CI és független review eredménye a PR-on rögzítendő; régi staging eredmény nem helyettesíti az integrációs CI-t.
+- Build PASS (worker és admin monitor dinamikus). Adatbázis CI és független review eredménye a PR-on rögzítendő; régi staging eredmény nem helyettesíti az integrációs CI-t.
 - Production deployment/migráció/config és célzott kézbesítés ebben a munkában nem történt.
 - `node scripts/check-release-evidence.mjs` konzisztenciaellenőrzés; `--release` a megmaradt kapuk miatt továbbra is blokkol.
+
+## Integrációs regresszióvédelem
+
+A CI külön helyi upgrade-próbát futtat: a három e-mail migráció nélkül újraépíti a main sémát, utólag alkalmazza a három eredeti SQL-t, majd ismét futtatja a pgTAP teszteket. Ez az alkalmazási sorrendet vizsgálja, nem a production adatok másolata. Az ügyfélimport-teszt külön ellenőrzi, hogy import és próbaimport-visszavonás után sem keletkezik outbox értesítés.
