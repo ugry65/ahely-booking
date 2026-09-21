@@ -1,6 +1,6 @@
 begin;
 
-select plan(36);
+select plan(37);
 
 select has_function('public','admin_import_allbooked_customer',array['uuid','uuid','text','text','text','text','text[]','jsonb','uuid'],'Az általános ügyfélimport függvény létezik');
 select ok(not has_function_privilege('authenticated','public.admin_import_allbooked_customer(uuid,uuid,text,text,text,text,text[],jsonb,uuid)','EXECUTE'),'Az authenticated nem hívhatja az importot');
@@ -169,6 +169,9 @@ reset role;
 select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='active'),1::bigint,'Az újraimport pontosan egy aktív valós foglalást hozott létre');
 select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='voided'),21::bigint,'A régi próba bizonyítéka voidolt állapotban elkülönül');
 select is((select is_active::text || '|' || phone from public.profiles where id='00000000-0000-0000-0000-000000000114'),'true|+36301111111','A valós újraimport újraaktiválja és frissíti a profilt');
+
+set constraints booking_email_from_audit immediate;
+select is((select count(*) from public.booking_email_outbox),0::bigint,'Az import és próbaimport-visszavonás nem generál foglalási értesítést');
 
 select * from finish();
 rollback;

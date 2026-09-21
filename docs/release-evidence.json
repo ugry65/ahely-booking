@@ -53,97 +53,105 @@
     {
       "id": "booking-email",
       "required": true,
-      "state": "absent",
+      "state": "present",
       "artifacts": [
         {
           "path": "scripts/test-booking-email-outbox-concurrency.sh",
-          "sha": null
+          "sha": "e491fb332605623bb59d8daf0d6c455aef94ec7b"
         },
         {
           "path": "src/app/api/internal/booking-email-worker/route.ts",
-          "sha": null
+          "sha": "09693a9cfcf8dde507c09242d201f0e8d0f1eed4"
         },
         {
           "path": "src/lib/booking-email/booking-email.test.ts",
-          "sha": null
+          "sha": "d5fec221cd5ad5c05599bfd1bc649e221e69cbfe"
         },
         {
           "path": "src/lib/booking-email/monitor.test.ts",
-          "sha": null
+          "sha": "3bf4c2d4e257d52ff190225de41ec888c85ae18c"
         },
         {
           "path": "src/lib/booking-email/monitor.ts",
-          "sha": null
+          "sha": "64d0476dd7ffad4b83698102528e7e73118a3c53"
         },
         {
           "path": "src/lib/booking-email/provider.ts",
-          "sha": null
+          "sha": "4023b86181d6514dc8cc4c4b2bf1b8ad574f6014"
         },
         {
           "path": "src/lib/booking-email/render.ts",
-          "sha": null
+          "sha": "2edd343a4abec5028701ab436bb495b9bb944b79"
         },
         {
           "path": "src/lib/booking-email/schema.ts",
-          "sha": null
+          "sha": "b7ca050f9b03e92ef5b8dfee5f638edc15632ac2"
         },
         {
           "path": "src/lib/booking-email/server.ts",
-          "sha": null
+          "sha": "bcf627000836c2fe3da397cd438ed8089e10ee36"
         },
         {
           "path": "src/lib/booking-email/vercel-cron-config.test.ts",
-          "sha": null
+          "sha": "6b49728b2e5fd535d7ac2edd71634c7a7109975b"
         },
         {
           "path": "src/lib/booking-email/worker-route.test.ts",
-          "sha": null
+          "sha": "b4ee64ebb66f84ccb624745c03822f4efd9bba39"
         },
         {
           "path": "src/lib/booking-email/worker-route.ts",
-          "sha": null
+          "sha": "16481e7383f5081115da4c8310279a23f4ecc036"
         },
         {
           "path": "src/lib/booking-email/worker.test.ts",
-          "sha": null
+          "sha": "70311d068bf54506943525590aa3fc0a55f2ce01"
         },
         {
           "path": "src/lib/booking-email/worker.ts",
-          "sha": null
+          "sha": "785788ae90324280d7c5cd9a230cd3d2455f4e93"
         },
         {
           "path": "supabase/migrations/202609030001_booking_email_outbox.sql",
-          "sha": null
+          "sha": "cc6836e315bbd420f4610ffe9f9755cd75e4eb40"
         },
         {
           "path": "supabase/migrations/202609030002_enqueue_booking_emails_from_audit.sql",
-          "sha": null
+          "sha": "ae84a1723f5bd8cfae14297b1074f4e5cd306a14"
         },
         {
           "path": "supabase/migrations/20260903185410_booking_email_delivery_monitor.sql",
-          "sha": null
+          "sha": "802f6f9db537a5c731a0398a9085257486b0c6bc"
         },
         {
           "path": "supabase/tests/database/104_booking_email_outbox.sql",
-          "sha": null
+          "sha": "39f78f0a3e81ee49d2e199e3607bf4d6573567b0"
         },
         {
           "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
-          "sha": null
+          "sha": "dc188a256bc446e1a871c11e3683594ddea8eca5"
         },
         {
           "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
-          "sha": null
+          "sha": "9755bcfd589abf298deedc8b35f570328ed4b331"
         },
         {
           "path": "vercel.json",
-          "sha": null
+          "sha": "a6dda02072ce25d1276e07a74c3160ed2d2a6168"
+        },
+        {
+          "path": "src/app/(protected)/admin/email-ertesitesek/page.tsx",
+          "sha": "4ad3218093e1bc0fec6043aee768371719552216"
+        },
+        {
+          "path": "src/app/(protected)/admin/email-ertesitesek/actions.ts",
+          "sha": "b725924518a2cea3740a7fd41dd58f29f71775d7"
         }
       ]
     }
   ],
   "releaseBlockers": [
-    "Integrate tested staging functionality with current main changes; verify dependencies and migrations.",
+    "Booking email integration candidate prepared; reconcile remaining staging/main feature differences separately.",
     "Record integrated candidate CI and independent review.",
     "Verify production deployment SHA, database migration state and email runtime configuration/delivery."
   ]
