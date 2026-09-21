@@ -1,6 +1,6 @@
 begin;
 
-select plan(29);
+select plan(32);
 
 select has_function(
   'public',
@@ -412,6 +412,54 @@ select is(
   ),
   6::bigint,
   'A teljes sikeres műveletsor hat logikai művelethez hat e-mail feladatot készít'
+);
+
+-- Regression: an internal notification-bridge failure must not abort the
+-- authoritative booking transaction. Deliberately remove the recipient profile
+-- after the booking audit is written but before the deferred trigger fires.
+do $email_bridge_failure_isolation$
+declare
+  v_booking_id uuid;
+begin
+  insert into auth.users (id, email, raw_user_meta_data) values
+    (
+      'a5000000-0000-0000-0000-000000000003',
+      'bridge-failure-owner@example.invalid',
+      '{"first_name":"Bridge","last_name":"Failure"}'
+    );
+
+  v_booking_id := public.create_booking(
+    '11000000-0000-0000-0000-000000000004',
+    'a5000000-0000-0000-0000-000000000003',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 70) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 70) + time '10:00') at time zone 'Europe/Budapest',
+    'individual', null, 'a5000000-0000-0000-0000-000000000108', 'Bridge failure isolation'
+  );
+
+  perform set_config('test.email_bridge_failure_booking_id', v_booking_id::text, true);
+
+  delete from public.profiles
+  where id = 'a5000000-0000-0000-0000-000000000003';
+
+  set constraints booking_email_from_audit immediate;
+  set constraints booking_email_from_audit deferred;
+end;
+$email_bridge_failure_isolation$;
+
+select is(
+  (select count(*) from public.bookings where id = current_setting('test.email_bridge_failure_booking_id')::uuid),
+  1::bigint,
+  'Az e-mail bridge belső hibája nem görgeti vissza a bookingot'
+);
+select is(
+  (select count(*) from public.booking_email_outbox where correlation_id = 'a5000000-0000-0000-0000-000000000108'),
+  0::bigint,
+  'Bridge-hiba esetén nem marad részleges e-mail outbox tétel'
+);
+select is(
+  (select count(*) from public.audit_logs where correlation_id = 'a5000000-0000-0000-0000-000000000108'),
+  1::bigint,
+  'Bridge-hiba mellett a booking auditnyoma megmarad'
 );
 
 select * from finish();
