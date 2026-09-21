@@ -11,6 +11,7 @@ on:
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
+      - "scripts/test-booking-email-outbox-concurrency.sh"
   push:
     branches: [main]
     paths:
@@ -22,6 +23,7 @@ on:
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
+      - "scripts/test-booking-email-outbox-concurrency.sh"
   workflow_dispatch:
 
 permissions:
@@ -74,6 +76,9 @@ jobs:
 
       - name: Run repeat permission compatibility concurrency test
         run: bash ./scripts/test-repeat-permission-concurrency.sh
+
+      - name: Run concurrent booking email outbox claim test
+        run: bash ./scripts/test-booking-email-outbox-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning
