@@ -117,7 +117,7 @@
         },
         {
           "path": "supabase/migrations/202609030002_enqueue_booking_emails_from_audit.sql",
-          "sha": "ae84a1723f5bd8cfae14297b1074f4e5cd306a14"
+          "sha": "814647f860bb5337ca75c56c936e0da35e74985e"
         },
         {
           "path": "supabase/migrations/20260903185410_booking_email_delivery_monitor.sql",
@@ -129,7 +129,7 @@
         },
         {
           "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
-          "sha": "dc188a256bc446e1a871c11e3683594ddea8eca5"
+          "sha": "313d44285f4efa5dde956e05b23b81501a34c808"
         },
         {
           "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
