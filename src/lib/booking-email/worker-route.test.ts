@@ -38,12 +38,16 @@ describe("booking e-mail worker Route Handler", () => {
   });
 
   it("hiányzó CRON_SECRET esetén biztonságos 503-at ad", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
     const response = await handleBookingEmailWorkerRequest(request("anything"), {
       getCronSecret: () => { throw new Error("CRON_SECRET raw config"); },
       createRuntime: vi.fn(),
     });
     expect(response.status).toBe(503);
     expect(JSON.stringify(await response.json())).not.toContain("raw config");
+    expect(warning).toHaveBeenCalledWith("booking_email_worker_config_error stage=cron_secret");
+    expect(JSON.stringify(warning.mock.calls)).not.toContain("raw config");
+    warning.mockRestore();
   });
 
   it("disabled módban nem hív workert és nem claimel", async () => {
@@ -73,6 +77,7 @@ describe("booking e-mail worker Route Handler", () => {
   });
 
   it("hibás runtime-konfigurációt nyers részlet nélkül jelez", async () => {
+    const warning = vi.spyOn(console, "warn").mockImplementation(() => {});
     const response = await handleBookingEmailWorkerRequest(request("correct"), {
       getCronSecret: () => "correct",
       createRuntime: () => { throw new Error("SMTP_PASS=secret"); },
@@ -81,6 +86,9 @@ describe("booking e-mail worker Route Handler", () => {
     const body = JSON.stringify(await response.json());
     expect(body).toBe('{"error":"worker_not_configured"}');
     expect(body).not.toContain("secret");
+    expect(warning).toHaveBeenCalledWith("booking_email_worker_config_error stage=runtime");
+    expect(JSON.stringify(warning.mock.calls)).not.toContain("secret");
+    warning.mockRestore();
   });
 
   it("worker vagy completion hibát általános 500-zal zár", async () => {

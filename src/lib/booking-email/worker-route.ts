@@ -40,6 +40,7 @@ export async function handleBookingEmailWorkerRequest(
   try {
     cronSecret = dependencies.getCronSecret();
   } catch {
+    console.warn("booking_email_worker_config_error stage=cron_secret");
     return response({ error: "worker_not_configured" }, 503);
   }
 
@@ -51,6 +52,7 @@ export async function handleBookingEmailWorkerRequest(
   try {
     runtime = dependencies.createRuntime();
   } catch {
+    console.warn("booking_email_worker_config_error stage=runtime");
     return response({ error: "worker_not_configured" }, 503);
   }
 
@@ -58,6 +60,7 @@ export async function handleBookingEmailWorkerRequest(
     return response(disabledBookingEmailWorkerSummary(), 200);
   }
   if (!runtime.run) {
+    console.warn("booking_email_worker_config_error stage=missing_runner");
     return response({ error: "worker_not_configured" }, 503);
   }
 
