@@ -89,7 +89,7 @@
         },
         {
           "path": "src/lib/booking-email/server.ts",
-          "sha": "bcf627000836c2fe3da397cd438ed8089e10ee36"
+          "sha": "ac2dc2a2dd02f576214ef39bdaf89c4ac3ae1679"
         },
         {
           "path": "src/lib/booking-email/vercel-cron-config.test.ts",
@@ -97,11 +97,11 @@
         },
         {
           "path": "src/lib/booking-email/worker-route.test.ts",
-          "sha": "b4ee64ebb66f84ccb624745c03822f4efd9bba39"
+          "sha": "d167027d4ccac87dde0b4773e6e889268a1637ab"
         },
         {
           "path": "src/lib/booking-email/worker-route.ts",
-          "sha": "16481e7383f5081115da4c8310279a23f4ecc036"
+          "sha": "d81036eaff402a877f1ca17f1d3a0ba528d73057"
         },
         {
           "path": "src/lib/booking-email/worker.test.ts",
