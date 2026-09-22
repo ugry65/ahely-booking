@@ -176,14 +176,45 @@ export function getBookingEmailCronSecret(): string {
 }
 
 export function createBookingEmailWorkerRuntime(): BookingEmailWorkerRuntime {
-  const mode = readMode();
+  let mode: BookingEmailMode;
+  try {
+    mode = readMode();
+  } catch {
+    console.warn("booking_email_worker_config_error stage=mode");
+    throw new Error("Invalid booking email mode configuration");
+  }
   if (mode === "disabled") return { mode };
 
-  const config = senderConfig();
-  const transport = mode === "capture" ? createCaptureTransport() : createSmtpTransport();
-  const batchSize = positiveInteger("BOOKING_EMAIL_BATCH_SIZE", 10, 1, 100);
-  const leaseSeconds = positiveInteger("BOOKING_EMAIL_LEASE_SECONDS", 300, 30, 900);
-  const store = createStore();
+  let config: BookingEmailSenderConfig;
+  try {
+    config = senderConfig();
+  } catch {
+    console.warn("booking_email_worker_config_error stage=sender");
+    throw new Error("Invalid booking email sender configuration");
+  }
+  let transport: EmailTransport;
+  try {
+    transport = mode === "capture" ? createCaptureTransport() : createSmtpTransport();
+  } catch {
+    console.warn("booking_email_worker_config_error stage=transport");
+    throw new Error("Invalid booking email transport configuration");
+  }
+  let batchSize: number;
+  let leaseSeconds: number;
+  try {
+    batchSize = positiveInteger("BOOKING_EMAIL_BATCH_SIZE", 10, 1, 100);
+    leaseSeconds = positiveInteger("BOOKING_EMAIL_LEASE_SECONDS", 300, 30, 900);
+  } catch {
+    console.warn("booking_email_worker_config_error stage=batch");
+    throw new Error("Invalid booking email batch configuration");
+  }
+  let store: BookingEmailWorkerStore;
+  try {
+    store = createStore();
+  } catch {
+    console.warn("booking_email_worker_config_error stage=store");
+    throw new Error("Invalid booking email store configuration");
+  }
 
   return {
     mode,
