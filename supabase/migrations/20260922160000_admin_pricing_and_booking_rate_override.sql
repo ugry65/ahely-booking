@@ -44,7 +44,18 @@ alter table public.settlement_booking_lines
   add column room_id uuid references public.rooms(id) on delete restrict,
   add column room_name text;
 
-alter table public.settlement_booking_lines disable trigger settlement_booking_lines_immutable;
+do $
+begin
+  if exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.settlement_booking_lines'::regclass
+      and tgname = 'settlement_booking_lines_immutable'
+      and not tgisinternal
+  ) then
+    alter table public.settlement_booking_lines disable trigger settlement_booking_lines_immutable;
+  end if;
+end;
+$;
 
 update public.settlement_booking_lines
 set rate_source = case pricing_mode
@@ -62,7 +73,18 @@ from public.bookings booking
 join public.rooms room on room.id=booking.room_id
 where booking.id=line.booking_id;
 
-alter table public.settlement_booking_lines enable trigger settlement_booking_lines_immutable;
+do $
+begin
+  if exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.settlement_booking_lines'::regclass
+      and tgname = 'settlement_booking_lines_immutable'
+      and not tgisinternal
+  ) then
+    alter table public.settlement_booking_lines enable trigger settlement_booking_lines_immutable;
+  end if;
+end;
+$;
 
 alter table public.settlement_booking_lines
   alter column rate_source set not null,
