@@ -44,6 +44,8 @@ alter table public.settlement_booking_lines
   add column room_id uuid references public.rooms(id) on delete restrict,
   add column room_name text;
 
+alter table public.settlement_booking_lines disable trigger settlement_booking_lines_immutable;
+
 update public.settlement_booking_lines
 set rate_source = case pricing_mode
   when 'fixed_user' then 'user_override'::public.applied_rate_source
@@ -59,6 +61,8 @@ set booking_start_at=booking.start_at,
 from public.bookings booking
 join public.rooms room on room.id=booking.room_id
 where booking.id=line.booking_id;
+
+alter table public.settlement_booking_lines enable trigger settlement_booking_lines_immutable;
 
 alter table public.settlement_booking_lines
   alter column rate_source set not null,
