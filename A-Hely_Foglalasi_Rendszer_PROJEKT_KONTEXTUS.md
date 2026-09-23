@@ -50,11 +50,15 @@ Az A-Hely jelenlegi AllBooked/Skedda rendszerének kiváltása saját, webalapú
 
 ## Díjazás
 Default havi sávos díjazás a teljes havi elszámolandó normál óraszám alapján:
-- 1–15 óra: 2700 Ft/óra
-- 16–60 óra: 1900 Ft/óra
-- 61 órától: 1700 Ft/óra
+- 1–15 óra: 2500 Ft/óra
+- 15 óra felett–60 óráig: 1900 Ft/óra
+- 60 óra felett: 1700 Ft/óra
 
 Admin userenként egyedi fix óradíjat is beállíthat, amely felülírja a default sávos díjazást.
+
+Admin egy konkrét foglalás óradíját is felülírhatja. Az alkalmazási sorrend:
+**foglalásszintű egyedi óradíj → user egyedi óradíj → központi díjszabás / Tréningterem csoportos alapdíj**.
+A foglalásszintű módosítás csak az adott bookingra vonatkozik. A pénzügyi változások időben verziózottak és auditáltak; későbbi tarifaváltozás korábbi szolgáltatási dátumot vagy már létrehozott settlement snapshotot nem írhat át.
 
 A normál szobák díjazása ugyanaz; kivétel a Tréningterem csoportos használata.
 

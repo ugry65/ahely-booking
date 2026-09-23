@@ -1,6 +1,6 @@
 begin;
 
-select plan(36);
+select plan(37);
 
 select has_function('public','admin_import_allbooked_customer',array['uuid','uuid','text','text','text','text','text[]','jsonb','uuid'],'Az általános ügyfélimport függvény létezik');
 select ok(not has_function_privilege('authenticated','public.admin_import_allbooked_customer(uuid,uuid,text,text,text,text,text[],jsonb,uuid)','EXECUTE'),'Az authenticated nem hívhatja az importot');
@@ -37,6 +37,7 @@ select is((select string_agg(access_group.name,',' order by access_group.name) f
 select is((select string_agg(booking.use_type::text,',' order by booking.start_at) from public.bookings booking where booking.user_id='00000000-0000-0000-0000-000000000112'),'individual,individual,group','A Tréningterem egyéni/csoportos besorolása megmaradt');
 select is((select string_agg(coalesce(booking_title,'—'),',' order by start_at) from public.bookings where user_id='00000000-0000-0000-0000-000000000112'),'Első foglalás,Egyéni tréning,Csoport','A foglalási megnevezések megmaradtak');
 select is((select count(*) from public.user_price_overrides where user_id='00000000-0000-0000-0000-000000000112')+(select count(*) from public.monthly_settlements where user_id='00000000-0000-0000-0000-000000000112'),0::bigint,'Legacy ár és fizetési adat nem jött létre');
+select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000112' and hourly_rate_override_huf is not null),0::bigint,'Az AllBooked import nem hozott létre véletlen foglalásszintű ár-felülírást');
 select is((select count(*) from public.audit_logs where action='allbooked.booking_imported' and correlation_id='11000000-0000-0000-0000-000000000001'),3::bigint,'Minden importált foglalás auditált');
 
 set local role service_role;

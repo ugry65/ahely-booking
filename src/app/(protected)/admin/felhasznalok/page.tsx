@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-import { importUsersCsv, inviteUser, sendPasswordReset, setUserGroupMembership, setUserRepeatPermission, setUserRole, updateUserProfile } from "./actions";
+import { importUsersCsv, inviteUser, sendPasswordReset, setUserGroupMembership, setUserHourlyRate, setUserRepeatPermission, setUserRole, updateUserProfile } from "./actions";
 import { updateGlobalBookingNameVisibility } from "./visibility-actions";
 
 type ManagedProfile = {
@@ -26,6 +26,15 @@ type ManagedProfile = {
 type AccessGroup = { id: string; name: string; is_active: boolean };
 type GroupMember = { group_id: string; user_id: string };
 type AccessOverview = { groups?: AccessGroup[]; group_members?: GroupMember[] };
+type UserRate = { id: string; user_id: string; hourly_rate_huf: number; valid_from: string; valid_to: string | null; reason: string; created_at: string };
+
+function budapestDate(dayOffset = 0) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).map((part) => [part.type, part.value]));
+  const date = new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day) + dayOffset));
+  return date.toISOString().slice(0, 10);
+}
+function tomorrow() { return budapestDate(1); }
+function formatRate(rate: number) { return `${new Intl.NumberFormat("hu-HU").format(rate)} Ft/óra`; }
 
 function BillingFields({ profile }: { profile: ManagedProfile }) {
   return <>
@@ -52,12 +61,13 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const actor = await requireAdmin();
   const params = await searchParams;
   const supabase = await createClient();
-  const [profilesResult, visibilityResult, accessResult] = await Promise.all([
+  const [profilesResult, visibilityResult, accessResult, ratesResult] = await Promise.all([
     supabase.from("profiles")
       .select("id,first_name,last_name,email,phone,role,is_active,can_repeat_bookings,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,onboarding_completed_at")
       .order("last_name").order("first_name").returns<ManagedProfile[]>(),
     supabase.from("app_settings").select("value").eq("key", "show_other_booker_names").maybeSingle<{ value: boolean }>(),
     supabase.rpc("admin_room_access_overview"),
+    params.user ? supabase.rpc("admin_list_user_price_overrides", { p_user_id: params.user }) : Promise.resolve({ data: [] as UserRate[], error: null }),
   ]);
   const profiles = profilesResult.data ?? [];
   const access = accessResult.error ? {} : accessResult.data as unknown as AccessOverview;
@@ -67,6 +77,11 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   const query = (params.q ?? "").trim().toLocaleLowerCase("hu-HU");
   const filteredProfiles = query ? profiles.filter((profile) => `${fullName(profile)} ${profile.email} ${profile.phone ?? ""}`.toLocaleLowerCase("hu-HU").includes(query)) : profiles;
   const selectedProfile = profiles.find((profile) => profile.id === params.user) ?? null;
+  const userRates = (ratesResult.data ?? []) as unknown as UserRate[];
+  const today = budapestDate();
+  const currentOrNextRate = userRates.find((rate) => rate.valid_from <= today && (rate.valid_to === null || rate.valid_to >= today))
+    ?? [...userRates].filter((rate) => rate.valid_from > today).sort((a, b) => a.valid_from.localeCompare(b.valid_from))[0]
+    ?? null;
   const groupsForUser = (profileId: string) => groups.filter((group) => groupMemberships.has(`${profileId}:${group.id}`));
 
   return (
@@ -116,6 +131,11 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
 
         <section className="stack"><h3>Törzs- és számlázási adatok</h3><form action={updateUserProfile} className="admin-editor-row"><input type="hidden" name="userId" value={selectedProfile.id} /><input type="hidden" name="isActive" value="false" /><label>Vezetéknév<input name="lastName" defaultValue={selectedProfile.last_name} required /></label><label>Keresztnév<input name="firstName" defaultValue={selectedProfile.first_name} required /></label><label>E-mail<input value={selectedProfile.email} readOnly aria-readonly="true" /></label><BillingFields profile={selectedProfile} /><label className="inline-check"><input type="checkbox" name="isActive" value="true" defaultChecked={selectedProfile.is_active} /> Aktív</label><button type="submit">Adatok mentése</button></form>
           <form action={sendPasswordReset}><input type="hidden" name="userId" value={selectedProfile.id} /><button type="submit" className="button secondary" disabled={!selectedProfile.is_active}>{selectedProfile.onboarding_completed_at ? "Jelszó-visszaállító link küldése" : "Aktiváló / jelszóbeállító link küldése"}</button></form>
+        </section>
+        <section className="stack"><h3>Díjazás</h3><p className="muted">Alapértelmezésben a központi havi sávos díjszabás érvényes. Az új beállítás legkorábban holnaptól indul, ezért korábbi foglalások ára nem változik.</p>
+          {currentOrNextRate ? <p><strong>Aktív / következő egyedi óradíj:</strong> {formatRate(currentOrNextRate.hourly_rate_huf)} · {currentOrNextRate.valid_from} – {currentOrNextRate.valid_to ?? "folyamatos"}</p> : <p><strong>Jelenlegi mód:</strong> központi díjszabás</p>}
+          <form action={setUserHourlyRate} className="admin-editor-row compact"><input type="hidden" name="userId" value={selectedProfile.id} /><label>Díjazási mód<select name="pricingMode" defaultValue={currentOrNextRate ? "fixed" : "central"}><option value="central">Központi díjszabás</option><option value="fixed">Egyedi óradíj</option></select></label><label>Egyedi óradíj (Ft)<input name="hourlyRate" type="number" min="0" step="1" defaultValue={currentOrNextRate?.hourly_rate_huf ?? ""} /></label><label>Érvényes ettől<input name="validFrom" type="date" min={tomorrow()} defaultValue={tomorrow()} required /></label><label>Indok<input name="reason" maxLength={300} required placeholder="Miért változik?" /></label><button type="submit">Díjazás mentése</button></form>
+          {userRates.length ? <details><summary>Korábbi és ütemezett egyedi díjak</summary><ul>{userRates.map((rate) => <li key={rate.id}>{formatRate(rate.hourly_rate_huf)} · {rate.valid_from} – {rate.valid_to ?? "folyamatos"} · {rate.reason}</li>)}</ul></details> : null}
         </section>
       </section> : null}
 

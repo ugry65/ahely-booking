@@ -16,13 +16,15 @@ on conflict (id) do update set
   is_training_room = excluded.is_training_room;
 
 insert into public.special_room_rates (
-  id, room_id, use_type, hourly_rate_huf, valid_from
+  id, room_id, use_type, hourly_rate_huf, valid_from, valid_to
 ) values (
   '12000000-0000-0000-0000-000000000001',
   '11000000-0000-0000-0000-000000000001',
   'group',
   5000,
-  date '2026-01-01'
+  date '2026-01-01',
+  date '2026-09-30'
 )
 on conflict (room_id, use_type, valid_from) do update set
-  hourly_rate_huf = excluded.hourly_rate_huf;
+  hourly_rate_huf = excluded.hourly_rate_huf,
+  valid_to = excluded.valid_to;

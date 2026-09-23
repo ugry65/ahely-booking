@@ -7,8 +7,8 @@ import { MobileDateStrip } from "./mobile-date-strip";
 import { QuickBookingDialog, type BookingUser } from "./quick-booking-dialog";
 import "./calendar-booking-actions.css";
 
-type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage">;
-type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "booking_title" | "series_id" | "updated_at" | "can_manage">;
+type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage" | "user_id" | "hourly_rate_override_huf" | "hourly_rate_override_reason">;
+type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "booking_title" | "series_id" | "updated_at" | "can_manage" | "user_id" | "hourly_rate_override_huf" | "hourly_rate_override_reason">;
 
 function budapestToday() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -46,6 +46,9 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
       series_id: manageable?.series_id ?? null,
       updated_at: manageable?.updated_at ?? null,
       can_manage: manageable?.can_manage ?? false,
+      user_id: manageable?.user_id ?? null,
+      hourly_rate_override_huf: manageable?.hourly_rate_override_huf ?? null,
+      hourly_rate_override_reason: manageable?.hourly_rate_override_reason ?? null,
     };
   });
   const repeatableRoomIds = ((repeatableRoomsResult.data ?? []) as unknown as BookableRoom[]).map((room) => room.room_id);

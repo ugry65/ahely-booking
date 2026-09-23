@@ -6,6 +6,7 @@ import { createRecurringBooking } from "./ismetlod/actions";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import type { BookableRoom } from "./calendar-booking-grid";
 import { BookingTimeFields } from "./booking-time-fields";
+import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
 
 const OPEN_MINUTE = 7 * 60;
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
@@ -92,6 +93,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
               <label>Foglalás címe<input name="bookingTitle" maxLength={100} placeholder="Opcionális" /></label>
               <span className="muted form-help">A címet csak te és az adminisztrátorok láthatják.</span>
               <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} placeholder="Opcionális" /></label>
+              {bookingUsers.length && currentUserId ? <AdminBookingPricingFields defaultUserId={currentUserId} /> : null}
               <div className="booking-modal-actions">
                 <button type="submit">{repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button>
                 <button type="button" className="button secondary" onClick={closeDialog}>Mégse</button>
