@@ -35,7 +35,7 @@ create table public.booking_pricing_requests(
 alter table public.booking_pricing_requests enable row level security;
 
 alter table public.settlement_revisions
-  add column pricing_breakdown jsonb not null default '[]'::jsonb;
+  add column if not exists pricing_breakdown jsonb not null default '[]'::jsonb;
 
 alter table public.settlement_booking_lines
   add column rate_source public.applied_rate_source,
@@ -169,10 +169,12 @@ begin
 end;
 $$;
 
+drop trigger if exists settlement_revisions_immutable on public.settlement_revisions;
 create trigger settlement_revisions_immutable
 before update or delete on public.settlement_revisions
 for each row execute function public.prevent_settlement_snapshot_mutation();
 
+drop trigger if exists settlement_booking_lines_immutable on public.settlement_booking_lines;
 create trigger settlement_booking_lines_immutable
 before update or delete on public.settlement_booking_lines
 for each row execute function public.prevent_settlement_snapshot_mutation();
