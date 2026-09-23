@@ -937,7 +937,10 @@ begin
   on conflict(user_id,settlement_month) do update set updated_at=now()
   returning id into v_settlement_id;
   select * into v_calc from public.calculate_monthly_pricing(p_user_id,p_settlement_month);
-  select coalesce(max(revision_number),0)+1 into v_revision_number from public.settlement_revisions where settlement_id=v_settlement_id;
+  select coalesce(max(revision.revision_number),0)+1
+  into v_revision_number
+  from public.settlement_revisions revision
+  where revision.settlement_id=v_settlement_id;
   insert into public.settlement_revisions(settlement_id,revision_number,normal_minutes,special_minutes,calculated_due_huf,calculation_input_hash,calculated_by,pricing_breakdown)
   values(v_settlement_id,v_revision_number,v_calc.normal_minutes,v_calc.special_minutes,v_calc.calculated_due_huf,v_calc.calculation_input_hash,v_actor,v_calc.pricing_breakdown)
   returning id into v_revision_id;
