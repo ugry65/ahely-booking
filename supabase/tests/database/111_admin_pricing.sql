@@ -1,6 +1,6 @@
 begin;
 
-select plan(58);
+select plan(62);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -68,6 +68,38 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+select is(
+  (select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+    '00000000-0000-0000-0000-000000000182','11000000-0000-0000-0000-000000000002',
+    '2035-10-10 07:00+02','2035-10-10 08:00+02','individual',null,null
+  )),
+  'central_tier:2500',
+  'A díjelőnézet a közös resolverrel központi sávos díjat ad'
+);
+select is(
+  (select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+    '00000000-0000-0000-0000-000000000183','11000000-0000-0000-0000-000000000001',
+    '2035-10-10 09:00+02','2035-10-10 10:00+02','group',null,null
+  )),
+  'training_room:5000',
+  'A díjelőnézet a közös resolverrel Tréningterem csoportos alapdíjat ad'
+);
+select is(
+  (select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+    '00000000-0000-0000-0000-000000000184','11000000-0000-0000-0000-000000000002',
+    '2035-10-10 11:00+02','2035-10-10 12:00+02','individual',null,null
+  )),
+  'user_override:3200',
+  'A díjelőnézet a közös resolverrel user egyedi óradíjat ad'
+);
+select is(
+  (select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+    '00000000-0000-0000-0000-000000000185','11000000-0000-0000-0000-000000000001',
+    '2035-10-10 13:00+02','2035-10-10 14:00+02','group',null,4100
+  )),
+  'booking_override:4100',
+  'A díjelőnézet explicit booking felülírása megelőzi a közös resolver user/terem szabályait'
+);
 select lives_ok(
   $$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$$,
   'Admin auditált jövőbeli user óradíjat állíthat be'
