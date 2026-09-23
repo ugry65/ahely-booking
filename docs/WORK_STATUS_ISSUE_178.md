@@ -129,3 +129,13 @@ HEAD-jéből és a dokumentumban felsorolt projektforrásokból kell folytatnia.
 ## Biztonsági korlát
 
 Production adatbázis, konfiguráció, secret és valós production adat nem módosítható külön projektgazdai jóváhagyás nélkül.
+
+## Független Claude review — 2026-09-23
+
+A független review a `6640ff2400dceb4085675f4aaa91969e12d04d91` HEAD-et vizsgálta. Eredmény: 0 CRITICAL, 1 HIGH, 1 MEDIUM, 0 LOW.
+
+- **HIGH-NEW-1 — javítva a branchen:** az admin díjelőnézet és a tényleges booking-rate feloldás közös belső `resolve_rate_for_context(...)` resolverre került. Az admin quote négy prioritási ágára (booking override, user override, Tréningterem, központi sáv) viselkedési pgTAP regresszió került be. A közös helper kliensszerepkörből közvetlenül nem végrehajtható.
+- **MEDIUM-NEW-1 — javítva a branchen:** új `scripts/test-pricing-concurrency.sh` valós két-`psql` folyamatú regresszió bizonyítja az advisory lock sorosítását és azt, hogy a blokkolt tranzakció nem hagy részleges díj- vagy auditadatot. A Database tests workflow és a lokális DB tesztcsomag futtatja.
+- **UI review során talált biztonsági/használhatósági javítás:** a Díjszabás űrlapok többé nem a kezdeti 2500/1900/1700/5000 konstansokat töltik vissza alapértékként, hanem a legutóbb konfigurált díjakat. Ez csökkenti annak kockázatát, hogy egy későbbi új díjperiódus létrehozásakor az admin véletlenül régi árat írjon vissza.
+
+A HIGH javítás pénzügyi/DB-logikát érint, ezért a végső merge előtt a módosított diffre új független Claude-visszaellenőrzés kötelező. Élő pgTAP/concurrency futás a GitHub Database tests PR-checkben szükséges; ebben a Chat környezetben nincs workflow-dispatch vagy lokális Supabase/Postgres futtatás.
