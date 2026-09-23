@@ -439,6 +439,8 @@ begin
 end;
 $$;
 
+drop function if exists public.admin_calculate_monthly_pricing(uuid, date);
+
 create or replace function public.admin_calculate_monthly_pricing(
   p_user_id uuid,
   p_settlement_month date
@@ -996,6 +998,8 @@ begin
   return query select v_settlement_id,v_revision_id,v_revision_number,v_calc.calculated_due_huf;
 end;
 $$;
+
+drop function if exists public.admin_monthly_pricing_summary(date);
 
 create or replace function public.admin_monthly_pricing_summary(p_month date)
 returns table(
