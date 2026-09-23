@@ -44,7 +44,7 @@ alter table public.settlement_booking_lines
   add column room_id uuid references public.rooms(id) on delete restrict,
   add column room_name text;
 
-do $
+do $compat$
 begin
   if exists (
     select 1 from pg_trigger
@@ -55,7 +55,7 @@ begin
     alter table public.settlement_booking_lines disable trigger settlement_booking_lines_immutable;
   end if;
 end;
-$;
+$compat$;
 
 update public.settlement_booking_lines
 set rate_source = case pricing_mode
@@ -73,7 +73,7 @@ from public.bookings booking
 join public.rooms room on room.id=booking.room_id
 where booking.id=line.booking_id;
 
-do $
+do $compat$
 begin
   if exists (
     select 1 from pg_trigger
@@ -84,7 +84,7 @@ begin
     alter table public.settlement_booking_lines enable trigger settlement_booking_lines_immutable;
   end if;
 end;
-$;
+$compat$;
 
 alter table public.settlement_booking_lines
   alter column rate_source set not null,
