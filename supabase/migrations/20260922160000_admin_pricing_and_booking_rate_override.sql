@@ -205,6 +205,62 @@ as $$
     and (booking.start_at at time zone 'Europe/Budapest')::date < (p_month + interval '1 month')::date;
 $$;
 
+create or replace function public.resolve_rate_for_context(
+  p_user_id uuid,
+  p_room_id uuid,
+  p_service_date date,
+  p_use_type public.booking_use_type,
+  p_is_training_group boolean,
+  p_month_normal_minutes integer
+)
+returns table (
+  rate_source public.applied_rate_source,
+  pricing_rule_id uuid,
+  hourly_rate_huf bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  return query
+  select 'user_override'::public.applied_rate_source, override.id, override.hourly_rate_huf
+  from public.user_price_overrides override
+  where override.user_id = p_user_id
+    and p_service_date between override.valid_from and coalesce(override.valid_to, 'infinity'::date)
+  order by override.valid_from desc
+  limit 1;
+  if found then return; end if;
+
+  if p_is_training_group then
+    return query
+    select 'training_room'::public.applied_rate_source, rate.id, rate.hourly_rate_huf
+    from public.special_room_rates rate
+    where rate.room_id = p_room_id
+      and rate.use_type = p_use_type
+      and p_service_date between rate.valid_from and coalesce(rate.valid_to, 'infinity'::date)
+    order by rate.valid_from desc
+    limit 1;
+    if not found then
+      raise exception 'Nincs érvényes Tréningterem csoportos óradíj.' using errcode = 'P0001';
+    end if;
+    return;
+  end if;
+
+  return query
+  select 'central_tier'::public.applied_rate_source, tier.id, tier.hourly_rate_huf
+  from public.pricing_tiers tier
+  where p_month_normal_minutes between tier.min_minutes and coalesce(tier.max_minutes, 2147483647)
+    and p_service_date between tier.valid_from and coalesce(tier.valid_to, 'infinity'::date)
+  order by tier.min_minutes desc, tier.valid_from desc
+  limit 1;
+  if not found then
+    raise exception 'Nincs érvényes központi díjsáv a havi óraszámhoz.' using errcode = 'P0001';
+  end if;
+end;
+$$;
+
 create or replace function public.resolve_booking_applied_rate(
   p_booking_id uuid,
   p_month_normal_minutes integer
@@ -245,39 +301,15 @@ begin
   end if;
 
   return query
-  select 'user_override'::public.applied_rate_source, override.id, override.hourly_rate_huf
-  from public.user_price_overrides override
-  where override.user_id = v_booking.user_id
-    and v_service_date between override.valid_from and coalesce(override.valid_to, 'infinity'::date)
-  order by override.valid_from desc
-  limit 1;
-  if found then return; end if;
-
-  if v_is_training_group then
-    return query
-    select 'training_room'::public.applied_rate_source, rate.id, rate.hourly_rate_huf
-    from public.special_room_rates rate
-    where rate.room_id = v_booking.room_id
-      and rate.use_type = v_booking.use_type
-      and v_service_date between rate.valid_from and coalesce(rate.valid_to, 'infinity'::date)
-    order by rate.valid_from desc
-    limit 1;
-    if not found then
-      raise exception 'Nincs érvényes Tréningterem csoportos óradíj.' using errcode = 'P0001';
-    end if;
-    return;
-  end if;
-
-  return query
-  select 'central_tier'::public.applied_rate_source, tier.id, tier.hourly_rate_huf
-  from public.pricing_tiers tier
-  where p_month_normal_minutes between tier.min_minutes and coalesce(tier.max_minutes, 2147483647)
-    and v_service_date between tier.valid_from and coalesce(tier.valid_to, 'infinity'::date)
-  order by tier.min_minutes desc, tier.valid_from desc
-  limit 1;
-  if not found then
-    raise exception 'Nincs érvényes központi díjsáv a havi óraszámhoz.' using errcode = 'P0001';
-  end if;
+  select resolved.rate_source, resolved.pricing_rule_id, resolved.hourly_rate_huf
+  from public.resolve_rate_for_context(
+    v_booking.user_id,
+    v_booking.room_id,
+    v_service_date,
+    v_booking.use_type,
+    v_is_training_group,
+    p_month_normal_minutes
+  ) resolved;
 end;
 $$;
 
@@ -425,6 +457,7 @@ declare
   v_projected integer;
   v_rate bigint;
   v_source public.applied_rate_source;
+  v_resolved record;
 begin
   perform public.require_active_admin();
   if p_user_id is null or p_room_id is null or p_start_at is null or p_end_at is null or p_use_type is null then
@@ -458,30 +491,17 @@ begin
   if p_hourly_rate_override_huf is not null then
     v_source := 'booking_override'; v_rate := p_hourly_rate_override_huf;
   else
-    select override.hourly_rate_huf into v_rate
-    from public.user_price_overrides override
-    where override.user_id = p_user_id
-      and v_service_date between override.valid_from and coalesce(override.valid_to, 'infinity'::date)
-    order by override.valid_from desc limit 1;
-    if found then
-      v_source := 'user_override';
-    elsif v_is_special then
-      select rate.hourly_rate_huf into v_rate
-      from public.special_room_rates rate
-      where rate.room_id = p_room_id and rate.use_type = p_use_type
-        and v_service_date between rate.valid_from and coalesce(rate.valid_to, 'infinity'::date)
-      order by rate.valid_from desc limit 1;
-      if not found then raise exception 'Nincs érvényes Tréningterem csoportos óradíj.' using errcode = 'P0001'; end if;
-      v_source := 'training_room';
-    else
-      select tier.hourly_rate_huf into v_rate
-      from public.pricing_tiers tier
-      where v_projected between tier.min_minutes and coalesce(tier.max_minutes, 2147483647)
-        and v_service_date between tier.valid_from and coalesce(tier.valid_to, 'infinity'::date)
-      order by tier.min_minutes desc, tier.valid_from desc limit 1;
-      if not found then raise exception 'Nincs érvényes központi díjsáv.' using errcode = 'P0001'; end if;
-      v_source := 'central_tier';
-    end if;
+    select * into v_resolved
+    from public.resolve_rate_for_context(
+      p_user_id,
+      p_room_id,
+      v_service_date,
+      p_use_type,
+      v_is_special,
+      v_projected
+    );
+    v_source := v_resolved.rate_source;
+    v_rate := v_resolved.hourly_rate_huf;
   end if;
 
   return query select v_source, v_rate, v_projected,
@@ -1099,6 +1119,7 @@ end;
 $$;
 
 revoke all on function public.month_normal_minutes(uuid,date,uuid,integer,boolean) from public,anon,authenticated,service_role;
+revoke all on function public.resolve_rate_for_context(uuid,uuid,date,public.booking_use_type,boolean,integer) from public,anon,authenticated,service_role;
 revoke all on function public.resolve_booking_applied_rate(uuid,integer) from public,anon,authenticated,service_role;
 revoke all on function public.calculate_monthly_pricing(uuid,date) from public,anon,authenticated,service_role;
 revoke all on function public.prevent_settlement_snapshot_mutation() from public,anon,authenticated,service_role;
