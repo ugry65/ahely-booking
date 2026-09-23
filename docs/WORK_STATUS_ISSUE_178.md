@@ -1,6 +1,6 @@
 # Folytatási státusz — GitHub #178 admin díjszabás
 
-Utolsó frissítés: 2026-09-23 — MEDIUM M-2 lezárási fázis
+Utolsó frissítés: 2026-09-23 — LOW L-1 lezárási fázis
 Repository: `ugry65/ahely-booking`  
 Branch: `feat/178-admin-pricing`  
 Base `main`: `953a233d7a1da6eafe243ed9b7e65c367c56bf3b`
@@ -69,10 +69,21 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
   megszüntetésekor a felület továbbra is új indokot kér.
 - A többi review-megállapítás lezárása még folyamatban van; ez a státusz nem
   jelent merge- vagy production-readiness jóváhagyást.
+- **LOW L-1 – User egyedi óradíj pontos webes validációja: LEZÁRVA a
+  branchen.** A user egyedi óradíj mező most ugyanúgy csak nem negatív,
+  JavaScriptben pontosan reprezentálható egész forintot fogad el, mint a többi
+  admin pénzügyi beviteli út. A `Number.MAX_SAFE_INTEGER` fölötti érték nem
+  kerülhet csendes kerekítés után a pénzügyi RPC-hez. Közvetlen unit teszt védi
+  a nulla, normál, felső biztonságos határ, túl nagy, tört, negatív és üres
+  bemenetet.
+- Az eredeti független review fennmaradó LOW-listája nem található sem a branch
+  dokumentumaiban, sem a GitHub #178 issue-ban. Emiatt a LOW tételek lezárása
+  bizonyíték-alapú, önálló diff-review-val történik; találgatásból nem készül
+  pénzügyi kódmódosítás.
 
 ## Legutóbbi ellenőrzött állapot
 
-- Alkalmazástesztek: PASS — 30 fájl, 173 teszt.
+- Alkalmazástesztek: PASS — 31 fájl, 175 teszt.
 - TypeScript typecheck: PASS.
 - Next.js production build: PASS.
 - SQL parser: PASS — 78 statement.
@@ -87,8 +98,8 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 
 ## Következő lépések
 
-1. A következő, külön fázisban a fennmaradó LOW review-megállapításokat kell
-   egyenként ellenőrizni és szükség szerint lezárni.
+1. A következő, külön fázisban a fennmaradó kódot újabb bizonyíték-alapú LOW
+   review során kell ellenőrizni és csak konkrét találat esetén javítani.
 2. Ezután a végső teljes DB/alkalmazás regresszió és a független review
    visszaellenőrzése következik.
 3. Kis, áttekinthető commitok létrehozása és branch push.

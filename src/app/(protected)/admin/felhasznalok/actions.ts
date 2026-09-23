@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireEnv } from "@/lib/env";
 import { authCreateErrorMessage, generateTemporaryPassword } from "@/lib/admin-user-invite";
+import { parseNonNegativeSafeIntegerHuf } from "@/lib/admin-pricing-input";
 
 function uuid(value: FormDataEntryValue | null) {
   const text = String(value ?? "");
@@ -112,8 +113,7 @@ export async function setUserHourlyRate(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
   const mode = String(formData.get("pricingMode") ?? "central");
-  const rateText = String(formData.get("hourlyRate") ?? "").trim();
-  const rate = mode === "fixed" && /^\d+$/.test(rateText) ? Number(rateText) : null;
+  const rate = mode === "fixed" ? parseNonNegativeSafeIntegerHuf(formData.get("hourlyRate")) : null;
   const validFrom = String(formData.get("validFrom") ?? "");
   const reason = String(formData.get("reason") ?? "").trim();
   if (!userId || !["central", "fixed"].includes(mode) || (mode === "fixed" && rate === null) || !/^\d{4}-\d{2}-\d{2}$/.test(validFrom) || !reason) {
