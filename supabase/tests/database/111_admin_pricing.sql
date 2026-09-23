@@ -1,6 +1,6 @@
 begin;
 
-select plan(49);
+select plan(52);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -16,6 +16,9 @@ select is((select hourly_rate_huf from public.pricing_tiers where 901 between mi
 select is((select hourly_rate_huf from public.pricing_tiers where 930 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1900::bigint,'15 óra felett a központi díj 1 900 Ft');
 select is((select hourly_rate_huf from public.pricing_tiers where 3600 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1900::bigint,'A 60 órás sávhatár még 1 900 Ft');
 select is((select hourly_rate_huf from public.pricing_tiers where 3630 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1700::bigint,'60 óra felett a központi díj 1 700 Ft');
+select is((select count(*) from public.audit_logs where action='pricing.central_schedule_migrated' and entity_type='pricing_tiers' and entity_id='2026-10-01' and actor_user_id is null and correlation_id is not null and nullif(btrim(reason),'') is not null),1::bigint,'A központi induló tarifamigráció egy rendszer-eredetű auditbejegyzést hoz létre');
+select is((select string_agg((tier->>'min_minutes')||':'||coalesce(tier->>'max_minutes','*')||':'||(tier->>'hourly_rate_huf'),',' order by (tier->>'min_minutes')::integer) from public.audit_logs audit cross join lateral jsonb_array_elements(audit.before_data) tier where audit.action='pricing.central_schedule_migrated'),'60:900:2700,901:3600:1900,3601:*:1700','A központi tarifamigráció auditja megőrzi a teljes előző díjsort');
+select is((select string_agg((tier->>'min_minutes')||':'||coalesce(tier->>'max_minutes','*')||':'||(tier->>'hourly_rate_huf'),',' order by (tier->>'min_minutes')::integer) from public.audit_logs audit cross join lateral jsonb_array_elements(audit.after_data) tier where audit.action='pricing.central_schedule_migrated'),'60:900:2500,901:3600:1900,3601:*:1700','A központi tarifamigráció auditja megőrzi a teljes új díjsort');
 select is((select hourly_rate_huf from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),5000::bigint,'A Tréningterem csoportos alapdíja 5 000 Ft');
 select is((select count(*) from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1::bigint,'A Tréningteremhez pontosan egy tarifa érvényes 2026-10-01-én');
 select is((select max(valid_to) from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and valid_from<date '2026-10-01'),date '2026-09-30','A korábbi Tréningterem-tarifa 2026-09-30-án lezárul');

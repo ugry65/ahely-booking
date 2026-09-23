@@ -1,6 +1,6 @@
 # Folytatási státusz — GitHub #178 admin díjszabás
 
-Utolsó frissítés: 2026-09-23 — HIGH-2 lezárási fázis
+Utolsó frissítés: 2026-09-23 — MEDIUM M-1 lezárási fázis
 Repository: `ugry65/ahely-booking`  
 Branch: `feat/178-admin-pricing`  
 Base `main`: `953a233d7a1da6eafe243ed9b7e65c367c56bf3b`
@@ -53,6 +53,13 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
   új pgTAP-ellenőrzés védi a snapshot user megmaradását, a revision összegét és
   a tételes exportforrás óradíját/összegét. Három alkalmazásteszt védi a
   képernyő és a két export helyes RPC-bekötését.
+- **MEDIUM M-1 – Induló központi tarifamigráció auditja: LEZÁRVA a branchen.**
+  A migráció egy rendszer-eredetű, korrelációs azonosítóval és indokkal ellátott
+  append-only auditbejegyzést készít. Három explicit pgTAP-ellenőrzés bizonyítja
+  az audit metaadatait, a teljes korábbi 2 700/1 900/1 700 Ft-os díjsort és a
+  teljes új 2 500/1 900/1 700 Ft-os díjsort. A korábbi díjsor a
+  `202608160001_initial_core.sql` migrációból származik, ezért tiszta
+  adatbázison sem seed-függő.
 - A többi review-megállapítás lezárása még folyamatban van; ez a státusz nem
   jelent merge- vagy production-readiness jóváhagyást.
 
@@ -63,8 +70,8 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 - Next.js production build: PASS.
 - SQL parser: PASS — 78 statement.
 - PL/pgSQL parser: PASS — 22 függvény.
-- A `111_admin_pricing.sql` SQL parser ellenőrzése: PASS — 75 statement; a
-  pgTAP terv és a tényleges assertionök száma egyaránt 49.
+- A `111_admin_pricing.sql` SQL parser ellenőrzése: PASS — 78 statement; a
+  pgTAP terv és a tényleges assertionök száma egyaránt 52.
 - PostgreSQL pgTAP élő futás: helyben nem elérhető; GitHub Database tests feladata lesz.
 - Független security/data-integrity review: elindítva, eredménye feldolgozás alatt.
 - HIGH-1 célzott statikus ellenőrzés: PASS — 46 pgTAP assertion egyezik a
@@ -73,9 +80,8 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 
 ## Következő lépések
 
-1. A következő, külön fázisban a központi induló tarifamigráció auditjának
-   explicit tesztbizonyítékát és a fennmaradó MEDIUM review-megállapításokat
-   kell egyenként lezárni.
+1. A következő, külön fázisban a foglalásszintű díj indokának szerkesztéskori
+   kezelését (MEDIUM M-2) kell végigellenőrizni és regressziós teszttel lezárni.
 2. Ezután a LOW review-megállapítások és a teljes DB/alkalmazás regresszió
    következik.
 3. Kis, áttekinthető commitok létrehozása és branch push.
