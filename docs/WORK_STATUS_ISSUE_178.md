@@ -1,6 +1,6 @@
 # Folytatási státusz — GitHub #178 admin díjszabás
 
-Utolsó frissítés: 2026-09-23 — LOW L-1 lezárási fázis
+Utolsó frissítés: 2026-09-23 — bizonyítékalapú LOW review-fázis lezárva
 Repository: `ugry65/ahely-booking`  
 Branch: `feat/178-admin-pricing`  
 Base `main`: `953a233d7a1da6eafe243ed9b7e65c367c56bf3b`
@@ -80,6 +80,19 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
   dokumentumaiban, sem a GitHub #178 issue-ban. Emiatt a LOW tételek lezárása
   bizonyíték-alapú, önálló diff-review-val történik; találgatásból nem készül
   pénzügyi kódmódosítás.
+- **LOW L-2 review-fázis – LEZÁRVA, új reprodukálható hiba nélkül.** A rögzített
+  `953a233d7` base és a `9041c8bbf` branch HEAD teljes fájllistáját, valamint a
+  díjszabás, user-díjazás, booking override, díjelőnézet, ismétlődő foglalás,
+  havi snapshot/export és jogosultsági belépési pontok érintett kódját újra
+  ellenőriztük. A review nem talált olyan új LOW hibát, amely reprodukálható
+  lenne és biztonságosan indokolna pénzügyi vagy adatbázis-módosítást. Ezért
+  ebben a fázisban szándékosan nem készült spekulatív kódváltozás.
+- A review külön visszaellenőrizte, hogy az admin RPC-k backend oldalon is
+  `require_active_admin()` ellenőrzést használnak, a SECURITY DEFINER
+  függvények rögzített üres `search_path` mellett futnak, a belső pricing
+  segédfüggvények végrehajtási joga vissza van vonva, és az admin végpontok
+  csak az `authenticated` / `service_role` szerepköröknek vannak explicit
+  engedélyezve.
 
 ## Legutóbbi ellenőrzött állapot
 
@@ -91,21 +104,20 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 - A `111_admin_pricing.sql` SQL parser ellenőrzése: PASS — 84 statement; a
   pgTAP terv és a tényleges assertionök száma egyaránt 58.
 - PostgreSQL pgTAP élő futás: helyben nem elérhető; GitHub Database tests feladata lesz.
-- Független security/data-integrity review: elindítva, eredménye feldolgozás alatt.
+- Független security/data-integrity review: a végső teljes diffre még kötelező; ez a LOW review nem helyettesíti.
 - HIGH-1 célzott statikus ellenőrzés: PASS — 46 pgTAP assertion egyezik a
   teszttervvel. A környezetben Supabase CLI és Docker nem érhető el, ezért
   az élő pgTAP futást a későbbi GitHub Database tests fogja bizonyítani.
 
 ## Következő lépések
 
-1. A következő, külön fázisban a fennmaradó kódot újabb bizonyíték-alapú LOW
-   review során kell ellenőrizni és csak konkrét találat esetén javítani.
-2. Ezután a végső teljes DB/alkalmazás regresszió és a független review
-   visszaellenőrzése következik.
-3. Kis, áttekinthető commitok létrehozása és branch push.
-4. PR létrehozása, GitHub Application/Database/Release/Vercel checkek ellenőrzése.
-5. Merge csak review és projektgazdai jóváhagyás után.
-6. Staging migráció és célzott UAT a merge után; production változtatás külön engedély nélkül tilos.
+1. Következő fázis: végső teljes DB/alkalmazás regresszió és független
+   security/data-integrity review a teljes végső diffre.
+2. Review-megállapítás csak bizonyíték alapján javítható; kritikus pénzügyi,
+   adatbázis- vagy security javítás után új független review szükséges.
+3. PR létrehozása, GitHub Application/Database/Release/Vercel checkek ellenőrzése.
+4. Merge csak review és projektgazdai jóváhagyás után.
+5. Staging migráció és célzott UAT a merge után; production változtatás külön engedély nélkül tilos.
 
 ## Chat-folytatás
 
