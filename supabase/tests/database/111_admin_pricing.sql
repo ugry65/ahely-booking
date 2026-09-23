@@ -1,6 +1,6 @@
 begin;
 
-select plan(43);
+select plan(46);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -17,6 +17,9 @@ select is((select hourly_rate_huf from public.pricing_tiers where 930 between mi
 select is((select hourly_rate_huf from public.pricing_tiers where 3600 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1900::bigint,'A 60 órás sávhatár még 1 900 Ft');
 select is((select hourly_rate_huf from public.pricing_tiers where 3630 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1700::bigint,'60 óra felett a központi díj 1 700 Ft');
 select is((select hourly_rate_huf from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),5000::bigint,'A Tréningterem csoportos alapdíja 5 000 Ft');
+select is((select count(*) from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),1::bigint,'A Tréningteremhez pontosan egy tarifa érvényes 2026-10-01-én');
+select is((select max(valid_to) from public.special_room_rates where room_id='11000000-0000-0000-0000-000000000001' and use_type='group' and valid_from<date '2026-10-01'),date '2026-09-30','A korábbi Tréningterem-tarifa 2026-09-30-án lezárul');
+select is((select count(*) from public.audit_logs where action='pricing.training_room_rate_migrated' and entity_id='11000000-0000-0000-0000-000000000001' and (after_data->>'hourly_rate_huf')::bigint=5000),1::bigint,'Az 5 000 Ft-os Tréningterem-tarifa migrációja auditált');
 
 insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000181','pricing-admin@example.invalid','{"first_name":"Pricing","last_name":"Admin"}'),
