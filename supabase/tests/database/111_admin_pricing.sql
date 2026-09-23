@@ -117,7 +117,10 @@ reset role;
 select is((select hourly_rate_override_reason from public.bookings where id='41000000-0000-0000-0000-000000000183'),'Javított booking indok','Az indokjavítás megmarad a bookingon');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+reset role;
 select is((select count(*) from public.audit_logs where action='pricing.booking_hourly_rate_override_set' and correlation_id='42000000-0000-0000-0000-000000000187' and before_data->>'hourly_rate_override_huf'='3600' and after_data->>'hourly_rate_override_huf'='3600' and before_data->>'reason'='Egyedi booking teszt' and after_data->>'reason'='Javított booking indok' and reason='Javított booking indok'),1::bigint,'Az indokjavítás régi és új indoka változatlan óradíj mellett auditált');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
 select lives_ok(
   $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,null,'42000000-0000-0000-0000-000000000188')$$,
   'Azonos ár és hiányzó új indok kompatibilis no-op, amely nem törli a meglévő indokot'
@@ -126,7 +129,10 @@ reset role;
 select is((select hourly_rate_override_reason from public.bookings where id='41000000-0000-0000-0000-000000000183'),'Javított booking indok','Általános booking-szerkesztés megőrzi a meglévő felülírás indokát');
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+reset role;
 select is((select count(*) from public.audit_logs where correlation_id='42000000-0000-0000-0000-000000000188'),0::bigint,'A kompatibilis no-op nem hoz létre félrevezető pénzügyi auditot');
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
 select lives_ok(
   $$select public.admin_create_booking_with_pricing(
     '11000000-0000-0000-0000-000000000002',
