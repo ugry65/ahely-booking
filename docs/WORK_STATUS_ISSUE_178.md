@@ -1,6 +1,6 @@
 # Folytatási státusz — GitHub #178 admin díjszabás
 
-Utolsó frissítés: 2026-09-23 — HIGH-1 lezárási fázis
+Utolsó frissítés: 2026-09-23 — HIGH-2 lezárási fázis
 Repository: `ugry65/ahely-booking`  
 Branch: `feat/178-admin-pricing`  
 Base `main`: `953a233d7a1da6eafe243ed9b7e65c367c56bf3b`
@@ -43,16 +43,28 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 - A HIGH-1 regressziós védelem három explicit pgTAP-ellenőrzést tartalmaz:
   pontosan egy aktív tarifa, a korábbi tarifa lezárási dátuma és az auditrekord
   5 000 Ft-os `after_data` értéke.
+- **HIGH-2 – Settlement snapshot/revision admin integráció: LEZÁRVA a
+  branchen.** A havi admin képernyő, az összesítő CSV és a tételes CSV ugyanazt
+  a snapshot-aware RPC-réteget használja. A lezárt hónap legutóbbi immutable
+  revisionje marad a pénzügyi képernyő és export forrása akkor is, ha az eredeti
+  booking élő állapota később megváltozik.
+- A HIGH-2 javítás megszüntette azt a rést, amelyben egy már snapshotolt user
+  eltűnhetett az összesítőből, ha később már nem maradt aktív bookingja. Három
+  új pgTAP-ellenőrzés védi a snapshot user megmaradását, a revision összegét és
+  a tételes exportforrás óradíját/összegét. Három alkalmazásteszt védi a
+  képernyő és a két export helyes RPC-bekötését.
 - A többi review-megállapítás lezárása még folyamatban van; ez a státusz nem
   jelent merge- vagy production-readiness jóváhagyást.
 
 ## Legutóbbi ellenőrzött állapot
 
-- Alkalmazástesztek: PASS — 28 fájl, 167 teszt.
+- Alkalmazástesztek: PASS — 29 fájl, 170 teszt.
 - TypeScript typecheck: PASS.
 - Next.js production build: PASS.
 - SQL parser: PASS — 78 statement.
 - PL/pgSQL parser: PASS — 22 függvény.
+- A `111_admin_pricing.sql` SQL parser ellenőrzése: PASS — 75 statement; a
+  pgTAP terv és a tényleges assertionök száma egyaránt 49.
 - PostgreSQL pgTAP élő futás: helyben nem elérhető; GitHub Database tests feladata lesz.
 - Független security/data-integrity review: elindítva, eredménye feldolgozás alatt.
 - HIGH-1 célzott statikus ellenőrzés: PASS — 46 pgTAP assertion egyezik a
@@ -61,9 +73,11 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 
 ## Következő lépések
 
-1. A következő, külön fázisban a HIGH-2 settlement snapshot/revision tényleges
-   admin integrációjának lezárása és célzott tesztelése.
-2. A fennmaradó MEDIUM/LOW review-megállapítások egyenkénti javítása.
+1. A következő, külön fázisban a központi induló tarifamigráció auditjának
+   explicit tesztbizonyítékát és a fennmaradó MEDIUM review-megállapításokat
+   kell egyenként lezárni.
+2. Ezután a LOW review-megállapítások és a teljes DB/alkalmazás regresszió
+   következik.
 3. Kis, áttekinthető commitok létrehozása és branch push.
 4. PR létrehozása, GitHub Application/Database/Release/Vercel checkek ellenőrzése.
 5. Merge csak review és projektgazdai jóváhagyás után.

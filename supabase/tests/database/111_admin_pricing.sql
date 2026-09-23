@@ -1,6 +1,6 @@
 begin;
 
-select plan(46);
+select plan(49);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -119,6 +119,17 @@ select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181'
 select lives_ok($$select * from public.admin_create_monthly_settlement_revision('00000000-0000-0000-0000-000000000185','2026-08-01','Indokolt korrekció','42000000-0000-0000-0000-000000000184')$$,'Indokolt korrekció új revisionként elkészíthető');
 reset role;
 select is((select string_agg(line.hourly_rate_huf::text,',' order by revision.revision_number) from public.settlement_booking_lines line join public.settlement_revisions revision on revision.id=line.settlement_revision_id where line.booking_id='41000000-0000-0000-0000-000000000185'),'4300,4400','Az új revision megőrzi az első snapshotot és külön tárolja a korrekciót');
+
+-- A legutóbbi immutable revision marad az admin képernyő és export hiteles
+-- forrása akkor is, ha az eredeti booking élő állapota később megváltozik.
+update public.bookings set status='cancelled',hourly_rate_override_huf=4500,updated_at=clock_timestamp()
+where id='41000000-0000-0000-0000-000000000185';
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+select is((select count(*) from public.admin_monthly_pricing_summary('2026-08-01') where user_id='00000000-0000-0000-0000-000000000185'),1::bigint,'A snapshot user az élő booking későbbi módosítása után is szerepel az admin összesítésben');
+select is((select pricing_state||':'||revision_number::text||':'||calculated_due_huf::text from public.admin_monthly_pricing_summary('2026-08-01') where user_id='00000000-0000-0000-0000-000000000185'),'snapshot:2:4400','Az admin összesítés a legutóbbi immutable revision pénzügyi értékét adja');
+select is((select pricing_state||':'||revision_number::text||':'||hourly_rate_huf::text||':'||amount_huf::text from public.admin_monthly_pricing_details('2026-08-01','00000000-0000-0000-0000-000000000185') where booking_id='41000000-0000-0000-0000-000000000185'),'snapshot:2:4400:4400','A tételes admin exportforrás is a legutóbbi immutable revisiont adja');
+reset role;
 
 select is((select count(*) from public.audit_logs where action='pricing.booking_hourly_rate_override_set' and correlation_id='42000000-0000-0000-0000-000000000182' and before_data ? 'hourly_rate_override_huf' and after_data ? 'hourly_rate_override_huf'),1::bigint,'A booking ármódosítás ki/mikor/miről/mire auditot hoz létre');
 select ok(not has_function_privilege('authenticated','public.calculate_monthly_pricing(uuid,date)','EXECUTE'),'A belső pénzügyi kalkulátor közvetlenül nem hívható authenticated szereppel');

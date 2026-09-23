@@ -950,9 +950,17 @@ begin
   for v_profile in
     select profile.id,profile.last_name||' '||profile.first_name as name,profile.email
     from public.profiles profile
-    where exists(select 1 from public.bookings booking where booking.user_id=profile.id and booking.status='active'
-      and (booking.start_at at time zone 'Europe/Budapest')::date>=v_month
-      and (booking.start_at at time zone 'Europe/Budapest')::date<(v_month+interval '1 month')::date)
+    where exists(
+      select 1 from public.bookings booking
+      where booking.user_id=profile.id and booking.status='active'
+        and (booking.start_at at time zone 'Europe/Budapest')::date>=v_month
+        and (booking.start_at at time zone 'Europe/Budapest')::date<(v_month+interval '1 month')::date
+    ) or exists(
+      select 1
+      from public.monthly_settlements settlement
+      join public.settlement_revisions revision on revision.settlement_id=settlement.id
+      where settlement.user_id=profile.id and settlement.settlement_month=v_month
+    )
     order by profile.last_name,profile.first_name,profile.id
   loop
     select revision.id,revision.revision_number,revision.normal_minutes,revision.special_minutes,revision.calculated_due_huf
