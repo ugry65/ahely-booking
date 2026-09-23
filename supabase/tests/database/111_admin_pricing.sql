@@ -1,6 +1,6 @@
 begin;
 
-select plan(62);
+select plan(63);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -9,6 +9,7 @@ select has_function('public','admin_set_user_hourly_rate',array['uuid','bigint',
 select has_function('public','admin_create_booking_with_pricing',array['uuid','uuid','timestamp with time zone','timestamp with time zone','booking_use_type','text','uuid','text','bigint','text'],'Az atomikus admin booking+díj RPC létezik');
 select has_function('public','admin_create_monthly_settlement_revision',array['uuid','date','text','uuid'],'Az auditált havi settlement revision RPC létezik');
 select ok(not has_function_privilege('anon','public.admin_set_booking_hourly_rate_override(uuid,bigint,text,uuid)','EXECUTE'),'Anon nem módosíthat foglalási árat');
+select ok(not has_function_privilege('authenticated','public.resolve_rate_for_context(uuid,uuid,date,booking_use_type,boolean,integer)','EXECUTE'),'A közös belső díjresolver kliensszerepkörből közvetlenül nem hívható');
 
 select is((select hourly_rate_huf from public.pricing_tiers where min_minutes=60 and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),2500::bigint,'1–15 óra központi díja 2 500 Ft');
 select is((select hourly_rate_huf from public.pricing_tiers where 900 between min_minutes and coalesce(max_minutes,2147483647) and date '2026-10-01' between valid_from and coalesce(valid_to,'infinity'::date)),2500::bigint,'A pontos 15 órás sávhatár még 2 500 Ft');
