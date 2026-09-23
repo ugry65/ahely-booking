@@ -9,6 +9,7 @@ on:
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
+      - "scripts/test-pricing-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
@@ -66,6 +67,9 @@ jobs:
 
       - name: Run concurrent booking mutation tests
         run: ./scripts/test-booking-mutation-concurrency.sh
+
+      - name: Run concurrent pricing administration test
+        run: bash ./scripts/test-pricing-concurrency.sh
 
       - name: Run concurrent room access administration tests
         run: bash ./scripts/test-room-access-concurrency.sh
