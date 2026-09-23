@@ -345,6 +345,8 @@ begin
 end;
 $$;
 
+drop function if exists public.calculate_monthly_pricing(uuid, date);
+
 create or replace function public.calculate_monthly_pricing(
   p_user_id uuid,
   p_settlement_month date
