@@ -7,12 +7,14 @@ import { createRecurringBooking } from "./ismetlod/actions";
 import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, normalizeCalendarSelection, type CalendarSelection } from "@/lib/calendar-selection";
 import { BookingTimeFields } from "./booking-time-fields";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
+import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
 
 export type BookableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 export type CalendarBooking = {
   booking_id: string; room_id: string; room_name: string; start_at: string; end_at: string;
   use_type: "individual" | "group"; is_own: boolean; booker_display_name: string | null; booker_color: string | null;
   booking_title: string | null; note: string | null; series_id: string | null; updated_at: string | null; can_manage: boolean;
+  user_id: string | null; hourly_rate_override_huf: number | null; hourly_rate_override_reason: string | null;
 };
 type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string };
 type TouchGesture = { roomId: string; pointerId: number; startX: number; startY: number; startScrollY: number; anchorMinute: number; active: boolean; element: HTMLDivElement };
@@ -156,7 +158,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
       <form key={`${dialogMode}-${sourceBooking?.booking_id ?? "new"}-${editScope}`} action={formAction} className="stack">
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
         {dialogMode === "edit" && sourceBooking ? <><input type="hidden" name="bookingId" value={sourceBooking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={sourceBooking.updated_at ?? ""} /><input type="hidden" name="scope" value={editScope} /></> : null}
-        {dialogMode !== "edit" && bookingUsers.length ? <label>Felhasználó<select name="targetUserId" defaultValue={currentUserId ?? bookingUsers[0]?.id} required>{bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}</select><span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span></label> : null}
+        {dialogMode !== "edit" && bookingUsers.length ? <label>Felhasználó<select name="targetUserId" defaultValue={sourceBooking?.user_id ?? currentUserId ?? bookingUsers[0]?.id} required>{bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}</select><span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span></label> : null}
         <label>Helyiség<select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); }} required>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
         <label>Dátum<input name="date" type="date" defaultValue={selectedDate} required /></label>
         <BookingTimeFields options={options} initialStartTime={calendarMinuteToTime(selection.startMinute)} initialEndTime={calendarMinuteToTime(selection.endMinute)} />
@@ -166,6 +168,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         <label>Foglalás címe<input name="bookingTitle" maxLength={100} defaultValue={sourceBooking?.booking_title ?? ""} placeholder="Opcionális" /></label>
         <span className="muted form-help">A címet csak a foglalás tulajdonosa és az adminisztrátorok láthatják.</span>
         <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={sourceBooking?.note ?? ""} placeholder="Opcionális" /></label>
+        {bookingUsers.length ? <AdminBookingPricingFields defaultUserId={sourceBooking?.user_id ?? currentUserId ?? bookingUsers[0].id} bookingId={dialogMode === "edit" ? sourceBooking?.booking_id : null} existingOverride={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_huf : null} existingReason={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_reason : null} allowOverride={dialogMode !== "edit" || editScope === "occurrence"} /> : null}
         {dialogMode === "edit" && sourceBooking?.series_id ? <p className="message">Hatókör: {editScope === "occurrence" ? "csak ez az alkalom" : editScope === "following" ? "ez és a következő alkalmak" : "teljes jövőbeli sorozat"}.</p> : null}
         <div className="booking-modal-actions"><button type="submit">{dialogMode === "edit" ? "Módosítás mentése" : repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button></div>
         <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>

@@ -89,12 +89,12 @@ A napi, heti, kétheti és havi dátumgenerálás az `Europe/Budapest` helyi fal
 Az aktuális havi dashboard számítható nézet. A pénzügyi visszakövethetőséghez viszont minden alkalmazott díj pillanatképe megőrzendő.
 
 - A normál, sávos órák havi összegét userenként össze kell adni; a kiválasztott sáv díja az összes normál órára érvényes.
-- Egyedi fix user-díj felülírja a sávos szabályt.
+- A foglalásszintű admin óradíj felülírja a user- és központi szabályt; az egyedi fix user-díj felülírja a központi sávot és a Tréningterem csoportos alapdíját.
 - A Tréningterem csoportos használata külön tétel, nem növeli a normál sávos óraszámot.
-- A `settlement_revisions` minden újraszámítás összesített, megőrzött pillanatképe. A `settlement_booking_lines` ehhez a revisionhöz kötve tárolja a foglalást, percet, alkalmazott díjtípust, óradíjat, összeget és a szabály hivatkozását.
+- A `settlement_revisions` minden végleges számítás összesített, megőrzött pillanatképe. A `settlement_booking_lines` ehhez a revisionhöz kötve tárolja a foglalást, percet, alkalmazott díjforrást, óradíjat, összeget és a szabály hivatkozását.
 - Korrekció nem írja át nyomtalanul a múltat: külön `settlement_adjustments` rekord készül kötelező indokkal.
 - A befizetés külön entitás; a fizetendő és a tényleges pénzbeérkezés nem keverhető.
-- Nincs kötelező havi lezárás, de minden újraszámítás új, sorszámozott revisionrekordot hoz létre, így a korábbi állapot és az export forrása is reprodukálható.
+- Nincs kötelező havi lezárás. Az admin végleges számítása immutable revisiont és booking line-okat készít; utólagos korrekció új, indokolt és auditált revision, ezért a korábbi állapot és az export forrása reprodukálható.
 
 ## 7. Logikai adatmodell
 
@@ -141,7 +141,7 @@ erDiagram
 | --- | --- |
 | `booking_series` | reprodukálható ismétlődési kérés: helyiség, helyi kezdés, időtartam, időzóna, végfeltétel, konfliktuspolitika és idempotenciakulcs |
 | `booking_series_occurrences` | minden generált alkalom append-only eredménye: létrejött, kivétel vagy elérhetetlen, opcionális booking-hivatkozással |
-| `bookings` | minden konkrét alkalom; aktív vagy lemondott állapot |
+| `bookings` | minden konkrét alkalom; aktív vagy lemondott állapot; opcionális admin foglalásszintű óradíj-felülírás |
 | `booking_cancellations` | törlési pillanatkép, actor, időpont, ok, kezdésig hátralévő percek |
 
 A `bookings` fizikailag nem törölhető az alkalmazásból. A lemondás állapotváltás és külön auditrekord. A történeti riportok a konkrét alkalmakból készülnek, nem a sorozatszabály utólagos újragenerálásából.

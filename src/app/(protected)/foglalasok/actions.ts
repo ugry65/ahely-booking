@@ -12,7 +12,16 @@ function resultUrl(date: string | null, kind: "hiba" | "uzenet", message: string
   const params = new URLSearchParams({ [kind]: message }); if (date) params.set("datum", date); return `/foglalasok?${params.toString()}`;
 }
 function safeRpcMessage(error: { code?: string; message: string }, fallback: string) {
-  return error.code === "P0001" && error.message.length <= 260 ? error.message : fallback;
+  return ["P0001", "22004", "22023", "42501"].includes(error.code ?? "") && error.message.length <= 260 ? error.message : fallback;
+}
+function pricingInput(formData: FormData) {
+  const text = String(formData.get("hourlyRateOverride") ?? "").trim();
+  const parsed = /^\d+$/.test(text) ? Number(text) : NaN;
+  return {
+    apply: String(formData.get("applyRateOverride") ?? "") === "true",
+    rate: text === "" ? null : Number.isSafeInteger(parsed) ? parsed : NaN,
+    reason: String(formData.get("rateOverrideReason") ?? "").trim() || null,
+  };
 }
 function parseScope(value: FormDataEntryValue | null) {
   const scope = String(value ?? "occurrence");
@@ -28,21 +37,28 @@ export async function createBooking(formData: FormData) {
   const input = Object.fromEntries(["roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(parsed.date, "hiba", parsed.error));
+  const pricing = pricingInput(formData);
+  if (Number.isNaN(pricing.rate)) redirect(resultUrl(parsed.value.date, "hiba", "Az egyedi óradíj csak nem negatív egész forint lehet."));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_booking", { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle });
+  const parameters = { p_room_id: parsed.value.roomId, p_user_id: targetUserId(profile, formData), p_start_at: parsed.value.startAt, p_end_at: parsed.value.endAt, p_use_type: parsed.value.useType, p_note: parsed.value.note, p_idempotency_key: parsed.value.idempotencyKey, p_booking_title: parsed.value.bookingTitle };
+  const { error } = profile.role === "admin"
+    ? await supabase.rpc("admin_create_booking_with_pricing", { ...parameters, p_hourly_rate_override_huf: pricing.rate, p_override_reason: pricing.reason })
+    : await supabase.rpc("create_booking", parameters);
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás mentése nem sikerült. Kérlek, próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", "A foglalás sikeresen létrejött."));
 }
 
 export async function updateCalendarBooking(formData: FormData) {
-  await requireActiveProfile();
+  const profile = await requireActiveProfile();
   const input = Object.fromEntries(["bookingId", "expectedUpdatedAt", "roomId", "date", "startTime", "endTime", "useType", "note", "bookingTitle", "idempotencyKey"].map((key) => [key, String(formData.get(key) ?? "")]));
   const parsed = parseUpdateBookingForm(input);
   if (!parsed.ok) redirect(resultUrl(String(formData.get("date") ?? "") || null, "hiba", parsed.error));
   const scope = parseScope(formData.get("scope"));
+  const pricing = pricingInput(formData);
+  if (Number.isNaN(pricing.rate)) redirect(resultUrl(parsed.value.date, "hiba", "Az egyedi óradíj csak nem negatív egész forint lehet."));
   const supabase = await createClient();
-  const { error } = await supabase.rpc("update_booking_scope", {
+  const parameters = {
     p_booking_id: parsed.value.bookingId,
     p_scope: scope,
     p_expected_updated_at: parsed.value.expectedUpdatedAt,
@@ -53,7 +69,10 @@ export async function updateCalendarBooking(formData: FormData) {
     p_note: parsed.value.note,
     p_idempotency_key: parsed.value.idempotencyKey,
     p_booking_title: parsed.value.bookingTitle,
-  });
+  };
+  const { error } = profile.role === "admin"
+    ? await supabase.rpc("admin_update_booking_scope_with_pricing", { ...parameters, p_apply_rate_override: pricing.apply, p_hourly_rate_override_huf: pricing.rate, p_override_reason: pricing.reason })
+    : await supabase.rpc("update_booking_scope", parameters);
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás módosítása nem sikerült. Frissítsd az oldalt és próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(parsed.value.date, "uzenet", scope === "occurrence" ? "A foglalás módosítása sikerült." : "A sorozat érintett alkalmai módosultak."));

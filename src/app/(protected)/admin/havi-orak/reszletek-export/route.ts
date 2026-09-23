@@ -12,7 +12,7 @@ export async function GET(request: Request) {
   const rows: MonthlyBookingDetailWithMonth[] = [];
 
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_active_booking_details", {
+    const response = await supabase.rpc("admin_monthly_pricing_details", {
       p_month: monthStart(month)!, p_user_id: userId,
     }).returns<MonthlyBookingDetail[]>();
     if (response.error) return new Response("A tételes elszámolási export nem sikerült. Hiányos export nem készül.", { status: 500 });

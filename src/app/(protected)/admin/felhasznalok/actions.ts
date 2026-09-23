@@ -108,6 +108,29 @@ export async function updateUserProfile(formData: FormData) {
   redirect(resultUrl("uzenet", "A felhasználói adatok elmentve.", formData));
 }
 
+export async function setUserHourlyRate(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  const mode = String(formData.get("pricingMode") ?? "central");
+  const rateText = String(formData.get("hourlyRate") ?? "").trim();
+  const rate = mode === "fixed" && /^\d+$/.test(rateText) ? Number(rateText) : null;
+  const validFrom = String(formData.get("validFrom") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!userId || !["central", "fixed"].includes(mode) || (mode === "fixed" && rate === null) || !/^\d{4}-\d{2}-\d{2}$/.test(validFrom) || !reason) {
+    redirect(resultUrl("hiba", "A díjazási mód, az érvényességi nap és az indok kötelező.", formData));
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_set_user_hourly_rate", {
+    p_user_id: userId,
+    p_hourly_rate_huf: rate,
+    p_valid_from: validFrom,
+    p_reason: reason,
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (error) redirect(resultUrl("hiba", safeRpcMessage(error, "A user díjazásának mentése nem sikerült."), formData));
+  redirect(resultUrl("uzenet", mode === "fixed" ? "Az egyedi óradíj új időszaka létrejött." : "A user a megadott naptól ismét a központi díjszabást használja.", formData));
+}
+
 export async function setUserRole(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));

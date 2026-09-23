@@ -7,6 +7,12 @@ export type MonthlyHoursRow = {
   booking_count: number;
   total_minutes: number;
   total_hours: number | string;
+  normal_minutes: number;
+  special_minutes: number;
+  calculated_due_huf: number;
+  pricing_state: "live" | "snapshot";
+  revision_id: string | null;
+  revision_number: number | null;
 };
 
 export type MonthlyHoursWithMonth = MonthlyHoursRow & { month: string };
@@ -21,6 +27,11 @@ export type MonthlyBookingDetail = {
   end_time: string;
   total_minutes: number;
   total_hours: number | string;
+  rate_source: "booking_override" | "user_override" | "central_tier" | "training_room";
+  hourly_rate_huf: number;
+  amount_huf: number;
+  pricing_state: "live" | "snapshot";
+  revision_number: number | null;
 };
 
 export type MonthlyBookingDetailWithMonth = MonthlyBookingDetail & { month: string };
@@ -49,20 +60,27 @@ export function decimalComma(value: number | string): string {
 }
 
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
-  const lines = [`${csvCell("Hónap")};${csvCell("Felhasználó")};${csvCell("Összes óra")}`];
+  const header = ["Hónap", "Felhasználó", "Összes óra", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
+  const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
-    lines.push(`${csvCell(row.month)};${csvCell(row.user_name)};${decimalComma(row.total_hours)}`);
+    lines.push([
+      row.month, row.user_name, decimalComma(row.total_hours), decimalComma(row.normal_minutes / 60),
+      decimalComma(row.special_minutes / 60), String(row.calculated_due_huf),
+      row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet", row.revision_number ? String(row.revision_number) : "",
+    ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
 
 export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string {
-  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Mettől", "Meddig", "Óra"];
+  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft", "Állapot", "Revision"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
       row.month, row.user_name, row.booking_date, row.room_name,
-      row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours),
+      row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours), row.rate_source,
+      String(row.hourly_rate_huf), String(row.amount_huf), row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet",
+      row.revision_number ? String(row.revision_number) : "",
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;

@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const rows: MonthlyHoursWithMonth[] = [];
 
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_booking_hours", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
+    const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
     if (response.error) return new Response("A havi óraszám exportálása nem sikerült. Hiányos export nem készül.", { status: 500 });
     for (const row of (response.data ?? []) as unknown as MonthlyHoursRow[]) rows.push({ ...row, month });
   }
