@@ -729,6 +729,7 @@ as $$
 declare
   v_actor uuid := public.require_active_admin();
   v_booking public.bookings%rowtype;
+  v_reason text := nullif(btrim(p_reason),'');
   v_before jsonb;
   v_after jsonb;
 begin
@@ -737,20 +738,29 @@ begin
   select * into v_booking from public.bookings where id=p_booking_id for update;
   if not found or v_booking.status<>'active' then raise exception 'Csak aktív foglalás díja módosítható.' using errcode='P0001'; end if;
   if v_booking.start_at <= now() then raise exception 'Múltbeli vagy megkezdett foglalás díja nem módosítható.' using errcode='P0001'; end if;
-  if v_booking.hourly_rate_override_huf is not distinct from p_hourly_rate_huf then return; end if;
-  if nullif(btrim(p_reason),'') is null then raise exception 'A díjmódosítás indoka kötelező.' using errcode='22004'; end if;
+  -- A régebbi vagy általános booking-szerkesztő kliens azonos ár mellett nem
+  -- feltétlenül küld indokot. Ez no-op: a meglévő indokot nem törölhetjük.
+  -- Nem üres, megváltozott indok ugyanazon ár mellett viszont önálló,
+  -- auditálandó pénzügyi metaadat-változás.
+  if v_booking.hourly_rate_override_huf is not distinct from p_hourly_rate_huf
+    and (p_hourly_rate_huf is null or v_reason is null
+      or v_booking.hourly_rate_override_reason is not distinct from v_reason)
+  then
+    return;
+  end if;
+  if v_reason is null then raise exception 'A díjmódosítás indoka kötelező.' using errcode='22004'; end if;
   v_before := jsonb_build_object('hourly_rate_override_huf',v_booking.hourly_rate_override_huf,'set_by',v_booking.hourly_rate_override_set_by,'set_at',v_booking.hourly_rate_override_set_at,'reason',v_booking.hourly_rate_override_reason);
   update public.bookings set
     hourly_rate_override_huf=p_hourly_rate_huf,
     hourly_rate_override_set_by=case when p_hourly_rate_huf is null then null else v_actor end,
     hourly_rate_override_set_at=case when p_hourly_rate_huf is null then null else clock_timestamp() end,
-    hourly_rate_override_reason=case when p_hourly_rate_huf is null then null else btrim(p_reason) end,
+    hourly_rate_override_reason=case when p_hourly_rate_huf is null then null else v_reason end,
     updated_at=clock_timestamp()
   where id=p_booking_id;
   select jsonb_build_object('hourly_rate_override_huf',booking.hourly_rate_override_huf,'set_by',booking.hourly_rate_override_set_by,'set_at',booking.hourly_rate_override_set_at,'reason',booking.hourly_rate_override_reason)
   into v_after from public.bookings booking where booking.id=p_booking_id;
   insert into public.audit_logs(actor_user_id,action,entity_type,entity_id,before_data,after_data,reason,correlation_id)
-  values(v_actor,'pricing.booking_hourly_rate_override_set','booking',p_booking_id::text,v_before,v_after,btrim(p_reason),p_correlation_id);
+  values(v_actor,'pricing.booking_hourly_rate_override_set','booking',p_booking_id::text,v_before,v_after,v_reason,p_correlation_id);
 end;
 $$;
 

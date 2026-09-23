@@ -1,6 +1,6 @@
 begin;
 
-select plan(52);
+select plan(58);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -76,6 +76,18 @@ select lives_ok(
   $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,'Egyedi booking teszt','42000000-0000-0000-0000-000000000182')$$,
   'Admin egyetlen jövőbeli booking óradíját auditáltan felülírhatja'
 );
+select lives_ok(
+  $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,'Javított booking indok','42000000-0000-0000-0000-000000000187')$$,
+  'Admin az óradíj változtatása nélkül is auditáltan javíthatja a felülírás indokát'
+);
+select is((select hourly_rate_override_reason from public.bookings where id='41000000-0000-0000-0000-000000000183'),'Javított booking indok','Az indokjavítás megmarad a bookingon');
+select is((select count(*) from public.audit_logs where action='pricing.booking_hourly_rate_override_set' and correlation_id='42000000-0000-0000-0000-000000000187' and before_data->>'hourly_rate_override_huf'='3600' and after_data->>'hourly_rate_override_huf'='3600' and before_data->>'reason'='Egyedi booking teszt' and after_data->>'reason'='Javított booking indok' and reason='Javított booking indok'),1::bigint,'Az indokjavítás régi és új indoka változatlan óradíj mellett auditált');
+select lives_ok(
+  $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,null,'42000000-0000-0000-0000-000000000188')$$,
+  'Azonos ár és hiányzó új indok kompatibilis no-op, amely nem törli a meglévő indokot'
+);
+select is((select hourly_rate_override_reason from public.bookings where id='41000000-0000-0000-0000-000000000183'),'Javított booking indok','Általános booking-szerkesztés megőrzi a meglévő felülírás indokát');
+select is((select count(*) from public.audit_logs where correlation_id='42000000-0000-0000-0000-000000000188'),0::bigint,'A kompatibilis no-op nem hoz létre félrevezető pénzügyi auditot');
 select lives_ok(
   $$select public.admin_create_booking_with_pricing(
     '11000000-0000-0000-0000-000000000002',

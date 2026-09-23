@@ -16,6 +16,7 @@ export function AdminBookingPricingFields({ defaultUserId, bookingId, existingOv
   const host = useRef<HTMLFieldSetElement>(null);
   const [custom, setCustom] = useState(existingOverride !== null);
   const [rate, setRate] = useState(existingOverride === null ? "" : String(existingOverride));
+  const [reason, setReason] = useState(existingReason ?? "");
   const [revision, setRevision] = useState(0);
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState("");
@@ -53,14 +54,14 @@ export function AdminBookingPricingFields({ defaultUserId, bookingId, existingOv
   }, [revision, custom, rate, defaultUserId, bookingId]);
 
   const removingExisting = allowOverride && existingOverride !== null && !custom;
-  const financialChange = allowOverride && (custom ? rate !== String(existingOverride ?? "") : existingOverride !== null);
+  const rateChanged = custom && rate !== String(existingOverride ?? "");
   return <fieldset ref={host} className="stack"><legend>Óradíj</legend>
     <input type="hidden" name="applyRateOverride" value={allowOverride ? "true" : "false"} />
     {quote ? <div className="message"><strong>{money(quote.hourly_rate_huf)}/óra</strong> · {labels[quote.rate_source]}<br /><span className="muted">A foglalás számított díja: {money(quote.amount_huf)}. Projekció szerinti normál havi idő: {(quote.projected_month_normal_minutes / 60).toLocaleString("hu-HU")} óra.</span></div> : error ? <p className="message error">{error}</p> : <p className="muted">Az automatikus díj a foglalási adatok kitöltése után jelenik meg.</p>}
-    {allowOverride ? <label className="inline-check"><input type="checkbox" checked={custom} onChange={(event) => { setCustom(event.target.checked); setRevision((value) => value + 1); }} /> Egyedi óradíj csak ehhez a foglaláshoz</label> : <p className="muted form-help">Sorozat több alkalmának szerkesztésekor az óradíjak változatlanok maradnak. Foglalásszintű óradíj egyetlen alkalom szerkesztésével módosítható.</p>}
-    {allowOverride && custom ? <label>Egyedi óradíj (Ft/óra)<input name="hourlyRateOverride" type="number" min="0" step="1" value={rate} onChange={(event) => setRate(event.target.value)} required /></label> : null}
-    {allowOverride && existingOverride !== null ? <p className="muted form-help">Jelenlegi felülírás indoka: {existingReason ?? "—"}</p> : null}
-    {financialChange ? <label>Új módosítás indoka<input name="rateOverrideReason" maxLength={300} defaultValue="" required /></label> : null}
+    {allowOverride ? <label className="inline-check"><input type="checkbox" checked={custom} onChange={(event) => { const checked = event.target.checked; setCustom(checked); setReason(checked ? existingReason ?? "" : ""); setRevision((value) => value + 1); }} /> Egyedi óradíj csak ehhez a foglaláshoz</label> : <p className="muted form-help">Sorozat több alkalmának szerkesztésekor az óradíjak változatlanok maradnak. Foglalásszintű óradíj egyetlen alkalom szerkesztésével módosítható.</p>}
+    {allowOverride && custom ? <label>Egyedi óradíj (Ft/óra)<input name="hourlyRateOverride" type="number" min="0" step="1" value={rate} onChange={(event) => { const nextRate = event.target.value; setRate(nextRate); if (existingOverride !== null) setReason(nextRate === String(existingOverride) ? existingReason ?? "" : ""); }} required /></label> : null}
+    {allowOverride && (custom || removingExisting) ? <label>{removingExisting ? "Felülírás megszüntetésének indoka" : rateChanged ? "Új módosítás indoka" : "Felülírás indoka"}<input name="rateOverrideReason" maxLength={300} value={reason} onChange={(event) => setReason(event.target.value)} required /></label> : null}
+    {allowOverride && custom && existingOverride !== null && !rateChanged ? <p className="muted form-help">Az indok az óradíj változtatása nélkül is javítható; a módosítás külön auditbejegyzést kap.</p> : null}
     {removingExisting ? <p className="muted form-help">Mentéskor a korábbi foglalásszintű felülírás megszűnik, és ismét az automatikus díj érvényesül.</p> : null}
   </fieldset>;
 }
