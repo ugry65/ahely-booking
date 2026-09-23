@@ -280,17 +280,21 @@ declare
   v_service_date date;
   v_is_training_group boolean;
 begin
-  select booking,
-         (booking.start_at at time zone 'Europe/Budapest')::date,
-         room.is_training_room and booking.use_type = 'group'
-  into v_booking, v_service_date, v_is_training_group
+  select booking.*
+  into v_booking
   from public.bookings booking
-  join public.rooms room on room.id = booking.room_id
   where booking.id = p_booking_id;
 
   if not found then
     raise exception 'A foglalás nem található.' using errcode = 'P0001';
   end if;
+
+  v_service_date := (v_booking.start_at at time zone 'Europe/Budapest')::date;
+
+  select room.is_training_room and v_booking.use_type = 'group'
+  into v_is_training_group
+  from public.rooms room
+  where room.id = v_booking.room_id;
 
   if v_booking.hourly_rate_override_huf is not null then
     return query select
