@@ -107,6 +107,13 @@ Az admin központi díjszabásának, userenkénti egyedi óradíjának és fogla
 5. Merge csak review és projektgazdai jóváhagyás után.
 6. Staging migráció és célzott UAT a merge után; production változtatás külön engedély nélkül tilos.
 
+## Chat-folytatás
+
+A Work-kredit megőrzése érdekében elkészült a teljes, önállóan használható
+átadás és a bemásolható prompt:
+`docs/CHAT_HANDOFF_ISSUE_178.md`. Az új beszélgetésnek a GitHub branch aktuális
+HEAD-jéből és a dokumentumban felsorolt projektforrásokból kell folytatnia.
+
 ## Biztonsági korlát
 
 Production adatbázis, konfiguráció, secret és valós production adat nem módosítható külön projektgazdai jóváhagyás nélkül.
