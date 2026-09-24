@@ -42,11 +42,15 @@
         },
         {
           "path": "src/app/api/internal/production-customer-migration-import/route.ts",
-          "sha": "6a47b5033bd850de1016065fb3bda95868c85473"
+          "sha": "ceb55982b4e2df9a760a2d1d8f709ebde01e63c9"
         },
         {
           "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",
           "sha": "bd0aa29d88d334ac205a70a9ddf50c371b0bcf85"
+        },
+        {
+          "path": "supabase/migrations/20260924183000_allbooked_preserve_booking_notes.sql",
+          "sha": "f412de29e5f3ae9e50b1def879232f118aef5bed"
         }
       ]
     },

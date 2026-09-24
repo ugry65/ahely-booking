@@ -1,15 +1,16 @@
 # AllBooked/Skedda ügyfélmigráció – operátori runbook
 
-Állapot: kötelező production eljárás; 2026-09-18.
+Állapot: kötelező production eljárás; frissítve 2026-09-24.
 
 ## Cél és hatókör
 
 A régi AllBooked/Skedda rendszerből a valódi ügyfeleket egyenként kell átvenni az A-Hely rendszerbe. Egy futás egy ügyfél profilját, helyiségcsoport-jogait és foglalásait kezeli. A Papp Dalma-import volt a sikeres kontrollminta; az általános folyamat ugyanazokat a biztonsági elveket tartja meg.
 
+A foglalás `Notes (Custom field 1)` mezőjét az import változtatás nélkül a célfoglalás `note` mezőjébe viszi. Az üres megjegyzés `null` marad. A megjegyzés nem kerül bele az import audit payloadjába, és más felhasználó számára a publikus naptár-read model nem teszi láthatóvá; a management read model csak a foglalás tulajdonosának vagy aktív adminnak adja vissza.
+
 Az import nem vesz át:
 
 - legacy árat vagy fizetési státuszt;
-- megjegyzést;
 - számlázási adatot;
 - ismétlődő foglalási jogosultságot.
 
@@ -56,7 +57,7 @@ Az azonos CSV biztonságosan újrafuttatható: a forrás-ujjlenyomat-ledger nem 
 - hiányos vagy többlet csoportjog elutasított;
 - aktív ütközésnél nem marad részleges profil-, jog-, booking- vagy ledger-adat;
 - azonos forrás újrafuttatása nem duplikál;
-- booking title megmarad, note/ár/payment nem kerül át;
+- booking title és booking note megmarad; legacy ár/payment nem kerül át; a note tartalma nem duplikálódik audit payloadba;
 - desktop és mobil admin menüben a `Migráció` elérhető, mobilon a menü navigáláskor bezár;
 - a foglalási naptár desktop és mobil baseline-jához az import fejlesztése nem nyúlhat.
 

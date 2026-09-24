@@ -13,6 +13,7 @@ type DryRunBooking = {
   endLocal: string;
   durationMinutes: number;
   bookingTitle: string | null;
+  note: string | null;
   sourceFingerprint: string;
 };
 
@@ -161,6 +162,7 @@ export function MigrationDryRunForm() {
         </div>
         <div><h3>Automatikusan szükséges helyiségcsoportok</h3><p>{result.importApproval.requiredAccessGroups.join(", ") || "—"}</p></div>
         <div><h3>Foglalások helyiségenként</h3>{Object.entries(result.summary.bookingsByRoom).map(([room, count]) => <p key={room}>{room}: {count} db</p>)}</div>
+        <div><h3>Migrált megjegyzések</h3><p className="muted">{result.bookings.filter((booking) => booking.note).length} foglalás tartalmaz AllBooked megjegyzést; ezek változtatás nélkül a foglalás megjegyzésébe kerülnek.</p></div>
         <div><h3>Nem migrált legacy pénzügyi mezők</h3><p className="muted">{result.ignoredPricingFields.join(", ")}</p></div>
         {result.issues.length || result.importApproval.issues.length ? <div><h3>Blokkoló eltérések</h3><ul>
           {result.issues.map((issue, index) => <li key={`${issue.line}-${issue.code}-${index}`}>{issue.line}. sor – {issue.message}</li>)}
@@ -188,7 +190,7 @@ export function MigrationDryRunForm() {
 
       {result?.importApproval.valid ? <section className="card stack">
         <div><p className="eyebrow">Production író import</p><h2>Ügyfél és foglalások atomi betöltése</h2></div>
-        <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. Árat, fizetési státuszt és megjegyzést nem migrál, e-mailt nem küld.</p>
+        <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
         <label>Megerősítés<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder={expectedConfirmation} autoComplete="off" /></label>
         <button type="button" className="danger" disabled={busy || !file || confirmation !== expectedConfirmation || !trainingComplete} onClick={runImport}>
           {busy ? "Import és reconciliation folyamatban…" : "Import productionre"}

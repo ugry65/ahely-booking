@@ -135,6 +135,7 @@ export async function POST(request: Request) {
     endLocal: booking.endLocal,
     durationMinutes: booking.durationMinutes,
     bookingTitle: booking.bookingTitle,
+    note: booking.note,
     useType: booking.roomTarget === "Tréningterem" ? trainingUseTypes[booking.sourceFingerprint] : "individual",
   }));
   const { data: reconciliation, error: importError } = await admin.rpc("admin_import_allbooked_customer", {

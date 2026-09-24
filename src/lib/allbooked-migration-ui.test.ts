@@ -20,6 +20,13 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
     expect(route).toContain("requiresManualCleanup: true");
     expect(route).toContain("orphanedUserId: userId");
     expect(route).toContain("Minden Tréningterem-foglalást egyéni vagy csoportos típusba kell sorolni.");
+    expect(route).toContain("note: booking.note");
+  });
+
+  it("a migrációs felület jelzi, hogy a booking megjegyzések átkerülnek", () => {
+    const form = read("../app/(protected)/admin/migracio/dry-run-form.tsx");
+    expect(form).toContain("Migrált megjegyzések");
+    expect(form).toContain("A foglalási megjegyzést migrálja");
   });
 
   it("a Papp Dalma próbaimport csak pontos production guarddal vonható vissza", () => {

@@ -95,6 +95,7 @@ describe("buildAllBookedDryRun", () => {
       endLocal: "2026-09-03 10:30",
       durationMinutes: 60,
       bookingTitle: null,
+      note: null,
     });
     expect(result.bookings[0].sourceFingerprint).toBe("922e5d7ca0e6068333c953c2f1a0d01fafada1d9fd4a975fb471118bc6155955");
     expect(result.ignoredPricingFields).toEqual([...IGNORED_ALLBOOKED_PRICING_FIELDS]);
@@ -127,10 +128,13 @@ describe("buildAllBookedDryRun", () => {
     expect(result.bookings).toHaveLength(0);
   });
 
-  it("does not silently copy notes", () => {
-    const result = buildAllBookedDryRun(`${header}\n${row({ "Notes (Custom field 1)": "érzékeny megjegyzés" })}\n`, { "Forrás tér": "Forrás tér" });
-    expect(result.valid).toBe(false);
-    expect(result.issues[0].code).toBe("note_requires_review");
+  it("preserves non-empty AllBooked notes exactly and maps empty notes to null", () => {
+    const note = "'+36 30 484 8529 – fontos ügyfél-információ  ";
+    const withNote = buildAllBookedDryRun(`${header}\n${row({ "Notes (Custom field 1)": note })}\n`, { "Forrás tér": "Forrás tér" });
+    const withoutNote = buildAllBookedDryRun(`${header}\n${row()}\n`, { "Forrás tér": "Forrás tér" });
+    expect(withNote.valid).toBe(true);
+    expect(withNote.bookings[0].note).toBe(note);
+    expect(withoutNote.bookings[0].note).toBeNull();
   });
 
   it("detects duplicate source bookings idempotently", () => {
