@@ -307,6 +307,7 @@ declare
   v_booking public.bookings%rowtype;
   v_service_date date;
   v_is_training_group boolean;
+  v_legacy_group_hourly_rate_huf bigint;
 begin
   select booking.*
   into v_booking
@@ -324,6 +325,21 @@ begin
   from public.rooms room
   where room.id = v_booking.room_id;
 
+  -- group_hourly_rate_huf is a legacy deployed column that is intentionally not
+  -- recreated in fresh databases. Read it dynamically when present so the same
+  -- migration supports both deployed history and clean CI databases.
+  if v_is_training_group and exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'bookings'
+      and column_name = 'group_hourly_rate_huf'
+  ) then
+    execute 'select group_hourly_rate_huf from public.bookings where id = $1'
+      into v_legacy_group_hourly_rate_huf
+      using p_booking_id;
+  end if;
+
   if v_booking.hourly_rate_override_huf is not null then
     return query select
       'booking_override'::public.applied_rate_source,
@@ -335,11 +351,11 @@ begin
   -- Legacy Training-room group bookings already carry the historical applied
   -- hourly rate on the booking. Preserve that immutable financial fact instead
   -- of requiring a special-room tariff row to exist retroactively.
-  if v_is_training_group and v_booking.group_hourly_rate_huf is not null then
+  if v_is_training_group and v_legacy_group_hourly_rate_huf is not null then
     return query select
       'training_room'::public.applied_rate_source,
       null::uuid,
-      v_booking.group_hourly_rate_huf;
+      v_legacy_group_hourly_rate_huf;
     return;
   end if;
 
