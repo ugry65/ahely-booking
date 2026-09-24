@@ -56,7 +56,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
 
     <form className="card stack" method="get">
       <MonthMultiSelect initialMonths={months} />
-      <div className="monthly-filter"><button>Megjelenítés</button><a className="button secondary" href={`/admin/havi-orak/export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő CSV</a></div>
+      <div className="monthly-filter"><button>Megjelenítés</button><a className="button secondary" href={`/admin/havi-orak/export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő CSV</a><a className="button secondary" href={`/admin/havi-orak/xlsx-export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő Excel</a></div>
     </form>
 
     {summaryError ? <p className="message error" role="alert">A havi óraszám betöltése nem sikerült teljes körűen. Az adatokat ne használd elszámolásra, amíg a hiba fennáll.</p> : null}
