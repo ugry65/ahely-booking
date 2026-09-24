@@ -153,7 +153,7 @@ export function MigrationDryRunForm() {
 
       {error ? <p className="message error" role="alert">{error}</p> : null}
       {result ? <section className="card stack">
-        <div><p className="eyebrow">Dry-run eredmény</p><h2>{result.importApproval.valid ? "PASS" : "ELLENŐRZÉST IGÉNYEL"}</h2></div>
+        <div><p className="eyebrow">Dry-run eredmény – még nem történt adatbetöltés</p><h2>{result.importApproval.valid ? "DRY-RUN PASS" : "ELLENŐRZÉST IGÉNYEL"}</h2></div>
         <div className="admin-grid">
           <p><strong>Ügyfél:</strong> {result.importApproval.user ? `${result.importApproval.user.lastName} ${result.importApproval.user.firstName}` : "—"}</p>
           <p><strong>E-mail:</strong> {result.importApproval.user?.email ?? "—"}</p>
@@ -167,7 +167,7 @@ export function MigrationDryRunForm() {
         {result.issues.length || result.importApproval.issues.length ? <div><h3>Blokkoló eltérések</h3><ul>
           {result.issues.map((issue, index) => <li key={`${issue.line}-${issue.code}-${index}`}>{issue.line}. sor – {issue.message}</li>)}
           {result.importApproval.issues.map((issue, index) => <li key={`approval-${index}`}>{issue}</li>)}
-        </ul></div> : <p className="message success" role="status">A fájl egy ügyfél kontrollált importjára alkalmas.</p>}
+        </ul></div> : <p className="message success" role="status">A fájl importálható. Fontos: ez csak ellenőrzés, a felhasználó és a foglalások még nem kerültek az adatbázisba.</p>}
       </section> : null}
 
       {result?.importApproval.valid && result.importApproval.trainingBookings.length ? <section className="card stack">
@@ -189,11 +189,11 @@ export function MigrationDryRunForm() {
       </section> : null}
 
       {result?.importApproval.valid ? <section className="card stack">
-        <div><p className="eyebrow">Production író import</p><h2>Ügyfél és foglalások atomi betöltése</h2></div>
+        <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Ügyfél és foglalások atomi betöltése</h2></div>
         <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
         <label>Megerősítés<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder={expectedConfirmation} autoComplete="off" /></label>
         <button type="button" className="danger" disabled={busy || !file || confirmation !== expectedConfirmation || !trainingComplete} onClick={runImport}>
-          {busy ? "Import és reconciliation folyamatban…" : "Import productionre"}
+          {busy ? "Import és reconciliation folyamatban…" : "Tényleges import indítása"}
         </button>
       </section> : null}
 
