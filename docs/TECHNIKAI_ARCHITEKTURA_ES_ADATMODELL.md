@@ -135,6 +135,8 @@ erDiagram
 
 Árat nem írunk felül történetvesztéssel: új érvényességi sor készül. A régi elszámolás így újra előállítható.
 
+2026-09-24-i kompatibilitási baseline: a deployed adatbázisban korábbról megmaradt `bookings.group_hourly_rate_huf` legacy mező nem része a tiszta új sémának. Ha egy történeti Tréningterem csoportos booking ezen már rögzített óradíjat hordoz (staging bizonyíték: 7 500 Ft/óra, 2026. szeptember), a resolver ezt történeti alkalmazott díjként megőrzi. Nem írható át az új, 2026-10-01-től érvényes 5 000 Ft/órás tarifára, és emiatt nem hozunk létre retroaktív tarifa-sort. A foglalásszintű explicit admin override továbbra is elsőbbséget élvez.
+
 ### 7.3. Foglalás
 
 | Tábla | Szerep |
