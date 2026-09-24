@@ -1,6 +1,6 @@
 begin;
 
-select plan(63);
+select plan(64);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -156,6 +156,17 @@ reset role;
 select is((select count(*) from public.audit_logs where action='pricing.user_hourly_rate_set' and correlation_id='42000000-0000-0000-0000-000000000181'),1::bigint,'A user díjmódosítás ki/mikor/miről/mire auditot hoz létre');
 select is((select hourly_rate_override_huf from public.bookings where idempotency_key='42000000-0000-0000-0000-000000000185'),3700::bigint,'Az atomikusan létrehozott booking megőrzi a foglalásszintű díjat');
 select is((select count(*) from public.bookings where idempotency_key='42000000-0000-0000-0000-000000000186'),0::bigint,'Sikertelen díjfelülírás után nem marad részleges booking');
+
+-- Fresh databases intentionally do not recreate the deployed legacy
+-- group_hourly_rate_huf column; deployed-lineage compatibility is exercised
+-- against staging UAT data after migration.
+select ok(
+  not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='bookings' and column_name='group_hourly_rate_huf'
+  ),
+  'A tiszta séma nem hozza vissza a legacy group_hourly_rate_huf oszlopot'
+);
 
 -- A későbbi tarifa-időszak nem módosítja a korábbi szolgáltatási dátum feloldását.
 update public.pricing_tiers set valid_to='2039-12-31' where valid_from='2026-10-01';

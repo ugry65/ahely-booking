@@ -26,8 +26,8 @@ export function AdminBookingPricingFields({ defaultUserId, bookingId, existingOv
     if (!form) return;
     const refresh = () => setRevision((value) => value + 1);
     form.addEventListener("change", refresh);
-    form.addEventListener("input", refresh);
-    return () => { form.removeEventListener("change", refresh); form.removeEventListener("input", refresh); };
+
+    return () => { form.removeEventListener("change", refresh); };
   }, []);
 
   useEffect(() => {
