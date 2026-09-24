@@ -24,6 +24,7 @@ export type NormalizedAllBookedBooking = {
   endLocal: string;
   durationMinutes: number;
   bookingTitle: string | null;
+  note: string | null;
 };
 
 export type AllBookedDryRunResult = {
@@ -315,7 +316,8 @@ export function buildAllBookedDryRun(
     const spacesCount = Number(value(row, "Spaces count"));
     const addOnsCount = Number(value(row, "Add-Ons count") || "0");
     const addOns = value(row, "Add-Ons");
-    const note = value(row, "Notes (Custom field 1)");
+    const rawNote = String(row[column("Notes (Custom field 1)")] ?? "");
+    const note = rawNote.trim() ? rawNote : null;
     const bookingTitle = value(row, "Booking title") || null;
 
     if (!/^\S+@\S+\.\S+$/.test(email) || !firstName || !lastName) {
@@ -356,11 +358,6 @@ export function buildAllBookedDryRun(
       issues.push({ line, code: "booking_title_too_long", message: "A foglalás címe legfeljebb 100 karakter lehet." });
       continue;
     }
-    if (note) {
-      issues.push({ line, code: "note_requires_review", message: "A megjegyzés nem másolható automatikusan; kézi adatvédelmi felülvizsgálat szükséges." });
-      continue;
-    }
-
     const normalizedUser: NormalizedAllBookedUser = {
       email,
       firstName,
@@ -394,6 +391,7 @@ export function buildAllBookedDryRun(
       endLocal,
       durationMinutes,
       bookingTitle,
+      note,
     });
   }
 
