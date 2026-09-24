@@ -27,3 +27,11 @@ A Resend create/update/cancel kézbesítés külön [jegyzőkönyvben](evidence/
 A stagingen elfogadott funkciók mainbe integrálását és a tényleges éles verziót kell igazolni. Teljes kézi UAT nem írható elő pusztán régi üres sablon, hiányzó kattintási napló vagy dokumentációs commit miatt. Konkrét regresszióhoz célzott ellenőrzés szükséges.
 
 A történeti eredmények nem jelentik automatikusan a jelenlegi production deployment elfogadását. A nyitott kiadási lépések és forrásverziók a RELEASE_EVIDENCE dokumentumban vannak.
+
+## Célzott árazási regressziós UAT – 2026-09-24
+
+A PR #179–#184 által érintett árazási és havi elszámolási területre célzott staging regressziós UAT történt. A projektgazda megerősítette, hogy **minden kijelölt teszt sikeres volt**. Az elfogadott scope: központi sávos díj, user egyedi díj, foglalásszintű óradíj és indok, díjprioritás, Tréningterem egyéni/csoportos díjazás, booking override, a szeptemberi 7 500 Ft/órás legacy Tréningterem-díj megőrzése, szeptemberi és októberi havi kimutatás, többhavi részletes export és történeti adatvédelem.
+
+Eredmény: **12/12 PASS, 0 FAIL**. Részletes jegyzőkönyv: [PRICING_REGRESSION_UAT.md](evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md).
+
+A korábban elfogadott és e módosítások által nem érintett foglalási funkciókat nem kellett újratesztelni; ez összhangban van a jelen dokumentum célzott regressziós ellenőrzési szabályával.
