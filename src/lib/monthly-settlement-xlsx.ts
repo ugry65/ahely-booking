@@ -103,11 +103,11 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[]): Uint8Array
   ).join("");
 
   const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>
 <col min="1" max="1" width="12" customWidth="1"/><col min="2" max="2" width="28" customWidth="1"/>
 <col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="16" customWidth="1"/>
 <col min="5" max="5" width="18" customWidth="1"/><col min="6" max="6" width="12" customWidth="1"/>
-</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:F${Math.max(1, rows.length + 1)}"/><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></worksheet>`;
+</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:F${Math.max(1, rows.length + 1)}"/></worksheet>`;
 
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
