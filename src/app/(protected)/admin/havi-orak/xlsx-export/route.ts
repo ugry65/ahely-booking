@@ -19,7 +19,8 @@ export async function GET(request: Request) {
 
   const workbook = monthlySettlementXlsx(rows);
   const suffix = months.length === 1 ? months[0] : `${months[0]}_${months.at(-1)}_${months.length}honap`;
-  return new Response(workbook, { headers: {
+  const body = new Uint8Array(workbook).buffer;
+  return new Response(body, { headers: {
     "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "Content-Disposition": `attachment; filename="a-hely-elszamolasi-osszesites-${suffix}.xlsx"`,
     "Cache-Control": "private, no-store",
