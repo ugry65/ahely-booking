@@ -8,20 +8,20 @@ import {
   validateAllBookedCustomerImport,
 } from "@/lib/allbooked-migration";
 import { generateTemporaryPassword } from "@/lib/admin-user-invite";
-import { isProductionMigrationTarget } from "@/lib/production-migration-target";
+import { isApprovedCustomerMigrationTarget } from "@/lib/production-migration-target";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 
 type BookingUseType = "individual" | "group";
 
-function assertProductionTarget() {
-  if (!isProductionMigrationTarget({
+function assertApprovedMigrationTarget() {
+  if (!isApprovedCustomerMigrationTarget({
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
     vercelEnvironment: process.env.VERCEL_ENV,
     gitCommitRef: process.env.VERCEL_GIT_COMMIT_REF,
   })) {
-    throw new Error("Az író AllBooked import kizárólag a main branch production Supabase projektjén engedélyezett.");
+    throw new Error("Az író AllBooked import kizárólag a dedikált staging vagy production main környezetben engedélyezett.");
   }
 }
 
@@ -50,7 +50,7 @@ function parseTrainingUseTypes(value: FormDataEntryValue | null) {
 export async function POST(request: Request) {
   const actor = await requireAdmin();
   try {
-    assertProductionTarget();
+    assertApprovedMigrationTarget();
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Tiltott importcél." }, { status: 403 });
   }
