@@ -22,7 +22,7 @@ grant select on generic_payload to service_role;
 
 set local role service_role;
 select lives_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
     'Egy','Ugyfel','+36301234567',array['Forrás tér','Tréningterem'],(select data from pg_temp.generic_payload),
     '11000000-0000-0000-0000-000000000001')$$,
@@ -44,7 +44,7 @@ select is((select count(*) from public.audit_logs where action='allbooked.bookin
 
 set local role service_role;
 select lives_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
     'Egy','Ugyfel','+36301234567',array['Tréningterem','Forrás tér'],(select data from pg_temp.generic_payload),
     '11000000-0000-0000-0000-000000000002')$$,
@@ -60,7 +60,7 @@ select jsonb_set(data, '{0,bookingTitle}', '"Megváltozott foglalás"'::jsonb) f
 grant select on altered_payload to service_role;
 set local role service_role;
 select throws_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
     'Egy','Ugyfel','+36301234567',array['Forrás tér','Tréningterem'],(select data from pg_temp.altered_payload),
     '11000000-0000-0000-0000-000000000009')$$,
@@ -91,14 +91,14 @@ select throws_ok(
   '22023','A kért helyiségcsoportok nem egyeznek a foglalásokból levezetett jogosultságokkal.','A hiányos helyiségcsoport-lista fail-closed módon elutasított'
 );
 select throws_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000112','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
     'Egy','Ugyfel','+36301234567',array['Forrás tér','Tréningterem'],(select data from pg_temp.generic_payload),
     '11000000-0000-0000-0000-000000000004')$$,
   '42501','Az importot csak aktív admin futtathatja.','Nem admin nem indíthat importot'
 );
 select throws_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000112','ugyfel-egy@example.invalid',
     'Egy','Ugyfel','+36301234567',array['Forrás tér'],
     jsonb_build_array(jsonb_build_object('sourceFingerprint',encode(digest('bad-group','sha256'),'hex'),'roomName','Forrás tér','startLocal','2031-03-01 08:00','endLocal','2031-03-01 09:00','durationMinutes',60,'bookingTitle',null,'note',null,'useType','group')),
@@ -117,7 +117,7 @@ insert into conflicting_payload values (jsonb_build_array(
 grant select on conflicting_payload to service_role;
 set local role service_role;
 select throws_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000113','ugyfel-ketto@example.invalid',
     'Ketto','Ugyfel',null,array['Forrás tér','Tréningterem'],(select data from pg_temp.conflicting_payload),
     '11000000-0000-0000-0000-000000000006')$$,
@@ -130,7 +130,7 @@ select is((select count(*) from public.allbooked_migration_bookings where user_i
 
 set local role service_role;
 select lives_ok(
-  $$$select public.admin_rollback_empty_allbooked_profile(
+  $$select public.admin_rollback_empty_allbooked_profile(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000113','ugyfel-ketto@example.invalid')$$,
   'Az üres, üzleti adat nélküli profil kompenzáló törlése sikeres'
 );
@@ -163,7 +163,7 @@ values ((select id from public.access_groups where name='Forrás tér'),'0000000
 
 set local role service_role;
 select lives_ok(
-  $$$select public.admin_void_papp_dalma_test_import(
+  $$select public.admin_void_papp_dalma_test_import(
     '00000000-0000-0000-0000-000000000111','REMOVE-PAPP-DALMA-TEST-DATA','11000000-0000-0000-0000-000000000007')$$,
   'A pontosan azonosított 21 foglalásos próbaimport visszavonható'
 );
@@ -175,7 +175,7 @@ select is((select is_active::text || '|' || coalesce(phone,'—') from public.pr
 
 set local role service_role;
 select lives_ok(
-  $$$select public.admin_import_allbooked_customer(
+  $$select public.admin_import_allbooked_customer(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000114','pappdalma17@gmail.com',
     'Dalma','Papp','+36301111111',array['Forrás tér'],
     jsonb_build_array(jsonb_build_object('sourceFingerprint',encode(digest('papp-real-v2','sha256'),'hex'),'roomName','Forrás tér','startLocal','2026-09-03 08:00','endLocal','2026-09-03 09:00','durationMinutes',60,'bookingTitle','Valós foglalás','note',null,'useType','individual')),
