@@ -1,3 +1,5 @@
+> **Aktuális megvalósítási státusz – 2026-09-24:** A dokumentum alábbi backlog-fejezetei történeti sorrendet őriznek. A 7. „Díjszámítás” már nem későbbi fázis: PR #179–#184 után mainben és stagingen implementált, célzott UAT-ja 12/12 PASS. A booking e-mail outbox/worker PR #175–#177-tel mainbe integrált; stagingen a DB-elemek telepítve és korábbi valódi Resend create/update/cancel UAT PASS, de normál staging üzemben nincs szándékos valós küldés, production aktiválás külön release-gate. A korábbi teljes foglalási UAT elfogadásai érvényben maradnak; változatlan funkciókat nem kell újrafuttatni. A production release továbbra is külön jóváhagyás-, backup/restore-, migráció- és e-mail-aktiválási kapukhoz kötött.
+
 > **Dokumentum státusza – 2026-09-17:** Ez a backlog történeti fejlesztési pillanatképe. A benne szereplő régi commit-, issue- és release-gate állapotok nem mindenütt tükrözik a jelenlegi `main` állapotát. Aktuális forrás: a `main` branch és az aktuális auditdokumentáció. A teljes funkcionális UAT és a production release-gate továbbra is külön, bizonyíték-alapú lezárást igényel. A PR #163 (AllBooked import) és PR #164 (Supabase availability health-check) már merge-elve van; ezek állapotát a jelenlegi audit dokumentálja. Történeti fejezetek tartalma változatlanul megőrzendő.
 
 # Implementációs backlog
@@ -69,7 +71,7 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 7. Díjszámítás
 
-Állapot: későbbi fázisra halasztva. Az előtte jóváhagyott havi óraszám-kimutatás és CSV-export implementálva (Issue #27, PR #28), díj- vagy pénzügyi számítás nélkül.
+Állapot: **implementálva és staging UAT-val elfogadva** (Issue #178, PR #179–#184; 2026-09-24: 12/12 célzott regressziós UAT PASS). A havi összesítő/részletező és export snapshot-aware pricing réteget használ; a történeti legacy Tréningterem-díj megőrzése regresszióvédett kompatibilitási követelmény.
 
 - verziózott sávos és egyedi díjak;
 - teljes havi normál óraszám alapján egységes sáv;
@@ -107,6 +109,8 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 - export revision-manifeszt és SHA-256.
 
 ## 11. E-mail, naplózás és adatmegőrzés
+
+Állapot: booking e-mail outbox/worker és megfigyelhetőség mainben implementálva (PR #175–#177); staging DB telepítve, korábbi valós Resend create/update/cancel UAT PASS. Production DB-migráció és send aktiválás külön jóváhagyás nélkül tilos. Az adatmegőrzési további elemek külön státuszúak.
 
 - outbox worker és retry;
 - visszaigazolások;
