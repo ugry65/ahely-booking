@@ -1,3 +1,5 @@
+> **LEZÁRÁSI FRISSÍTÉS – 2026-09-24:** Issue #178 implementációja PR #179-cel mainbe került (`5ebb543d...`). A deployed staging séma kompatibilitási javításai PR #180–#183-ban kerültek mainbe. A staging UAT során talált admin booking input-regressziót és a legacy Tréningterem történeti díj feloldását PR #184 javította; merge: `1213641387...`. A célzott pricing regressziós UAT **12/12 PASS**. Részletek: [evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md](evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md). Az alábbi branch/review leírás a fejlesztés közbeni történeti állapotot őrzi; nem nyitott feladatlista.
+
 # Folytatási státusz — GitHub #178 admin díjszabás
 
 Utolsó frissítés: 2026-09-23 — bizonyítékalapú LOW review-fázis lezárva
