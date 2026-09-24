@@ -332,6 +332,17 @@ begin
     return;
   end if;
 
+  -- Legacy Training-room group bookings already carry the historical applied
+  -- hourly rate on the booking. Preserve that immutable financial fact instead
+  -- of requiring a special-room tariff row to exist retroactively.
+  if v_is_training_group and v_booking.group_hourly_rate_huf is not null then
+    return query select
+      'training_room'::public.applied_rate_source,
+      null::uuid,
+      v_booking.group_hourly_rate_huf;
+    return;
+  end if;
+
   return query
   select resolved.rate_source, resolved.pricing_rule_id, resolved.hourly_rate_huf
   from public.resolve_rate_for_context(
