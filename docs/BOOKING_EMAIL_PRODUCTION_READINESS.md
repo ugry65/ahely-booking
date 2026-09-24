@@ -1,3 +1,5 @@
+> **Státuszfrissítés – 2026-09-24:** PR #176 (`48aacfb1...`) és PR #177 (`953a233d...`) is mainbe került a PR #175 után; ezek az e-mail bridge megfigyelhetőségét/dokumentációját és a staging worker biztonságos diagnosztikáját egészítették ki. A stagingen a valós provider smoke/UAT korábban sikeres volt, majd a környezetet szándékosan nem-valós-küldési üzemre állítottuk vissza, hogy fejlesztési/UAT tesztfoglalások ne küldjenek véletlenül külső levelet. Ez nem booking-funkcióhiba. A production e-mail DB-migráció és `send` aktiválás továbbra is külön jóváhagyást igényel. A runtime aktuális env-értékét e dokumentációs frissítés nem olvassa ki, ezért konkrét élő módot csak környezeti ellenőrzés után szabad állítani.
+
 # Booking e-mail: élesítés előtti állapot és üzemeltetés
 
 Ellenőrzés: 2026-09-21, repository main `930fd6a39056e1d652b1d055d506a2956ea3fdce` (PR #175). Ez a fájl a történeti [kiadási jegyzék](RELEASE_EVIDENCE.md) és a [korábbi staging UAT](evidence/2026-09-18-staging/BOOKING_EMAIL_RESEND_STAGING_UAT.md) mellé tartozik. A PR-ban javasolt további SQL-változásokat csak merge és külön DB-migráció után tekintsd telepítettnek.

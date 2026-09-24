@@ -4,7 +4,11 @@ Az A-Hely saját, magyar nyelvű foglalási és havi elszámolási webalkalmazá
 
 ## Állapot
 
-A technikai architektúra, az adatmodell és a PostgreSQL-séma alapjai elkészültek. Az Auth/RLS mérföldkő fejlesztés alatt áll. Production használatra még nem alkalmas.
+**2026-09-24:** a foglalási mag, Auth/RLS, jogosultságok, admin/user naptár, ismétlődés, lemondás, AllBooked együgyfeles migráció, booking e-mail outbox/worker, admin díjszabás, user- és foglalásszintű óradíj, havi pricing kimutatás és részletes export mainben implementált. A korábbi funkcionális staging UAT elfogadásai érvényesek; a PR #179–#184 pricing változtatási kör célzott regressziós UAT-ja **12/12 PASS**.
+
+A staging és production elkülönül. Production adatbázis-migráció, booking e-mail send aktiválás és végső release csak külön jóváhagyott release-folyamatban történhet. A repository aktuális állapota ezért **release-előkészítési / production-readiness fázis**, nem automatikus production GO.
+
+Aktuális bizonyítékok és státusz: `docs/RELEASE_EVIDENCE.md`, `docs/UAT_FUTASI_JEGYZOKONYV.md`, `docs/BOOKING_EMAIL_PRODUCTION_READINESS.md`.
 
 ## Kötelező források
 
@@ -14,13 +18,15 @@ A technikai architektúra, az adatmodell és a PostgreSQL-séma alapjai elkész�
 
 Ellentmondás esetén az aktuális FS és projektkontextus az irányadó.
 
-## Első fejlesztési mérföldkő
+## Fejlesztési / release munkamód
 
-1. PostgreSQL-séma és adatbázis-kényszerek
-2. Auth és RLS
-3. tranzakciós foglalás-létrehozás
-4. automatikus adatbázistesztek
-5. független review
+1. üzleti követelmény és FS ellenőrzése;
+2. technikai terv és adatmodell;
+3. külön branch/PR;
+4. automatikus tesztek és kritikus résznél független review;
+5. staging migráció és célzott UAT;
+6. dokumentált release-evidence;
+7. production csak külön jóváhagyással és visszaállíthatósági kapuk után.
 
 ## Helyi előfeltételek
 

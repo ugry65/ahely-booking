@@ -1,3 +1,5 @@
+> **Aktuális kiegészítés – 2026-09-24:** A 2026-09-18-i állapotjelentés történeti baseline. Azóta booking e-mail PR #175–#177 és admin pricing PR #179–#184 mainbe merge-elve. A pricing célzott staging regressziós UAT 12/12 PASS, 0 FAIL; bizonyíték: [evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md](evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md). A korábbi foglalási UAT elfogadásokat nem nyitjuk újra koncepcionálisan nem érintett területeken. Ez továbbra sem production GO: production DB/e-mail aktiválás külön jóváhagyás, a release-gate-ek és backup/restore bizonyítékok aktuális ellenőrzése szükséges.
+
 # Élesítés előtti állapotjelentés – helyesbített
 
 Dátum: 2026-09-18. A korábbi main-only összesítést felváltja a [kiadási bizonyítékjegyzék](RELEASE_EVIDENCE.md).
