@@ -1,6 +1,6 @@
 begin;
 
-select plan(63);
+select plan(64);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -156,6 +156,16 @@ reset role;
 select is((select count(*) from public.audit_logs where action='pricing.user_hourly_rate_set' and correlation_id='42000000-0000-0000-0000-000000000181'),1::bigint,'A user díjmódosítás ki/mikor/miről/mire auditot hoz létre');
 select is((select hourly_rate_override_huf from public.bookings where idempotency_key='42000000-0000-0000-0000-000000000185'),3700::bigint,'Az atomikusan létrehozott booking megőrzi a foglalásszintű díjat');
 select is((select count(*) from public.bookings where idempotency_key='42000000-0000-0000-0000-000000000186'),0::bigint,'Sikertelen díjfelülírás után nem marad részleges booking');
+
+-- Legacy Training-room group bookings may carry their historical applied rate directly.
+-- This must remain usable even when no retroactive special-room tariff row exists.
+insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key,group_hourly_rate_huf) values
+ ('41000000-0000-0000-0000-000000000189','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000185','00000000-0000-0000-0000-000000000181','2026-09-03 10:00+02','2026-09-03 14:00+02','group','active',gen_random_uuid(),7500);
+select is(
+  (select rate_source::text||':'||hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000189',0)),
+  'training_room:7500',
+  'A legacy Tréningterem csoportos booking megőrzi a rögzített történeti óradíját tarifa-visszaírás nélkül'
+);
 
 -- A későbbi tarifa-időszak nem módosítja a korábbi szolgáltatási dátum feloldását.
 update public.pricing_tiers set valid_to='2039-12-31' where valid_from='2026-10-01';
