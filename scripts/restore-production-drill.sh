@@ -132,12 +132,26 @@ restore_db_container="$(docker ps \
 }
 
 # Hosted Supabase can run a newer managed Auth/Storage schema than the local
-# isolated CLI stack. Preflight COPY blocks against the actual target schema.
-# Only empty incompatible auth/storage blocks may be omitted. Any non-empty
-# managed mismatch, and every business-schema mismatch, fails closed.
+# isolated CLI stack. The backup's public/business schema does not exist in a
+# freshly bootstrapped local stack yet, so compatibility must be evaluated
+# against the POST-schema target, not against the bootstrap state.
+#
+# Apply the immutable backup schema temporarily, inspect the resulting target
+# columns, then reset the isolated database back to a clean bootstrap state.
+# The real restore below still runs roles + schema + data + migration history in
+# one transaction. No production connection is involved in this preflight.
+docker exec -i "$restore_db_container" \
+  psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
+  < "$bundle_dir/schema.sql"
+
 target_columns="$work_dir/target-columns.txt"
 docker exec "$restore_db_container" psql -U supabase_admin -d postgres -X -A -t -F "|" -v ON_ERROR_STOP=1 \
   -c "select n.nspname || '.' || c.relname, string_agg(a.attname, ',' order by a.attnum) from pg_class c join pg_namespace n on n.oid = c.relnamespace join pg_attribute a on a.attrelid = c.oid where c.relkind in ('r','p') and a.attnum > 0 and not a.attisdropped group by n.nspname, c.relname order by 1" > "$target_columns"
+
+(
+  cd "$restore_project"
+  supabase db reset --local --no-seed
+)
 
 restore_data="$work_dir/restore-data.sql"
 python3 "$script_dir/lib/prepare-supabase-restore-data.py" \
