@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 umask 077
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
     echo "Missing required command: $1" >&2
