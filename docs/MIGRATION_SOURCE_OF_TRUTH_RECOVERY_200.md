@@ -1,29 +1,80 @@
 # Migration source-of-truth helyreállítás – #200
 
 ## Miért kell
-2026-09-25 read-only release audit során kiderült, hogy a main migration könyvtárból hiányzott több, stagingen már alkalmazott történeti migráció. A 20260922160000 admin pricing migráció ezekre az objektumokra épít, ezért a hiányos main lánc productionre nem telepíthető biztonságosan.
+A 2026-09-25-i read-only release audit kimutatta, hogy a `main` migration könyvtárból hiányzott több, stagingen már alkalmazott történeti migráció. A későbbi admin pricing migráció ezekre az objektumokra épít, ezért a hiányos lánc productionre nem telepíthető biztonságosan.
 
-## Ebben a branchben visszaemelt kanonikus fájlok
-- 202608250001..202608250015: pricing / monthly settlement / payment baseline és hardening
-- 202608260001..202608260002: pricing policy + settlement immutability hardening
-- 20260826205749: closed settlement line insert protection
-- 20260829145720: admin past-booking creation
-- 20260830183000: booking update cutoff guard
-- 202609040001, 202609050001, 202609050002: first-login/password/admin temporary-password audit hardening
+## Visszaemelt kanonikus történeti forrás
+A branch 23 hiányzó történeti migration fájlt állít vissza:
+- `202608250001..202608250015`: pricing / monthly settlement / payment baseline és hardening;
+- `202608260001..202608260002`: pricing policy + settlement immutability hardening;
+- `20260826205749`: closed settlement line insert protection;
+- `20260829145720`: admin past-booking creation;
+- `20260830183000`: booking update cutoff guard;
+- `202609040001`, `202609050001`, `202609050002`: first-login/password/admin temporary-password audit hardening.
 
-A fájlok nem üzleti logikából lettek újraírva: a korábbi, staginghez használt repository branchek pontos tartalmából kerültek vissza.
+Ezeket nem rekonstruáltuk üzleti logikából. A 20260825/26/29/30 fájlok Git blob SHA-ja megegyezik a `feature/82-pricing-modes` eredeti végleges forrásával; a 20260904/05 fájloké a `feature/107-booking-email-outbox` eredeti forrásával.
 
-## Ismert history-mapping eltérések
-A staging Supabase migration history több 2026-08-21/22 migrációt tényleges alkalmazási timestamp-verzióval tart nyilván, míg a main kanonikus fájlnevei logikai verziókat használnak. Ezt nem szabad history-repair nélkül automatikusan productionre/stagingre újrajátszani.
+## Staging history → kanonikus Git mapping
+A staging migration history nem mindenhol ugyanazt a timestampet használja, mint a kanonikus Git-fájlnév. Ezek **mapping eltérések**, nem automatikusan újrajátszandó migrációk.
 
-A stagingben továbbá alkalmazva van a preserve_legacy_training_booking_rate változás 20260924080123 history-bejegyzéssel, miközben ennek kanonikus migration fájlja jelenleg nem található a mainen. A staging élő resolve_booking_applied_rate függvényében a legacy group_hourly_rate_huf megőrzési ág jelen van. Ezt külön forward migrationként vissza kell állítani a repó source-of-truth-jába, nem szabad stagingből vakon dumpolni.
+- staging `20260923171023 admin_pricing_and_booking_rate_override`
+  → kanonikus `20260922160000_admin_pricing_and_booking_rate_override.sql`;
+- staging `20260924080123 preserve_legacy_training_booking_rate`
+  → nincs külön történeti migration fájl; a változás a fenti kanonikus migration Git-fejlődéséből származik, különösen a `0e075b8` és `979d703` commitokból;
+- staging `20260924181855 allbooked_preserve_booking_notes`
+  → kanonikus `20260924183000_allbooked_preserve_booking_notes.sql`;
+- staging `20260925095053 booking_email_recurring_summary`
+  → kanonikus `20260925100000_booking_email_recurring_summary.sql`.
 
-## Kötelező további kapuk
-1. A hiányzó legacy-training forward migration kanonikus rekonstruálása a jóváhagyott üzleti döntés és staging definíció alapján, teszttel.
-2. Teljes migration-chain CI/pristine DB ellenőrzés.
-3. Staging/main schema drift audit.
-4. Production migration dry-run/plan, production írás nélkül.
-5. Kritikus pénzügyi rész független review.
-6. Külön owner approval production DB deploy előtt.
+A staging history timestampjeit ezért nem szabad külön migration fájlként mesterségesen létrehozni vagy productionre vakon replayelni.
+
+## Legacy Tréningterem kompatibilitás
+A branch új, előre mutató kompatibilitási migrációja:
+`20260925143000_retire_empty_legacy_training_rate.sql`.
+
+Ez **nem történeti fájl rekonstrukciója**. Célja, hogy a visszaállított teljes lánc tiszta adatbázison a jelenlegi modellt adja, miközben deployed adatbázison megőrzi a történeti Tréningterem-díjakat:
+- ha a legacy `group_hourly_rate_huf` oszlopban nincs történeti érték, a legacy write-path és az oszlop eltávolítható;
+- ha legalább egy történeti érték van, a migráció fail-closed módon megtartja a compatibility surface-t;
+- a resolver sorrendje ilyen deployed lineage esetén: booking override → történeti booking-szintű Tréningterem-díj → user override → aktuális Tréningterem alapdíj → központi sáv.
+
+A `112_legacy_training_rate_compatibility.sql` regressziós teszt mindkét adatfüggő ágat és a precedence láncot explicit lefedi.
+
+## Staging drift audit – 2026-09-25
+Read-only ellenőrzés a staging projekten (`fvwapntzhavhgazeflri`):
+- a teljes 202608250001..20260830183000 pricing/settlement baseline history alkalmazva van;
+- a 202609040001/202609050001/202609050002 auth hardening alkalmazva van;
+- a pricing scheme type, user pricing policy table, havi pricing és applied-rate resolver jelen van;
+- a booking override oszlop jelen van;
+- a legacy `group_hourly_rate_huf` oszlop jelen van és **42 nem-null történeti értéket** tartalmaz;
+- a hozzá tartozó legacy trigger és admin/trigger függvények jelen vannak.
+
+Következmény: stagingen a `20260925143000` forward migration adatmegőrző ága a helyes ág; a 42 történeti érték miatt nem szabad a legacy oszlopot vagy write-pathot eltávolítani. Ez összhangban van a korábbi staging UAT-tal.
+
+## Automatikus ellenőrzés
+A PR pristine 0→HEAD rebuildje és a teljes DB tesztcsomag a compatibility teszt hozzáadása előtti HEAD-en PASS volt. Az új compatibility tesztet tartalmazó HEAD-en a Release evidence PASS; a Database tests futása kötelező merge gate, és csak sikeres lezárása után tekinthető a branch merge-késznek.
+
+## Független review
+A kritikus pénzügyi migration láncot független Claude-review ellenőrizte. Eredmény: **APPROVE**, BLOCKER nélkül. A reviewer által jelzett legacy compatibility teszthiányokat a `112_legacy_training_rate_compatibility.sql` zárja le.
+
+## Production release terv – írás nélkül
+Production DB módosítás csak külön owner approval után történhet. Addig kizárólag read-only preflight engedélyezett.
+
+Kötelező preflight:
+1. friss production migration history snapshot;
+2. pricing-scheme type/table/function jelenlétének újbóli ellenőrzése;
+3. booking override és legacy Training-rate oszlopok/értékek újbóli ellenőrzése;
+4. Trainingterem történeti és aktív booking/rate adatok ellenőrzése;
+5. pricing tier és special-room-rate állapot összevetése a tervezett post-migration állapottal;
+6. dry-run/diff alapján a várható DDL és adatváltozások tételes ellenőrzése;
+7. destruktív vagy nem várt művelet esetén fail closed;
+8. production write előtt friss backup + restore/restore-drill bizonyíték;
+9. csak ezután külön explicit owner approval;
+10. deploy után migration history, schema fingerprint, pricing regresszió és booking smoke test.
+
+## Fennmaradó kapuk
+- az új HEAD Database tests eredménye legyen PASS;
+- production read-only dry-run/preflight terv bizonyítsa, hogy nincs hiányzó dependency vagy váratlan destruktív lépés;
+- friss backup/restore evidence legyen meg a későbbi production write előtt;
+- külön owner approval production DB deploy előtt.
 
 Productiont ez a branch nem módosítja.
