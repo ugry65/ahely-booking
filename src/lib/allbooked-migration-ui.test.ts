@@ -24,7 +24,7 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
     const form = read("../app/(protected)/admin/migracio/dry-run-form.tsx");
     expect(form).toContain("DRY-RUN PASS");
     expect(form).toContain("még nem történt adatbetöltés");
-    expect(form).toContain("Tényleges import indítása");
+    expect(form).toContain("Tényleges import indítása");\n    expect(form).toContain("Import feltételei:");\n    expect(form).toContain("remainingTrainingCount");\n    expect(form).toContain("Mind egyéni");\n    expect(form).toContain("Mind csoportos");\n    expect(form).toContain("Minden feltétel teljesült. A tényleges import indítható.");
   });
 
   it("a migrációs felület jelzi, hogy a booking megjegyzések átkerülnek", () => {
