@@ -148,7 +148,7 @@ export function MigrationDryRunForm() {
 
   return (
     <div className="stack">
-      <form onSubmit={submit} className="card stack">
+      <form onSubmit={submit} className="card stack migration-card">
         <h2>Egy ügyfél AllBooked CSV-jének ellenőrzése</h2>
         <p className="muted">Egy fájl pontosan egy ügyfél foglalásait tartalmazza. A dry-run nem ír adatbázisba és nem küld e-mailt.</p>
         <label>
@@ -159,7 +159,7 @@ export function MigrationDryRunForm() {
       </form>
 
       {error ? <p className="message error" role="alert">{error}</p> : null}
-      {result ? <section className="card stack">
+      {result ? <section className="card stack migration-card">
         <div><p className="eyebrow">Dry-run eredmény – még nem történt adatbetöltés</p><h2>{result.importApproval.valid ? "DRY-RUN PASS" : "ELLENŐRZÉST IGÉNYEL"}</h2></div>
         <div className="admin-grid">
           <p><strong>Ügyfél:</strong> {result.importApproval.user ? `${result.importApproval.user.lastName} ${result.importApproval.user.firstName}` : "—"}</p>
@@ -177,7 +177,7 @@ export function MigrationDryRunForm() {
         </ul></div> : <p className="message success" role="status">A fájl importálható. Fontos: ez csak ellenőrzés, a felhasználó és a foglalások még nem kerültek az adatbázisba.</p>}
       </section> : null}
 
-      {result?.importApproval.valid && result.importApproval.trainingBookings.length ? <section className="card stack">
+      {result?.importApproval.valid && result.importApproval.trainingBookings.length ? <section className="card stack migration-card">
         <div><p className="eyebrow">Kötelező kézi besorolás</p><h2>Tréningterem-foglalások</h2></div>
         <p className="muted">Az exportból nem állapítható meg biztonságosan, hogy a Tréningterem foglalása egyéni vagy csoportos volt. Minden sort sorolj be.</p>
         <p className={trainingComplete ? "message success" : "message error"} role="status"><strong>Besorolás:</strong> {classifiedTrainingCount}/{trainingBookings.length} kész{remainingTrainingCount ? ` – még ${remainingTrainingCount} foglalást be kell sorolni az import előtt.` : " – minden Tréningterem-foglalás besorolva."}</p>
@@ -200,7 +200,7 @@ export function MigrationDryRunForm() {
         </div>
       </section> : null}
 
-      {result?.importApproval.valid ? <section className="card stack migration-import-card">
+      {result?.importApproval.valid ? <section className="card stack migration-card migration-import-card">
         <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Ügyfél és foglalások biztonságos betöltése</h2></div>
         <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
         <div className="import-readiness" aria-live="polite">
@@ -217,7 +217,7 @@ export function MigrationDryRunForm() {
         </button>
       </section> : null}
 
-      {importResult ? <section className="card stack">
+      {importResult ? <section className="card stack migration-card">
         <div><p className="eyebrow">Import utáni reconciliation</p><h2>{importResult.valid === true ? "PASS" : "FAIL"}</h2></div>
         <div className="admin-grid">
           <p><strong>Felhasználó:</strong> {String(importResult.email ?? "—")}</p>
@@ -232,7 +232,7 @@ export function MigrationDryRunForm() {
         <p className="message success" role="status">A tranzakció és a tételes adatbázis-reconciliation sikeres. Az aktiváló e-mail külön, a Felhasználók oldalon küldhető.</p>
       </section> : null}
 
-      <section className="card stack">
+      <section className="card stack migration-card">
         <div><p className="eyebrow">Egyszeri indulási művelet</p><h2>Papp Dalma próbaimport visszavonása</h2></div>
         <p className="muted">Kizárólag a bizonyított 21 foglalásos próbaimportot teszi üzletileg láthatatlanná, eltávolítja a próba-jogosultságot és inaktiválja a profilt. Az auditbizonyíték megmarad, a valódi ügyfél később friss CSV-ből újramigrálható.</p>
         <label>Megerősítés<input value={cleanupConfirmation} onChange={(event) => setCleanupConfirmation(event.target.value)} placeholder="REMOVE-PAPP-DALMA-TEST-DATA" autoComplete="off" /></label>
