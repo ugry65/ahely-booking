@@ -19,7 +19,10 @@ def parse_target(path: Path):
     out={}
     for raw in path.read_text().splitlines():
         if not raw.strip(): continue
-        table, cols = raw.split("\t",1)
+        delimiter = "|" if "|" in raw else "\t" if "\t" in raw else None
+        if delimiter is None:
+            raise ValueError(f"Invalid target schema row (missing delimiter): {raw!r}")
+        table, cols = raw.split(delimiter, 1)
         out[table] = set(cols.split(",")) if cols else set()
     return out
 
