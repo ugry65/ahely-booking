@@ -28,6 +28,7 @@ on:
       - ".github/workflows/staging-uat-bootstrap.yml"
       - ".github/workflows/production-backup-drill.yml"
       - ".github/workflows/production-backup.yml"
+      - ".github/workflows/production-backup-retention.yml"
       - ".github/workflows/production-restore-drill.yml"
   push:
     branches: [main]
@@ -57,6 +58,7 @@ jobs:
       - run: bash ./scripts/test-production-backup-heartbeat.sh
       - run: node ./scripts/test-production-backup-schedule.mjs
       - run: bash ./scripts/test-backup-production.sh
+      - run: bash ./scripts/test-retention-production.sh
       - run: bash ./scripts/test-production-restore-trigger.sh
       - run: node ./scripts/test-supabase-availability-healthcheck.mjs
       - run: pnpm test
