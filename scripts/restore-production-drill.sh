@@ -132,13 +132,18 @@ restore_db_container="$(docker ps \
 }
 
 # Hosted Supabase can run a newer managed Auth/Storage schema than the local
-# isolated CLI stack. Supabase documents this as a restore compatibility case.
-# Preflight every COPY block against the actual target schema. Only empty,
-# incompatible auth/storage blocks may be omitted; any non-empty mismatch fails
-# closed so no user/auth/storage data can be silently discarded.
+# isolated CLI stack. Preflight COPY blocks against the actual target schema.
+# Only empty incompatible auth/storage blocks may be omitted. Any non-empty
+# managed mismatch, and every business-schema mismatch, fails closed.
 target_columns="$work_dir/target-columns.tsv"
 docker exec "$restore_db_container" \
-  psql -U supabase_admin -d postgres -X -A -t -F   printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n'
+  psql -U supabase_admin -d postgres -X -A -t -F {
+  cat "$bundle_dir/roles.sql"
+  printf '\n'
+  cat "$bundle_dir/schema.sql"
+  printf '\nSET session_replication_role = replica;\n'
+  cat "$restore_data"
+  printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n'
   cat "$bundle_dir/migration-schema.sql"
   printf '\n'
   cat "$bundle_dir/migration-history.sql"
@@ -258,7 +263,7 @@ restore_sql="$work_dir/full-restore.sql"
   printf '\n'
   cat "$bundle_dir/schema.sql"
   printf '\nSET session_replication_role = replica;\n'
-  cat "$restore_data"
+  cat "$bundle_dir/data.sql"
   printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n'
   cat "$bundle_dir/migration-schema.sql"
   printf '\n'
