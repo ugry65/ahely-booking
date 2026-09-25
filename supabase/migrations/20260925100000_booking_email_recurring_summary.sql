@@ -190,6 +190,9 @@ begin
     v_recipient_user_id,v_recipient.email,v_booking_audit.actor_user_id,v_actor.role='admin',1,v_payload);
   return new;
 exception when others then
+  -- Preserve the established safe observability contract: SQLSTATE is a fixed
+  -- five-character class and cannot leak recipient, note, payload or raw error details.
+  raise warning 'booking_email_bridge_failed sqlstate=%', SQLSTATE;
   return new;
 end;
 $$;
