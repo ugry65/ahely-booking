@@ -93,3 +93,10 @@ Kötelező preflight:
 - külön owner approval production DB deploy előtt.
 
 Productiont ez a branch nem módosítja.
+
+
+## Restore drill guard korrekció – 2026-09-25
+
+A production restore drill eredeti implementációja a #124/#141 Papp Dalma pre-migration teszthez készült, ezért csak olyan artifactot engedett tovább, amelyben a Papp Dalma mintarekordok száma 0 volt. Ez a feltétel nem általános restore-integritási követelmény: a restore drill feladata annak bizonyítása, hogy az aktuális, immutable backup pontosan visszaállítható izolált környezetben. A production booking-cleanliness külön release/preflight gate.
+
+A friss production drill artifact mindkét tárolási célon checksum PASS volt, de a régi Papp-specifikus guard emiatt szándékosan megállította a restore-t. A guardot ezért általános restore-kontrollra módosítjuk: a backup manifest kontrollszámai legyenek érvényesek, majd a restore utáni teljes kontrollszám-egyezés, RLS, booking trigger, FK/orphan és DB lint ellenőrzés marad kötelező. Ez nem lazítja a valódi migráció kapuját: a production `bookings` táblának a jóváhagyott cleanup után továbbra is pontosan 0 rekordot kell tartalmaznia a valódi AllBooked migráció előtt.
