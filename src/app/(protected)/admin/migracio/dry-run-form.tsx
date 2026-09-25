@@ -200,11 +200,19 @@ export function MigrationDryRunForm() {
         </div>
       </section> : null}
 
-      {result?.importApproval.valid ? <section className="card stack">
-        <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Ügyfél és foglalások atomi betöltése</h2></div>
+      {result?.importApproval.valid ? <section className="card stack migration-import-card">
+        <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Ügyfél és foglalások biztonságos betöltése</h2></div>
         <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
+        <div className="import-readiness" aria-live="polite">
+          <p><strong>Import feltételei:</strong></p>
+          <p>{file ? "✓" : "✗"} CSV fájl betöltve</p>
+          <p>{trainingComplete ? "✓" : "✗"} Tréningterem-besorolás kész ({classifiedTrainingCount}/{trainingBookings.length})</p>
+          <p>{confirmationComplete ? "✓" : "✗"} Megerősítő szöveg pontosan beírva</p>
+        </div>
         <label>Megerősítés<input value={confirmation} onChange={(event) => setConfirmation(event.target.value)} placeholder={expectedConfirmation} autoComplete="off" /></label>
-        <button type="button" className="danger" disabled={busy || !file || confirmation !== expectedConfirmation || !trainingComplete} onClick={runImport}>
+        <p className="muted">Ezt írd be pontosan: <code>{expectedConfirmation}</code></p>
+        {!importReady ? <p className="message error" role="status">A tényleges import még nem indítható. A fenti ✗ jelű feltétel(eke)t teljesítsd.</p> : <p className="message success" role="status">Minden feltétel teljesült. A tényleges import indítható.</p>}
+        <button type="button" className="danger" disabled={busy || !importReady} onClick={runImport}>
           {busy ? "Import és reconciliation folyamatban…" : "Tényleges import indítása"}
         </button>
       </section> : null}
