@@ -89,7 +89,7 @@
         },
         {
           "path": "src/lib/booking-email/schema.ts",
-          "sha": "e632668c21bb3fd5eb877c9a9040d35019161442"
+          "sha": "3b63d88ee869ff7ab225b65f1177f66219c4fd88"
         },
         {
           "path": "src/lib/booking-email/server.ts",
