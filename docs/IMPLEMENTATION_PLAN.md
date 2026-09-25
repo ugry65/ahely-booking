@@ -1,3 +1,5 @@
+> **Aktuális megvalósítási státusz – 2026-09-25:** A generic AllBooked write-import stagingen valós 35 bookingos importtal E2E igazolt; a Notes-megőrzés, Tréningterem-besorolási UX, import readiness és migrációs oldal layout javításai mainben vannak. Az Admin → Havi órák összesítő valódi XLSX exportja elkészült (PR #190). A következő launch-kritikus munka nem új foglalási feature, hanem production release-gate: aktuális backup/restore bizonyíték, production DB migration chain, booking-email aktiválási kapu és release candidate egyezés. Részletek: [PROJECT_STATUS_2026-09-25.md](PROJECT_STATUS_2026-09-25.md).
+
 > **Aktuális megvalósítási státusz – 2026-09-24:** A dokumentum alábbi backlog-fejezetei történeti sorrendet őriznek. A 7. „Díjszámítás” már nem későbbi fázis: PR #179–#184 után mainben és stagingen implementált, célzott UAT-ja 12/12 PASS. A booking e-mail outbox/worker PR #175–#177-tel mainbe integrált; stagingen a DB-elemek telepítve és korábbi valódi Resend create/update/cancel UAT PASS, de normál staging üzemben nincs szándékos valós küldés, production aktiválás külön release-gate. A korábbi teljes foglalási UAT elfogadásai érvényben maradnak; változatlan funkciókat nem kell újrafuttatni. A production release továbbra is külön jóváhagyás-, backup/restore-, migráció- és e-mail-aktiválási kapukhoz kötött.
 
 > **Dokumentum státusza – 2026-09-17:** Ez a backlog történeti fejlesztési pillanatképe. A benne szereplő régi commit-, issue- és release-gate állapotok nem mindenütt tükrözik a jelenlegi `main` állapotát. Aktuális forrás: a `main` branch és az aktuális auditdokumentáció. A teljes funkcionális UAT és a production release-gate továbbra is külön, bizonyíték-alapú lezárást igényel. A PR #163 (AllBooked import) és PR #164 (Supabase availability health-check) már merge-elve van; ezek állapotát a jelenlegi audit dokumentálja. Történeti fejezetek tartalma változatlanul megőrzendő.
@@ -101,11 +103,11 @@ Elfogadás: friss adatbázison migráció és minden DB-teszt sikeres, beleértv
 
 ## 10. Adminfelület és XLSX
 
-Állapot: helyiség- és hozzáférés-adminfelület, valamint havi óraszám-adminnézet és CSV-export implementálva; teljes pénzügyi admin és XLSX későbbre halasztva.
+Állapot: helyiség- és hozzáférés-adminfelület, havi óraszám-adminnézet, CSV-export és az elszámolási összesítés valódi XLSX exportja implementálva. A teljes pénzügyi admin (befizetések/korrekciók) továbbra is későbbi fázis.
 
 - userek, helyiségek, jogok és beállítások;
 - havi elszámolás és részletek;
-- stabil összesítő és részletes XLSX;
+- összesítő XLSX implementálva; részletes/stabil pénzügyi XLSX és további pénzügyi mezők a teljes pénzügyi modul részeként későbbi fázis;
 - export revision-manifeszt és SHA-256.
 
 ## 11. E-mail, naplózás és adatmegőrzés
