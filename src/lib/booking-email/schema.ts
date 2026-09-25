@@ -20,6 +20,8 @@ export type BookingEmailPayloadV1 = BookingEmailState & {
   firstStartAt: string;
   lastEndAt: string;
   performedByAdmin: boolean;
+  recurrence?: string;
+  skippedDates?: string[];
   cancellationReason?: string;
   before?: BookingEmailState;
   after?: BookingEmailState;
@@ -36,7 +38,7 @@ export type BookingEmailJob = {
 const PAYLOAD_KEYS = new Set([
   "recipient_name", "room_name", "start_at", "end_at", "use_type", "booking_title",
   "scope", "affected_count", "first_start_at", "last_end_at", "performed_by_admin",
-  "cancellation_reason", "before", "after",
+  "recurrence", "skipped_dates", "cancellation_reason", "before", "after",
 ]);
 const STATE_KEYS = new Set(["room_name", "start_at", "end_at", "use_type", "booking_title"]);
 
@@ -62,6 +64,16 @@ function text(value: unknown, label: string, maxLength = 300): string {
 function optionalText(value: unknown, label: string, maxLength = 1000): string | undefined {
   if (value === undefined || value === null || value === "") return undefined;
   return text(value, label, maxLength);
+}
+
+function dateList(value: unknown, label: string): string[] | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) throw new Error(`Érvénytelen ${label}.`);
+  return value.map((item) => {
+    const parsed = text(item, label, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(parsed)) throw new Error(`Érvénytelen ${label}.`);
+    return parsed;
+  });
 }
 
 function instant(value: unknown, label: string): string {
@@ -138,6 +150,8 @@ export function parseBookingEmailPayload(
     firstStartAt,
     lastEndAt,
     performedByAdmin: source.performed_by_admin,
+    recurrence: optionalText(source.recurrence, "ismétlődés", 100),
+    skippedDates: dateList(source.skipped_dates, "kimaradt alkalom"),
     cancellationReason: optionalText(source.cancellation_reason, "lemondási ok"),
     before,
     after,
