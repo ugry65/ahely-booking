@@ -69,7 +69,7 @@
         },
         {
           "path": "src/lib/booking-email/booking-email.test.ts",
-          "sha": "d5fec221cd5ad5c05599bfd1bc649e221e69cbfe"
+          "sha": "509fe1cf2e230b1ec0e4fdae8389a8e1d87bb1c1"
         },
         {
           "path": "src/lib/booking-email/monitor.test.ts",
@@ -85,11 +85,11 @@
         },
         {
           "path": "src/lib/booking-email/render.ts",
-          "sha": "2edd343a4abec5028701ab436bb495b9bb944b79"
+          "sha": "51f16a590cbd99dc26a9479120807280e6c3f509"
         },
         {
           "path": "src/lib/booking-email/schema.ts",
-          "sha": "b7ca050f9b03e92ef5b8dfee5f638edc15632ac2"
+          "sha": "e632668c21bb3fd5eb877c9a9040d35019161442"
         },
         {
           "path": "src/lib/booking-email/server.ts",
@@ -133,7 +133,7 @@
         },
         {
           "path": "supabase/tests/database/105_booking_email_rpc_enqueue.sql",
-          "sha": "c2b91d083b135c9c3b7f2ca5839eea96a68d3cdc"
+          "sha": "187e3057785f80385a1402fc3ba325c2503a0c5f"
         },
         {
           "path": "supabase/tests/database/106_booking_email_delivery_monitor.sql",
