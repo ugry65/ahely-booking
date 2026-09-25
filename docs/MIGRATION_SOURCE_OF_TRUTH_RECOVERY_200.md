@@ -56,20 +56,33 @@ A PR pristine 0→HEAD rebuildje és a teljes DB tesztcsomag a compatibility tes
 ## Független review
 A kritikus pénzügyi migration láncot független Claude-review ellenőrizte. Eredmény: **APPROVE**, BLOCKER nélkül. A reviewer által jelzett legacy compatibility teszthiányokat a `112_legacy_training_rate_compatibility.sql` zárja le.
 
+## Production foglalási adatindítás – owner döntés 2026-09-25
+Productionre **nem kerülhet át staging foglalási adat**. A staging kizárólag teszt/UAT környezet; annak foglalásai, audit- és elszámolási mellékhatásai nem production seed adatok.
+
+A production indulási invariant:
+- a valódi migráció megkezdése előtt a production `bookings` tábla üzleti értelemben tiszta;
+- a productionbe kerülő első valódi foglalások kizárólag a külön jóváhagyott éles migrációs forrásból vagy az éles rendszerben létrehozott foglalásokból származhatnak;
+- stagingből sem közvetlen DB-másolás, sem backup/restore, sem seed/import nem vihet át foglalási rekordot;
+- a foglalásokhoz kapcsolódó settlement/payment/audit/outbox adatoknál ugyanezt a környezetszétválasztást kell betartani;
+- production preflight kötelezően ellenőrzi a foglalási táblát és a kapcsolódó üzleti adatokat.
+
+A 2026-09-25-i read-only production ellenőrzés **21 meglévő booking rekordot** talált. Emiatt a „tiszta foglalási tábla” feltétel jelenleg nem tekinthető teljesültnek. Ezeket nem töröljük automatikusan: production adat törlése külön, explicit owner approvalt és előtte mentést/azonosítást igényel.
+
 ## Production release terv – írás nélkül
 Production DB módosítás csak külön owner approval után történhet. Addig kizárólag read-only preflight engedélyezett.
 
 Kötelező preflight:
 1. friss production migration history snapshot;
 2. pricing-scheme type/table/function jelenlétének újbóli ellenőrzése;
-3. booking override és legacy Training-rate oszlopok/értékek újbóli ellenőrzése;
-4. Trainingterem történeti és aktív booking/rate adatok ellenőrzése;
-5. pricing tier és special-room-rate állapot összevetése a tervezett post-migration állapottal;
-6. dry-run/diff alapján a várható DDL és adatváltozások tételes ellenőrzése;
-7. destruktív vagy nem várt művelet esetén fail closed;
-8. production write előtt friss backup + restore/restore-drill bizonyíték;
-9. csak ezután külön explicit owner approval;
-10. deploy után migration history, schema fingerprint, pricing regresszió és booking smoke test.
+3. production booking rekordok eredetének és darabszámának ellenőrzése; a valódi migráció előtt elvárt tiszta állapot külön release gate;
+4. booking override és legacy Training-rate oszlopok/értékek újbóli ellenőrzése;
+5. Trainingterem történeti és aktív booking/rate adatok ellenőrzése;
+6. pricing tier és special-room-rate állapot összevetése a tervezett post-migration állapottal;
+7. dry-run/diff alapján a várható DDL és adatváltozások tételes ellenőrzése;
+8. destruktív vagy nem várt művelet esetén fail closed;
+9. production write előtt friss backup + restore/restore-drill bizonyíték;
+10. csak ezután külön explicit owner approval;
+11. deploy után migration history, schema fingerprint, pricing regresszió és booking smoke test.
 
 ## Fennmaradó kapuk
 - az új HEAD Database tests eredménye legyen PASS;
