@@ -128,4 +128,23 @@ fi
 test -f "$remote_root/gdrive/backups/$broken"
 test -f "$remote_root/b2/backups/$broken"
 
+# A defect on only the second target must be caught before the first target is
+# modified. This guards against avoidable cross-target partial retention.
+rm -f "$remote_root/gdrive/backups/$broken" "$remote_root/b2/backups/$broken"
+isolated="ahely-booking-production_20260702T180000Z_abcdef123456.tar.gz.age"
+printf 'encrypted\n' > "$remote_root/gdrive/backups/$isolated"
+printf 'checksum\n' > "$remote_root/gdrive/backups/$isolated.sha256"
+printf 'encrypted\n' > "$remote_root/b2/backups/$isolated"
+gdrive_before_isolated="$(find "$remote_root/gdrive/backups" -type f | wc -l)"
+if python3 "$repo_root/scripts/retention-production.py" --apply > "$test_root/b2-only-broken.log" 2>&1; then
+  echo "Retention unexpectedly succeeded with a B2-only missing sidecar" >&2
+  exit 1
+fi
+if [ "$(find "$remote_root/gdrive/backups" -type f | wc -l)" -ne "$gdrive_before_isolated" ]; then
+  echo "Google Drive changed before the B2 preflight failure was detected" >&2
+  exit 1
+fi
+test -f "$remote_root/gdrive/backups/$isolated"
+test -f "$remote_root/gdrive/backups/$isolated.sha256"
+
 printf '%s\n' "Production retention policy tests passed."
