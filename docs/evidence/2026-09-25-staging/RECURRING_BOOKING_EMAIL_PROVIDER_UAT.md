@@ -44,7 +44,7 @@ The recipient confirmed in chat that the real e-mail arrived and that all requir
 
 ## Cleanup
 
-The UAT series was cancelled through the canonical `cancel_booking_scope(..., 'series', ...)` path with reason `Staging UAT lezárás`, correlation id `e1500000-0000-0000-0000-000000000002`. All three created bookings became `cancelled`, preserving auditability instead of deleting booking/audit history.
+The UAT series was cancelled through the canonical `cancel_booking_scope(..., 'series', ...)` path with reason `Staging UAT lezárás`, correlation id `e1500000-0000-0000-0000-000000000002`. All three created bookings became `cancelled`, preserving auditability instead of deleting booking/audit history. The resulting controlled cancellation e-mail also reached `sent` in one attempt with no error, proving the series-cancellation provider path while staging was still in send mode.
 
 ## Remaining safety action
 
