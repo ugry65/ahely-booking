@@ -15,7 +15,7 @@ main { width: min(100% - 2rem, 72rem); margin: 0 auto; padding: 3rem 0; }
 label { display: grid; gap: .4rem; font-weight: 600; }
 input, select, textarea { width: 100%; padding: .8rem; border: 1px solid #707b75; border-radius: .5rem; background: #fff; color: inherit; font: inherit; }
 input[type="checkbox"] { width: auto; padding: 0; }
-button { padding: .8rem 1rem; border: 0; border-radius: .5rem; background: #235c43; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
+button { padding: .8rem 1rem; border: 0; border-radius: .5rem; background: #235c43; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }\nbutton:disabled { opacity: .45; cursor: not-allowed; }
 .button { display: inline-flex; align-items: center; justify-content: center; padding: .7rem .9rem; border-radius: .5rem; background: #235c43; color: #fff; font-weight: 700; text-decoration: none; }
 .button.secondary { border: 1px solid #65716a; background: #fff; color: #235c43; }
 .muted { color: #65716a; }
@@ -192,3 +192,8 @@ tfoot th { font-weight: 800; }
   .billing-address-fields { grid-template-columns: 1fr; }
   .monthly-filter { width: 100%; grid-template-columns: minmax(0, 1fr); }
 }
+
+.migration-import-card { width: min(100%, 48rem); }
+.migration-import-card input { width: 100%; }
+.import-readiness { padding: .8rem 1rem; border: 1px solid #d4d9d6; border-radius: .6rem; background: #f7f8f7; }
+.import-readiness p { margin: .25rem 0; }
