@@ -71,7 +71,7 @@ function dateList(value: unknown, label: string): string[] | undefined {
   if (!Array.isArray(value)) throw new Error(`Érvénytelen ${label}.`);
   return value.map((item) => {
     const parsed = text(item, label, 10);
-    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(parsed)) throw new Error(`Érvénytelen ${label}.`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(parsed)) throw new Error(`Érvénytelen ${label}.`);
     return parsed;
   });
 }
