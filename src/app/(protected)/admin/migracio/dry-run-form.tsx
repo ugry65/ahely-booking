@@ -173,6 +173,11 @@ export function MigrationDryRunForm() {
       {result?.importApproval.valid && result.importApproval.trainingBookings.length ? <section className="card stack">
         <div><p className="eyebrow">Kötelező kézi besorolás</p><h2>Tréningterem-foglalások</h2></div>
         <p className="muted">Az exportból nem állapítható meg biztonságosan, hogy a Tréningterem foglalása egyéni vagy csoportos volt. Minden sort sorolj be.</p>
+        <p className={trainingComplete ? "message success" : "message error"} role="status"><strong>Besorolás:</strong> {classifiedTrainingCount}/{trainingBookings.length} kész{remainingTrainingCount ? ` – még ${remainingTrainingCount} foglalást be kell sorolni az import előtt.` : " – minden Tréningterem-foglalás besorolva."}</p>
+        <div className="monthly-filter">
+          <button type="button" className="secondary" onClick={() => classifyAllTraining("individual")}>Mind egyéni</button>
+          <button type="button" className="secondary" onClick={() => classifyAllTraining("group")}>Mind csoportos</button>
+        </div>
         <div className="table-scroll">
           <table>
             <thead><tr><th>Dátum</th><th>Idő</th><th>Megnevezés</th><th>Típus</th></tr></thead>
