@@ -64,18 +64,21 @@ A pricing célzott staging regressziós UAT 12/12 PASS. A generic AllBooked impo
 
 ## Nyitott munka – prioritás szerint
 
-### P0 – production indulás előtt kötelező release-gate
+### P0 – production indulás előtt kötelező fejlesztés / release-gate
 
-1. **Production backup frissesség és teljes restore-drill aktuális bizonyítéka.**
+1. **#150 – Ismétlődő foglalási e-mail kötelező sorozatadatainak bővítése.**
+   Ez valódi, még nyitott fejlesztési feladat. A jelenlegi repositoryban nincs bizonyíték arra, hogy a recurring e-mail minden esetben tartalmazza az üzletileg előírt `Első alkalom`, `Utolsó alkalom`, emberileg érthető `Ismétlődés` és `Kimaradt alkalmak` adatokat. Mivel a booking e-mail az első éles verzió kötelező funkciója, ezt a production e-mail aktiválás előtt implementálni és regressziótesztelni kell.
+
+2. **Production backup frissesség és teljes restore-drill aktuális bizonyítéka.**
    A backup/restore mechanizmus korábban elkészült és volt sikeres bizonyíték, de éles indulás előtt az aktuális production mentés frissességét, off-site példányait, integritását és egy teljes visszaállítást újra release-evidence-ként rögzíteni kell. Adatvesztési kockázat miatt ez kötelező kapu.
 
-2. **Production DB migrációs lánc egyeztetése és jóváhagyott deploy.**
+3. **Production DB migrációs lánc egyeztetése és jóváhagyott deploy.**
    A stagingen alkalmazott új pricing, booking-email és AllBooked-note migrációkat össze kell vetni a production migration historyval. Production DB-módosítás csak külön projektgazdai jóváhagyással történhet.
 
-3. **Booking e-mail production aktiválási kapu lezárása.**
+4. **Booking e-mail production aktiválási kapu lezárása.**
    A kód mainben van és korábbi staging provider-UAT sikeres, de production DB-migráció/send nincs engedélyezve. Aktiválás előtt ellenőrizni kell a runtime módot, secret-nevek meglétét, pending backlogot/címzettkört, majd célzott staging provider-UAT bizonyítékot kell rögzíteni. Production `send` külön jóváhagyást igényel.
 
-4. **Release candidate egyezés és célzott smoke.**
+5. **Release candidate egyezés és célzott smoke.**
    A productionre kerülő commit SHA, DB migration history és environment konfiguráció egyezését rögzíteni kell; utána csak az érintett kritikus útvonalak célzott smoke-ja szükséges. Nem kell indokolatlanul újrafuttatni a már elfogadott, változatlan teljes UAT-ot.
 
 ### P1 – első valódi ügyfelek migrációjához szükséges operatív munka
