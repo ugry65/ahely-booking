@@ -1,3 +1,5 @@
+> **Friss ellenőrzés – 2026-09-25:** main `e3e719b9c3435f27ed9f82626ded87e21b44bb62` (PR #195). A korábbi main/staging 259 fájlos eltérés történeti állapot, nem aktuális integrációs backlog: az elfogadott booking-email és pricing fejlesztések azóta mainbe kerültek. PR #187/#188/#192 generic AllBooked import és UX, PR #190 havi elszámolási XLSX, PR #194/#195 migrációs desktop layout/CSS parser javítás mainben és stagingen READY. A projektgazda 2026-09-25-én a tényleges staging importot sikeresnek jelezte; DB-utóellenőrzés: 35 booking, 15 nem üres note, 0 booking-email outbox job az importált userhez. Production változtatás nem történt. Az aktuális release/backlog forrás: [PROJECT_STATUS_2026-09-25.md](PROJECT_STATUS_2026-09-25.md).
+
 > **Friss ellenőrzés – 2026-09-24:** main `1213641387d2244378dfda5971c498861dbc074c` (PR #184). PR #175–#177 booking e-mail integráció/megfigyelhetőség, PR #179 admin pricing, PR #180–#183 deployed-schema kompatibilitás, PR #184 staging UAT regressziójavítás mainbe merge-elve. A PR #184 merge előtt Application checks, Database tests és Release evidence PASS volt. A staging pricing migráció kompatibilitási lánca telepítve; a szeptemberi havi summary/details és az októberi details technikailag sikeresen ellenőrzött, a szeptemberi legacy Tréningterem tétel 7 500 Ft/óra maradt. A projektgazda 2026-09-24-én a célzott pricing regressziós UAT mind a 12 pontját PASS-nak minősítette. Bizonyíték: [evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md](evidence/2026-09-24-staging/PRICING_REGRESSION_UAT.md). Production DB és production booking e-mail aktiválás továbbra sem történt / nincs ezzel engedélyezve.
 
 > **Friss ellenőrzés – 2026-09-21, PR #175 után:** main `930fd6a39056e1d652b1d055d506a2956ea3fdce`. A merge utáni három CI workflow PASS, négy legfrissebb Vercel deployment READY és ugyanezt a SHA-t mutatja. Az e-mail migrációk stagingen alkalmazva vannak; productionben egyik sem. A runtime mód és titkok élő értéke nem igazolt. Az alábbi 2026-09-18-i ág- és teendőlista **történeti pillanatkép**, nem a mai main állapota. A jelenlegi e-mail élesítési terv: [BOOKING_EMAIL_PRODUCTION_READINESS.md](BOOKING_EMAIL_PRODUCTION_READINESS.md). Ez nem production send engedély.\n\n# Kiadási bizonyítékok és ágak egyeztetése
@@ -58,11 +60,13 @@ A main-only vizsgálat összekeverte a „mainből hiányzik” és a „nem ké
 - A GitHub branch protection required-check beállítása ebben a változtatásban nem módosult. A release ellenőrzés nem épül be automatikusan a meglévő deployment workflow-kba; az integrációs release kötelező ellenőrzési lépése.
 - A fájl- és hash-ellenőrzés nem bizonyít szemantikai helyességet, levélkézbesítést vagy szolgáltatói konfigurációt. A nyilvántartás módosítása review-köteles.
 
-## Hátralévő konkrét munka
+## Hátralévő konkrét munka – aktuális értelmezés
 
-1. A 259 fájlos eltérésből az elfogadott funkciók és szükséges függőségeik integrációs PR-ja, a frissebb main-javítások megőrzésével.
-2. Az integrált kód automatikus ellenőrzése és kritikus részeinek független review-ja.
-3. A production deployment, DB-migrációk és e-mail konfiguráció egyezésének ellenőrzése; szükséges változtatások jóváhagyása, majd célzott ellenőrzés.
-4. Többügyfeles import továbbra is külön fejlesztés; a jelenlegi együgyfeles import korlátja nem változott.
+1. Aktuális production backup/off-site mentés frissességének és egy teljes restore-drillnek release-evidence szintű igazolása.
+2. Staging és production DB migration history egyeztetése; szükséges production migrációk csak külön jóváhagyással.
+3. Booking e-mail production readiness kapuk lezárása: runtime mód/secret-jelenlét, backlog/címzettkör, célzott staging provider-UAT, majd külön production send jóváhagyás.
+4. A végleges release candidate commit SHA, DB és environment egyezésének rögzítése és célzott smoke.
+5. A valódi ügyfelek egyenkénti AllBooked migrációja már operatív feladat, nem hiányzó fejlesztés.
+6. Többügyfeles import külön későbbi fejlesztés; a jelenlegi együgyfeles modell szándékos.
 
-Ez a rendezés nem integrálja az e-mail kódot és nem jelent teljes élesítési GO-t.
+Ez a dokumentum önmagában nem jelent teljes élesítési GO-t.
