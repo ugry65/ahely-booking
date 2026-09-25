@@ -193,7 +193,7 @@ tfoot th { font-weight: 800; }
   .monthly-filter { width: 100%; grid-template-columns: minmax(0, 1fr); }
 }
 
-.migration-import-card { width: min(100%, 48rem); }
+.migration-page, .migration-page > .stack { min-width: 0; width: 100%; }\n.migration-card, .migration-import-card { width: 100%; max-width: none; }
 .migration-import-card input { width: 100%; }
 .import-readiness { padding: .8rem 1rem; border: 1px solid #d4d9d6; border-radius: .6rem; background: #f7f8f7; }
 .import-readiness p { margin: .25rem 0; }
