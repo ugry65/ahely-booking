@@ -1,6 +1,6 @@
 # AllBooked/Skedda ügyfélmigráció – operátori runbook
 
-Állapot: kötelező production eljárás; frissítve 2026-09-24.
+Állapot: kötelező production eljárás; frissítve 2026-09-25.
 
 ## Cél és hatókör
 
@@ -27,12 +27,27 @@ Az import nem vesz át:
 2. Nyisd meg a `Migráció` menüt.
 3. Válaszd ki az egy ügyfélhez tartozó CSV-t, majd futtasd a dry-runt.
 4. Csak `PASS` eredménynél folytasd. Ellenőrizd a nevet, e-mailt, telefonszámot, foglalásszámot, összes órát, helyiségenkénti darabszámot és az automatikusan levezetett helyiségcsoportokat.
-5. Minden Tréningterem-foglalást sorolj `Egyéni` vagy `Csoportos` típusba az eredeti rendszer adatai alapján. Bizonytalan besorolással tilos importálni.
-6. Írd be pontosan a felületen megjelenő ügyfélspecifikus megerősítést: `IMPORT <email> <foglalásszám>`.
+5. Minden Tréningterem-foglalást sorolj `Egyéni` vagy `Csoportos` típusba az eredeti rendszer adatai alapján. A felület mutatja a kész/összes darabszámot. Ha az adott ügyfél összes Tréningterem-foglalása bizonyítottan azonos típusú, az admin használhatja a `Mind egyéni` vagy `Mind csoportos` segédgombot; ez explicit admin döntés, automatikus következtetés nincs. Bizonytalan besorolással tilos importálni.
+6. Ellenőrizd az `Import feltételei` blokkot: CSV betöltve, Tréningterem-besorolás kész, megerősítő szöveg pontos. Mindhárom feltételnek teljesülnie kell. Ezután írd be pontosan a külön is megjelenített ügyfélspecifikus megerősítést: `IMPORT <email> <foglalásszám>`.
 7. Indítsd el egyszer az importot, és várd meg az import utáni reconciliation `PASS` eredményét. Várakozás közben a gomb letiltott; ne frissítsd az oldalt.
 8. Hasonlítsd össze a reconciliation foglalásszámát, összpercét, dátumtartományát, csoportjogait és Tréningterem-besorolásait a dry-runnal.
 9. A `Felhasználók` oldalon ellenőrizd a profilt, majd külön küldd ki az aktiváló/jelszóbeállító linket.
 10. Ismétlődő foglalási jogot csak külön üzleti jóváhagyás alapján állíts be.
+
+## Staging end-to-end bizonyíték – 2026-09-25
+
+A generic write-import a dedikált staging környezetben valós ügyfél-exporttal sikeresen lefutott.
+
+- ügyfél: `alkalmifoglalas@gmail.com`;
+- importált booking: 35;
+- nem üres, megőrzött booking note: 15;
+- booking-időtartomány: 2026-09-04 – 2026-12-30;
+- az érintett userhez tartozó booking-email outbox job: 0;
+- a projektgazda a böngészős tényleges importot sikeresnek jelezte;
+- az importgomb korábbi „nem történik semmi” hibájának gyökéroka kliensoldali, rejtett előfeltétel volt: minden Tréningterem-sort be kellett sorolni, miközben a disabled állapot nem volt egyértelmű. Ez PR #192-ben javítva;
+- a Migráció oldal globális `.card` 30rem limitje és egy literal `\n` CSS parser regresszió PR #194/#195-ben javítva. A projektgazda a végleges staging megjelenést elfogadta.
+
+Ez a staging bizonyíték a funkció működőképességét igazolja, de nem helyettesíti a production előtti backup-, DB-migration- és release-gate ellenőrzést.
 
 ## Papp Dalma próbaimport kivezetése
 
