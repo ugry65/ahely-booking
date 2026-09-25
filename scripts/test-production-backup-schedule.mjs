@@ -44,7 +44,7 @@ assert.match(heartbeatTestJob, /if: \$\{\{ always\(\) \}\}/);
 assert.match(heartbeatTestJob, /for attempt in 1 2 3/);
 assert.match(heartbeatTestJob, /BACKUP_SLOT: \${{ inputs\.heartbeat_slot }}/);
 for (const slot of ["08", "12", "16", "20"]) {
-  assert.match(workflow, new RegExp(`- "\${slot}"`));
+  assert.match(workflow, new RegExp(`- "${slot}"`));
 }
 assert.match(heartbeatTestJob, /notify-production-backup-heartbeat\.sh fail "\$BACKUP_SLOT"/);
 assert.match(heartbeatTestJob, /notify-production-backup-heartbeat\.sh success "\$BACKUP_SLOT"/);
