@@ -109,9 +109,23 @@ A pricing célzott staging regressziós UAT 12/12 PASS. A generic AllBooked impo
 12. **Kihasználtsági/statisztikai dashboard, számlázó-integráció, Google Calendar egyirányú szinkron.**
     Későbbi fázisok; a foglalási adatbázis marad az authoritative forrás.
 
-## GitHub issue-higiénia
+## GitHub issue-audit – 2026-09-25
 
-A nyitott issue-listában több történeti umbrella/implementációs issue továbbra is nyitva látszik annak ellenére, hogy a kapcsolódó funkció részben vagy teljesen elkészült. Ezeket nem szabad automatikusan „hátralévő fejlesztésnek” tekinteni. Külön issue-audit szükséges: kész issue-k lezárása vagy scope-juk pontosítása, a valóban nyitott release-gate-ek megtartása. Különösen felülvizsgálandó: #31, #36, #73, #75, #82, #100–#104, #107, #116, #150.
+A nyitott issue-lista nem azonos a tényleges fejlesztési backloggal. A jelenlegi main, dokumentáció és issue-kommentek alapján:
+
+- **#150 – VALÓBAN NYITOTT FEJLESZTÉS / launch előtt:** recurring booking e-mail kötelező sorozatadatok.
+- **#107 – IMPLEMENTÁCIÓ NAGYRÉSZT KÉSZ, RELEASE-GATE NYITOTT:** transactional outbox/worker mainben; production aktiválás és a #150 kiegészítés hátra van.
+- **#100/#101/#102/#104/#31 – INFRA/RELEASE-GATE, nem új üzleti feature:** backup/restore/monitoring nagy része implementált és korábbi PASS bizonyítékok vannak; éles indulás előtt frissesség és aktuális restore/release evidence kell. A nyitott issue-k scope-ját/lezárhatóságát külön rendbe kell tenni.
+- **#116 – dokumentációs/issue-higiéniai tétel:** a staging auth UAT a leírás szerint sikeres; ellenőrizni kell, hogy a bizonyíték repositoryban teljes-e, majd lezárható.
+- **#109 – VALÓBAN NYITOTT, de nem launch-blocker:** a nem-naptár menüpontok teljes mobil/reszponzív finomítása. A Migráció oldal most javított desktop-szélessége ennek csak egy konkrét részhibája volt.
+- **#105 – későbbi PWA**, nem launch-blocker.
+- **#40 – későbbi UX-fejlesztés:** ismétlődő foglalás kivételdátumainak naptáras többes kijelölése.
+- **#85 – opcionális Cloudflare/OpenNext preview-kísérlet**, nem szükséges a Vercel-alapú első éles verzióhoz.
+- **#73/#75/#44 – erősen történeti / nagyrészt implementált scope:** onboarding, helyiségcsoport/jogosultság és adminból állítható előrefoglalási limitek jelenlegi main-állapotát issue-lezárás előtt tételesen össze kell vetni az acceptance pontokkal.
+- **#82 – részben superseded/történeti pénzügyi issue:** a pricing logika az újabb projekt-döntések szerint elkészült és UAT PASS, de a teljes befizetés/korrekció pénzügyi modul későbbi fázis. A #82 régi tarifaadatai nem írhatják felül az aktuális projektkontextust.
+- **#36/#32 – történeti UAT umbrella:** staging és jelentős UAT-bizonyíték már létezik; lezárásuk előtt a mai release-gate-ekre kell szűkíteni, nem szabad a teljes régi UAT-ot indokolatlanul újranyitni.
+
+Következő issue-higiéniai lépés: a fenti történeti issue-k acceptance pontjainak tételes összevetése a mainnel, majd csak bizonyítottan teljes scope esetén lezárás. Ez nem production mutáció.
 
 ## Production biztonsági szabály
 
