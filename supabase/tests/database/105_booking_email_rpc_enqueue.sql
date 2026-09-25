@@ -1,6 +1,6 @@
 begin;
 
-select plan(32);
+select plan(36);
 
 select has_function(
   'public',
@@ -244,6 +244,17 @@ select results_eq(
   'A sorozat create payloadja helyes scope-ot, darabszámot és címet őriz'
 );
 
+select is(
+  (select payload ->> 'recurrence' from public.booking_email_outbox where correlation_id = 'a5000000-0000-0000-0000-000000000104'),
+  'Naponta',
+  'A sorozat create payload emberileg érthető ismétlődést őriz'
+);
+select is(
+  (select payload -> 'skipped_dates' from public.booking_email_outbox where correlation_id = 'a5000000-0000-0000-0000-000000000104'),
+  '[]'::jsonb,
+  'A sorozat create kivétel hiányát üres listaként őrzi'
+);
+
 select set_config(
   'test.email_series_first_booking_id',
   (
@@ -470,6 +481,33 @@ select ok(
       and entity_id = current_setting('test.email_bridge_failure_booking_id')
   ),
   'Bridge-hiba mellett a booking létrehozási auditnyoma megmarad'
+);
+
+select set_config(
+  'test.email_weekly_series_id',
+  public.create_booking_series(
+    '11000000-0000-0000-0000-000000000002',
+    'a5000000-0000-0000-0000-000000000002',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 80) + time '09:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 80) + time '10:00') at time zone 'Europe/Budapest',
+    'weekly', null, 4,
+    array[((clock_timestamp() at time zone 'Europe/Budapest')::date + 87), ((clock_timestamp() at time zone 'Europe/Budapest')::date + 94)],
+    'abort_all', 'individual', null,
+    'a5000000-0000-0000-0000-000000000109', 'Heti kivételes sorozat'
+  ) ->> 'series_id', true
+);
+set constraints booking_email_from_audit immediate;
+set constraints booking_email_from_audit deferred;
+
+select is(
+  (select payload ->> 'recurrence' from public.booking_email_outbox where correlation_id = 'a5000000-0000-0000-0000-000000000109'),
+  'Hetente',
+  'A heti sorozat e-mail payloadja magyar recurrence címkét kap'
+);
+select is(
+  jsonb_array_length((select payload -> 'skipped_dates' from public.booking_email_outbox where correlation_id = 'a5000000-0000-0000-0000-000000000109')),
+  2,
+  'A heti sorozat két kimaradt alkalma bekerül az immutable e-mail snapshotba'
 );
 
 select * from finish();
