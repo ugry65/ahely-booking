@@ -167,6 +167,15 @@ def main() -> int:
 
     try:
         now = parse_now()
+        # Apply mode first preflights both independent targets without deletion.
+        # This prevents a known-bad second target from being discovered only
+        # after eligible objects were already removed from the first target.
+        if args.apply:
+            gdrive_preflight = process_remote("Google Drive", gdrive, now, False, b2=False)
+            b2_preflight = process_remote("Backblaze B2", b2, now, False, b2=True)
+            if gdrive_preflight != 0 or b2_preflight != 0:
+                return 2
+
         gdrive_status = process_remote("Google Drive", gdrive, now, args.apply, b2=False)
         b2_status = process_remote("Backblaze B2", b2, now, args.apply, b2=True)
     except (subprocess.CalledProcessError, ValueError) as exc:
