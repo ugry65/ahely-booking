@@ -3,6 +3,8 @@ set -Eeuo pipefail
 
 umask 077
 
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 require_command() {
   command -v "$1" >/dev/null 2>&1 || {
     echo "Missing required command: $1" >&2
@@ -18,7 +20,7 @@ require_env() {
   }
 }
 
-for command_name in supabase psql age rclone sha256sum tar jq docker cmp; do
+for command_name in supabase psql age rclone sha256sum tar jq docker cmp python3; do
   require_command "$command_name"
 done
 
@@ -129,13 +131,27 @@ restore_db_container="$(docker ps \
   exit 1
 }
 
+# Hosted Supabase can run a newer managed Auth/Storage schema than the local
+# isolated CLI stack. Preflight COPY blocks against the actual target schema.
+# Only empty incompatible auth/storage blocks may be omitted. Any non-empty
+# managed mismatch, and every business-schema mismatch, fails closed.
+target_columns="$work_dir/target-columns.txt"
+docker exec "$restore_db_container" psql -U supabase_admin -d postgres -X -A -t -F "|" -v ON_ERROR_STOP=1 \
+  -c "select n.nspname || '.' || c.relname, string_agg(a.attname, ',' order by a.attnum) from pg_class c join pg_namespace n on n.oid = c.relnamespace join pg_attribute a on a.attrelid = c.oid where c.relkind in ('r','p') and a.attnum > 0 and not a.attisdropped group by n.nspname, c.relname order by 1" > "$target_columns"
+
+restore_data="$work_dir/restore-data.sql"
+python3 "$script_dir/lib/prepare-supabase-restore-data.py" \
+  --input "$bundle_dir/data.sql" \
+  --output "$restore_data" \
+  --target-columns "$target_columns"
+
 restore_sql="$work_dir/full-restore.sql"
 {
   cat "$bundle_dir/roles.sql"
   printf '\n'
   cat "$bundle_dir/schema.sql"
   printf '\nSET session_replication_role = replica;\n'
-  cat "$bundle_dir/data.sql"
+  cat "$restore_data"
   printf '\nDROP SCHEMA IF EXISTS supabase_migrations CASCADE;\n'
   cat "$bundle_dir/migration-schema.sql"
   printf '\n'
