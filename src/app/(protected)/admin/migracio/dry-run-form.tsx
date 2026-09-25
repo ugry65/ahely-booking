@@ -86,10 +86,17 @@ export function MigrationDryRunForm() {
     }
   }
 
-  const trainingComplete = result?.importApproval.trainingBookings.every(
-    (booking) => trainingUseTypes[booking.sourceFingerprint],
-  ) ?? false;
+  const trainingBookings = result?.importApproval.trainingBookings ?? [];
+  const classifiedTrainingCount = trainingBookings.filter((booking) => trainingUseTypes[booking.sourceFingerprint]).length;
+  const remainingTrainingCount = trainingBookings.length - classifiedTrainingCount;
+  const trainingComplete = remainingTrainingCount === 0;
   const expectedConfirmation = result?.importApproval.confirmation ?? "";
+  const confirmationComplete = confirmation === expectedConfirmation;
+  const importReady = Boolean(file && result?.importApproval.valid && confirmationComplete && trainingComplete);
+
+  function classifyAllTraining(useType: BookingUseType) {
+    setTrainingUseTypes(Object.fromEntries(trainingBookings.map((booking) => [booking.sourceFingerprint, useType])));
+  }
 
   async function runImport() {
     if (!file || !result?.importApproval.valid || confirmation !== expectedConfirmation || !trainingComplete) return;
