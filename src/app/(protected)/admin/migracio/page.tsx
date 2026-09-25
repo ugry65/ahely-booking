@@ -5,7 +5,7 @@ import { MigrationDryRunForm } from "./dry-run-form";
 export default async function MigrationAdminPage() {
   await requireAdmin();
   return (
-    <section className="stack">
+    <section className="stack migration-page">
       <header className="page-heading">
         <div>
           <p className="eyebrow">Adminisztráció</p>
