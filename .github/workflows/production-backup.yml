@@ -8,6 +8,16 @@ on:
         required: true
         default: ""
         type: string
+      heartbeat_slot:
+        description: "HEARTBEAT-TEST esetén tesztelendő backup slot"
+        required: false
+        default: "08"
+        type: choice
+        options:
+          - "08"
+          - "12"
+          - "16"
+          - "20"
   schedule:
     - cron: "0 8 * * *"
       timezone: "Europe/Budapest"
@@ -36,23 +46,31 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - name: Mark the live 08:00 heartbeat as failed
+      - name: Mark the selected live heartbeat as failed
         id: heartbeat_test_fail
         env:
+          BACKUP_SLOT: ${{ inputs.heartbeat_slot }}
           BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
-        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh fail 08
+          BACKUP_HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
+          BACKUP_HEARTBEAT_16_URL: ${{ secrets.BACKUP_HEARTBEAT_16_URL }}
+          BACKUP_HEARTBEAT_20_URL: ${{ secrets.BACKUP_HEARTBEAT_20_URL }}
+        run: bash ./scripts/lib/notify-production-backup-heartbeat.sh fail "$BACKUP_SLOT"
 
       - name: Hold the controlled failure state for alert delivery
         if: ${{ steps.heartbeat_test_fail.outcome == 'success' }}
         run: sleep 60
 
-      - name: Recover the live 08:00 heartbeat
+      - name: Recover the selected live heartbeat
         if: ${{ always() }}
         env:
+          BACKUP_SLOT: ${{ inputs.heartbeat_slot }}
           BACKUP_HEARTBEAT_08_URL: ${{ secrets.BACKUP_HEARTBEAT_08_URL }}
+          BACKUP_HEARTBEAT_12_URL: ${{ secrets.BACKUP_HEARTBEAT_12_URL }}
+          BACKUP_HEARTBEAT_16_URL: ${{ secrets.BACKUP_HEARTBEAT_16_URL }}
+          BACKUP_HEARTBEAT_20_URL: ${{ secrets.BACKUP_HEARTBEAT_20_URL }}
         run: |
           for attempt in 1 2 3; do
-            if bash ./scripts/lib/notify-production-backup-heartbeat.sh success 08; then
+            if bash ./scripts/lib/notify-production-backup-heartbeat.sh success "$BACKUP_SLOT"; then
               exit 0
             fi
             if [ "$attempt" -lt 3 ]; then
