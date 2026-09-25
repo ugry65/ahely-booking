@@ -13,6 +13,7 @@ describe("migration admin layout", () => {
     expect(page).toContain('className="stack migration-page"');
     expect(form).toContain("migration-card");
     expect(css).toContain(".migration-card, .migration-import-card { width: 100%; max-width: none; }");
-    expect(css).toContain(".migration-page, .migration-page > .stack { min-width: 0; width: 100%; }");\n    expect(css).not.toContain("\\\\n");
+    expect(css).toContain(".migration-page, .migration-page > .stack { min-width: 0; width: 100%; }");
+    expect(css).not.toContain("\\\\n");
   });
 });
