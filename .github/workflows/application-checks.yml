@@ -59,6 +59,7 @@ jobs:
       - run: node ./scripts/test-production-backup-schedule.mjs
       - run: bash ./scripts/test-backup-production.sh
       - run: bash ./scripts/test-retention-production.sh
+      - run: node ./scripts/test-production-retention-workflow.mjs
       - run: bash ./scripts/test-production-restore-trigger.sh
       - run: node ./scripts/test-supabase-availability-healthcheck.mjs
       - run: pnpm test
