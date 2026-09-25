@@ -66,7 +66,9 @@ A production indulási invariant:
 - a foglalásokhoz kapcsolódó settlement/payment/audit/outbox adatoknál ugyanezt a környezetszétválasztást kell betartani;
 - production preflight kötelezően ellenőrzi a foglalási táblát és a kapcsolódó üzleti adatokat.
 
-A 2026-09-25-i read-only production ellenőrzés **21 meglévő booking rekordot** talált. Emiatt a „tiszta foglalási tábla” feltétel jelenleg nem tekinthető teljesültnek. Ezeket nem töröljük automatikusan: production adat törlése külön, explicit owner approvalt és előtte mentést/azonosítást igényel.
+A 2026-09-25-i read-only production ellenőrzés **21 meglévő booking rekordot** talált. Mind a 21 `voided` státuszú, ugyanahhoz az inaktív Papp Dalma teszt/migrációs userhez és a „Forrás tér” helyiséghez tartozik. Az auditnapló 21 `allbooked.booking_imported` eseményt (`AllBooked production migration #108/#124`) és 21 `allbooked.test_booking_voided` eseményt (`Papp Dalma 21-booking migration trial removed before customer cutover`) tartalmaz, ezért ezek egyértelműen a korábbi production migrációs próba maradványai, nem valódi éles foglalások. Kapcsolódó `settlement_booking_lines`, `monthly_settlements`, `payments` és `outbox_events` rekord nincs.
+
+**Owner döntés 2026-09-25:** a valódi éles migráció előtt a productionből **minden foglalási rekordot el kell távolítani**, tehát a `public.bookings` elvárt darabszáma 0. Ez a jóváhagyás a foglalási rekordok eltávolításának üzleti döntését rögzíti; a fizikai production törlés csak a kötelező friss backup + restore/restore-drill bizonyíték és a közvetlen preflight ellenőrzések sikeres lezárása után hajtható végre. A meglévő auditbizonyítékot meg kell őrizni.
 
 ## Production release terv – írás nélkül
 Production DB módosítás csak külön owner approval után történhet. Addig kizárólag read-only preflight engedélyezett.
