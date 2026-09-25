@@ -117,6 +117,37 @@ describe("magyar booking e-mail renderer", () => {
     expect(rendered.text).toContain("Lemondás oka: Szabadság");
   });
 
+  it("sorozatnál emberileg érthető ismétlődést és kimaradt alkalmakat jelenít meg", () => {
+    const parsed = parseBookingEmailPayload("booking.created", 1, {
+      ...payload,
+      scope: "series",
+      affected_count: 3,
+      first_start_at: "2026-10-05T07:00:00Z",
+      last_end_at: "2026-10-12T08:00:00Z",
+      recurrence: "Hetente",
+      skipped_dates: ["2026-10-07", "2026-10-09"],
+    });
+    const rendered = renderBookingEmail("booking.created", parsed);
+    expect(rendered.text).toContain("Első alkalom:");
+    expect(rendered.text).toContain("Utolsó alkalom:");
+    expect(rendered.text).toContain("Ismétlődés: Hetente");
+    expect(rendered.text).toContain("Kimaradt alkalmak:");
+    expect(rendered.text).toContain("2026");
+    expect(rendered.html).toContain("Ismétlődés");
+  });
+
+  it("sorozatnál kivétel hiányát is egyértelműen közli", () => {
+    const parsed = parseBookingEmailPayload("booking.created", 1, {
+      ...payload,
+      scope: "series", affected_count: 3,
+      first_start_at: "2026-10-05T07:00:00Z", last_end_at: "2026-10-07T08:00:00Z",
+      recurrence: "Naponta", skipped_dates: [],
+    });
+    const rendered = renderBookingEmail("booking.created", parsed);
+    expect(rendered.text).toContain("Ismétlődés: Naponta");
+    expect(rendered.text).toContain("Kimaradt alkalmak: Nincs");
+  });
+
   it("HTML-escape-et alkalmaz minden dinamikus tartalomra", () => {
     const parsed = parseBookingEmailPayload("booking.created", 1, {
       ...payload,
