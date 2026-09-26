@@ -70,7 +70,7 @@ select ok(
       and procedure.prosecdef
       and left(procedure.proname, 6) = 'admin_'
       and has_function_privilege('authenticated', procedure.oid, 'EXECUTE')
-      and pg_get_functiondef(procedure.oid) !~* 'require_active_admin\\s*\\('
+      and position('public.require_active_admin()' in pg_get_functiondef(procedure.oid)) = 0
   ),
   'every authenticated admin SECURITY DEFINER API has the active-admin guard'
 );
