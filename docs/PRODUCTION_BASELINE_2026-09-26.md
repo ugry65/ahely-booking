@@ -81,7 +81,11 @@ Technikai metadata PASS és custom-domain mobil böngészős smoke PASS. Még do
 
 ## 8. Migráció / cutover
 
-A technikai production infrastruktúra működik, de valódi ügyfél/booking migráció még nem történt meg. Cutover sorrend:
+A technikai production infrastruktúra működik. **2026-09-26-án az első valódi production ügyfél/foglalás migráció sikeresen lefutott** az Admin → Migráció funkcióval, és a migrált foglalások megjelentek a Havi órák tételes elszámolási nézetében. A teljes cutover azonban még nincs kész: nem dokumentáltunk még teljes állományra vonatkozó reconciliation eredményt.
+
+Az első éles használat UX-hiányt is feltárt: a tételes elszámolásban a profil neve mellett szükséges a foglalás tényleges `booking_title` értéke. PR #217 ezt desktopon, mobilon és a Részletes CSV-ben is hozzáadja, adatbázis-migráció nélkül.
+
+A további cutover sorrend:
 1. végleges forrásexport és mapping;
 2. staging import;
 3. reconciliation;
@@ -117,7 +121,8 @@ Production DB/Auth/config/email/monitoring módosítás továbbra is explicit pr
 1. új retention policy implementáció + teszt + dry-run;
 2. maradék mobil/PWA valós-device acceptance;
 3. dokumentáció konzisztencia;
-4. valódi migrációs cutover előkészítése;
-5. friss backup;
-6. production import + reconciliation;
-7. üzemi átállás.
+4. további valódi ügyfél/foglalás migrációk kontrollált végrehajtása;
+5. minden production import előtt friss backup;
+6. teljes production reconciliation;
+7. auth/hozzáférés smoke;
+8. üzemi átállás.
