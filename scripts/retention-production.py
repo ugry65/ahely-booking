@@ -28,9 +28,9 @@ class Backup:
         return self.timestamp_utc.astimezone(BUDAPEST).date()
 
     @property
-    def local_month(self) -> tuple[int, int]:
-        local = self.timestamp_utc.astimezone(BUDAPEST)
-        return (local.year, local.month)
+    def local_iso_week(self) -> tuple[int, int]:
+        iso = self.local_date.isocalendar()
+        return (iso.year, iso.week)
 
 
 def run(*args: str, capture: bool = False) -> str:
@@ -52,14 +52,6 @@ def parse_now() -> dt.datetime:
             raise ValueError("RETENTION_NOW_UTC must include timezone")
         return value.astimezone(UTC)
     return dt.datetime.now(tz=UTC)
-
-
-def subtract_months(date: dt.date, months: int) -> dt.date:
-    month_index = date.year * 12 + (date.month - 1) - months
-    year, month_zero = divmod(month_index, 12)
-    month = month_zero + 1
-    # Retention boundaries only need a stable calendar-month cutoff.
-    return dt.date(year, month, 1)
 
 
 def list_remote(remote: str) -> set[str]:
@@ -88,46 +80,51 @@ def parse_backups(files: set[str]) -> tuple[list[Backup], list[str]]:
 
 
 def retention_candidates(backups: list[Backup], now: dt.datetime, b2: bool) -> tuple[set[str], set[str]]:
+    """Return exact keep/delete sets for the 2026-09-26 retention policy.
+
+    Local Europe/Budapest calendar-day age is authoritative:
+    - age 0..7 days: keep every restore point;
+    - age 8..30 days: keep the newest restore point of each ISO week;
+    - age >30 days: delete.
+
+    B2 has a 30-day Governance Object Lock, therefore every B2 restore point
+    with age <=30 days is physically kept even when the logical weekly policy
+    would already thin it on Google Drive.
+    """
     keep: set[str] = set()
     delete: set[str] = set()
-
-    cutoff_15 = now - dt.timedelta(days=15)
-    cutoff_30 = now - dt.timedelta(days=30)
-    cutoff_90 = now - dt.timedelta(days=90)
-    cutoff_24_months = subtract_months(now.astimezone(BUDAPEST).date(), 24)
-
-    daily_groups: dict[dt.date, list[Backup]] = defaultdict(list)
-    monthly_groups: dict[tuple[int, int], list[Backup]] = defaultdict(list)
+    weekly_groups: dict[tuple[int, int], list[Backup]] = defaultdict(list)
+    today = now.astimezone(BUDAPEST).date()
 
     for backup in backups:
-        if backup.timestamp_utc >= cutoff_15:
+        age_days = (today - backup.local_date).days
+
+        # Future-dated artifacts are never deleted automatically.
+        if age_days < 0:
             keep.add(backup.name)
             continue
-        if b2 and backup.timestamp_utc >= cutoff_30:
-            # 30-day Governance Object Lock intentionally keeps all B2 restore points.
+
+        if age_days <= 7:
             keep.add(backup.name)
             continue
-        if backup.timestamp_utc >= cutoff_90:
-            daily_groups[backup.local_date].append(backup)
+
+        if b2 and age_days <= 30:
+            # Object Lock is intentionally stronger than logical thinning.
+            keep.add(backup.name)
             continue
-        if backup.local_date >= cutoff_24_months:
-            monthly_groups[backup.local_month].append(backup)
+
+        if age_days <= 30:
+            weekly_groups[backup.local_iso_week].append(backup)
             continue
+
         delete.add(backup.name)
 
-    for group in daily_groups.values():
-        newest = max(group, key=lambda item: item.timestamp_utc)
-        keep.add(newest.name)
-        delete.update(item.name for item in group if item.name != newest.name)
-
-    for group in monthly_groups.values():
+    for group in weekly_groups.values():
         newest = max(group, key=lambda item: item.timestamp_utc)
         keep.add(newest.name)
         delete.update(item.name for item in group if item.name != newest.name)
 
     return keep, delete
-
-
 def process_remote(label: str, remote: str, now: dt.datetime, apply: bool, b2: bool) -> int:
     files = list_remote(remote)
     backups, errors = parse_backups(files)
