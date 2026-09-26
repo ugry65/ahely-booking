@@ -7,7 +7,7 @@ assert.match(workflow, /cron: "0 2 \* \* \*"/);
 assert.match(workflow, /timezone: "Europe\/Budapest"/);
 assert.match(workflow, /group: production-backup-storage-maintenance/);
 assert.match(workflow, /vars\.RETENTION_AUTOMATION_ENABLED == 'true'/);
-assert.match(workflow, /vars\.RETENTION_POLICY_VERSION == '2026-08-31-v1'/);
+assert.match(workflow, /vars\.RETENTION_POLICY_VERSION == '2026-09-26-v2'/);
 assert.match(workflow, /environment: production/);
 assert.match(workflow, /BACKUP_B2_DAILY_ACCOUNT_ID/);
 assert.match(workflow, /BACKUP_B2_DAILY_APPLICATION_KEY/);
