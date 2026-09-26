@@ -55,4 +55,11 @@ describe("mobile booking calendar scroll", () => {
     expect(component).toContain('touchAction: "pan-x pan-y"');
     expect(component).toContain("onPointerCancel={(event) => endSelection(event, true)}");
   });
+
+  it("extends the proven native calendar scroller to coarse-pointer tablets without changing desktop navigation", () => {
+    expect(css).toContain("@media (pointer: coarse) and (min-width: 52.001rem) and (max-width: 85rem)");
+    expect(css).toMatch(/@media \(pointer: coarse\)[\\s\\S]*?\.calendar-scroll\s*\{[\\s\\S]*?height: calc\(100dvh - 12rem\);[\\s\\S]*?overflow: auto;[\\s\\S]*?overscroll-behavior: auto;[\\s\\S]*?touch-action: pan-x pan-y;[\\s\\S]*?-webkit-overflow-scrolling: touch;/);
+    expect(css).toMatch(/@media \(pointer: coarse\)[\\s\\S]*?\.room-timeline\s*\{[\\s\\S]*?touch-action: pan-x pan-y !important;/);
+    expect(css).not.toContain("@media (max-width: 85rem) {\n  .desktop-app-nav");
+  });
 });
