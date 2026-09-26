@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   description: "Az A-Hely saját foglalási és havi elszámolási rendszere",
   applicationName: "A-Hely",
   manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
   appleWebApp: {
     capable: true,
     title: "A-Hely",
