@@ -65,6 +65,9 @@ describe("mobile booking calendar scroll", () => {
     expect(tabletRule).toContain("touch-action: pan-x pan-y");
     expect(tabletRule).toContain("-webkit-overflow-scrolling: touch");
     expect(tabletRule).toContain("touch-action: pan-x pan-y !important");
+    expect(tabletRule).toContain(".calendar-corner,\n  .room-heading {\n    position: sticky;\n    top: 0;");
+    expect(tabletRule).toContain(".room-heading {\n    z-index: 8;");
+    expect(tabletRule).toContain(".time-axis {\n    position: sticky;\n    left: 0;");
     expect(css).not.toContain("@media (max-width: 85rem) {\n  .desktop-app-nav");
   });
 });
