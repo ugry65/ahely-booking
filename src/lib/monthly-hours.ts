@@ -23,6 +23,7 @@ export type MonthlyBookingDetail = {
   user_name: string;
   booking_date: string;
   room_name: string;
+  booking_title: string | null;
   start_time: string;
   end_time: string;
   total_minutes: number;
@@ -35,6 +36,19 @@ export type MonthlyBookingDetail = {
 };
 
 export type MonthlyBookingDetailWithMonth = MonthlyBookingDetail & { month: string };
+
+export type MonthlyActiveBookingTitle = {
+  booking_id: string;
+  booking_title: string | null;
+};
+
+export function mergeBookingTitles<T extends { booking_id: string }>(
+  rows: T[],
+  titles: MonthlyActiveBookingTitle[],
+): Array<T & { booking_title: string | null }> {
+  const titleByBookingId = new Map(titles.map((row) => [row.booking_id, row.booking_title]));
+  return rows.map((row) => ({ ...row, booking_title: titleByBookingId.get(row.booking_id) ?? null }));
+}
 
 export function validMonth(value: string): boolean {
   return MONTH_PATTERN.test(value);
@@ -73,11 +87,11 @@ export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
 }
 
 export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string {
-  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft", "Állapot", "Revision"];
+  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Foglalás címe", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft", "Állapot", "Revision"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
-      row.month, row.user_name, row.booking_date, row.room_name,
+      row.month, row.user_name, row.booking_date, row.room_name, row.booking_title ?? "",
       row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours), row.rate_source,
       String(row.hourly_rate_huf), String(row.amount_huf), row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet",
       row.revision_number ? String(row.revision_number) : "",

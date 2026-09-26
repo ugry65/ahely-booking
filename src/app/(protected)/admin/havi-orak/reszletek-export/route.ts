@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, monthlyDetailsCsv, selectedMonths, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth } from "@/lib/monthly-hours";
+import { mergeBookingTitles, monthStart, monthlyDetailsCsv, selectedMonths, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -12,11 +12,22 @@ export async function GET(request: Request) {
   const rows: MonthlyBookingDetailWithMonth[] = [];
 
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_pricing_details", {
-      p_month: monthStart(month)!, p_user_id: userId,
-    }).returns<MonthlyBookingDetail[]>();
-    if (response.error) return new Response("A tételes elszámolási export nem sikerült. Hiányos export nem készül.", { status: 500 });
-    for (const row of (response.data ?? []) as unknown as MonthlyBookingDetail[]) rows.push({ ...row, month });
+    const [pricingResponse, titleResponse] = await Promise.all([
+      supabase.rpc("admin_monthly_pricing_details", {
+        p_month: monthStart(month)!, p_user_id: userId,
+      }),
+      supabase.rpc("admin_monthly_active_booking_details", {
+        p_month: monthStart(month)!, p_user_id: userId,
+      }),
+    ]);
+    if (pricingResponse.error || titleResponse.error) {
+      return new Response("A tételes elszámolási export nem sikerült. Hiányos export nem készül.", { status: 500 });
+    }
+    const enriched = mergeBookingTitles(
+      (pricingResponse.data ?? []) as unknown as Omit<MonthlyBookingDetail, "booking_title">[],
+      (titleResponse.data ?? []) as unknown as MonthlyActiveBookingTitle[],
+    );
+    for (const row of enriched) rows.push({ ...row, month });
   }
 
   const csv = monthlyDetailsCsv(rows);

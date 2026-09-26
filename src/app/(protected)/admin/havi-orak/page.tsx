@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, selectedMonths, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
+import { monthStart, selectedMonths, mergeBookingTitles, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
@@ -36,11 +36,20 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   const details: MonthlyBookingDetailWithMonth[] = [];
   let detailsError = false;
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_pricing_details", {
-      p_month: monthStart(month)!, p_user_id: selectedUserId,
-    }).returns<MonthlyBookingDetail[]>();
-    if (response.error) detailsError = true;
-    for (const row of (response.data ?? []) as unknown as MonthlyBookingDetail[]) details.push({ ...row, month });
+    const [pricingResponse, titleResponse] = await Promise.all([
+      supabase.rpc("admin_monthly_pricing_details", {
+        p_month: monthStart(month)!, p_user_id: selectedUserId,
+      }),
+      supabase.rpc("admin_monthly_active_booking_details", {
+        p_month: monthStart(month)!, p_user_id: selectedUserId,
+      }),
+    ]);
+    if (pricingResponse.error || titleResponse.error) detailsError = true;
+    const enriched = mergeBookingTitles(
+      (pricingResponse.data ?? []) as unknown as Omit<MonthlyBookingDetail, "booking_title">[],
+      (titleResponse.data ?? []) as unknown as MonthlyActiveBookingTitle[],
+    );
+    for (const row of enriched) details.push({ ...row, month });
   }
 
   const totalHours = rows.reduce((sum, row) => sum + Number(row.total_hours), 0);
@@ -81,8 +90,8 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       </form>
       {detailsError ? <p className="message error" role="alert">A tételes foglalások betöltése nem sikerült teljes körűen. Az adatokat ne használd ellenőrzésre, amíg a hiba fennáll.</p> : null}
       <div className="monthly-detail-table-desktop table-scroll"><table>
-        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Idő</th><th>Óra</th><th>Árforrás</th><th>Óradíj</th><th>Összeg</th><th>Korrekció</th></tr></thead>
-        <tbody>{details.map((row) => <tr key={`${row.month}-${row.booking_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}–{time(row.end_time)}</td><td>{hours(row.total_hours)}</td><td>{rateSourceLabel[row.rate_source]}</td><td>{huf(row.hourly_rate_huf)}</td><td>{huf(row.amount_huf)}</td><td>{row.month < currentMonth ? <form action={correctHistoricalBookingRate} className="inline-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="bookingId" value={row.booking_id} /><input name="hourlyRate" type="number" min="0" step="1" required defaultValue={row.hourly_rate_huf} aria-label="Korrigált óradíj" /><input name="reason" maxLength={300} required placeholder="Új korrekciós indok" aria-label="Korrekció indoka" /><button type="submit">Korrigálás + revision</button></form> : <span className="muted">—</span>}</td></tr>)}</tbody>
+        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Foglalás címe</th><th>Idő</th><th>Óra</th><th>Árforrás</th><th>Óradíj</th><th>Összeg</th><th>Korrekció</th></tr></thead>
+        <tbody>{details.map((row) => <tr key={`${row.month}-${row.booking_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{row.booking_title || "—"}</td><td>{time(row.start_time)}–{time(row.end_time)}</td><td>{hours(row.total_hours)}</td><td>{rateSourceLabel[row.rate_source]}</td><td>{huf(row.hourly_rate_huf)}</td><td>{huf(row.amount_huf)}</td><td>{row.month < currentMonth ? <form action={correctHistoricalBookingRate} className="inline-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="bookingId" value={row.booking_id} /><input name="hourlyRate" type="number" min="0" step="1" required defaultValue={row.hourly_rate_huf} aria-label="Korrigált óradíj" /><input name="reason" maxLength={300} required placeholder="Új korrekciós indok" aria-label="Korrekció indoka" /><button type="submit">Korrigálás + revision</button></form> : <span className="muted">—</span>}</td></tr>)}</tbody>
       </table></div>
       <div className="monthly-detail-list-mobile" aria-label="Tételes aktív foglalások mobil nézete">
         {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
@@ -90,6 +99,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
           <dl className="report-mobile-details">
             <div><dt>Dátum</dt><dd>{row.booking_date}</dd></div>
             <div><dt>Helyiség</dt><dd>{row.room_name}</dd></div>
+            <div><dt>Foglalás címe</dt><dd>{row.booking_title || "—"}</dd></div>
             <div><dt>Időtartam</dt><dd>{time(row.start_time)}–{time(row.end_time)}</dd></div>
             <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
             <div><dt>Óradíj</dt><dd>{huf(row.hourly_rate_huf)} · {rateSourceLabel[row.rate_source]}</dd></div>

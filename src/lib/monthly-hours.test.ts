@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csvCell, decimalComma, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
+import { csvCell, decimalComma, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
 
 describe("monthly hours export", () => {
   it("csak érvényes YYYY-MM hónapot fogad el", () => {
@@ -34,7 +34,16 @@ describe("monthly hours export", () => {
     expect(csv).not.toContain("Foglalások száma");
   });
   it("a részletes CSV-ben hónap, dátum, helyiség és időintervallum is szerepel", () => {
-    const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "2.Szoba", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50", rate_source: "booking_override", hourly_rate_huf: 4300, amount_huf: 6450, pricing_state: "snapshot", revision_number: 3 }]);
-    expect(csv).toContain('"2026-08";"Teszt User";"2026-08-22";"2.Szoba";"09:00";"10:30";"1,50";"booking_override";"4300";"6450";"Snapshot";"3"');
+    const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "2.Szoba", booking_title: "Kovács Anna", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50", rate_source: "booking_override", hourly_rate_huf: 4300, amount_huf: 6450, pricing_state: "snapshot", revision_number: 3 }]);
+    expect(csv).toContain('"2026-08";"Teszt User";"2026-08-22";"2.Szoba";"Kovács Anna";"09:00";"10:30";"1,50";"booking_override";"4300";"6450";"Snapshot";"3"');
+  });
+  it("booking id alapján hozzákapcsolja a foglalás címét a pricing részlethez", () => {
+    expect(mergeBookingTitles(
+      [{ booking_id: "b1", room_name: "2.Szoba" }, { booking_id: "b2", room_name: "3.Szoba" }],
+      [{ booking_id: "b1", booking_title: "Kliens neve" }],
+    )).toEqual([
+      { booking_id: "b1", room_name: "2.Szoba", booking_title: "Kliens neve" },
+      { booking_id: "b2", room_name: "3.Szoba", booking_title: null },
+    ]);
   });
 });
