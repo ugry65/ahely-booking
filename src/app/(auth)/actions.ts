@@ -50,8 +50,6 @@ export async function logout() {
 
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const siteUrl = requireEnv("SITE_URL");
-
   if (email) {
     const supabase = await createClient();
     await supabase.auth.resetPasswordForEmail(email);
