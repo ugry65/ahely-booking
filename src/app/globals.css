@@ -110,7 +110,7 @@ tfoot th { font-weight: 800; }
 .user-mobile-edit { width: 100%; }
 .user-mobile-empty { margin: 0; }
 
-.monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile { display: none; }
+.monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: none; }
 .report-mobile-card { display: grid; gap: .9rem; padding: 1rem; border: 1px solid #d8d4c8; border-radius: .8rem; background: #fff; }
 .report-mobile-card-heading { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
 .report-mobile-card-heading h3 { min-width: 0; margin: 0; overflow-wrap: anywhere; font-size: 1.05rem; }
@@ -170,8 +170,8 @@ tfoot th { font-weight: 800; }
   .admin-grid { grid-template-columns: 1fr; }
   .page-heading { align-items: center; text-align: center; }
   .page-heading > div { width: 100%; }
-  .monthly-detail-table-desktop, .cancellation-summary-table-desktop, .cancellation-detail-table-desktop { display: none; }
-  .monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile { display: grid; gap: .75rem; }
+  .monthly-detail-table-desktop, .cancellation-summary-table-desktop, .cancellation-detail-table-desktop, .pricing-table-desktop { display: none; }
+  .monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: grid; gap: .75rem; }
   .report-mobile-details > div { grid-template-columns: minmax(6.75rem, 34%) minmax(0, 1fr); gap: .5rem; }
   .users-table-desktop { display: none; }
   .users-list-mobile { display: grid; gap: .75rem; }

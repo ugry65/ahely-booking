@@ -49,8 +49,6 @@ export function MigrationDryRunForm() {
   const [confirmation, setConfirmation] = useState("");
   const [trainingUseTypes, setTrainingUseTypes] = useState<Record<string, BookingUseType>>({});
   const [importResult, setImportResult] = useState<Record<string, unknown> | null>(null);
-  const [cleanupConfirmation, setCleanupConfirmation] = useState("");
-  const [cleanupResult, setCleanupResult] = useState<Record<string, unknown> | null>(null);
   const [busy, setBusy] = useState(false);
 
   function selectFile(nextFile: File | null) {
@@ -117,30 +115,6 @@ export function MigrationDryRunForm() {
       setImportResult(body.reconciliation as Record<string, unknown>);
     } catch {
       setError("A production import technikai hiba miatt nem futott le.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function voidPappDalmaTrial() {
-    if (cleanupConfirmation !== "REMOVE-PAPP-DALMA-TEST-DATA") return;
-    setBusy(true);
-    setError(null);
-    setCleanupResult(null);
-    try {
-      const response = await fetch("/api/internal/void-papp-dalma-test-import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmation: cleanupConfirmation }),
-      });
-      const body = await response.json();
-      if (!response.ok) {
-        setError(body.error ?? "A próbaadatok visszavonása nem sikerült.");
-        return;
-      }
-      setCleanupResult(body.reconciliation as Record<string, unknown>);
-    } catch {
-      setError("A próbaadatok visszavonása technikai hiba miatt nem sikerült.");
     } finally {
       setBusy(false);
     }
@@ -232,15 +206,6 @@ export function MigrationDryRunForm() {
         <p className="message success" role="status">A tranzakció és a tételes adatbázis-reconciliation sikeres. Az aktiváló e-mail külön, a Felhasználók oldalon küldhető.</p>
       </section> : null}
 
-      <section className="card stack migration-card">
-        <div><p className="eyebrow">Egyszeri indulási művelet</p><h2>Papp Dalma próbaimport visszavonása</h2></div>
-        <p className="muted">Kizárólag a bizonyított 21 foglalásos próbaimportot teszi üzletileg láthatatlanná, eltávolítja a próba-jogosultságot és inaktiválja a profilt. Az auditbizonyíték megmarad, a valódi ügyfél később friss CSV-ből újramigrálható.</p>
-        <label>Megerősítés<input value={cleanupConfirmation} onChange={(event) => setCleanupConfirmation(event.target.value)} placeholder="REMOVE-PAPP-DALMA-TEST-DATA" autoComplete="off" /></label>
-        <button type="button" className="danger-button" disabled={busy || cleanupConfirmation !== "REMOVE-PAPP-DALMA-TEST-DATA"} onClick={voidPappDalmaTrial}>
-          {busy ? "Visszavonás és ellenőrzés folyamatban…" : "Papp Dalma próbaadat visszavonása"}
-        </button>
-        {cleanupResult ? <p className="message success" role="status">PASS: {String(cleanupResult.voidedBookings ?? 0)} próba-foglalás kivezetve, aktív foglalás: {String(cleanupResult.activeBookings ?? "—")}. A profil valódi újraimportra kész.</p> : null}
-      </section>
     </div>
   );
 }
