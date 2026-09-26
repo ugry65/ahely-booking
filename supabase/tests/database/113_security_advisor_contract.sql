@@ -68,7 +68,7 @@ select ok(
     join pg_namespace namespace on namespace.oid = procedure.pronamespace
     where namespace.nspname = 'public'
       and procedure.prosecdef
-      and procedure.proname like 'admin\_%' escape '\\'
+      and left(procedure.proname, 6) = 'admin_'
       and has_function_privilege('authenticated', procedure.oid, 'EXECUTE')
       and pg_get_functiondef(procedure.oid) !~* 'require_active_admin\\s*\\('
   ),
