@@ -55,9 +55,7 @@ export async function requestPasswordReset(formData: FormData) {
 
   if (email) {
     const supabase = await createClient();
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
-    });
+    await supabase.auth.resetPasswordForEmail(email);
   }
 
   redirect(destination("/elfelejtett-jelszo", "uzenet", "Ha a cím létezik, elküldtük a visszaállító levelet."));
