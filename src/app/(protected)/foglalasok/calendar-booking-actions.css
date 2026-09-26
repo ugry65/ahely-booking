@@ -184,3 +184,21 @@ body:has(.selection-action-bar) .desktop-calendar-header > form {
   .booking-action-item { min-height: 3.25rem; font-size: 1rem; }
   .scope-choice-card { max-height: 80vh; }
 }
+
+/* Touch tablets wider than the phone breakpoint keep the desktop navigation,
+   but use the proven native calendar scroller so a long-press gesture cannot
+   trap vertical panning in iPad landscape. */
+@media (pointer: coarse) and (min-width: 52.001rem) and (max-width: 85rem) {
+  .calendar-scroll {
+    height: calc(100dvh - 12rem);
+    min-height: 28rem;
+    overflow: auto;
+    overscroll-behavior: auto;
+    touch-action: pan-x pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .room-timeline {
+    touch-action: pan-x pan-y !important;
+  }
+}
