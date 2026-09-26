@@ -6,7 +6,6 @@ import { requireAdmin } from "@/lib/auth";
 import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { requireEnv } from "@/lib/env";
 import { authCreateErrorMessage, generateTemporaryPassword } from "@/lib/admin-user-invite";
 import { parseNonNegativeSafeIntegerHuf } from "@/lib/admin-pricing-input";
 
@@ -191,10 +190,7 @@ export async function sendPasswordReset(formData: FormData) {
     redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető."), formData));
   }
 
-  const siteUrl = requireEnv("SITE_URL");
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
-  });
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
   if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
   redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
 }
