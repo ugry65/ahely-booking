@@ -9,6 +9,17 @@ import { FormSubmitFeedback } from "./form-submit-feedback";
 export const metadata: Metadata = {
   title: "A-Hely foglalás",
   description: "Az A-Hely saját foglalási és havi elszámolási rendszere",
+  applicationName: "A-Hely",
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "A-Hely",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
