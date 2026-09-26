@@ -31,7 +31,7 @@ concurrency:
 
 jobs:
   retention:
-    if: ${{ github.event_name != 'schedule' || (vars.RETENTION_AUTOMATION_ENABLED == 'true' && vars.RETENTION_POLICY_VERSION == '2026-08-31-v1') }}
+    if: ${{ github.event_name != 'schedule' || (vars.RETENTION_AUTOMATION_ENABLED == 'true' && vars.RETENTION_POLICY_VERSION == '2026-09-26-v2') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: production

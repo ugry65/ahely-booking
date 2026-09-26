@@ -55,16 +55,14 @@ make_pair() {
 
 seed_provider() {
   local provider="$1"
-  # <15 days: all four must stay.
+  # 0-7 local calendar days: every restore point stays.
   for t in 20260830T060000Z 20260830T100000Z 20260830T140000Z 20260830T180000Z; do make_pair "$provider" "$t"; done
-  # 20 days old: GDrive keeps one; B2 keeps all because of 30-day Object Lock window.
-  for t in 20260811T060000Z 20260811T100000Z 20260811T140000Z 20260811T180000Z; do make_pair "$provider" "$t"; done
-  # 40 days old: both keep only the latest local-day backup.
-  for t in 20260722T060000Z 20260722T100000Z 20260722T140000Z 20260722T180000Z; do make_pair "$provider" "$t"; done
-  # Older than 90 days but inside 24 months: one latest backup per local month.
-  for t in 20260501T060000Z 20260515T100000Z 20260531T180000Z; do make_pair "$provider" "$t"; done
-  # Older than 24 calendar months: no automatic retention.
-  for t in 20240501T060000Z 20240531T180000Z; do make_pair "$provider" "$t"; done
+  # 8-30 days: Google Drive keeps one newest restore point per ISO week.
+  # B2 keeps all because the 30-day Object Lock is intentionally stronger.
+  for t in 20260820T060000Z 20260820T100000Z 20260820T140000Z 20260820T180000Z; do make_pair "$provider" "$t"; done
+  for t in 20260813T060000Z 20260813T100000Z 20260813T140000Z 20260813T180000Z; do make_pair "$provider" "$t"; done
+  # >30 days: deletable on both targets.
+  for t in 20260731T060000Z 20260731T100000Z 20260731T140000Z 20260731T180000Z; do make_pair "$provider" "$t"; done
 }
 
 seed_provider gdrive
@@ -90,29 +88,31 @@ python3 "$repo_root/scripts/retention-production.py" --apply > "$test_root/apply
 
 artifact_count() { find "$remote_root/$1/backups" -type f -name '*.tar.gz.age' | wc -l; }
 
-# Expected GDrive artifacts: 4 recent + 1 from 20d + 1 from 40d + 1 monthly = 7.
-if [ "$(artifact_count gdrive)" -ne 7 ]; then
+# Expected GDrive artifacts: 4 recent + 1 newest from each of two weekly groups = 6.
+if [ "$(artifact_count gdrive)" -ne 6 ]; then
   echo "Unexpected Google Drive artifact count after retention" >&2
-  find "$remote_root/gdrive/backups" -type f -printf '%f\n' | sort >&2
+  find "$remote_root/gdrive/backups" -type f -printf '%f\\n' | sort >&2
   exit 1
 fi
 
-# Expected B2 artifacts: 4 recent + all 4 from 20d lock window + 1 from 40d + 1 monthly = 10.
-if [ "$(artifact_count b2)" -ne 10 ]; then
+# Expected B2 artifacts: all 12 restore points aged <=30 days survive Object Lock.
+if [ "$(artifact_count b2)" -ne 12 ]; then
   echo "Unexpected B2 artifact count after retention" >&2
-  find "$remote_root/b2/backups" -type f -printf '%f\n' | sort >&2
+  find "$remote_root/b2/backups" -type f -printf '%f\\n' | sort >&2
   exit 1
 fi
 
-# Latest daily/monthly restore points must survive.
+# Google Drive weekly survivors are the newest restore points of their ISO weeks.
+for timestamp in 20260813T180000Z 20260820T180000Z; do
+  name="ahely-booking-production_${timestamp}_abcdef123456.tar.gz.age"
+  test -f "$remote_root/gdrive/backups/$name"
+  test -f "$remote_root/gdrive/backups/$name.sha256"
+done
+
+# >30-day artifacts are deleted from both targets.
 for provider in gdrive b2; do
-  for timestamp in 20260722T180000Z 20260531T180000Z; do
-    name="ahely-booking-production_${timestamp}_abcdef123456.tar.gz.age"
-    test -f "$remote_root/$provider/backups/$name"
-    test -f "$remote_root/$provider/backups/$name.sha256"
-  done
-  if find "$remote_root/$provider/backups" -type f -name 'ahely-booking-production_202405*.tar.gz.age' -print -quit | grep -q .; then
-    echo "Backup older than 24 months was unexpectedly retained on $provider" >&2
+  if find "$remote_root/$provider/backups" -type f -name 'ahely-booking-production_20260731*.tar.gz.age' -print -quit | grep -q .; then
+    echo "Backup older than 30 days was unexpectedly retained on $provider" >&2
     exit 1
   fi
 done
