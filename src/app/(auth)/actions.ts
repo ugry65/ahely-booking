@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 
-import { requireEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 function destination(path: string, key: string, value: string) {
