@@ -1,39 +1,57 @@
 # Döntés – Production backup retention és Backblaze B2 Object Lock
 
-Dátum: 2026-08-31
-Kapcsolódó issue-k: #100, #101
-Státusz: ELFOGADOTT ÜZLETI/ÜZEMELTETÉSI DÖNTÉS
+Eredeti döntés: 2026-08-31  
+Felülíró üzleti döntés: **2026-09-26**  
+Státusz: **ELFOGADOTT, IMPLEMENTÁCIÓ/DRY-RUN ALATT**
 
-## Elfogadott retention
+## 1. Aktuális, kötelező retention policy
 
-- 0–14 nap: mind a napi négy (08:00, 12:00, 16:00, 20:00 Europe/Budapest) sikeres restore-pont megmarad.
-- 15–90 nap: naponként egy restore-pont marad meg.
-- 3–24 hónap: havonta egy restore-pont marad meg.
-- 24 hónapnál régebbi automatikus megőrzés nem része az induló policy-nak.
+A 2026-08-31-i 14 nap / 90 nap / 24 hónap policyt a projektgazda 2026-09-26-án felülírta.
 
-A napi ritkításnál az adott Europe/Budapest szerinti nap legutolsó sikeres backupja marad meg. A havi ritkításnál az adott hónap legutolsó sikeres backupja marad meg.
+- **0–7 nap:** minden sikeres restore-pont megmarad, normál esetben napi 4;
+- **8–30 nap:** hetente 1 restore-pont marad;
+- **30 napnál régebbi:** törölhető;
+- a heti restore-pont az adott Europe/Budapest szerinti ISO-hét legutolsó sikeres backupja.
 
-## Backblaze B2 Object Lock
+A korábbi napi/havi hosszú távú generációs retention megszűnik.
 
-- A production backup bucket Object Lock védelemmel működjön.
-- Induló retention mód: Governance.
-- Minimális Object Lock időtartam: 30 nap.
-- Compliance mód induláskor nem használatos, mert annak visszafordíthatatlansága szükségtelen üzemeltetési kockázatot okozna.
+## 2. Backblaze B2 Object Lock
 
-A 30 napos B2 Object Lock szándékosan erősebb, mint a logikai retention első ritkítási pontja. Emiatt B2-n a 0–30 nap közötti mentések mind megmaradnak; a 15–30 nap közötti napi ritkítás csak Google Drive-on hajtható végre. B2-n ugyanazok a restore-pontok csak a lock lejárta után ritkíthatók. Ez többletmegőrzés, nem policy-gyengítés.
+- Governance mód;
+- legalább 30 napos védelem;
+- a lock szándékosan erősebb a 8–30 napos heti ritkításnál.
 
-## Biztonsági invariánsok
+Következmény: Google Drive-on 8–30 nap között fizikailag végrehajtható a heti ritkítás. B2-n az Object Lock miatt **minden 30 napon belüli restore-pont fizikailag megmarad**. Ez nem policy-hiba, hanem szándékos törlésvédelem. A 30 napnál régebbi B2 artifact a lock lejárta után törölhető.
 
-1. 30 napos lock alatt automatikus B2 törlés nem történhet.
-2. A retention script csak a lock lejárta után ritkíthat B2 objektumot.
-3. Google Drive és B2 retention logikája hosszabb távon azonos restore-pont készletre törekszik, de B2 a törlésvédett biztonsági példány.
-4. Törlés/ritkítás alapértelmezetten dry-run legyen; éles törlés csak explicit módon engedélyezhető.
-5. Hibás vagy hiányos fájlnév/metadata esetén a script fail-closed módon ne töröljön.
-6. A legutóbbi 14 nap teljes, napi 4× restore-pont készlete egyik célhelyen sem ritkítható.
-7. B2-n a legutóbbi 30 nap teljes készlete a lock miatt ténylegesen megmarad.
-8. A retention folyamat nem írhat felül backup artifactot.
-9. Production aktiválás előtt a retention logikának automatikus teszttel és sandbox dry-runnal bizonyítottnak kell lennie.
+## 3. Biztonsági invariánsok
 
-## Költség és felülvizsgálat
+1. 0–7 nap között egyik célhelyen sem ritkítható backup.
+2. B2-n 30 napon belül automatikus törlés nem történhet.
+3. Ismeretlen fájlnév nem törölhető.
+4. Felismert backup hiányzó checksum sidecarral fail-closed hibát okoz.
+5. Apply előtt mindkét célhely teljes preflightja lefut; ismert hibás második cél esetén az első sem módosulhat.
+6. Artifact és `.sha256` sidecar párban kezelendő.
+7. Dry-run az alapértelmezett mód.
+8. Manuális apply külön `RETENTION` megerősítést igényel.
+9. Scheduled apply csak akkor indulhat, ha `RETENTION_AUTOMATION_ENABLED=true` és `RETENTION_POLICY_VERSION=2026-09-26-v2`.
+10. Az új policy production automatikus aktiválása előtt kötelező a valós Google Drive + B2 dry-run exact keep/delete lista ellenőrzése.
 
-A policy célja, hogy a rövid távú visszaállíthatóság erős maradjon, miközben a hosszabb távú tárolási mennyiség kontrollált. A tényleges backup méret és B2/Google Drive fogyasztás alapján a policy később felülvizsgálható, de a megőrzési idő csökkentése külön üzleti döntést igényel.
+## 4. Bevezetési sorrend
+
+1. kód;
+2. automatikus retention teszt;
+3. workflow gate teszt;
+4. PR CI;
+5. production workflow **dry-run**;
+6. exact Google Drive/B2 keep/delete lista emberi ellenőrzése;
+7. csak ezután engedélyezhető a v2 scheduled apply.
+
+A régi policyvel készült korábbi dry-run nem fogadható el az új policy bizonyítékaként.
+
+## 5. Indoklás
+
+A backup és monitoring hibáknak napokon belül láthatóvá kell válniuk. Az A-Hely jelenlegi üzemi kockázatához egy hét teljes sűrűség, majd egy hónapig heti restore-pont megfelelő kompromisszum. A B2 30 napos Object Lock külön védelmi réteg marad.
+
+## 6. Későbbi felülvizsgálat
+
+A policy csak dokumentált új üzleti döntéssel változtatható. A foglalási/elszámolási üzleti adatok adatmegőrzési szabálya ettől külön kérdés: ez a dokumentum kizárólag a technikai backup-generációk retentionjét szabályozza.
