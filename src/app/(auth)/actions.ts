@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 
-import { requireEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 
 function destination(path: string, key: string, value: string) {
@@ -51,13 +50,9 @@ export async function logout() {
 
 export async function requestPasswordReset(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const siteUrl = requireEnv("SITE_URL");
-
   if (email) {
     const supabase = await createClient();
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/auth/callback?next=/jelszo-visszaallitas`,
-    });
+    await supabase.auth.resetPasswordForEmail(email);
   }
 
   redirect(destination("/elfelejtett-jelszo", "uzenet", "Ha a cím létezik, elküldtük a visszaállító levelet."));
