@@ -1,6 +1,6 @@
 begin;
 
-select plan(64);
+select plan(70);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -113,6 +113,24 @@ select lives_ok(
   $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,'Javított booking indok','42000000-0000-0000-0000-000000000187')$$,
   'Admin az óradíj változtatása nélkül is auditáltan javíthatja a felülírás indokát'
 );
+reset role;
+
+-- Retroaktív díjszabás: a nyitott havi kalkuláció a szolgáltatási dátum szerinti új tarifát használja.
+insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key) values
+ ('41000000-0000-0000-0000-000000000188','11000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000182','00000000-0000-0000-0000-000000000181','2026-09-05 07:00+02','2026-09-05 08:00+02','individual','active',gen_random_uuid()),
+ ('41000000-0000-0000-0000-000000000189','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000183','00000000-0000-0000-0000-000000000181','2026-09-06 07:00+02','2026-09-06 08:00+02','group','active',gen_random_uuid()),
+ ('41000000-0000-0000-0000-000000000190','11000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000184','00000000-0000-0000-0000-000000000181','2026-09-07 07:00+02','2026-09-07 08:00+02','individual','active',gen_random_uuid());
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+select lives_ok($select public.admin_set_central_pricing('2026-09-01',2800,2000,1800,'Szeptemberi visszamenőleges korrekció',gen_random_uuid())$,'Admin múltbeli kezdődátummal központi díjat állíthat');
+select lives_ok($select public.admin_set_training_room_rate(5200,'2026-09-01','Szeptemberi visszamenőleges korrekció',gen_random_uuid())$,'Admin múltbeli kezdődátummal Tréningterem-díjat állíthat');
+select lives_ok($select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000184',3400,'2026-09-01','Szeptemberi visszamenőleges korrekció',gen_random_uuid())$,'Admin múltbeli kezdődátummal user óradíjat állíthat');
+reset role;
+select is((select calculated_due_huf from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000182','2026-09-01')),2800::bigint,'A szeptemberi nyitott elszámolás az új retroaktív központi díjjal számol újra');
+select is((select calculated_due_huf from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000183','2026-09-01')),5200::bigint,'A szeptemberi nyitott elszámolás az új retroaktív Tréningterem-díjjal számol újra');
+select is((select calculated_due_huf from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000184','2026-09-01')),3400::bigint,'A szeptemberi nyitott elszámolás az új retroaktív user díjjal számol újra');
+
 reset role;
 select is((select hourly_rate_override_reason from public.bookings where id='41000000-0000-0000-0000-000000000183'),'Javított booking indok','Az indokjavítás megmarad a bookingon');
 set local role authenticated;
