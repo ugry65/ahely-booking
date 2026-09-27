@@ -1,5 +1,5 @@
 begin;
-select plan(10);
+select plan(11);
 
 select has_function('public','admin_prepare_user_email_change',array['uuid','text','text','uuid'],'E-mail módosítás előellenőrző RPC létezik');
 select has_function('public','admin_finalize_user_email_change',array['uuid','text','text','text','uuid'],'E-mail módosítás véglegesítő RPC létezik');
