@@ -237,7 +237,12 @@ export async function sendPasswordReset(formData: FormData) {
     redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető."), formData));
   }
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email);
+  const siteUrl = process.env.SITE_URL?.replace(/\/$/, "");
+  if (!siteUrl) redirect(resultUrl("hiba", "A jelszóbeállító link nem küldhető: hiányzik a SITE_URL konfiguráció.", formData));
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/auth/confirm`,
+  });
   if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
   redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
 }
