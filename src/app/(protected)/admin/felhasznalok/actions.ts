@@ -109,7 +109,7 @@ export async function updateUserProfile(formData: FormData) {
 }
 
 export async function updateUserEmail(formData: FormData) {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const userId = uuid(formData.get("userId"));
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const reason = String(formData.get("reason") ?? "").trim();
@@ -120,6 +120,7 @@ export async function updateUserEmail(formData: FormData) {
   const admin = createAdminClient();
   const correlationId = crypto.randomUUID();
   const { data: prepared, error: prepareError } = await admin.rpc("admin_prepare_user_email_change", {
+    p_actor_id: actor.id,
     p_user_id: userId,
     p_new_email: email,
     p_reason: reason,
@@ -136,6 +137,7 @@ export async function updateUserEmail(formData: FormData) {
   }
 
   const { error: finalizeError } = await admin.rpc("admin_finalize_user_email_change", {
+    p_actor_id: actor.id,
     p_user_id: userId,
     p_old_email: before.old_email ?? "",
     p_new_email: email,
