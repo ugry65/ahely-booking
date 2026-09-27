@@ -42,7 +42,7 @@
         },
         {
           "path": "src/app/api/internal/production-customer-migration-import/route.ts",
-          "sha": "dcd5bad9c49e29518a6448d8b0b3c44461b1ff40"
+          "sha": "cda867ca9099b3dd60bddfa24cc5ebddb4f79339"
         },
         {
           "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",
@@ -55,6 +55,10 @@
         {
           "path": "supabase/migrations/20260927120000_multi_customer_allbooked_batch.sql",
           "sha": "ce9924b6ab56994ed55620ad1d672362d1d24edb"
+        },
+        {
+          "path": "supabase/migrations/20260927124500_harden_allbooked_auth_compensation.sql",
+          "sha": "19291f5711e46041eb2c86f96cf712db46fb11c6"
         }
       ]
     },
