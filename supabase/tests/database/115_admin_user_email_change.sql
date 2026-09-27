@@ -45,7 +45,7 @@ select is((select count(*) from public.audit_logs where correlation_id='19100000
 set local role authenticated;
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000193',true);
 select throws_ok(
- $select public.admin_prepare_user_email_change('00000000-0000-0000-0000-000000000191','00000000-0000-0000-0000-000000000192','other@example.invalid','Próba',gen_random_uuid())$,
+ $$select public.admin_prepare_user_email_change('00000000-0000-0000-0000-000000000191','00000000-0000-0000-0000-000000000192','other@example.invalid','Próba',gen_random_uuid())$$,
  '42501','permission denied for function admin_prepare_user_email_change','Normál authenticated user közvetlenül nem hívhatja az RPC-t'
 );
 reset role;
