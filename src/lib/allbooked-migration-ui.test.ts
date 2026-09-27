@@ -14,15 +14,17 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
   it("az általános import megtartja a production guardot és a kompenzációt", () => {
     const route = read("../app/api/internal/production-customer-migration-import/route.ts");
     expect(route).toContain("isApprovedCustomerMigrationTarget");
-    expect(route).toContain("admin_import_allbooked_customer");
-    expect(route).toContain("admin_rollback_empty_allbooked_profile");
-    expect(route).toContain("deleteUser(userId)");
+    expect(route).toContain("admin_import_allbooked_batch");
+    expect(route).toContain("compensateCreatedAuth");
+    expect(route).toContain("deleteUser(id)");
     expect(route).toContain("requiresManualCleanup: true");
-    expect(route).toContain("orphanedUserId: userId");
+    expect(route).toContain("batchImportConfirmation");
     expect(route).toContain("Minden Tréningterem-foglalást egyéni vagy csoportos típusba kell sorolni.");
     expect(route).toContain("note: booking.note");
     const form = read("../app/(protected)/admin/migracio/dry-run-form.tsx");
     expect(form).toContain("DRY-RUN PASS");
+    expect(form).toContain("Egy fájl egy vagy több foglaló foglalásait is tartalmazhatja.");
+    expect(form).toContain("result.importApproval.users.map");
     expect(form).toContain("még nem történt adatbetöltés");
     expect(form).toContain("Tényleges import indítása");
     expect(form).toContain("Import feltételei:");
