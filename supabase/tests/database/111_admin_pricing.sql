@@ -1,6 +1,6 @@
 begin;
 
-select plan(64);
+select plan(67);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -30,7 +30,8 @@ insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000182','pricing-central@example.invalid','{"first_name":"Central","last_name":"User"}'),
  ('00000000-0000-0000-0000-000000000183','pricing-training@example.invalid','{"first_name":"Training","last_name":"User"}'),
  ('00000000-0000-0000-0000-000000000184','pricing-fixed@example.invalid','{"first_name":"Fixed","last_name":"User"}'),
- ('00000000-0000-0000-0000-000000000185','pricing-booking@example.invalid','{"first_name":"Booking","last_name":"User"}');
+ ('00000000-0000-0000-0000-000000000185','pricing-booking@example.invalid','{"first_name":"Booking","last_name":"User"}'),
+ ('00000000-0000-0000-0000-000000000186','pricing-retro@example.invalid','{"first_name":"Retro","last_name":"User"}');
 update public.profiles set role='admin' where id='00000000-0000-0000-0000-000000000181';
 
 insert into public.user_price_overrides(user_id,hourly_rate_huf,valid_from,reason,created_by) values
@@ -102,8 +103,23 @@ select is(
   'A díjelőnézet explicit booking felülírása megelőzi a közös resolver user/terem szabályait'
 );
 select lives_ok(
-  $$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$$,
+  $q$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$q$,
   'Admin auditált jövőbeli user óradíjat állíthat be'
+);
+select lives_ok(
+  $q$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000186',0,date_trunc('month',timezone('Europe/Budapest',now()))::date,'Tulajdonosi díj',gen_random_uuid())$q$,
+  'Admin az aktuális hónap elejétől visszamenőleg 0 Ft-os user óradíjat állíthat'
+);
+reset role;
+select is(
+  (select hourly_rate_huf from public.user_price_overrides where user_id='00000000-0000-0000-0000-000000000186' and date_trunc('month',timezone('Europe/Budapest',now()))::date between valid_from and coalesce(valid_to,'infinity'::date) order by valid_from desc limit 1),
+  0::bigint,
+  'A visszamenőleges 0 Ft-os user óradíj ténylegesen érvényes'
+);
+select is(
+  (select count(*) from public.audit_logs where action='pricing.user_hourly_rate_set' and entity_id='00000000-0000-0000-0000-000000000186' and reason='Tulajdonosi díj'),
+  1::bigint,
+  'A visszamenőleges user díj auditált'
 );
 select lives_ok(
   $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,'Egyedi booking teszt','42000000-0000-0000-0000-000000000182')$$,
