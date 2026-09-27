@@ -36,7 +36,7 @@ describe("monthly hours export", () => {
   it("az összesítő a ténylegesen alkalmazott egyedi óradíjakat mutatja, nem átlagot", () => {
     expect(appliedHourlyRatesText({ pricing_breakdown: [
       { hourly_rate_huf: 5000 }, { hourly_rate_huf: 2500 }, { hourly_rate_huf: 2500 },
-    ] })).toBe("2 500 / 5 000 Ft");
+    ] })).toBe("2 500 / 5 000 Ft");
   });
   it("a részletes CSV-ben hónap, dátum, helyiség és időintervallum is szerepel", () => {
     const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "2.Szoba", booking_title: "Kovács Anna", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50", rate_source: "booking_override", hourly_rate_huf: 4300, amount_huf: 6450, pricing_state: "snapshot", revision_number: 3 }]);
