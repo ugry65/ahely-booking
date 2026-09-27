@@ -22,15 +22,27 @@ begin
   if not exists (select 1 from public.profiles where id=p_user_id and lower(email)=lower(trim(p_expected_email)) and role='user') then
     raise exception 'A profil azonossága nem bizonyítható.' using errcode='P0001';
   end if;
-  if exists (select 1 from public.bookings where user_id=p_user_id or created_by=p_user_id)
+  if exists (select 1 from public.bookings where user_id=p_user_id or created_by=p_user_id or hourly_rate_override_set_by=p_user_id)
      or exists (select 1 from public.allbooked_migration_bookings where user_id=p_user_id or imported_by=p_user_id)
      or exists (select 1 from public.access_group_members where user_id=p_user_id)
      or exists (select 1 from public.user_room_permissions where user_id=p_user_id)
-     or exists (select 1 from public.user_price_overrides where user_id=p_user_id)
-     or exists (select 1 from public.user_pricing_policies where user_id=p_user_id)
-     or exists (select 1 from public.monthly_settlements where user_id=p_user_id)
+     or exists (select 1 from public.user_price_overrides where user_id=p_user_id or created_by=p_user_id)
+     or exists (select 1 from public.user_pricing_policies where user_id=p_user_id or created_by=p_user_id)
+     or exists (select 1 from public.monthly_settlements where user_id=p_user_id or closed_by=p_user_id)
      or exists (select 1 from public.booking_series where owner_user_id=p_user_id or created_by=p_user_id)
      or exists (select 1 from public.booking_email_outbox where recipient_user_id=p_user_id or actor_user_id=p_user_id)
+     or exists (select 1 from public.booking_cancellations where cancelled_by=p_user_id)
+     or exists (select 1 from public.booking_operation_requests where actor_user_id=p_user_id)
+     or exists (select 1 from public.booking_scope_operations where actor_user_id=p_user_id)
+     or exists (select 1 from public.booking_title_requests where actor_user_id=p_user_id)
+     or exists (select 1 from public.app_settings where updated_by=p_user_id)
+     or exists (select 1 from public.export_runs where created_by=p_user_id)
+     or exists (select 1 from public.payments where created_by=p_user_id)
+     or exists (select 1 from public.pricing_tiers where created_by=p_user_id)
+     or exists (select 1 from public.retention_candidates where approved_by=p_user_id)
+     or exists (select 1 from public.settlement_adjustments where created_by=p_user_id)
+     or exists (select 1 from public.settlement_revisions where calculated_by=p_user_id)
+     or exists (select 1 from public.special_room_rates where created_by=p_user_id)
      or exists (select 1 from public.audit_logs where actor_user_id=p_user_id) then
     raise exception 'A frissen létrehozott profilhoz üzleti adat kapcsolódik; automatikus takarítás tiltva.' using errcode='P0001';
   end if;
