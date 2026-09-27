@@ -10,6 +10,7 @@ export type MonthlyHoursRow = {
   normal_minutes: number;
   special_minutes: number;
   calculated_due_huf: number;
+  pricing_breakdown: Array<{ hourly_rate_huf?: number | string | null }>;
   pricing_state: "live" | "snapshot";
   revision_id: string | null;
   revision_number: number | null;
@@ -73,12 +74,24 @@ export function decimalComma(value: number | string): string {
   return Number.isFinite(number) ? number.toFixed(2).replace(".", ",") : "0,00";
 }
 
+export function appliedHourlyRates(row: Pick<MonthlyHoursRow, "pricing_breakdown">): number[] {
+  return Array.from(new Set((row.pricing_breakdown ?? [])
+    .map((item) => Number(item.hourly_rate_huf))
+    .filter((rate) => Number.isFinite(rate) && rate >= 0)))
+    .sort((a, b) => a - b);
+}
+
+export function appliedHourlyRatesText(row: Pick<MonthlyHoursRow, "pricing_breakdown">): string {
+  const rates = appliedHourlyRates(row);
+  return rates.length ? rates.map((rate) => rate.toLocaleString("hu-HU")).join(" / ") + " Ft" : "—";
+}
+
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
-  const header = ["Hónap", "Felhasználó", "Összes óra", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
+  const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
-      row.month, row.user_name, decimalComma(row.total_hours), decimalComma(row.normal_minutes / 60),
+      row.month, row.user_name, decimalComma(row.total_hours), appliedHourlyRates(row).join(" / "), decimalComma(row.normal_minutes / 60),
       decimalComma(row.special_minutes / 60), String(row.calculated_due_huf),
       row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet", row.revision_number ? String(row.revision_number) : "",
     ].map(csvCell).join(";"));
