@@ -108,6 +108,51 @@ export async function updateUserProfile(formData: FormData) {
   redirect(resultUrl("uzenet", "A felhasználói adatok elmentve.", formData));
 }
 
+export async function updateUserEmail(formData: FormData) {
+  await requireAdmin();
+  const userId = uuid(formData.get("userId"));
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!userId || !/^\\S+@\\S+\\.\\S+$/.test(email) || !reason) {
+    redirect(resultUrl("hiba", "Érvényes új e-mail-cím és indok megadása kötelező.", formData));
+  }
+
+  const admin = createAdminClient();
+  const correlationId = crypto.randomUUID();
+  const { data: prepared, error: prepareError } = await admin.rpc("admin_prepare_user_email_change", {
+    p_user_id: userId,
+    p_new_email: email,
+    p_reason: reason,
+    p_correlation_id: correlationId,
+  });
+  if (prepareError || !prepared) {
+    redirect(resultUrl("hiba", safeRpcMessage(prepareError, "Az e-mail módosításának előkészítése nem sikerült."), formData));
+  }
+
+  const before = prepared as { old_email?: string; new_email?: string };
+  const { error: authError } = await admin.auth.admin.updateUserById(userId, { email });
+  if (authError) {
+    redirect(resultUrl("hiba", "A bejelentkezési e-mail módosítása nem sikerült. A profil nem változott.", formData));
+  }
+
+  const { error: finalizeError } = await admin.rpc("admin_finalize_user_email_change", {
+    p_user_id: userId,
+    p_old_email: before.old_email ?? "",
+    p_new_email: email,
+    p_reason: reason,
+    p_correlation_id: correlationId,
+  });
+  if (finalizeError) {
+    const rollback = await admin.auth.admin.updateUserById(userId, { email: before.old_email ?? "" });
+    const message = rollback.error
+      ? "Az e-mail módosítása közben konzisztenciahiba történt. Adminisztrátori ellenőrzés szükséges."
+      : "Az e-mail módosítása nem sikerült; a bejelentkezési cím visszaállt az eredeti értékre.";
+    redirect(resultUrl("hiba", message, formData));
+  }
+
+  redirect(resultUrl("uzenet", `Az e-mail-cím módosítva: ${email}`, formData));
+}
+
 export async function setUserHourlyRate(formData: FormData) {
   await requireAdmin();
   const userId = uuid(formData.get("userId"));
