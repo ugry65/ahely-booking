@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import { passwordRecoveryRedirect } from "@/lib/auth-urls";
 import { checkboxValue } from "@/lib/form-values";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -237,12 +238,10 @@ export async function sendPasswordReset(formData: FormData) {
     redirect(resultUrl("hiba", safeRpcMessage(auditError, "Az aktiváló/jelszóbeállító link nem küldhető."), formData));
   }
 
-  const siteUrl = process.env.SITE_URL?.replace(/\/$/, "");
-  if (!siteUrl) redirect(resultUrl("hiba", "A jelszóbeállító link nem küldhető: hiányzik a SITE_URL konfiguráció.", formData));
+  const redirectTo = passwordRecoveryRedirect(process.env.SITE_URL);
+  if (!redirectTo) redirect(resultUrl("hiba", "A jelszóbeállító link nem küldhető: hiányzik a SITE_URL konfiguráció.", formData));
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/auth/confirm`,
-  });
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
   redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
 }
