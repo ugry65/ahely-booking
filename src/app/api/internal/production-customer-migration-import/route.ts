@@ -117,7 +117,7 @@ export async function POST(request: Request) {
   const userIds = new Map<string, string>();
   async function compensateCreatedAuth() {
     const failures: string[] = [];
-    for (const id of [...createdAuthIds].reverse()) {
+    for (const id of [...createdAuthUsers].reverse()) {
       const { error } = await admin.auth.admin.deleteUser(id);
       if (error) failures.push(id);
     }
