@@ -23,7 +23,7 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
 
     const createUserIndex = route.indexOf("admin.auth.admin.createUser");
     const trackCreatedIndex = route.indexOf("createdAuthUsers.push({ id: data.user.id, email: user.email })");
-    const existingUserIndex = route.indexOf("userIds.set(user.email, existing.id)");
+    const existingUserIndex = route.indexOf("userIds.set(user.email, existingId)");
     const cleanupIndex = route.indexOf("admin_cleanup_failed_allbooked_auth_profile");
     const authDeleteIndex = route.indexOf("deleteUser(created.id)");
 
