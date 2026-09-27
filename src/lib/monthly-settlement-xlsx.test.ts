@@ -13,7 +13,7 @@ describe("monthly settlement XLSX export", () => {
     expect(raw).toContain("Elszámolási összesítés");
     expect(raw).toContain("Admin UAT");
     expect(raw).toContain("Óradíj");
-    expect(raw).toContain("2 500 / 5 000 Ft");
+    expect(raw).toContain("2 500 / 5 000 Ft");
     expect(raw).toContain("Kijelölt hónapok mindösszesen");
     expect(raw).toContain('formatCode="#,##0 &quot;Ft&quot;"');
   });
