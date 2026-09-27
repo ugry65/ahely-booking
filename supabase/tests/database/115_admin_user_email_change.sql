@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(10);
 
 select has_function('public','admin_prepare_user_email_change',array['uuid','text','text','uuid'],'E-mail módosítás előellenőrző RPC létezik');
 select has_function('public','admin_finalize_user_email_change',array['uuid','text','text','text','uuid'],'E-mail módosítás véglegesítő RPC létezik');
@@ -29,7 +29,10 @@ select throws_ok(
  '22023','Az indok kötelező.','Indok kötelező'
 );
 
+reset role;
 update auth.users set email='new-user@example.invalid' where id='00000000-0000-0000-0000-000000000192';
+set local role service_role;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000191',true);
 select lives_ok(
  $$select public.admin_finalize_user_email_change('00000000-0000-0000-0000-000000000192','old-user@example.invalid','new-user@example.invalid','Címváltás','19100000-0000-0000-0000-000000000001')$$,
  'Az Auth módosítás után a profil véglegesíthető'
