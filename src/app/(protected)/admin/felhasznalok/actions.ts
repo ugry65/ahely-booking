@@ -113,7 +113,7 @@ export async function updateUserEmail(formData: FormData) {
   const userId = uuid(formData.get("userId"));
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const reason = String(formData.get("reason") ?? "").trim();
-  if (!userId || !/^\\S+@\\S+\\.\\S+$/.test(email) || !reason) {
+  if (!userId || !/^\S+@\S+\.\S+$/.test(email) || !reason) {
     redirect(resultUrl("hiba", "Érvényes új e-mail-cím és indok megadása kötelező.", formData));
   }
 
