@@ -1,6 +1,6 @@
 begin;
 
-select plan(64);
+select plan(67);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -102,8 +102,22 @@ select is(
   'A díjelőnézet explicit booking felülírása megelőzi a közös resolver user/terem szabályait'
 );
 select lives_ok(
-  $$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$$,
+  $select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$,
   'Admin auditált jövőbeli user óradíjat állíthat be'
+);
+select lives_ok(
+  $select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000182',0,date_trunc('month',timezone('Europe/Budapest',now()))::date,'Tulajdonosi díj',gen_random_uuid())$,
+  'Admin az aktuális hónap elejétől visszamenőleg 0 Ft-os user óradíjat állíthat'
+);
+select is(
+  (select hourly_rate_huf from public.user_price_overrides where user_id='00000000-0000-0000-0000-000000000182' and date_trunc('month',timezone('Europe/Budapest',now()))::date between valid_from and coalesce(valid_to,'infinity'::date) order by valid_from desc limit 1),
+  0::bigint,
+  'A visszamenőleges 0 Ft-os user óradíj ténylegesen érvényes'
+);
+select is(
+  (select count(*) from public.audit_logs where action='pricing.user_hourly_rate_set' and entity_id='00000000-0000-0000-0000-000000000182' and reason='Tulajdonosi díj'),
+  1::bigint,
+  'A visszamenőleges user díj auditált'
 );
 select lives_ok(
   $$select public.admin_set_booking_hourly_rate_override('41000000-0000-0000-0000-000000000183',3600,'Egyedi booking teszt','42000000-0000-0000-0000-000000000182')$$,
