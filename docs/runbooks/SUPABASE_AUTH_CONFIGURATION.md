@@ -9,7 +9,7 @@ Ezt a listát minden staging és production Supabase-projektnél külön végre 
 - Anonymous sign-in tiltott.
 - Meghívó és jelszó-visszaállító e-mail sablon ellenőrzött.
 - Productionben saját SMTP beállítva és próbalevéllel ellenőrizve.
-- A jelszóházirend legalább 12 karaktert követel.
+- A jelszóházirend legalább 8 karaktert, legalább egy kisbetűt, egy nagybetűt és egy számot követel. Speciális karakter nem kötelező.
 
 ## URL-ek
 
