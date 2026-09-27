@@ -1,0 +1,125 @@
+name: Production application release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Production release ellenőrzése vagy deploy"
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - deploy
+      commit_sha:
+        description: "A release-re kijelölt main commit teljes SHA-ja"
+        required: true
+        type: string
+      confirmation:
+        description: "Deploy módnál írd be: DEPLOY-PRODUCTION"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-application-release
+  cancel-in-progress: false
+
+jobs:
+  production-application-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    env:
+      EXPECTED_VERCEL_PROJECT_ID: prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo
+      EXPECTED_SUPABASE_PROJECT_REF: yasrmxwjojepessivhmc
+      EXPECTED_SITE_URL: https://foglalas.a-hely.com
+      VERCEL_PROJECT_ID: ${{ secrets.PRODUCTION_VERCEL_PROJECT_ID }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
+      PRODUCTION_SITE_URL: ${{ vars.PRODUCTION_SITE_URL }}
+
+    steps:
+      - name: Check out requested release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+
+      - name: Validate release request
+        env:
+          MODE: ${{ inputs.mode }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "commit_sha must be a full 40-character lowercase Git SHA." >&2
+            exit 1
+          fi
+
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          if [ "$ACTUAL_SHA" != "$REQUESTED_SHA" ]; then
+            echo "Checked out SHA does not match requested release SHA." >&2
+            exit 1
+          fi
+
+          git fetch origin main
+          if ! git merge-base --is-ancestor "$REQUESTED_SHA" origin/main; then
+            echo "Requested release SHA is not part of origin/main." >&2
+            exit 1
+          fi
+
+          if [ "$MODE" = "deploy" ] && [ "$CONFIRMATION" != "DEPLOY-PRODUCTION" ]; then
+            echo "Production deploy requires exact confirmation: DEPLOY-PRODUCTION" >&2
+            exit 1
+          fi
+
+      - name: Validate production identity configuration
+        run: |
+          set -euo pipefail
+
+          required=(VERCEL_PROJECT_ID VERCEL_ORG_ID VERCEL_TOKEN PRODUCTION_SUPABASE_PROJECT_REF PRODUCTION_SITE_URL)
+          for name in "${required[@]}"; do
+            if [ -z "${!name:-}" ]; then
+              echo "Missing production release configuration: $name" >&2
+              exit 1
+            fi
+          done
+
+          [ "$VERCEL_PROJECT_ID" = "$EXPECTED_VERCEL_PROJECT_ID" ] || {
+            echo "Refusing release: unexpected Vercel project ID." >&2
+            exit 1
+          }
+          [ "$PRODUCTION_SUPABASE_PROJECT_REF" = "$EXPECTED_SUPABASE_PROJECT_REF" ] || {
+            echo "Refusing release: unexpected Supabase production project ref." >&2
+            exit 1
+          }
+          [ "$PRODUCTION_SITE_URL" = "$EXPECTED_SITE_URL" ] || {
+            echo "Refusing release: unexpected production site URL." >&2
+            exit 1
+          }
+
+      - name: Dry-run summary
+        if: ${{ inputs.mode == 'dry-run' }}
+        run: |
+          {
+            echo "## Production application release dry-run"
+            echo "- commit: \`${{ inputs.commit_sha }}\`"
+            echo "- Vercel project identity: verified"
+            echo "- Supabase project identity: verified"
+            echo "- canonical site URL: verified"
+            echo "- no deployment performed"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Stop before deploy until activation is explicitly completed
+        if: ${{ inputs.mode == 'deploy' }}
+        run: |
+          echo "Deploy mode is intentionally fail-closed while issue #241 activation prerequisites are incomplete." >&2
+          echo "Required before enabling deployment: production Vercel Git auto-deploy isolation, GitHub production reviewer verification, and controlled dry-run evidence." >&2
+          exit 1
