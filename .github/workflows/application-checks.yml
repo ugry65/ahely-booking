@@ -51,6 +51,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: bash ./scripts/test-vercel-cron-policy.sh
       - run: bash ./scripts/test-production-db-url-guard.sh
       - run: bash ./scripts/test-production-backup-trigger.sh
       - run: bash ./scripts/test-production-backup-drill.sh
