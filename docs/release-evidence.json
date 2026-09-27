@@ -58,7 +58,7 @@
         },
         {
           "path": "supabase/migrations/20260927124500_harden_allbooked_auth_compensation.sql",
-          "sha": "8063db09c8d306ed6eaa82729656de1c7846b7cf"
+          "sha": "3f8965ec678f04501d5881ca195d01bbe04bce73"
         }
       ]
     },
