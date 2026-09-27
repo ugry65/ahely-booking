@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import {
   ALLBOOKED_ROOM_MAPPING,
+  batchImportConfirmation,
   buildAllBookedDryRun,
   customerImportConfirmation,
   validateAllBookedCustomerImport,
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   if (!(file instanceof File) || !file.size) {
-    return NextResponse.json({ error: "Válassz egy ügyfélhez tartozó AllBooked CSV fájlt." }, { status: 400 });
+    return NextResponse.json({ error: "Válassz AllBooked CSV fájlt." }, { status: 400 });
   }
   if (file.size > 5_000_000) {
     return NextResponse.json({ error: "Az import CSV legfeljebb 5 MB lehet." }, { status: 413 });
@@ -66,13 +67,15 @@ export async function POST(request: Request) {
 
   const dryRun = buildAllBookedDryRun(await file.text(), ALLBOOKED_ROOM_MAPPING);
   const approved = validateAllBookedCustomerImport(dryRun);
-  if (!approved.valid || !approved.user || !approved.confirmation) {
-    return NextResponse.json({ error: approved.issues[0] ?? "A CSV nem alkalmas ügyfélmigrációra.", dryRun }, { status: 422 });
+  if (!approved.valid || !approved.confirmation) {
+    return NextResponse.json({ error: approved.issues[0] ?? "A CSV nem alkalmas migrációra.", dryRun }, { status: 422 });
   }
 
-  const confirmation = String(formData.get("confirmation") ?? "");
-  if (confirmation !== customerImportConfirmation(approved.user.email, dryRun.bookings.length)) {
-    return NextResponse.json({ error: "A production import megerősítő szövege nem egyezik." }, { status: 400 });
+  const expectedConfirmation = dryRun.users.length === 1
+    ? customerImportConfirmation(dryRun.users[0].email, dryRun.bookings.length)
+    : batchImportConfirmation(dryRun.users.length, dryRun.bookings.length);
+  if (String(formData.get("confirmation") ?? "") !== expectedConfirmation) {
+    return NextResponse.json({ error: "Az import megerősítő szövege nem egyezik." }, { status: 400 });
   }
 
   const trainingUseTypes = parseTrainingUseTypes(formData.get("trainingUseTypes"));
@@ -86,95 +89,99 @@ export async function POST(request: Request) {
   }
 
   const admin = createAdminClient();
-  const { data: existingProfile, error: profileError } = await admin
+  const emails = dryRun.users.map((user) => user.email);
+  const { data: profiles, error: profilesError } = await admin
     .from("profiles")
     .select("id,email")
-    .eq("email", approved.user.email)
-    .maybeSingle<{ id: string; email: string }>();
-  if (profileError) {
-    return NextResponse.json({ error: "A célprofil előellenőrzése nem sikerült." }, { status: 500 });
+    .in("email", emails);
+  if (profilesError) return NextResponse.json({ error: "A célprofilok előellenőrzése nem sikerült." }, { status: 500 });
+
+  const authByEmail = new Map<string, string>();
+  for (let page = 1; page <= 100; page += 1) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
+    if (error) return NextResponse.json({ error: "Az Auth előellenőrzése nem sikerült." }, { status: 500 });
+    for (const user of data.users) if (user.email) authByEmail.set(user.email.toLowerCase(), user.id);
+    if (data.users.length < 100) break;
   }
 
-  let userId = existingProfile?.id ?? null;
-  let authCreated = false;
-  if (userId) {
-    const { data, error } = await admin.auth.admin.getUserById(userId);
-    if (error || data.user?.email?.toLowerCase() !== approved.user.email) {
-      return NextResponse.json({ error: "A meglévő Auth/profile azonosság nem bizonyítható." }, { status: 409 });
+  const profileByEmail = new Map((profiles ?? []).map((profile) => [profile.email.toLowerCase(), profile.id]));
+  for (const user of dryRun.users) {
+    const profileId = profileByEmail.get(user.email);
+    const authId = authByEmail.get(user.email);
+    if ((profileId && profileId !== authId) || (!profileId && authId)) {
+      return NextResponse.json({ error: `${user.email}: a meglévő Auth/profile azonosság nem bizonyítható.` }, { status: 409 });
     }
-  } else {
-    for (let page = 1; page <= 100; page += 1) {
-      const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 100 });
-      if (error) return NextResponse.json({ error: "Az Auth előellenőrzése nem sikerült." }, { status: 500 });
-      if (data.users.some((user) => user.email?.toLowerCase() === approved.user!.email)) {
-        return NextResponse.json({ error: "Az e-mail már létezik az Authban, de konzisztens profil nem található." }, { status: 409 });
-      }
-      if (data.users.length < 100) break;
+  }
+
+  const createdAuthIds: string[] = [];
+  const userIds = new Map<string, string>();
+  async function compensateCreatedAuth() {
+    const failures: string[] = [];
+    for (const id of [...createdAuthIds].reverse()) {
+      const { error } = await admin.auth.admin.deleteUser(id);
+      if (error) failures.push(id);
+    }
+    return failures;
+  }
+
+  for (const user of dryRun.users) {
+    const existingId = profileByEmail.get(user.email);
+    if (existingId) {
+      userIds.set(user.email, existingId);
+      continue;
     }
     const { data, error } = await admin.auth.admin.createUser({
-      email: approved.user.email,
+      email: user.email,
       password: generateTemporaryPassword(),
       email_confirm: true,
-      user_metadata: {
-        first_name: approved.user.firstName,
-        last_name: approved.user.lastName,
-        must_change_password: true,
-      },
+      user_metadata: { first_name: user.firstName, last_name: user.lastName, must_change_password: true },
     });
     if (error || !data.user) {
-      return NextResponse.json({ error: "A production Auth-felhasználó létrehozása nem sikerült." }, { status: 500 });
+      const failures = await compensateCreatedAuth();
+      return NextResponse.json({
+        error: failures.length
+          ? "Az Auth-előkészítés meghiúsult, és a kompenzáló takarítás nem volt teljes. Az importot állítsd le; kézi adminisztrátori ellenőrzés szükséges."
+          : "Az Auth-előkészítés meghiúsult; a létrehozott ideiglenes Auth-fiókok visszavonása megtörtént.",
+        requiresManualCleanup: failures.length > 0,
+      }, { status: 500 });
     }
-    userId = data.user.id;
-    authCreated = true;
+    createdAuthIds.push(data.user.id);
+    userIds.set(user.email, data.user.id);
   }
 
-  const payload = dryRun.bookings.map((booking) => ({
-    sourceFingerprint: booking.sourceFingerprint,
-    roomName: booking.roomTarget,
-    startLocal: booking.startLocal,
-    endLocal: booking.endLocal,
-    durationMinutes: booking.durationMinutes,
-    bookingTitle: booking.bookingTitle,
-    note: booking.note,
-    useType: booking.roomTarget === "Tréningterem" ? trainingUseTypes[booking.sourceFingerprint] : "individual",
+  const customers = approved.users.map(({ user, requiredAccessGroups }) => ({
+    userId: userIds.get(user.email),
+    email: user.email,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    phone: user.phone,
+    accessGroupNames: requiredAccessGroups,
+    bookings: dryRun.bookings.filter((booking) => booking.holderEmail === user.email).map((booking) => ({
+      sourceFingerprint: booking.sourceFingerprint,
+      roomName: booking.roomTarget,
+      startLocal: booking.startLocal,
+      endLocal: booking.endLocal,
+      durationMinutes: booking.durationMinutes,
+      bookingTitle: booking.bookingTitle,
+      note: booking.note,
+      useType: booking.roomTarget === "Tréningterem" ? trainingUseTypes[booking.sourceFingerprint] : "individual",
+    })),
   }));
-  const { data: reconciliation, error: importError } = await admin.rpc("admin_import_allbooked_customer", {
+
+  const { data: reconciliation, error: importError } = await admin.rpc("admin_import_allbooked_batch", {
     p_actor_id: actor.id,
-    p_user_id: userId,
-    p_email: approved.user.email,
-    p_first_name: approved.user.firstName,
-    p_last_name: approved.user.lastName,
-    p_phone: approved.user.phone,
-    p_access_group_names: approved.requiredAccessGroups,
-    p_bookings: payload,
+    p_customers: customers,
     p_correlation_id: crypto.randomUUID(),
   });
 
   if (importError) {
-    if (authCreated) {
-      const { data: rolledBack, error: rollbackError } = await admin.rpc("admin_rollback_empty_allbooked_profile", {
-        p_actor_id: actor.id,
-        p_user_id: userId,
-        p_email: approved.user.email,
-      });
-      if (!rollbackError && rolledBack === true) {
-        const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
-        if (deleteError) {
-          console.error("AllBooked Auth compensation failed", { userId, code: deleteError.code ?? null });
-          return NextResponse.json({
-            error: "Az import meghiúsult, és az új Auth-fiók automatikus törlése nem sikerült. Az importot állítsd le; kézi adminisztrátori takarítás szükséges.",
-            requiresManualCleanup: true,
-            orphanedUserId: userId,
-          }, { status: 500 });
-        }
-      } else {
-        console.error("AllBooked profile compensation failed", { userId, code: rollbackError?.code ?? null });
-        return NextResponse.json({
-          error: "Az import meghiúsult, és az új profil automatikus visszavonása nem sikerült. Az importot állítsd le; kézi adminisztrátori takarítás szükséges.",
-          requiresManualCleanup: true,
-          orphanedUserId: userId,
-        }, { status: 500 });
-      }
+    const failures = await compensateCreatedAuth();
+    if (failures.length) {
+      console.error("AllBooked batch Auth compensation failed", { userIds: failures });
+      return NextResponse.json({
+        error: "Az adatbázis-import visszagördült, de néhány új Auth-fiók automatikus törlése nem sikerült. Az importot állítsd le; kézi adminisztrátori takarítás szükséges.",
+        requiresManualCleanup: true,
+      }, { status: 500 });
     }
     return NextResponse.json({ error: safeImportError(importError) }, { status: 409 });
   }

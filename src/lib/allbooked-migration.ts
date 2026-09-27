@@ -76,6 +76,11 @@ export const MAX_ALLBOOKED_CUSTOMER_BOOKINGS = 2_000;
 
 export type AllBookedCustomerImportApproval = {
   valid: boolean;
+  users: Array<{
+    user: NormalizedAllBookedUser;
+    bookingCount: number;
+    requiredAccessGroups: string[];
+  }>;
   user: NormalizedAllBookedUser | null;
   requiredAccessGroups: string[];
   trainingBookings: NormalizedAllBookedBooking[];
@@ -87,32 +92,47 @@ export function customerImportConfirmation(email: string, bookingCount: number) 
   return `IMPORT ${email.toLowerCase()} ${bookingCount}`;
 }
 
+export function batchImportConfirmation(userCount: number, bookingCount: number) {
+  return `IMPORT ${userCount} USERS ${bookingCount} BOOKINGS`;
+}
+
 export function validateAllBookedCustomerImport(result: AllBookedDryRunResult): AllBookedCustomerImportApproval {
-  const user = result.users.length === 1 ? result.users[0] : null;
   const issues: string[] = [];
   if (!result.valid) issues.push("A CSV dry-run hibát tartalmaz.");
-  if (!user) issues.push("Egy CSV pontosan egy foglaló adatait tartalmazhatja.");
+  if (result.users.length < 1) issues.push("A CSV nem tartalmaz importálható foglalót.");
   if (result.bookings.length < 1) issues.push("Legalább egy foglalás szükséges az ügyfélmigrációhoz.");
-  if (result.bookings.length > MAX_ALLBOOKED_CUSTOMER_BOOKINGS) {
-    issues.push(`Egy ügyfélnél legfeljebb ${MAX_ALLBOOKED_CUSTOMER_BOOKINGS} foglalás importálható egyszerre.`);
-  }
-  if (user && result.bookings.some((booking) => booking.holderEmail !== user.email)) {
-    issues.push("A foglalások nem ugyanahhoz az ügyfélhez tartoznak.");
-  }
 
-  const requiredAccessGroups = [...new Set(result.bookings.map((booking) => ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING[booking.roomTarget]))]
-    .filter((group): group is string => Boolean(group))
-    .sort((left, right) => left.localeCompare(right, "hu"));
+  const users = result.users.map((user) => {
+    const bookings = result.bookings.filter((booking) => booking.holderEmail === user.email);
+    if (bookings.length > MAX_ALLBOOKED_CUSTOMER_BOOKINGS) {
+      issues.push(`${user.email}: legfeljebb ${MAX_ALLBOOKED_CUSTOMER_BOOKINGS} foglalás importálható egyszerre.`);
+    }
+    const requiredAccessGroups = [...new Set(bookings.map((booking) => ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING[booking.roomTarget]))]
+      .filter((group): group is string => Boolean(group))
+      .sort((left, right) => left.localeCompare(right, "hu"));
+    return { user, bookingCount: bookings.length, requiredAccessGroups };
+  });
+
+  if (result.bookings.some((booking) => !result.users.some((user) => user.email === booking.holderEmail))) {
+    issues.push("Legalább egy foglaláshoz nem tartozik egyértelmű foglaló.");
+  }
   if (result.bookings.some((booking) => !ALLBOOKED_ROOM_ACCESS_GROUP_MAPPING[booking.roomTarget])) {
     issues.push("Legalább egy helyiséghez nincs kanonikus helyiségcsoport.");
   }
 
+  const requiredAccessGroups = [...new Set(users.flatMap((item) => item.requiredAccessGroups))]
+    .sort((left, right) => left.localeCompare(right, "hu"));
+  const singleUser = result.users.length === 1 ? result.users[0] : null;
+
   return {
     valid: issues.length === 0,
-    user,
+    users,
+    user: singleUser,
     requiredAccessGroups,
     trainingBookings: result.bookings.filter((booking) => booking.roomTarget === "Tréningterem"),
-    confirmation: user ? customerImportConfirmation(user.email, result.bookings.length) : null,
+    confirmation: result.users.length === 1 && singleUser
+      ? customerImportConfirmation(singleUser.email, result.bookings.length)
+      : batchImportConfirmation(result.users.length, result.bookings.length),
     issues,
   };
 }

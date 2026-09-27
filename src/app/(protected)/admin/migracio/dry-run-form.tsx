@@ -35,6 +35,7 @@ type DryRunResult = {
   importApproval: {
     valid: boolean;
     issues: string[];
+    users: { user: DryRunResult["users"][number]; bookingCount: number; requiredAccessGroups: string[] }[];
     user: DryRunResult["users"][number] | null;
     requiredAccessGroups: string[];
     trainingBookings: DryRunBooking[];
@@ -123,8 +124,8 @@ export function MigrationDryRunForm() {
   return (
     <div className="stack">
       <form onSubmit={submit} className="card stack migration-card">
-        <h2>Egy ügyfél AllBooked CSV-jének ellenőrzése</h2>
-        <p className="muted">Egy fájl pontosan egy ügyfél foglalásait tartalmazza. A dry-run nem ír adatbázisba és nem küld e-mailt.</p>
+        <h2>AllBooked CSV ellenőrzése</h2>
+        <p className="muted">Egy fájl egy vagy több foglaló foglalásait is tartalmazhatja. A dry-run nem ír adatbázisba és nem küld e-mailt.</p>
         <label>
           Booking export CSV
           <input name="file" type="file" accept=".csv,text/csv" required onChange={(event) => selectFile(event.target.files?.[0] ?? null)} />
@@ -136,12 +137,12 @@ export function MigrationDryRunForm() {
       {result ? <section className="card stack migration-card">
         <div><p className="eyebrow">Dry-run eredmény – még nem történt adatbetöltés</p><h2>{result.importApproval.valid ? "DRY-RUN PASS" : "ELLENŐRZÉST IGÉNYEL"}</h2></div>
         <div className="admin-grid">
-          <p><strong>Ügyfél:</strong> {result.importApproval.user ? `${result.importApproval.user.lastName} ${result.importApproval.user.firstName}` : "—"}</p>
-          <p><strong>E-mail:</strong> {result.importApproval.user?.email ?? "—"}</p>
+          <p><strong>Felhasználók:</strong> {result.summary.normalizedUsers}</p>
           <p><strong>Foglalások:</strong> {result.summary.normalizedBookings}</p>
+          <p><strong>CSV sorok:</strong> {result.summary.sourceRows}</p>
           <p><strong>Összes óra:</strong> {result.summary.totalHours}</p>
         </div>
-        <div><h3>Automatikusan szükséges helyiségcsoportok</h3><p>{result.importApproval.requiredAccessGroups.join(", ") || "—"}</p></div>
+        <div><h3>Felhasználók és automatikus helyiségcsoportok</h3>{result.importApproval.users.map(({ user, bookingCount, requiredAccessGroups }) => <p key={user.email}><strong>{user.lastName} {user.firstName}</strong> – {user.email} – {bookingCount} foglalás – {requiredAccessGroups.join(", ") || "—"}</p>)}</div>
         <div><h3>Foglalások helyiségenként</h3>{Object.entries(result.summary.bookingsByRoom).map(([room, count]) => <p key={room}>{room}: {count} db</p>)}</div>
         <div><h3>Migrált megjegyzések</h3><p className="muted">{result.bookings.filter((booking) => booking.note).length} foglalás tartalmaz AllBooked megjegyzést; ezek változtatás nélkül a foglalás megjegyzésébe kerülnek.</p></div>
         <div><h3>Nem migrált legacy pénzügyi mezők</h3><p className="muted">{result.ignoredPricingFields.join(", ")}</p></div>
@@ -175,8 +176,8 @@ export function MigrationDryRunForm() {
       </section> : null}
 
       {result?.importApproval.valid ? <section className="card stack migration-card migration-import-card">
-        <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Ügyfél és foglalások biztonságos betöltése</h2></div>
-        <p className="muted">A művelet létrehozza vagy ellenőrzi a felhasználót, kiosztja a szükséges helyiségcsoportokat és betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
+        <div><p className="eyebrow">Író import – stagingen UAT, productionben éles művelet</p><h2>Felhasználók és foglalások biztonságos betöltése</h2></div>
+        <p className="muted">A művelet minden felhasználót előellenőriz, szükség esetén létrehoz, kiosztja a szükséges helyiségcsoportokat és egy adatbázis-tranzakcióban betölti a foglalásokat. A foglalási megjegyzést migrálja; legacy árat és fizetési státuszt nem migrál, e-mailt nem küld.</p>
         <div className="import-readiness" aria-live="polite">
           <p><strong>Import feltételei:</strong></p>
           <p>{file ? "✓" : "✗"} CSV fájl betöltve</p>
@@ -194,14 +195,10 @@ export function MigrationDryRunForm() {
       {importResult ? <section className="card stack migration-card">
         <div><p className="eyebrow">Import utáni reconciliation</p><h2>{importResult.valid === true ? "PASS" : "FAIL"}</h2></div>
         <div className="admin-grid">
-          <p><strong>Felhasználó:</strong> {String(importResult.email ?? "—")}</p>
-          <p><strong>Helyiségcsoportok:</strong> {Array.isArray(importResult.accessGroups) ? importResult.accessGroups.join(", ") : "—"}</p>
+          <p><strong>Felhasználók:</strong> {String(importResult.users ?? "—")}</p>
           <p><strong>Foglalások:</strong> {String(importResult.bookings ?? "—")}</p>
           <p><strong>Új / meglévő:</strong> {String(importResult.created ?? "—")} / {String(importResult.existing ?? "—")}</p>
-          <p><strong>Összes perc:</strong> {String(importResult.totalMinutes ?? "—")}</p>
-          <p><strong>Dátumtartomány:</strong> {String(importResult.firstServiceDate ?? "—")} – {String(importResult.lastServiceDate ?? "—")}</p>
-          <p><strong>Tréning egyéni / csoportos:</strong> {String(importResult.trainingIndividual ?? 0)} / {String(importResult.trainingGroup ?? 0)}</p>
-          <p><strong>Legacy pénzügyi rekord:</strong> {String(importResult.legacyFinancialRows ?? 0)}</p>
+          <p><strong>Userenkénti reconciliation:</strong> {Array.isArray(importResult.customers) ? importResult.customers.length : 0} eredmény</p>
         </div>
         <p className="message success" role="status">A tranzakció és a tételes adatbázis-reconciliation sikeres. Az aktiváló e-mail külön, a Felhasználók oldalon küldhető.</p>
       </section> : null}
