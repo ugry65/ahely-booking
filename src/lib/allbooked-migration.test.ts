@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ALLBOOKED_ROOM_MAPPING,
+  batchImportConfirmation,
   customerImportConfirmation,
   approvedBudapestLocalToIso,
   buildAllBookedDryRun,
@@ -193,16 +194,44 @@ describe("generic single-customer AllBooked import gate", () => {
     expect(approval.confirmation).toBe("IMPORT pappdalma17@gmail.com 3");
   });
 
-  it("rejects a file containing more than one customer", () => {
-    const csv = [header, row(), row({ "Holder email": "masik@example.com", "Holder first name": "Másik" })].join("\n");
-    const approval = validateAllBookedCustomerImport(buildAllBookedDryRun(csv, ALLBOOKED_ROOM_MAPPING));
+  it("accepts a file containing multiple customers and derives per-user access groups", () => {
+    const csv = [
+      header,
+      row(),
+      row({
+        "Holder email": "masik@example.com",
+        "Holder first name": "Másik",
+        "Holder last name": "Teszt",
+        "Scheduled start": "2026-10-08 11:30",
+        End: "2026-10-08 13:00",
+        "Duration (minutes)": "90",
+        Spaces: "1.Szoba-családi",
+      }),
+    ].join("\n");
+    const result = buildAllBookedDryRun(csv, ALLBOOKED_ROOM_MAPPING);
+    const approval = validateAllBookedCustomerImport(result);
 
+    expect(approval.valid).toBe(true);
+    expect(approval.users).toHaveLength(2);
+    expect(approval.users.map((item) => [item.user.email, item.bookingCount, item.requiredAccessGroups])).toEqual([
+      ["pappdalma17@gmail.com", 1, ["Forrás tér"]],
+      ["masik@example.com", 1, ["Másik Hely"]],
+    ]);
+    expect(approval.confirmation).toBe("IMPORT 2 USERS 2 BOOKINGS");
+  });
+
+  it("still fails closed when the same email has inconsistent user data", () => {
+    const csv = [header, row(), row({ "Holder first name": "Eltérő", "Scheduled start": "2026-09-04 09:30", End: "2026-09-04 10:30" })].join("\n");
+    const result = buildAllBookedDryRun(csv, ALLBOOKED_ROOM_MAPPING);
+    const approval = validateAllBookedCustomerImport(result);
+    expect(result.valid).toBe(false);
+    expect(result.issues).toEqual([expect.objectContaining({ code: "inconsistent_user" })]);
     expect(approval.valid).toBe(false);
-    expect(approval.issues).toContain("Egy CSV pontosan egy foglaló adatait tartalmazhatja.");
   });
 
   it("builds a case-normalized, customer-specific confirmation phrase", () => {
     expect(customerImportConfirmation("Customer@Example.COM", 12)).toBe("IMPORT customer@example.com 12");
+    expect(batchImportConfirmation(7, 123)).toBe("IMPORT 7 USERS 123 BOOKINGS");
   });
 });
 
