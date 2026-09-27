@@ -113,13 +113,22 @@ export async function POST(request: Request) {
     }
   }
 
-  const createdAuthIds: string[] = [];
+  const createdAuthUsers: Array<{ id: string; email: string }> = [];
   const userIds = new Map<string, string>();
   async function compensateCreatedAuth() {
     const failures: string[] = [];
-    for (const id of [...createdAuthIds].reverse()) {
-      const { error } = await admin.auth.admin.deleteUser(id);
-      if (error) failures.push(id);
+    for (const created of [...createdAuthUsers].reverse()) {
+      const { data: profileCleaned, error: profileCleanupError } = await admin.rpc("admin_cleanup_failed_allbooked_auth_profile", {
+        p_actor_id: actor.id,
+        p_user_id: created.id,
+        p_expected_email: created.email,
+      });
+      if (profileCleanupError || profileCleaned !== true) {
+        failures.push(created.id);
+        continue;
+      }
+      const { error } = await admin.auth.admin.deleteUser(created.id);
+      if (error) failures.push(created.id);
     }
     return failures;
   }
@@ -145,7 +154,7 @@ export async function POST(request: Request) {
         requiresManualCleanup: failures.length > 0,
       }, { status: 500 });
     }
-    createdAuthIds.push(data.user.id);
+    createdAuthUsers.push({ id: data.user.id, email: user.email });
     userIds.set(user.email, data.user.id);
   }
 

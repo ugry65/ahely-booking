@@ -16,8 +16,23 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
     expect(route).toContain("isApprovedCustomerMigrationTarget");
     expect(route).toContain("admin_import_allbooked_batch");
     expect(route).toContain("compensateCreatedAuth");
-    expect(route).toContain("deleteUser(id)");
+    expect(route).toContain("admin_cleanup_failed_allbooked_auth_profile");
+    expect(route).toContain("deleteUser(created.id)");
     expect(route).toContain("requiresManualCleanup: true");
+    expect(route).toContain("createdAuthUsers.push({ id: data.user.id, email: user.email })");
+
+    const createUserIndex = route.indexOf("admin.auth.admin.createUser");
+    const trackCreatedIndex = route.indexOf("createdAuthUsers.push({ id: data.user.id, email: user.email })");
+    const existingUserIndex = route.indexOf("userIds.set(user.email, existingId)");
+    const cleanupIndex = route.indexOf("admin_cleanup_failed_allbooked_auth_profile");
+    const authDeleteIndex = route.indexOf("deleteUser(created.id)");
+
+    expect(createUserIndex).toBeGreaterThan(-1);
+    expect(trackCreatedIndex).toBeGreaterThan(createUserIndex);
+    expect(existingUserIndex).toBeGreaterThan(-1);
+    expect(existingUserIndex).toBeLessThan(createUserIndex);
+    expect(cleanupIndex).toBeGreaterThan(-1);
+    expect(authDeleteIndex).toBeGreaterThan(cleanupIndex);
     expect(route).toContain("batchImportConfirmation");
     expect(route).toContain("Minden Tréningterem-foglalást egyéni vagy csoportos típusba kell sorolni.");
     expect(route).toContain("note: booking.note");
