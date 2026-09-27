@@ -105,7 +105,7 @@
         },
         {
           "path": "src/lib/booking-email/vercel-cron-config.test.ts",
-          "sha": "b622fb6899cb477780228e0b1765de74adfe0434"
+          "sha": "e229c0c3373c5374e549f69cf9357924348ae3a6"
         },
         {
           "path": "src/lib/booking-email/worker-route.test.ts",
@@ -149,7 +149,7 @@
         },
         {
           "path": "vercel.json",
-          "sha": "21d0103d69d8bf528efb85592fa014502eb72092"
+          "sha": "3c48d3d3dfa2bef50cfa707ff7ce8c74b475aa54"
         }
       ]
     }
