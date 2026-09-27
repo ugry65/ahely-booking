@@ -61,8 +61,8 @@ export async function requestPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
-  if (password.length < 12) {
-    redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó legalább 12 karakter legyen."));
+  if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot."));
   }
 
   const supabase = await createClient();
