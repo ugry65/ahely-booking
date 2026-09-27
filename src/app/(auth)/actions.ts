@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 
+export function isValidPassword(password: string) {
+  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
+}
+
 function destination(path: string, key: string, value: string) {
   const query = new URLSearchParams({ [key]: value });
   return `${path}?${query.toString()}`;
@@ -61,7 +65,7 @@ export async function requestPasswordReset(formData: FormData) {
 export async function updatePassword(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
-  if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+  if (!isValidPassword(password)) {
     redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó legalább 8 karakter legyen, és tartalmazzon kisbetűt, nagybetűt és számot."));
   }
 
