@@ -102,11 +102,11 @@ select is(
   'A díjelőnézet explicit booking felülírása megelőzi a közös resolver user/terem szabályait'
 );
 select lives_ok(
-  $select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$,
+  $q$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000183',3300,timezone('Europe/Budapest',now())::date+1,'Jövőbeli teszt tarifa','42000000-0000-0000-0000-000000000181')$q$,
   'Admin auditált jövőbeli user óradíjat állíthat be'
 );
 select lives_ok(
-  $select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000182',0,date_trunc('month',timezone('Europe/Budapest',now()))::date,'Tulajdonosi díj',gen_random_uuid())$,
+  $q$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000182',0,date_trunc('month',timezone('Europe/Budapest',now()))::date,'Tulajdonosi díj',gen_random_uuid())$q$,
   'Admin az aktuális hónap elejétől visszamenőleg 0 Ft-os user óradíjat állíthat'
 );
 select is(
