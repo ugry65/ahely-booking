@@ -83,7 +83,7 @@ export function appliedHourlyRates(row: Pick<MonthlyHoursRow, "pricing_breakdown
 
 export function appliedHourlyRatesText(row: Pick<MonthlyHoursRow, "pricing_breakdown">): string {
   const rates = appliedHourlyRates(row);
-  return rates.length ? rates.map((rate) => rate.toLocaleString("hu-HU")).join(" / ") + " Ft" : "—";
+  return rates.length ? rates.map((rate) => rate.toLocaleString("hu-HU").replace(/\s/g, " ")).join(" / ") + " Ft" : "—";
 }
 
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
