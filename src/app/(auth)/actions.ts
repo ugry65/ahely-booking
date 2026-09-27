@@ -2,11 +2,8 @@
 
 import { redirect } from "next/navigation";
 
+import { isValidPassword } from "@/lib/password-policy";
 import { createClient } from "@/lib/supabase/server";
-
-export function isValidPassword(password: string) {
-  return password.length >= 8 && /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password);
-}
 
 function destination(path: string, key: string, value: string) {
   const query = new URLSearchParams({ [key]: value });
