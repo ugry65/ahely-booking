@@ -16,7 +16,8 @@ describe("AllBooked ügyfélmigráció admin UI", () => {
     expect(route).toContain("isApprovedCustomerMigrationTarget");
     expect(route).toContain("admin_import_allbooked_batch");
     expect(route).toContain("compensateCreatedAuth");
-    expect(route).toContain("deleteUser(id)");
+    expect(route).toContain("admin_cleanup_failed_allbooked_auth_profile");
+    expect(route).toContain("deleteUser(created.id)");
     expect(route).toContain("requiresManualCleanup: true");
     expect(route).toContain("batchImportConfirmation");
     expect(route).toContain("Minden Tréningterem-foglalást egyéni vagy csoportos típusba kell sorolni.");
