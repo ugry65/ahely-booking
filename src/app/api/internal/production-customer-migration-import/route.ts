@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
   }
 
-  const createdAuthIds: string[] = [];
+  const createdAuthUsers: Array<{ id: string; email: string }> = [];
   const userIds = new Map<string, string>();
   async function compensateCreatedAuth() {
     const failures: string[] = [];
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
         requiresManualCleanup: failures.length > 0,
       }, { status: 500 });
     }
-    createdAuthIds.push(data.user.id);
+    createdAuthUsers.push({ id: data.user.id, email: user.email });
     userIds.set(user.email, data.user.id);
   }
 
