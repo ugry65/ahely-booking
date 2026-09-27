@@ -117,9 +117,18 @@ export async function POST(request: Request) {
   const userIds = new Map<string, string>();
   async function compensateCreatedAuth() {
     const failures: string[] = [];
-    for (const id of [...createdAuthUsers].reverse()) {
-      const { error } = await admin.auth.admin.deleteUser(id);
-      if (error) failures.push(id);
+    for (const created of [...createdAuthUsers].reverse()) {
+      const { data: profileCleaned, error: profileCleanupError } = await admin.rpc("admin_cleanup_failed_allbooked_auth_profile", {
+        p_actor_id: actor.id,
+        p_user_id: created.id,
+        p_expected_email: created.email,
+      });
+      if (profileCleanupError || profileCleaned !== true) {
+        failures.push(created.id);
+        continue;
+      }
+      const { error } = await admin.auth.admin.deleteUser(created.id);
+      if (error) failures.push(created.id);
     }
     return failures;
   }
