@@ -12,12 +12,9 @@ function readVercelConfig(): VercelConfig {
 }
 
 describe("Vercel cron konfiguráció", () => {
-  it("percenként ütemezi a booking e-mail workert", () => {
+  it("nem ütemezi a booking e-mail workert, amíg az értesítések ki vannak kapcsolva", () => {
     const config = readVercelConfig();
-    expect(config.crons).toContainEqual({
-      path: "/api/internal/booking-email-worker",
-      schedule: "* * * * *",
-    });
+    expect(config.crons?.some((cron) => cron.path === "/api/internal/booking-email-worker")).toBe(false);
   });
 
   it("megtartja a production health négy napi futását", () => {
