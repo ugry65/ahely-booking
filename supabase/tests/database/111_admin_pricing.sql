@@ -109,6 +109,7 @@ select lives_ok(
   $q$select public.admin_set_user_hourly_rate('00000000-0000-0000-0000-000000000182',0,date_trunc('month',timezone('Europe/Budapest',now()))::date,'Tulajdonosi díj',gen_random_uuid())$q$,
   'Admin az aktuális hónap elejétől visszamenőleg 0 Ft-os user óradíjat állíthat'
 );
+reset role;
 select is(
   (select hourly_rate_huf from public.user_price_overrides where user_id='00000000-0000-0000-0000-000000000182' and date_trunc('month',timezone('Europe/Budapest',now()))::date between valid_from and coalesce(valid_to,'infinity'::date) order by valid_from desc limit 1),
   0::bigint,
