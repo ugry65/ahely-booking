@@ -79,3 +79,14 @@ Ha a `main` → `production` Branch Tracking átállítás után a release útvo
 - GitHub `production` branch: jelenleg nem létezik;
 - repository ruleset: jelenleg nincs;
 - production Cron Jobs globálisan **Enabled**; ezt a release-isoláció részeként nem módosítjuk.
+
+## Baseline egyezőség – 2026-09-27
+
+Read-only ellenőrzés alapján a jelenleg futó production deployment Git SHA-ja és a GitHub `main` HEAD azonos:
+
+- production deployment SHA: `5a34742d2297bd3b6ac66a73ca932ee7136e2ad5`;
+- GitHub `main` HEAD: `5a34742d2297bd3b6ac66a73ca932ee7136e2ad5`.
+
+Ez legyen a kezdeti `production` release branch létrehozási pontja. A branch létrehozása előtt újra ellenőrizni kell, hogy a production deployment nem változott.
+
+GitHub ellenőrzés szerint a `main` jelenleg `protected: false`, repository ruleset nincs. A release-isoláció részeként legalább a `production` branch közvetlen véletlen módosítását meg kell akadályozni; a `main` védelmét külön repository-governance hardeningként szintén be kell vezetni úgy, hogy a meglévő PR/CI folyamatot ne törje el.
