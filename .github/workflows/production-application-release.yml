@@ -117,9 +117,15 @@ jobs:
             echo "- no deployment performed"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Preview dedicated production branch promotion
+        if: ${{ inputs.mode == 'dry-run' }}
+        run: |
+          echo "Release candidate is eligible for later fast-forward promotion: ${{ inputs.commit_sha }}"
+          echo "No production branch or Vercel setting is changed by this dry-run."
+
       - name: Stop before deploy until activation is explicitly completed
         if: ${{ inputs.mode == 'deploy' }}
         run: |
           echo "Deploy mode is intentionally fail-closed while issue #241 activation prerequisites are incomplete." >&2
-          echo "Required before enabling deployment: production Vercel Git auto-deploy isolation, GitHub production reviewer verification, and controlled dry-run evidence." >&2
+          echo "Required before enabling deployment: dedicated production branch protection, Vercel Production Branch Tracking main -> production, GitHub production reviewer verification, and controlled dry-run evidence." >&2
           exit 1
