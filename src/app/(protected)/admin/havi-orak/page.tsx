@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, selectedMonths, mergeBookingTitles, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
+import { monthStart, selectedMonths, mergeBookingTitles, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
@@ -73,9 +73,9 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       <h2>Elszámolási összesítés</h2>
       <p className="muted">A Snapshot állapot a legutóbbi immutable revisiont mutatja. Korrekciókor új revision készül; a korábbi nem íródik át.</p>
       <div className="table-scroll"><table>
-        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Összes óra</th><th>Fizetendő</th><th>Állapot</th><th>Revision készítése</th></tr></thead>
-        <tbody>{rows.map((row) => <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{hours(row.total_hours)}</td><td>{huf(row.calculated_due_huf)}</td><td>{row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td>{row.month < currentMonth ? <form action={createSettlementRevision} className="inline-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><input name="reason" maxLength={300} required placeholder="Új revision indoka" aria-label={`${row.user_name} revision indoka`} /><button type="submit">{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot"}</button></form> : <span className="muted">A hónap még nyitott</span>}</td></tr>)}</tbody>
-        <tfoot><tr><th colSpan={2}>Kijelölt hónapok mindösszesen</th><th>{hours(totalHours)}</th><th>{huf(totalDue)}</th><th colSpan={2}></th></tr></tfoot>
+        <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Összes óra</th><th>Óradíj</th><th>Fizetendő</th><th>Állapot</th><th>Revision készítése</th></tr></thead>
+        <tbody>{rows.map((row) => <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{hours(row.total_hours)}</td><td>{appliedHourlyRatesText(row)}</td><td>{huf(row.calculated_due_huf)}</td><td>{row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td>{row.month < currentMonth ? <form action={createSettlementRevision} className="inline-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><input name="reason" maxLength={300} required placeholder="Új revision indoka" aria-label={`${row.user_name} revision indoka`} /><button type="submit">{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot"}</button></form> : <span className="muted">A hónap még nyitott</span>}</td></tr>)}</tbody>
+        <tfoot><tr><th colSpan={2}>Kijelölt hónapok mindösszesen</th><th>{hours(totalHours)}</th><th>—</th><th>{huf(totalDue)}</th><th colSpan={2}></th></tr></tfoot>
       </table></div>
       {rows.length ? null : <p className="muted">A kijelölt hónapokban nincs elszámolható aktív foglalás.</p>}
     </section>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { csvCell, decimalComma, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
+import { appliedHourlyRatesText, csvCell, decimalComma, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
 
 describe("monthly hours export", () => {
   it("csak érvényes YYYY-MM hónapot fogad el", () => {
@@ -25,13 +25,18 @@ describe("monthly hours export", () => {
   });
   it("az összesítő CSV hónaponként külön sorban tartja az órákat", () => {
     const csv = monthlyHoursCsv([
-      { month: "2026-07", user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 1, total_minutes: 60, total_hours: "1.00", normal_minutes: 60, special_minutes: 0, calculated_due_huf: 2500, pricing_state: "live", revision_id: null, revision_number: null },
-      { month: "2026-08", user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 2, total_minutes: 270, total_hours: "4.50", normal_minutes: 210, special_minutes: 60, calculated_due_huf: 10250, pricing_state: "snapshot", revision_id: "revision-id", revision_number: 2 },
+      { month: "2026-07", user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 1, total_minutes: 60, total_hours: "1.00", normal_minutes: 60, special_minutes: 0, calculated_due_huf: 2500, pricing_breakdown: [{ hourly_rate_huf: 2500 }], pricing_state: "live", revision_id: null, revision_number: null },
+      { month: "2026-08", user_id: "id", user_name: "Teszt User", email: "teszt@example.invalid", booking_count: 2, total_minutes: 270, total_hours: "4.50", normal_minutes: 210, special_minutes: 60, calculated_due_huf: 10250, pricing_breakdown: [{ hourly_rate_huf: 2500 }, { hourly_rate_huf: 5000 }], pricing_state: "snapshot", revision_id: "revision-id", revision_number: 2 },
     ]);
     expect(csv.startsWith("\uFEFF\"Hónap\";\"Felhasználó\";\"Összes óra\"")).toBe(true);
-    expect(csv).toContain('"2026-08";"Teszt User";"4,50";"3,50";"1,00";"10250";"Snapshot";"2"');
+    expect(csv).toContain('"2026-08";"Teszt User";"4,50";"2500 / 5000";"3,50";"1,00";"10250";"Snapshot";"2"');
     expect(csv).not.toContain("E-mail");
     expect(csv).not.toContain("Foglalások száma");
+  });
+  it("az összesítő a ténylegesen alkalmazott egyedi óradíjakat mutatja, nem átlagot", () => {
+    expect(appliedHourlyRatesText({ pricing_breakdown: [
+      { hourly_rate_huf: 5000 }, { hourly_rate_huf: 2500 }, { hourly_rate_huf: 2500 },
+    ] })).toBe("2 500 / 5 000 Ft");
   });
   it("a részletes CSV-ben hónap, dátum, helyiség és időintervallum is szerepel", () => {
     const csv = monthlyDetailsCsv([{ month: "2026-08", booking_id: "b", user_id: "u", user_name: "Teszt User", booking_date: "2026-08-22", room_name: "2.Szoba", booking_title: "Kovács Anna", start_time: "09:00:00", end_time: "10:30:00", total_minutes: 90, total_hours: "1.50", rate_source: "booking_override", hourly_rate_huf: 4300, amount_huf: 6450, pricing_state: "snapshot", revision_number: 3 }]);
