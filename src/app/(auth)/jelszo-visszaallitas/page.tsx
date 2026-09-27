@@ -19,7 +19,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       </p>
       {params.hiba ? <p className="message" role="alert">{params.hiba}</p> : null}
       <form action={updatePassword} className="stack">
-        <label>Új jelszó<input name="password" type="password" minLength={12} autoComplete="new-password" required /></label>
+        <p><strong>Jelszószabály:</strong> legalább 8 karakter, benne legalább egy kisbetű, egy nagybetű és egy szám. Speciális karakter használható, de nem kötelező.</p>\n        <label>Új jelszó<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
         <button type="submit">Jelszó mentése</button>
       </form>
     </section></div>
