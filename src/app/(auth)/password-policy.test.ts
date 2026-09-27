@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidPassword } from "./actions";
+import { isValidPassword } from "../../lib/password-policy";
 
 describe("password policy", () => {
   it.each(["Abcdefg1", "Jelszo12", "aB3xxxxx"])("accepts valid passwords: %s", (password) => {
