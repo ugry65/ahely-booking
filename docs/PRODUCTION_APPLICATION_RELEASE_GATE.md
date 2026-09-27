@@ -12,7 +12,7 @@ A production alkalmazás nem kerülhet automatikusan élesbe pusztán attól, ho
 
 ## Biztonsági alapelv
 
-A production Vercel projekt Git-alapú automatikus deployját projekt-szinten kell megszüntetni. Ezt **nem** szabad a közös `vercel.json` `git.deploymentEnabled` mezőjével megoldani, mert ugyanazt a fájlt a staging projekt is használja.
+A production Vercel projektben a Production környezet Branch Tracking értékét a jelenlegi `main` ágról külön `production` release ágra kell átállítani. A GitHub kapcsolat megtartható; a staging projekt továbbra is `main`-t követ. Ezt **nem** szabad a közös `vercel.json` `git.deploymentEnabled` mezőjével megoldani, mert ugyanazt a fájlt a staging projekt is használja.
 
 A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda külön nem hagyja jóvá a production Vercel beállítás módosítását.
 
@@ -22,7 +22,7 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
 2. Merge `main`-be.
 3. Staging Vercel automatikusan deployolja a `main` commitot.
 4. Staging UAT/smoke PASS.
-5. Production release workflow kizárólag kézi `workflow_dispatch` indítással fusson.
+5. Production release workflow kizárólag kézi `workflow_dispatch` indítással fusson, és kizárólag egy már `main`-ben lévő, stagingen ellenőrzött teljes commit SHA-t engedjen release-jelöltként.
 6. A workflow pontos megerősítő szöveget kérjen: `DEPLOY-PRODUCTION`.
 7. A workflow `environment: production` alatt fusson.
 8. Release előtt ellenőrizze:
@@ -31,7 +31,7 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
    - a production Supabase project ref pontosan `yasrmxwjojepessivhmc`;
    - a production site URL pontosan `https://foglalas.a-hely.com`;
    - a szükséges production secret-ek rendelkezésre állnak.
-9. A workflow először build/deployment jelöltet készítsen, majd csak explicit kapun keresztül állítsa productionre.
+9. Aktiválás után a workflow kizárólag fast-forward jelleggel mozgathassa a `production` release branchet a jóváhagyott `main` SHA-ra; tetszőleges feature/preview commit közvetlen production kiadása tilos.
 10. A deployolt commit SHA és Vercel deployment ID/URL auditálhatóan jelenjen meg a workflow summaryban/release evidence-ben.
 11. Deploy után célzott production smoke: canonical URL + `/api/health`.
 12. Hiba esetén a korábbi ismert jó deploymentre történő rollback legyen dokumentált és kézi jóváhagyású.
@@ -40,10 +40,13 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
 
 Csak a fenti workflow staging/száraz ellenőrzése után, külön projektgazdai jóváhagyással:
 
-- production Vercel projekt automatikus Git deploymentjének projekt-szintű letiltása / Git kapcsolat kontrollált leválasztása;
-- staging Git kapcsolat változatlan marad;
+- GitHub `production` release branch létrehozása az aktuális, ismert jó production baseline SHA-ról;
+- a `production` branch közvetlen, véletlen módosítása elleni GitHub-védelem beállítása;
+- production Vercel Production Branch Tracking átállítása `main` → `production`;
+- a Git kapcsolat megmarad, staging Git kapcsolat változatlan marad;
 - ellenőrizni kell, hogy a jelenlegi production deployment és custom domain továbbra is kiszolgál;
-- egy próba main commit után igazolni kell: staging deploy történik, production automatikus deploy NEM történik;
+- egy kontrollált `main` commit után igazolni kell: staging deploy történik, production automatikus deploy NEM történik;
+- ezt követően egy kontrollált release-promócióval igazolni kell, hogy kizárólag a `production` branch előreléptetése indít production deploymentet;
 - csak ezután tekinthető a release-isoláció lezártnak.
 
 ## GitHub production environment
@@ -63,3 +66,16 @@ A production Vercel/Supabase secret-ek kizárólag a production release környez
 - automatikus production deployment.
 
 Ezek csak külön jóváhagyott aktiválási lépésben történhetnek.
+
+## Visszaállítás az átállás közben
+
+Ha a `main` → `production` Branch Tracking átállítás után a release útvonal nem működik megfelelően, **nem kell az alkalmazást vagy az adatbázist visszaállítani**: a már futó production deployment változatlanul kiszolgál. A konfigurációs rollback a Vercel Production Branch Tracking visszaállítása `main` értékre. Ezt is csak projektgazdai jóváhagyással szabad elvégezni.
+
+## Megfigyelt jelenlegi állapot – 2026-09-27
+
+- production Vercel Production Branch Tracking: `main`;
+- production Git repository kapcsolat: `ugry65/ahely-booking`;
+- production Deploy Hook: nincs;
+- GitHub `production` branch: jelenleg nem létezik;
+- repository ruleset: jelenleg nincs;
+- production Cron Jobs globálisan **Enabled**; ezt a release-isoláció részeként nem módosítjuk.
