@@ -207,3 +207,10 @@ tfoot th { font-weight: 800; }
 .migration-import-card input { width: 100%; }
 .import-readiness { padding: .8rem 1rem; border: 1px solid #d4d9d6; border-radius: .6rem; background: #f7f8f7; }
 .import-readiness p { margin: .25rem 0; }
+
+.casual-settlement-collector { border: 1px solid #d8d4c8; border-radius: .75rem; padding: .8rem; }
+.casual-settlement-collector > summary { cursor: pointer; padding: .25rem; }
+.casual-booking-lines { display: grid; gap: .35rem; margin-top: .55rem; min-width: 25rem; }
+.casual-booking-lines > div { display: flex; justify-content: space-between; gap: 1rem; padding: .35rem .5rem; border-left: 3px solid #d8d4c8; }
+.payment-preview-check { display: inline-flex; align-items: center; gap: .35rem; white-space: nowrap; }
+.payment-preview-check input { width: 1.1rem; height: 1.1rem; }
