@@ -87,7 +87,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
   return (
     <section className="stack">
       <header className="page-heading"><div><p className="eyebrow">Adminisztráció</p><h1>Felhasználók</h1><p className="muted">Áttekinthető felhasználólista, helyiségcsoportok, szerepkörök és törzsadatok.</p></div><Link className="button secondary" href="/admin/helyisegek">Helyiségek</Link></header>
-      {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
+      {(params.hiba || params.uzenet) && !selectedProfile ? <p className={`message ${params.hiba ? "error" : "success"}`} role={params.hiba ? "alert" : "status"}>{params.hiba ?? params.uzenet}</p> : null}
       {profilesResult.error || accessResult.error ? <p className="message error" role="alert">A felhasználói adminisztrációs adatok betöltése nem sikerült.</p> : null}
 
       <section className="card wide-card stack">
@@ -122,6 +122,7 @@ export default async function UsersAdminPage({ searchParams }: { searchParams: P
 
       {selectedProfile ? <section className="card wide-card stack">
         <div className="page-heading"><div><p className="eyebrow">Felhasználó szerkesztése</p><h2>{fullName(selectedProfile)}</h2><p className="muted">{selectedProfile.email}</p></div><Link className="button secondary" href={`/admin/felhasznalok${params.q ? `?${new URLSearchParams({ q: params.q }).toString()}` : ""}`}>Bezárás</Link></div>
+        {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role={params.hiba ? "alert" : "status"}>{params.hiba ?? params.uzenet}</p> : null}
 
         <div className="admin-grid">
           <section className="stack"><h3>Szerepkör</h3>{selectedProfile.id === actor.id && selectedProfile.role === "admin" ? <p className="message error" role="alert"><strong>Figyelem:</strong> a saját adminisztrátori jogosultságodat szerkeszted. Ha „Normál felhasználó”-ra váltasz és elmented, azonnal elveszíted az adminfelülethez való hozzáférésedet. Az utolsó aktív admin visszaminősítését a backend továbbra is megakadályozza.</p> : null}<form action={setUserRole} className="admin-editor-row compact"><input type="hidden" name="userId" value={selectedProfile.id} /><label>Jogosultsági szint<select name="role" defaultValue={selectedProfile.role}><option value="user">Normál felhasználó</option><option value="admin">Adminisztrátor</option></select></label><button type="submit">Szerepkör mentése</button></form><p className="muted form-help">Az utolsó aktív adminisztrátort a backend nem engedi lefokozni.</p></section>
