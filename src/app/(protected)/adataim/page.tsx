@@ -14,6 +14,7 @@ type EditableProfile = {
   billing_street: string | null;
   billing_house_number: string | null;
   tax_number: string | null;
+  calendar_color: string;
 };
 
 function paramValue(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
@@ -24,7 +25,7 @@ export default async function MyDataPage({ searchParams }: { searchParams: Promi
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("profiles")
-    .select("first_name,last_name,email,phone,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number")
+    .select("first_name,last_name,email,phone,customer_type,billing_name,billing_postal_code,billing_city,billing_street,billing_house_number,tax_number,calendar_color")
     .eq("id", activeProfile.id)
     .maybeSingle<EditableProfile>();
 
