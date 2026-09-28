@@ -4,7 +4,7 @@
 
 **Issue:** #241
 
-**Állapot:** PR előkészítés; production konfigurációt ez a változtatás nem módosít, a workflow nincs `main`-ben.
+**Állapot:** PR előkészítés; production konfigurációt ez a változtatás nem módosít, a workflow nincs `main`-ben. A teljes aktiválás sorrendi korlátja alább szerepel.
 
 ## Célfolyamat
 
@@ -14,7 +14,7 @@ A production alkalmazás nem kerülhet automatikusan élesbe pusztán attól, ho
 
 ## Biztonsági alapelv
 
-A production Vercel projekt Git-integrációját a bizonyított CLI release-út után, külön jóváhagyással kell leválasztani; a staging projekt továbbra is `main`-t követ. A közös `vercel.json` `git.deploymentEnabled` mezője mindkét projektre hatna, ezért itt nem alkalmas a szétválasztásra. A Vercel CLI a pontos `main` SHA-ból production környezettel épít, majd az ellenőrzött artifactot a production projektbe deployolja. A workflow deploy módja a Vercel API-n keresztül a leválasztott Git-integrációt is ellenőrzi, ezért a mostani állapotban megáll.
+A production Vercel projekt Git-integrációját a branch-szintű ellenőrzések és staging CLI próba után, külön jóváhagyással kell leválasztani; a staging projekt továbbra is `main`-t követ. A közös `vercel.json` `git.deploymentEnabled` mezője mindkét projektre hatna, ezért itt nem alkalmas a szétválasztásra. A Vercel CLI a pontos `main` SHA-ból production környezettel épít, majd az ellenőrzött artifactot a production projektbe deployolja. A workflow deploy módja a Vercel API-n keresztül a leválasztott Git-integrációt is ellenőrzi, ezért a mostani állapotban megáll.
 
 A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda külön nem hagyja jóvá a production Vercel beállítás módosítását.
 
@@ -42,13 +42,16 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
 
 ## Production Vercel projekt átállítása
 
-Csak a fenti workflow staging/száraz ellenőrzése után, külön projektgazdai jóváhagyással:
+Csak a branch-szintű tesztek és a staging CLI próba után, külön projektgazdai jóváhagyással. A production workflow `dry-run` módja jelenleg nem indítható: GitHub a kézi workflow-t csak a default branchből kínálja, az Environment pedig kizárólag `main`-t engedi; a #242 `main` merge viszont a mostani Vercel Git-kapcsolattal automatikus production deployt indíthat. Ezért a production környezethez kötött dry-run csak a Git-integráció leválasztása és a #242 merge után bizonyítható. A staging próba a mechanizmus működését igazolja, de nem bizonyítja előre a production token és konfiguráció helyességét.
 
-- staging projekten izolált CLI build/deploy próba a production workflow mintájára, staging konfigurációval; pontos SHA/deployment ID/health jegyzőkönyv;
+Előbb stagingen izolált CLI build/deploy próba szükséges a production workflow mintájára, staging konfigurációval, pontos SHA/deployment ID/health jegyzőkönyvvel. Ehhez jelenleg nincs a workflow számára elérhető staging Vercel token. A staging próba önmagában nem változtat production beállítást.
+
+Jóváhagyott aktiválási ablakban, `main` freeze és aktuális deployment ID rögzítése után:
+
 - production release token elhelyezése kizárólag az új GitHub Environmentben és a scope audit rendezése, külön jóváhagyással;
-- production Vercel Git-integráció Disconnect, külön jóváhagyással; a staging Git kapcsolat változatlan marad;
+- production Vercel Git-integráció Disconnect, külön jóváhagyással; a staging Git kapcsolat változatlan marad. A futó deployment ettől nem változik, de a következő release útja igen;
 - ellenőrizni kell, hogy a jelenlegi production deployment és custom domain továbbra is kiszolgál;
-- egy kontrollált `main` commit után igazolni kell: staging deploy történik, production automatikus deploy NEM történik;
+- a #242 jóváhagyott merge után igazolni kell: staging deploy történik, production automatikus deploy NEM történik; majd production workflow `dry-run` sikeres, ha a scoped token és a scope audit rendben van;
 - ezt követően külön, pontos SHA-ra és UAT-ra adott emberi jóváhagyással indítható az első workflow `deploy` mód;
 - csak ezután tekinthető a release-isoláció lezártnak.
 
