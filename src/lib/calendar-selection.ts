@@ -32,6 +32,10 @@ export function normalizeCalendarSelection(roomId: string, anchorMinute: number,
   return { roomId, startMinute, endMinute };
 }
 
+export function selectionFromBookingInterval(roomId: string, startMinute: number, endMinute: number): CalendarSelection {
+  return { roomId, startMinute, endMinute };
+}
+
 export function calendarMinuteToTime(minute: number) {
   return `${String(Math.floor(minute / 60)).padStart(2, "0")}:${String(minute % 60).padStart(2, "0")}`;
 }
