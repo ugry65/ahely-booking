@@ -63,6 +63,8 @@ A token jogosultsága a Vercel team/project elérését biztosítja; a GitHub En
 
 **Read-only scope audit, 2026-09-28:** a production projekt Production változólistájában a `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SMTP_PASS` és az alkalmazás URL/kulcs változói Production hatókörűek. Ugyanennek a projektnek a Preview listájában van általános Preview és `staging` ágra célzott `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, illetve `SMTP_PASS` bejegyzés is. A titokértékeket nem nyitottuk meg, így **nem igazolt**, hogy az általános Preview érték production vagy staging hitelesítő adat-e. Az általános Preview scope minden nem külön rendelt feature ágra érvényes lehet. Az értékek eredetét biztonságos, titkokat naplóba nem író eljárással kell igazolni; addig a production hitelesítő adatok Preview-ból kizárása nincs bizonyítva és az aktiválás NO-GO. A scope audit nem módosított Vercel beállítást.
 
+Ugyanezen a napon a Preview `Shared` tabon **nincs kapcsolt közös változó**. A Vercel `A-hely` team taglistájában csak `ugry65` Owner látszik; projekt-szintű szerepkör kiosztását a UI Enterprise funkcióként jelzi. A tulajdonos kézi Vercel műveleteit a GitHub workflow önmagában nem tilthatja; az auditálható release-folyamat ezért az operátori eljárást és a Vercel activity/deployment ellenőrzést is igényli. Ez csak olvasási megállapítás, nem szerepkör- vagy tokenmódosítás.
+
 ## Release és rollback operátori jegyzőkönyv
 
 1. Jegyezd fel a kiinduló production deployment ID-t, Git SHA-t, a `main` SHA-t és a production/staging deployment queue állapotát. Az aktiválás alatt `main` merge stop.
