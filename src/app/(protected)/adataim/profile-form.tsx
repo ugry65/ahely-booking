@@ -30,7 +30,23 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
     if (checked) setBillingName(profileName);
   }
 
-  return <div className="stack">\n    <form action={updateOwnCalendarColor} className="stack calendar-color-form">\n      <fieldset>\n        <legend>Naptárszínem</legend>\n        <p className="muted form-help">Válaszd ki, milyen színnel jelenjenek meg a foglalásaid a naptárban. Ugyanazt a színt mások is választhatják.</p>\n        <div className="calendar-color-palette" role="radiogroup" aria-label="Naptárszín választása">\n          {CALENDAR_COLOR_PALETTE.map((color) => <label className="calendar-color-option" key={color.value} title={color.label}>\n            <input type="radio" name="calendarColor" value={color.value} defaultChecked={profile.calendar_color.toUpperCase() === color.value} required />\n            <span className="calendar-color-swatch" style={{ background: color.value }} aria-hidden="true" />\n            <span>{color.label}</span>\n          </label>)}\n        </div>\n        <button type="submit">Naptárszín mentése</button>\n      </fieldset>\n    </form>\n\n    <form action={updateOwnProfileData} className="stack">
+  return <div className="stack">
+    <form action={updateOwnCalendarColor} className="stack calendar-color-form">
+      <fieldset>
+        <legend>Naptárszínem</legend>
+        <p className="muted form-help">Válaszd ki, milyen színnel jelenjenek meg a foglalásaid a naptárban. Ugyanazt a színt mások is választhatják.</p>
+        <div className="calendar-color-palette" role="radiogroup" aria-label="Naptárszín választása">
+          {CALENDAR_COLOR_PALETTE.map((color) => <label className="calendar-color-option" key={color.value} title={color.label}>
+            <input type="radio" name="calendarColor" value={color.value} defaultChecked={profile.calendar_color.toUpperCase() === color.value} required />
+            <span className="calendar-color-swatch" style={{ background: color.value }} aria-hidden="true" />
+            <span>{color.label}</span>
+          </label>)}
+        </div>
+        <button type="submit">Naptárszín mentése</button>
+      </fieldset>
+    </form>
+
+    <form action={updateOwnProfileData} className="stack">
     <fieldset>
       <legend>Személyes adatok</legend>
       <label>Vezetéknév<input value={profile.last_name} readOnly aria-readonly="true" /></label>
@@ -65,4 +81,6 @@ export function ProfileForm({ profile }: { profile: ProfileData }) {
 
     <button type="submit">Adatok mentése</button>
     <p className="muted form-help">A módosítás naplózott. A foglalási jogosultságokat és más adminisztrációs beállításokat ezen az oldalon nem lehet megváltoztatni.</p>
-  </form>\n  </div>;\n}
+  </form>
+  </div>;
+}
