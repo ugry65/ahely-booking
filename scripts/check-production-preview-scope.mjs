@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { parseVercelEnv } from './check-production-vercel-env.mjs';
 
 const PRODUCTION_REF = 'yasrmxwjojepessivhmc';
-const SENSITIVE_KEYS = ['SUPABASE_SERVICE_ROLE_KEY', 'CRON_SECRET', 'SMTP_PASS'];
+const SENSITIVE_KEYS = ['SUPABASE_SERVICE_ROLE_KEY', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'CRON_SECRET', 'SMTP_PASS'];
 
 export function validatePreviewScope(productionText, previewText) {
   const production = parseVercelEnv(productionText);
@@ -19,6 +19,9 @@ export function validatePreviewScope(productionText, previewText) {
     if (preview.get(key) === `https://${PRODUCTION_REF}.supabase.co`) {
       throw new Error(`Refusing release: production Supabase URL is available in Preview as ${key}`);
     }
+  }
+  if (preview.get('SITE_URL') === 'https://foglalas.a-hely.com') {
+    throw new Error('Refusing release: production site URL is available in Preview');
   }
   return true;
 }
