@@ -6,7 +6,7 @@ export function matchingStagingDeployment(payload, sha) {
   return payload.deployments.find((deployment) =>
     deployment.projectId === STAGING_PROJECT_ID &&
     deployment.target === 'production' &&
-    deployment.readyState === 'READY' &&
+    deployment.state === 'READY' &&
     deployment.meta?.githubCommitSha === sha &&
     deployment.meta?.githubCommitRef === 'main'
   );
@@ -17,7 +17,7 @@ if (process.argv[1]?.endsWith('/verify-staging-release-deployment.mjs')) {
   if (!token || !team || !/^[0-9a-f]{40}$/.test(sha ?? '')) {
     throw new Error('Missing Vercel credentials or invalid release SHA');
   }
-  const url = new URL('https://api.vercel.com/v6/deployments');
+  const url = new URL('https://api.vercel.com/v7/deployments');
   url.searchParams.set('projectId', STAGING_PROJECT_ID);
   url.searchParams.set('teamId', team);
   url.searchParams.set('target', 'production');
