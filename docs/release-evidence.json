@@ -42,7 +42,7 @@
         },
         {
           "path": "src/app/api/internal/production-customer-migration-import/route.ts",
-          "sha": "cef7f5dff744b992fd9b05e5b0ab34f5ad40fb2c"
+          "sha": "c7af5c398571f26b29c1df9ecf76a5688380b356"
         },
         {
           "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",

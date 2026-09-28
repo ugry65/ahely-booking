@@ -1,0 +1,19 @@
+name: Production release gate
+
+on:
+  pull_request:
+    branches: [production]
+
+permissions:
+  contents: read
+
+jobs:
+  release-gate:
+    name: Production release gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify source, UAT evidence and merged tree
+        run: node scripts/check-production-release-pr.mjs

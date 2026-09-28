@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     vercelEnvironment: process.env.VERCEL_ENV,
     gitCommitRef: process.env.VERCEL_GIT_COMMIT_REF,
   })) {
-    return NextResponse.json({ error: "A próbaadat-visszavonás csak a main production célon engedélyezett." }, { status: 403 });
+    return NextResponse.json({ error: "A próbaadat-visszavonás csak a production célon engedélyezett." }, { status: 403 });
   }
   const body = await request.json().catch(() => null) as { confirmation?: unknown } | null;
   if (body?.confirmation !== CONFIRMATION) {
