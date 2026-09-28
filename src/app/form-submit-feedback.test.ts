@@ -61,6 +61,16 @@ describe("form submit feedback", () => {
     expect(css).toContain("overflow: auto");
   });
 
+  it("keeps admin action feedback visible inside an open user editor", () => {
+    const page = fs.readFileSync(path.join(process.cwd(), "src", "app", "(protected)", "admin", "felhasznalok", "page.tsx"), "utf8");
+    const actions = fs.readFileSync(path.join(process.cwd(), "src", "app", "(protected)", "admin", "felhasznalok", "actions.ts"), "utf8");
+    expect(page).toContain('(params.hiba || params.uzenet) && !selectedProfile');
+    expect(page).toContain('role={params.hiba ? "alert" : "status"}');
+    expect(page.indexOf('{selectedProfile ? <section')).toBeLessThan(page.lastIndexOf('{params.hiba || params.uzenet ? <p'));
+    expect(actions).toContain('error.code === "over_email_send_rate_limit"');
+    expect(actions).toContain("várj legalább 60 másodpercet");
+  });
+
   it("keeps a visible pressed and pending state in CSS", () => {
     const css = fs.readFileSync(path.join(process.cwd(), "src", "app", "form-submit-feedback.css"), "utf8");
     expect(css).toContain('a.button:active:not([aria-busy="true"])');
