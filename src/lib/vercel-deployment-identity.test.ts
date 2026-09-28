@@ -35,4 +35,9 @@ describe("Vercel production build identity", () => {
       { ...production, VERCEL_PROJECT_ID: undefined },
     ]) expect(() => assertVercelDeploymentIdentity(env)).toThrow("Refusing Vercel production build");
   });
+  it("fails closed when a Vercel build has no known target", () => {
+    expect(() => assertVercelDeploymentIdentity({ VERCEL: "1" })).toThrow("missing or unknown");
+    expect(() => assertVercelDeploymentIdentity({ ...production, VERCEL_ENV: "unknown" })).toThrow("missing or unknown");
+    expect(() => assertVercelDeploymentIdentity({})).not.toThrow();
+  });
 });

@@ -1,4 +1,5 @@
 type DeploymentIdentity = {
+  VERCEL?: string;
   VERCEL_ENV?: string;
   VERCEL_PROJECT_ID?: string;
   VERCEL_GIT_COMMIT_REF?: string;
@@ -20,7 +21,11 @@ const targets = {
 } as const;
 
 export function assertVercelDeploymentIdentity(env: DeploymentIdentity) {
-  if (env.VERCEL_ENV !== "production") return;
+  if (!env.VERCEL && !env.VERCEL_ENV) return;
+  if (env.VERCEL_ENV === "preview" || env.VERCEL_ENV === "development") return;
+  if (env.VERCEL_ENV !== "production") {
+    throw new Error("Refusing Vercel build: missing or unknown target environment");
+  }
   const target = targets[env.VERCEL_PROJECT_ID as keyof typeof targets];
   if (!target || env.VERCEL_GIT_COMMIT_REF !== target.ref ||
       env.NEXT_PUBLIC_SUPABASE_URL !== target.supabase ||
