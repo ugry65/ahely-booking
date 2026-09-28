@@ -13,7 +13,8 @@ grep -Fq "Verify actual staging Vercel deployment" "$file"
 grep -Fq "prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo" "$file"
 grep -Fq "yasrmxwjojepessivhmc" "$file"
 grep -Fq "https://foglalas.a-hely.com" "$file"
-grep -Fq "not part of origin/main" "$file"
+grep -Fq 'git rev-parse origin/main)" != "$REQUESTED_SHA"' "$file"
+grep -Fq "must be the current main HEAD" "$file"
 grep -Fq "intentionally fail-closed" "$file"
 
 if grep -Eq 'vercel (deploy|--prod|promote)' "$file"; then
