@@ -1,7 +1,9 @@
 # Production alkalmazás-release kapu – technikai terv
 
-**Dátum:** 2026-09-27  
-**Issue:** #241  
+**Dátum:** 2026-09-27
+
+**Issue:** #241
+
 **Állapot:** előkészítés; production konfigurációt ez a változtatás nem módosít.
 
 ## Célfolyamat
