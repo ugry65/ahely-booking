@@ -52,6 +52,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: bash ./scripts/test-production-application-release-gate.sh
+      - run: node --test scripts/test-verify-staging-release-deployment.mjs
+      - run: node --test scripts/test-check-production-vercel-env.mjs
       - run: bash ./scripts/test-production-db-url-guard.sh
       - run: bash ./scripts/test-production-backup-trigger.sh
       - run: bash ./scripts/test-production-backup-drill.sh

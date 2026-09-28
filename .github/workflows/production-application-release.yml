@@ -15,6 +15,14 @@ on:
         description: "A release-re kijelölt main commit teljes SHA-ja"
         required: true
         type: string
+      staging_deployment_sha:
+        description: "A READY staging deployment Git SHA-ja (egyezzen a release SHA-val)"
+        required: true
+        type: string
+      staging_uat_evidence:
+        description: "A SHA-hoz kötött staging UAT jegyzőkönyv GitHub issue/PR URL-je"
+        required: true
+        type: string
       confirmation:
         description: "Deploy módnál írd be: DEPLOY-PRODUCTION"
         required: false
@@ -30,9 +38,10 @@ concurrency:
 
 jobs:
   production-application-release:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.actor == 'ugry65' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    environment: production
+    environment: Production – ahely-booking
     env:
       EXPECTED_VERCEL_PROJECT_ID: prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo
       EXPECTED_SUPABASE_PROJECT_REF: yasrmxwjojepessivhmc
@@ -66,6 +75,11 @@ jobs:
           ACTUAL_SHA="$(git rev-parse HEAD)"
           if [ "$ACTUAL_SHA" != "$REQUESTED_SHA" ]; then
             echo "Checked out SHA does not match requested release SHA." >&2
+            exit 1
+          fi
+
+          if [ "$MODE" != "dry-run" ] && [ "$MODE" != "deploy" ]; then
+            echo "Unknown release mode." >&2
             exit 1
           fi
 
@@ -104,6 +118,34 @@ jobs:
             echo "Refusing release: unexpected production site URL." >&2
             exit 1
           }
+
+      - name: Read and verify actual Vercel production configuration
+        run: |
+          set -euo pipefail
+          npm install --global vercel@60.1.3 >/dev/null
+          vercel pull --yes --environment=production --token="$VERCEL_TOKEN" >/dev/null
+          node scripts/check-production-vercel-env.mjs
+
+      - name: Validate staging UAT evidence and deployment identity
+        env:
+          STAGING_DEPLOYMENT_SHA: ${{ inputs.staging_deployment_sha }}
+          STAGING_UAT_EVIDENCE: ${{ inputs.staging_uat_evidence }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          [ "$STAGING_DEPLOYMENT_SHA" = "$REQUESTED_SHA" ] || {
+            echo "Staging deployment SHA must equal the requested release SHA." >&2
+            exit 1
+          }
+          [[ "$STAGING_UAT_EVIDENCE" =~ ^https://github\.com/ugry65/ahely-booking/(issues|pull)/[0-9]+ ]] || {
+            echo "Provide a GitHub issue or PR URL with recorded staging UAT evidence." >&2
+            exit 1
+          }
+
+      - name: Verify actual staging Vercel deployment
+        env:
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+        run: node scripts/verify-staging-release-deployment.mjs
 
       - name: Dry-run summary
         if: ${{ inputs.mode == 'dry-run' }}
