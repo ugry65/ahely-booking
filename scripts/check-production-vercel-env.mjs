@@ -3,10 +3,7 @@ import { readFileSync } from 'node:fs';
 const PRODUCTION_ID = 'prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo';
 const PRODUCTION_REF = 'yasrmxwjojepessivhmc';
 
-export function validateProductionVercelConfig(project, envText, expectedOrgId) {
-  if (project?.projectId !== PRODUCTION_ID || !expectedOrgId || project.orgId !== expectedOrgId) {
-    throw new Error('Linked Vercel project identity mismatch');
-  }
+export function parseVercelEnv(envText) {
   const env = new Map();
   for (const line of envText.split(/\r?\n/)) {
     const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
@@ -17,6 +14,14 @@ export function validateProductionVercelConfig(project, envText, expectedOrgId) 
     }
     env.set(match[1], value);
   }
+  return env;
+}
+
+export function validateProductionVercelConfig(project, envText, expectedOrgId) {
+  if (project?.projectId !== PRODUCTION_ID || !expectedOrgId || project.orgId !== expectedOrgId) {
+    throw new Error('Linked Vercel project identity mismatch');
+  }
+  const env = parseVercelEnv(envText);
   const actualUrl = env.get('NEXT_PUBLIC_SUPABASE_URL');
   if (actualUrl !== `https://${PRODUCTION_REF}.supabase.co`) {
     throw new Error('Vercel production Supabase URL mismatch');

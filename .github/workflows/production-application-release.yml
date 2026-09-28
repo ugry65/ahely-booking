@@ -126,6 +126,14 @@ jobs:
           vercel pull --yes --environment=production --token="$VERCEL_TOKEN" >/dev/null
           node scripts/check-production-vercel-env.mjs
 
+      - name: Refuse production credentials in Preview scopes
+        run: |
+          set -euo pipefail
+          vercel pull --yes --environment=preview --git-branch=feat/production-release-gate-241 --token="$VERCEL_TOKEN" >/dev/null
+          node scripts/check-production-preview-scope.mjs
+          vercel pull --yes --environment=preview --git-branch=staging --token="$VERCEL_TOKEN" >/dev/null
+          node scripts/check-production-preview-scope.mjs
+
       - name: Validate staging UAT evidence and deployment identity
         env:
           STAGING_DEPLOYMENT_SHA: ${{ inputs.staging_deployment_sha }}
