@@ -43,12 +43,11 @@ jobs:
     timeout-minutes: 20
     environment: Production – ahely-booking
     env:
-      EXPECTED_VERCEL_PROJECT_ID: prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo
+      VERCEL_PROJECT_ID: prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo
+      VERCEL_ORG_ID: team_zUlC4KlLvkMuz1zRdq8ssAk2
       EXPECTED_SUPABASE_PROJECT_REF: yasrmxwjojepessivhmc
       EXPECTED_SITE_URL: https://foglalas.a-hely.com
-      VERCEL_PROJECT_ID: ${{ secrets.PRODUCTION_VERCEL_PROJECT_ID }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TOKEN: ${{ secrets.PRODUCTION_RELEASE_VERCEL_TOKEN }}
       PRODUCTION_SUPABASE_PROJECT_REF: ${{ vars.PRODUCTION_SUPABASE_PROJECT_REF }}
       PRODUCTION_SITE_URL: ${{ vars.PRODUCTION_SITE_URL }}
 
@@ -98,7 +97,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          required=(VERCEL_PROJECT_ID VERCEL_ORG_ID VERCEL_TOKEN PRODUCTION_SUPABASE_PROJECT_REF PRODUCTION_SITE_URL)
+          required=(VERCEL_TOKEN PRODUCTION_SUPABASE_PROJECT_REF PRODUCTION_SITE_URL)
           for name in "${required[@]}"; do
             if [ -z "${!name:-}" ]; then
               echo "Missing production release configuration: $name" >&2
@@ -106,10 +105,6 @@ jobs:
             fi
           done
 
-          [ "$VERCEL_PROJECT_ID" = "$EXPECTED_VERCEL_PROJECT_ID" ] || {
-            echo "Refusing release: unexpected Vercel project ID." >&2
-            exit 1
-          }
           [ "$PRODUCTION_SUPABASE_PROJECT_REF" = "$EXPECTED_SUPABASE_PROJECT_REF" ] || {
             echo "Refusing release: unexpected Supabase production project ref." >&2
             exit 1
