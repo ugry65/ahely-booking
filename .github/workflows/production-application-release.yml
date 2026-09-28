@@ -84,8 +84,8 @@ jobs:
           fi
 
           git fetch origin main
-          if ! git merge-base --is-ancestor "$REQUESTED_SHA" origin/main; then
-            echo "Requested release SHA is not part of origin/main." >&2
+          if [ "$(git rev-parse origin/main)" != "$REQUESTED_SHA" ]; then
+            echo "Requested release SHA must be the current main HEAD; freeze main for UAT and release." >&2
             exit 1
           fi
 
@@ -137,7 +137,7 @@ jobs:
             echo "Staging deployment SHA must equal the requested release SHA." >&2
             exit 1
           }
-          [[ "$STAGING_UAT_EVIDENCE" =~ ^https://github\.com/ugry65/ahely-booking/(issues|pull)/[0-9]+ ]] || {
+          [[ "$STAGING_UAT_EVIDENCE" =~ ^https://github\.com/ugry65/ahely-booking/(issues|pull)/[0-9]+(\#(issuecomment|discussion_r)[0-9]+)?$ ]] || {
             echo "Provide a GitHub issue or PR URL with recorded staging UAT evidence." >&2
             exit 1
           }
