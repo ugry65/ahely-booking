@@ -1,6 +1,6 @@
 import type { MonthlyBookingDetailWithMonth } from "@/lib/monthly-hours";
 
-const CASUAL_USERS = new Set(["Alkalmi Csoport", "Alkalmi Egyéni"]);
+const CASUAL_USERS = new Set(["Alkalmi Csoport", "Alkalmi Egyéni", "Csoport A.", "A. Csoport"]);
 function hours(value: number) { return value.toLocaleString("hu-HU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function huf(value: number) { return value.toLocaleString("hu-HU") + " Ft"; }
 
