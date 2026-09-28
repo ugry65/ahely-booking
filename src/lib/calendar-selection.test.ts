@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarMinuteToTime, normalizeCalendarSelection, snapCalendarMinute } from "./calendar-selection";
+import { calendarMinuteToTime, normalizeCalendarSelection, selectionFromBookingInterval, snapCalendarMinute } from "./calendar-selection";
 
 describe("calendar selection", () => {
   it("30 perces rácsra lefelé kerekít", () => {
@@ -17,6 +17,11 @@ describe("calendar selection", () => {
 
   it("22:00 után nem engedi a kijelölést", () => {
     expect(normalizeCalendarSelection("room-1", 21 * 60 + 30, 22 * 60 + 15)).toEqual({ roomId: "room-1", startMinute: 1260, endMinute: 1320 });
+  });
+
+  it("meglévő foglalás szerkesztésekor pontosan megőrzi a befejezési időt", () => {
+    expect(selectionFromBookingInterval("room-1", 8 * 60, 16 * 60)).toEqual({ roomId: "room-1", startMinute: 480, endMinute: 960 });
+    expect(calendarMinuteToTime(selectionFromBookingInterval("room-1", 8 * 60, 16 * 60).endMinute)).toBe("16:00");
   });
 
   it("HH:MM formátumot ad a rejtett formmezőkhöz", () => {
