@@ -4,7 +4,8 @@ export function verifyProductionDeployment(deployment, sha, runId) {
   const id = deployment?.id ?? deployment?.uid;
   if (!/^dpl_[A-Za-z0-9]+$/.test(id ?? '') || deployment?.projectId !== PROJECT_ID ||
       deployment?.target !== 'production' || deployment?.readyState !== 'READY' ||
-      deployment?.meta?.releaseCommitSha !== sha || deployment?.meta?.githubActionsRunId !== runId) {
+      deployment?.meta?.releaseCommitSha !== sha || deployment?.meta?.githubActionsRunId !== runId ||
+      deployment?.meta?.githubCommitRef !== 'main' || deployment?.meta?.githubCommitSha !== sha) {
     throw new Error('Production deployment identity, commit or READY status mismatch');
   }
   return id;

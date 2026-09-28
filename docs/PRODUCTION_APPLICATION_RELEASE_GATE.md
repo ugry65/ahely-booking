@@ -46,6 +46,8 @@ Csak a branch-szintű tesztek és a staging CLI próba után, külön projektgaz
 
 Előbb stagingen izolált CLI build/deploy próba szükséges a production workflow mintájára, staging konfigurációval, pontos SHA/deployment ID/health jegyzőkönyvvel. Ehhez jelenleg nincs a workflow számára elérhető staging Vercel token. A staging próba önmagában nem változtat production beállítást.
 
+A staging próba külön ellenőrizze a deployolt runtime `VERCEL_GIT_COMMIT_REF` értékét is. Két admin import/visszavonás végpont csak `main` ref esetén enged író műveletet; a CLI deployment explicit `githubCommitRef=main` metaadatot kap, de ebből önmagában nem következik, hogy a runtime rendszer-változó is `main`. Ha ez nem bizonyítható, az alkalmazás release NO-GO, mert a működés változhat.
+
 Jóváhagyott aktiválási ablakban, `main` freeze és aktuális deployment ID rögzítése után:
 
 - production release token elhelyezése kizárólag az új GitHub Environmentben és a scope audit rendezése, külön jóváhagyással;

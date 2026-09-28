@@ -181,6 +181,7 @@ jobs:
           set -euo pipefail
           git fetch origin main
           test "$(git rev-parse origin/main)" = "$REQUESTED_SHA"
+          git checkout -B main "$REQUESTED_SHA"
 
       - name: Require production Git isolation before CLI deployment
         if: ${{ inputs.mode == 'deploy' }}
@@ -208,7 +209,7 @@ jobs:
           REQUESTED_SHA: ${{ inputs.commit_sha }}
         run: |
           set -euo pipefail
-          url="$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" --meta "releaseCommitSha=$REQUESTED_SHA" --meta "githubActionsRunId=$GITHUB_RUN_ID")"
+          url="$(vercel deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN" --meta githubDeployment=1 --meta githubCommitRef=main --meta "githubCommitSha=$REQUESTED_SHA" --meta "releaseCommitSha=$REQUESTED_SHA" --meta "githubActionsRunId=$GITHUB_RUN_ID")"
           [[ "$url" =~ ^https://[a-zA-Z0-9.-]+\.vercel\.app$ ]] || { echo "Unexpected deployment URL" >&2; exit 1; }
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
