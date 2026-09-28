@@ -53,13 +53,15 @@ Csak a fenti workflow staging/száraz ellenőrzése után, külön projektgazdai
 
 ## GitHub production environment
 
-A workflow `Production – ahely-booking` environment használata önmagában nem bizonyít emberi approvalt. A Required reviewers jelenleg nincs bekapcsolva. Mivel a repository publikus, a GitHub dokumentáció szerint a reviewer protection elérhető lehet, de az adott repository tényleges UI-beállítását még igazolni kell. Addig a manuális indítás csak a tulajdonos `ugry65` számára, a teljes SHA, UAT-hivatkozás és az exact-confirmation mező jelenti az emberi kaput. Második személyes reviewer jóváhagyást ez nem helyettesít.
+A workflow `Production – ahely-booking` environment használata önmagában nem bizonyít emberi approvalt. A 2026-09-28-i read-only UI-ellenőrzés szerint a Required reviewers kapcsoló elérhető, de **ki van kapcsolva**; az admin bypass be van kapcsolva. Az environment kizárólag a `main` ágat engedi deployment branchként, és jelenleg nincs benne secret vagy variable. Az environment név szerint különbözik a régi `Production` environmenttől, amelynek saját secretjei és változói vannak; ezek nem öröklődnek át. A kézi indítás `ugry65` actorra, teljes SHA-ra, UAT-hivatkozásra és pontos megerősítő szövegre korlátozott, de ez nem GitHub reviewer jóváhagyás. Required reviewers és bypass szabály tényleges beállítása, valamint a szükséges scoped hitelesítő adatok jóváhagyott elhelyezése előtt a release NO-GO.
 
 ## Secret-scope
 
 A production release workflow `Production – ahely-booking` Environmentben keresi a `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `PRODUCTION_VERCEL_PROJECT_ID` secretet és a `PRODUCTION_SUPABASE_PROJECT_REF`, `PRODUCTION_SITE_URL` variable-t. Ezeket az új environmentben még külön igazolni és szükség szerint beállítani kell, kizárólag projektgazdai jóváhagyással. A meglévő `production` nevű environmentet más production DB/backup workflow-k használják; a két environmentet nem szabad azonosnak feltételezni.
 
 A token jogosultsága a Vercel team/project elérését biztosítja; a GitHub Environment csak a token kiadását védi. A production Vercel Supabase service-role, DB URL, SMTP és CRON secretjeinek Preview/Development scope-ját külön, titokértékek kiírása nélkül ellenőrizni kell. Staging scope-ba production secret nem kerülhet. A száraz futás a tényleges production Vercel projektből olvassa a konfigurációt, és fail-closed módon ellenőrzi a project ID-t, az org ID-t, a Supabase URL-t, a canonical site URL-t és a két Supabase kulcs jelenlétét. Nem végez deployt és nem módosítja a production konfigurációt.
+
+**Read-only scope audit, 2026-09-28:** a production projekt Production változólistájában a `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `SMTP_PASS` és az alkalmazás URL/kulcs változói Production hatókörűek. Ugyanennek a projektnek a Preview listájában van általános Preview és `staging` ágra célzott `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, illetve `SMTP_PASS` bejegyzés is. A titokértékeket nem nyitottuk meg, így **nem igazolt**, hogy az általános Preview érték production vagy staging hitelesítő adat-e. Az általános Preview scope minden nem külön rendelt feature ágra érvényes lehet. Az értékek eredetét biztonságos, titkokat naplóba nem író eljárással kell igazolni; addig a production hitelesítő adatok Preview-ból kizárása nincs bizonyítva és az aktiválás NO-GO. A scope audit nem módosított Vercel beállítást.
 
 ## Release és rollback operátori jegyzőkönyv
 
@@ -92,6 +94,8 @@ Ha a `main` → `production` Branch Tracking átállítás után a release útvo
 - GitHub `production` branch: jelenleg nem létezik;
 - repository ruleset: a 2026-09-27-i történeti pillanatképben még nem volt;
 - production Cron Jobs globálisan **Enabled**; ezt a release-isoláció részeként nem módosítjuk.
+
+A 2026-09-28-i UI-ellenőrzés megerősítette, hogy a Production Branch Tracking továbbra is `main`, és minden `main` push Production Deploymentet indíthat. Emiatt sem a #242, sem a #240 PR nem merge-elhető a release-isoláció aktiválása előtt.
 
 ## Baseline egyezőség – 2026-09-27
 
