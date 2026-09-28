@@ -242,7 +242,12 @@ export async function sendPasswordReset(formData: FormData) {
   if (!redirectTo) redirect(resultUrl("hiba", "A jelszóbeállító link nem küldhető: hiányzik a SITE_URL konfiguráció.", formData));
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) redirect(resultUrl("hiba", "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
+  if (error) {
+    const isEmailRateLimit = error.status === 429 || error.code === "over_email_send_rate_limit";
+    redirect(resultUrl("hiba", isEmailRateLimit
+      ? "Nemrég már küldtünk aktiváló/jelszóbeállító levelet. Kérjük, várj legalább 60 másodpercet az újraküldéssel."
+      : "Az aktiváló/jelszóbeállító e-mail elküldése nem sikerült.", formData));
+  }
   redirect(resultUrl("uzenet", `Az aktiváló/jelszóbeállító link elküldve: ${email}`, formData));
 }
 
