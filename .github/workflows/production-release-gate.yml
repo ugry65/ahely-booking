@@ -17,3 +17,5 @@ jobs:
           fetch-depth: 0
       - name: Verify source, UAT evidence and merged tree
         run: node scripts/check-production-release-pr.mjs
+      - name: Require release evidence without open blockers
+        run: node scripts/check-release-evidence.mjs --release
