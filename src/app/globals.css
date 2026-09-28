@@ -128,6 +128,12 @@ tfoot th { font-weight: 800; }
 .booking-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
 .calendar-help { margin: 0; }
 
+.calendar-color-palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; }
+.calendar-color-option { position: relative; display: flex; align-items: center; gap: .5rem; min-width: 0; padding: .55rem; border: 1px solid #d8d4c8; border-radius: .65rem; background: #fff; cursor: pointer; font-size: .82rem; font-weight: 650; }
+.calendar-color-option input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.calendar-color-swatch { flex: 0 0 auto; width: 2rem; height: 2rem; border: 1px solid rgb(31 42 36 / 18%); border-radius: 50%; }
+.calendar-color-option:has(input:checked) { border-color: #235c43; outline: 2px solid #235c43; outline-offset: 1px; background: #f4faf6; }
+.calendar-color-option:has(input:focus-visible) { outline: 3px solid #235c43; outline-offset: 2px; }
 
 @media (min-width: 52.01rem) {
   /* Keep non-calendar content aligned with the centered desktop navigation. */
@@ -191,6 +197,8 @@ tfoot th { font-weight: 800; }
   .calendar-help { display: none; }
   .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row, .monthly-filter { grid-template-columns: 1fr; }
   .billing-address-fields { grid-template-columns: 1fr; }
+  .calendar-color-palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .calendar-color-option { font-size: .78rem; }
   .monthly-filter { width: 100%; grid-template-columns: minmax(0, 1fr); }
 }
 
