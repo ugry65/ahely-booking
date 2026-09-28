@@ -16,11 +16,10 @@ grep -Fq "https://foglalas.a-hely.com" "$file"
 grep -Fq 'check-production-preview-scope.mjs' "$file"
 grep -Fq 'git rev-parse origin/main)" != "$REQUESTED_SHA"' "$file"
 grep -Fq "must be the current main HEAD" "$file"
-grep -Fq "intentionally fail-closed" "$file"
+grep -Fq 'check-production-git-isolation.mjs' "$file"
+grep -Fq 'vercel build --prod' "$file"
+grep -Fq 'vercel deploy --prebuilt --prod' "$file"
+grep -Fq 'verify-production-release-deployment.mjs' "$file"
+grep -Fq 'releaseCommitSha=$REQUESTED_SHA' "$file"
 
-if grep -Eq 'vercel (deploy|--prod|promote)' "$file"; then
-  echo "Production release workflow must remain non-deploying until activation prerequisites are approved." >&2
-  exit 1
-fi
-
-echo "Production application release gate is fail-closed and non-deploying."
+echo "Production application release gate is manual, SHA-bound and Git-isolation guarded."

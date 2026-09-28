@@ -4,7 +4,7 @@
 
 **Issue:** #241
 
-**Állapot:** előkészítés; production konfigurációt ez a változtatás nem módosít.
+**Állapot:** PR előkészítés; production konfigurációt ez a változtatás nem módosít, a workflow nincs `main`-ben.
 
 ## Célfolyamat
 
@@ -14,7 +14,7 @@ A production alkalmazás nem kerülhet automatikusan élesbe pusztán attól, ho
 
 ## Biztonsági alapelv
 
-A production Vercel projektben a Production környezet Branch Tracking értékét a jelenlegi `main` ágról külön `production` release ágra kell átállítani. A GitHub kapcsolat megtartható; a staging projekt továbbra is `main`-t követ. Ezt **nem** szabad a közös `vercel.json` `git.deploymentEnabled` mezőjével megoldani, mert ugyanazt a fájlt a staging projekt is használja.
+A production Vercel projekt Git-integrációját a bizonyított CLI release-út után, külön jóváhagyással kell leválasztani; a staging projekt továbbra is `main`-t követ. A közös `vercel.json` `git.deploymentEnabled` mezője mindkét projektre hatna, ezért itt nem alkalmas a szétválasztásra. A Vercel CLI a pontos `main` SHA-ból production környezettel épít, majd az ellenőrzött artifactot a production projektbe deployolja. A workflow deploy módja a Vercel API-n keresztül a leválasztott Git-integrációt is ellenőrzi, ezért a mostani állapotban megáll.
 
 A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda külön nem hagyja jóvá a production Vercel beállítás módosítását.
 
@@ -35,7 +35,7 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
    - a szükséges production secret-ek rendelkezésre állnak;
    - a staging Vercel projektben valóban létezik READY, `main` ágból készült production-target deployment a pontos SHA-val;
    - a SHA-hoz kötött staging UAT-jegyzőkönyv hivatkozása rögzített.
-9. Aktiválás után a workflow kizárólag fast-forward jelleggel mozgathassa a `production` release branchet a jóváhagyott `main` SHA-ra; tetszőleges feature/preview commit közvetlen production kiadása tilos.
+9. Aktiválás után a workflow csak a leválasztott production projektbe deployolhatja az aktuális `main` HEAD pontos, stagingen ellenőrzött SHA-ját. A `main`-t közvetlenül a build és a deploy előtt is újra ellenőrzi.
 10. A deployolt commit SHA és Vercel deployment ID/URL auditálhatóan jelenjen meg a workflow summaryban/release evidence-ben.
 11. Deploy után célzott production smoke: canonical URL + `/api/health`.
 12. Hiba esetén a korábbi ismert jó deploymentre történő rollback legyen dokumentált és kézi jóváhagyású.
@@ -44,18 +44,17 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
 
 Csak a fenti workflow staging/száraz ellenőrzése után, külön projektgazdai jóváhagyással:
 
-- GitHub `production` release branch létrehozása az aktuális, ismert jó production baseline SHA-ról;
-- a `production` branch közvetlen, véletlen módosítása elleni GitHub-védelem beállítása;
-- production Vercel Production Branch Tracking átállítása `main` → `production`;
-- a Git kapcsolat megmarad, staging Git kapcsolat változatlan marad;
+- staging projekten izolált CLI build/deploy próba a production workflow mintájára, staging konfigurációval; pontos SHA/deployment ID/health jegyzőkönyv;
+- production release token elhelyezése kizárólag az új GitHub Environmentben és a scope audit rendezése, külön jóváhagyással;
+- production Vercel Git-integráció Disconnect, külön jóváhagyással; a staging Git kapcsolat változatlan marad;
 - ellenőrizni kell, hogy a jelenlegi production deployment és custom domain továbbra is kiszolgál;
 - egy kontrollált `main` commit után igazolni kell: staging deploy történik, production automatikus deploy NEM történik;
-- ezt követően egy kontrollált release-promócióval igazolni kell, hogy kizárólag a `production` branch előreléptetése indít production deploymentet;
+- ezt követően külön, pontos SHA-ra és UAT-ra adott emberi jóváhagyással indítható az első workflow `deploy` mód;
 - csak ezután tekinthető a release-isoláció lezártnak.
 
 ## GitHub production environment
 
-A workflow `Production – ahely-booking` environment használata önmagában nem bizonyít emberi approvalt. A 2026-09-28-i read-only UI-ellenőrzés szerint a Required reviewers kapcsoló elérhető, de **ki van kapcsolva**; az admin bypass be van kapcsolva. Az environment kizárólag a `main` ágat engedi deployment branchként, és jelenleg nincs benne secret vagy variable. Az environment név szerint különbözik a régi `Production` environmenttől, amelynek saját secretjei és változói vannak; ezek nem öröklődnek át. Egyetlen tulajdonos saját indítású workflow-jának saját reviewer-jóváhagyása nem független ellenőrzés, ezért nem kötelező release-kapu. Az explicit emberi döntést Imre az adott teljes SHA-ra és staging UAT-ra adja meg; az operátor ezután indíthatja a kézi workflow-t a jogosult `ugry65` GitHub-fiókkal, megadva a pontos megerősítő szöveget. Ha az asszisztens számára az indítás technikailag nem elérhető, a tulajdonosnak csak ezt az egy GitHub-indítást kell elvégeznie. A döntés, a workflow run és a deployment azonosítói együtt alkotják a kiadási jegyzőkönyvet. A scoped hitelesítő adatok jóváhagyott elhelyezése és a production Git izoláció előtt továbbra is NO-GO.
+A workflow `Production – ahely-booking` environment használata önmagában nem bizonyít emberi approvalt. A 2026-09-28-i read-only UI-ellenőrzés szerint a Required reviewers kapcsoló elérhető, de **ki van kapcsolva**; az admin bypass be van kapcsolva. Az environment kizárólag a `main` ágat engedi deployment branchként, és jelenleg nincs benne secret vagy variable. Az environment név szerint különbözik a régi `Production` environmenttől, amelynek saját secretjei és változói vannak; ezek nem öröklődnek át. Egyetlen tulajdonos saját indítású workflow-jának saját reviewer-jóváhagyása nem független ellenőrzés, ezért nem kötelező release-kapu. Az explicit emberi döntést Imre az adott teljes SHA-ra és staging UAT-ra adja meg; az operátor ezután indíthatja a kézi workflow-t a jogosult `ugry65` GitHub-fiókkal, megadva a pontos megerősítő szöveget. A GitHub bejelentkezett felületén az asszisztens elérte egy másik kézi workflow indítási űrlapját, indítás nélkül; a #241 workflow tényleges indíthatósága csak `main`-be kerülése után ellenőrizhető. A döntés, a workflow run és a deployment azonosítói együtt alkotják a kiadási jegyzőkönyvet. A scoped hitelesítő adatok jóváhagyott elhelyezése és a production Git izoláció előtt továbbra is NO-GO.
 
 ## Secret-scope
 
@@ -73,10 +72,10 @@ Ugyanezen a napon a Preview `Shared` tabon **nincs kapcsolt közös változó**.
 
 1. Jegyezd fel a kiinduló production deployment ID-t, Git SHA-t, a `main` SHA-t és a production/staging deployment queue állapotát. Az aktiválás alatt `main` merge stop.
 2. A `main` release SHA legyen teljes 40 karakter, CI PASS, és a release ellenőrzésekor is egyezzen a `main` HEAD-del. A staging Vercel projekt production targetje ugyanezt a SHA-t `main` refből READY állapotban futtassa; az UAT issue/PR URL-je a SHA-t és deployment ID-t tartalmazza. Az UAT és a release között a `main` befagyasztandó; új merge után ismételt staging ellenőrzés szükséges.
-3. A workflow `dry-run` módban a fenti azonosságokat és a productionből lekért runtime környezetet ellenőrzi. Ha secret vagy scope hiányzik, NO-GO. `deploy` mód jelenleg szándékosan leáll.
-4. Külön jóváhagyott aktiválás után a `production` release branch csak a korábbi production SHA-ról, majd fast-forward útvonalon mozoghat. Production branch ruleset és Vercel Branch Tracking átállítás szükséges; a jelenlegi production deploymentnek az átállás után is azonosnak kell maradnia.
-5. Egy jóváhagyott release esetén a workflow summaryban rögzítendő: actor, release SHA, UAT URL, staging deployment ID, előző production deployment ID, új production deployment ID, URL és READY állapot, utána `/api/health` smoke. Ennek aktív végrehajtó lépése külön review és aktiválás nélkül nem kerülhet be.
-6. Hibás kiadáskor a korábbi ismert jó deployment ID alapján Vercel Dashboardban kézi rollback/promote, külön jóváhagyással. A rollback csak alkalmazáskódot és domaint fordít vissza: adatbázis-migrációt vagy Auth konfigurációt nem. A `production` branch history és a visszaállított deployment eltérését a következő release előtt rendezni és dokumentálni kell.
+3. A workflow `dry-run` módban a fenti azonosságokat és a productionből lekért runtime környezetet ellenőrzi. Ha secret vagy scope hiányzik, NO-GO. `deploy` mód a production Git-integráció leválasztásának API-bizonyítéka nélkül leáll.
+4. Külön jóváhagyott aktiváláskor rögzítsd a production aktuális deployment ID-ját és SHA-ját. Disconnect után ellenőrizd, hogy ugyanaz a deployment szolgálja ki a domaint; `main` merge csak ezután történhet. A #242 merge maga is a soron következő release-jelöltet változtatja, ezért staging UAT újra szükséges.
+5. Egy jóváhagyott release esetén a workflow summaryban rögzíti az actort, release SHA-t, UAT URL-t, staging deployment ID-t, új production deployment ID-t, URL-t és READY állapotot. Az előző production deploymentet az indítás előtt külön rögzítsd; utána `/api/health` smoke és canonical domain ellenőrzés.
+6. Hibás kiadáskor a korábbi ismert jó deployment ID alapján Vercel Dashboardban kézi rollback/promote, külön jóváhagyással. A rollback csak alkalmazáskódot és domaint fordít vissza: adatbázis-migrációt vagy Auth konfigurációt nem. A következő release előtt a dokumentált SHA/deployment eltérést rendezni kell.
 
 ## Nem része ennek a változtatásnak
 
@@ -90,14 +89,14 @@ Ezek csak külön jóváhagyott aktiválási lépésben történhetnek.
 
 ## Visszaállítás az átállás közben
 
-Ha a `main` → `production` Branch Tracking átállítás után a release útvonal nem működik megfelelően, **nem kell az alkalmazást vagy az adatbázist visszaállítani**: a már futó production deployment változatlanul kiszolgál. A konfigurációs rollback a Vercel Production Branch Tracking visszaállítása `main` értékre. Ezt is csak projektgazdai jóváhagyással szabad elvégezni.
+Ha a Disconnect után a release útvonal nem működik megfelelően, a már futó production deployment változatlanul kiszolgál. A Git-integráció visszakapcsolása `main` követéssel ismét automatikus production deployt okozhat, ezért csak külön projektgazdai jóváhagyással, a `main` és a deployment queue ellenőrzése után történhet. Hibás aktív deploymentre a fenti, deployment ID alapú Vercel rollback vonatkozik.
 
 ## Megfigyelt jelenlegi állapot – 2026-09-27
 
 - production Vercel Production Branch Tracking: `main`;
 - production Git repository kapcsolat: `ugry65/ahely-booking`;
 - production Deploy Hook: nincs;
-- GitHub `production` branch: jelenleg nem létezik;
+- Külön `production` Git branch nem szükséges a CLI alapú kiadáshoz;
 - repository ruleset: a 2026-09-27-i történeti pillanatképben még nem volt;
 - production Cron Jobs globálisan **Enabled**; ezt a release-isoláció részeként nem módosítjuk.
 
@@ -121,7 +120,7 @@ Az időközben lezárt PR-ok után a GitHub `main` HEAD `4ce6f60f280f10a6a235690
 
 ## Független review utáni kötelező kapuk – 2026-09-28
 
-A production Branch Tracking átállítása **NO-GO**, amíg az alábbiak nincsenek igazolva:
+A production Git-integráció leválasztása **NO-GO**, amíg az alábbiak nincsenek igazolva:
 
 1. `main` branch protection/ruleset: PR kötelező, szükséges CI checkek kötelezők, force-push és törlés tiltott.
 2. GitHub production environment: deployment branch/tag policy explicit és ellenőrzött; feature ágról módosított workflow nem férhet hozzá production secretekhez. A tulajdonos pontos release SHA-ra adott emberi jóváhagyása és a kézi workflow-indítás auditálható. Required reviewer opcionális, nem feltétele az egytulajdonosos folyamatnak.
@@ -130,9 +129,9 @@ A production Branch Tracking átállítása **NO-GO**, amíg az alábbiak nincse
 5. Production DB deploy workflow release SHA-hoz kötése; DB és app release nem csúszhat eltérő commitokra.
 6. Staging evidence: a release SHA staging deploymentje READY és az UAT jóváhagyás SHA-hoz kötött.
 7. Production identity guard ne csak kézi címkéket hasonlítson: a tényleges URL/kulcs/projekt összerendelést is ellenőrizze, ahol biztonságosan lehetséges.
-8. Rehearsal production secret nélkül igazolja a branch tracking, branch-push→Vercel deployment és rollback viselkedést.
+8. Rehearsal production secret nélkül a staging projekten igazolja a CLI production build/deploy, SHA-metaadat, deployment ellenőrzés és rollback eljárás viselkedését.
 9. Átállási ablakban main freeze és deployment-queue ellenőrzés.
-10. A `production` branch csak fast-forward release-t engedjen; force push normál release-ben tilos.
+10. A production Git-integráció leválasztása után a release workflow API-n igazolja a `link: null` állapotot; eltérő vagy hiányzó mezőnél leáll. A tényleges Vercel API válasz alakját az aktiváláskor ellenőrizni kell. A Vercel token birtokában továbbra is lehetne kézi megkerülő deploy; a token scope és operátori naplózás fontos.
 
 ### Cron-konfigurációs eltérés
 
