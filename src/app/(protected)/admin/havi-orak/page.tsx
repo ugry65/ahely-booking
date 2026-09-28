@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth";
 import { monthStart, selectedMonths, mergeBookingTitles, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
+import { CasualSettlementBreakdown } from "./casual-settlement-breakdown";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
 
 function currentBudapestMonth() {
@@ -79,6 +80,8 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       </table></div>
       {rows.length ? null : <p className="muted">A kijelölt hónapokban nincs elszámolható aktív foglalás.</p>}
     </section>
+
+    <CasualSettlementBreakdown details={details} />
 
     <section className="card wide-card stack">
       <div><p className="eyebrow">Ellenőrzés</p><h2>Tételes aktív foglalások</h2><p className="muted">Minden elszámolt foglalás visszaellenőrizhető. A lista ugyanazokat a kijelölt hónapokat használja; lemondott foglalás nem szerepelhet.</p></div>
