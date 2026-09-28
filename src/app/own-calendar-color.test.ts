@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { CALENDAR_COLOR_PALETTE } from "@/lib/calendar-colors";
+import { CALENDAR_COLOR_PALETTE } from "../lib/calendar-colors";
 
 describe("self-service calendar color", () => {
   it("offers exactly 20 approved colors without requiring uniqueness", () => {
