@@ -5,6 +5,12 @@ import path from "node:path";
 const read = (file: string) => fs.readFileSync(path.join(__dirname, file), "utf8");
 
 describe("migration admin layout", () => {
+  it("does not expose the completed migration in desktop or mobile admin navigation", () => {
+    const layout = read("../app/(protected)/layout.tsx");
+    const mobileNav = read("../app/(protected)/mobile-app-nav.tsx");
+    expect(layout).not.toContain('href="/admin/migracio"');
+    expect(mobileNav).not.toContain('href="/admin/migracio"');
+  });
   it("uses page-scoped full-width cards instead of the global 30rem card limit", () => {
     const page = read("../app/(protected)/admin/migracio/page.tsx");
     const form = read("../app/(protected)/admin/migracio/dry-run-form.tsx");

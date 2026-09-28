@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { cancelCalendarBooking, createBooking, updateCalendarBooking } from "./actions";
 import { createRecurringBooking } from "./ismetlod/actions";
-import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, normalizeCalendarSelection, type CalendarSelection } from "@/lib/calendar-selection";
+import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, normalizeCalendarSelection, selectionFromBookingInterval, type CalendarSelection } from "@/lib/calendar-selection";
 import { BookingTimeFields } from "./booking-time-fields";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
@@ -112,7 +112,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
     if (event?.pointerType === "touch") touchGesture.current = null; dragState.current = null; if (completedTouchSelection) setBookingDialogOpen(true);
   }
   function clearSelection() { cancelLongPress(); touchGesture.current = null; setBookingDialogOpen(false); setDialogRoomId(""); setRepeatFrequency("none"); setSelection(null); setSourceBooking(null); setDialogMode("create"); }
-  function setSelectionFromBooking(booking: CalendarBooking) { setSelection(normalizeCalendarSelection(booking.room_id, localMinute(booking.start_at), localMinute(booking.end_at))); setDialogRoomId(booking.room_id); setRepeatFrequency("none"); setSourceBooking(booking); }
+  function setSelectionFromBooking(booking: CalendarBooking) { setSelection(selectionFromBookingInterval(booking.room_id, localMinute(booking.start_at), localMinute(booking.end_at))); setDialogRoomId(booking.room_id); setRepeatFrequency("none"); setSourceBooking(booking); }
   function duplicateBooking(booking: CalendarBooking) { setMenuBooking(null); setSelectionFromBooking(booking); setDialogMode("duplicate"); setBookingDialogOpen(true); }
   function editBooking(booking: CalendarBooking, scope: BookingScope) { setMenuBooking(null); setScopePrompt(null); setSelectionFromBooking(booking); setEditScope(scope); setDialogMode("edit"); setBookingDialogOpen(true); }
   function requestEdit(booking: CalendarBooking) { setMenuBooking(null); if (booking.series_id) setScopePrompt({ kind: "edit", booking }); else editBooking(booking, "occurrence"); }

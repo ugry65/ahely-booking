@@ -4,11 +4,11 @@ import { describe, expect, it } from "vitest";
 const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
 
 describe("AllBooked ügyfélmigráció admin UI", () => {
-  it("asztali és mobil admin menüből is elérhető, a mobil menü bezárul", () => {
+  it("a lezárt migráció nem jelenik meg az asztali vagy mobil admin menüben", () => {
     const desktop = read("../app/(protected)/layout.tsx");
     const mobile = read("../app/(protected)/mobile-app-nav.tsx");
-    expect(desktop).toContain('<Link href="/admin/migracio">Migráció</Link>');
-    expect(mobile).toContain('<Link href="/admin/migracio" onClick={closeMenu}>Migráció</Link>');
+    expect(desktop).not.toContain('href="/admin/migracio"');
+    expect(mobile).not.toContain('href="/admin/migracio"');
   });
 
   it("az általános import megtartja a production guardot és a kompenzációt", () => {

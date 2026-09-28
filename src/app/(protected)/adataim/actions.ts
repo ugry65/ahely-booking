@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireActiveProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { CALENDAR_COLOR_VALUES } from "@/lib/calendar-colors";
 
 function resultUrl(kind: "hiba" | "uzenet", message: string) {
   return `/adataim?${new URLSearchParams({ [kind]: message }).toString()}`;
@@ -48,4 +49,25 @@ export async function updateOwnProfileData(formData: FormData) {
   }
   revalidatePath("/adataim");
   redirect(resultUrl("uzenet", "Az adataid mentése sikerült."));
+}
+
+
+export async function updateOwnCalendarColor(formData: FormData) {
+  await requireActiveProfile();
+  const calendarColor = String(formData.get("calendarColor") ?? "").trim().toUpperCase();
+  if (!CALENDAR_COLOR_VALUES.includes(calendarColor as (typeof CALENDAR_COLOR_VALUES)[number])) {
+    redirect(resultUrl("hiba", "Válassz a megadott naptárszínek közül."));
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("update_own_calendar_color", {
+    p_calendar_color: calendarColor,
+    p_correlation_id: crypto.randomUUID(),
+  });
+  if (error) {
+    redirect(resultUrl("hiba", "A naptárszín mentése nem sikerült. Kérlek, próbáld újra."));
+  }
+  revalidatePath("/adataim");
+  revalidatePath("/foglalasok");
+  redirect(resultUrl("uzenet", "A naptárszíned mentése sikerült."));
 }

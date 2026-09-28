@@ -104,9 +104,13 @@ Read-only ellenőrzés alapján a jelenleg futó production deployment Git SHA-j
 - production deployment SHA: `5a34742d2297bd3b6ac66a73ca932ee7136e2ad5`;
 - GitHub `main` HEAD: `5a34742d2297bd3b6ac66a73ca932ee7136e2ad5`.
 
-Ez legyen a kezdeti `production` release branch létrehozási pontja. A branch létrehozása előtt újra ellenőrizni kell, hogy a production deployment nem változott.
+Ez a 2026-09-27-i történeti egyezés; **nem használható** már a `production` release branch létrehozási pontjaként. A branch létrehozása előtt újra ellenőrizni kell az aktuális production deploymentet és a `main`-t.
 
 A projektgazda 2026-09-28-án megerősítette a `main` ruleset aktiválását (PR kötelező, `Application checks` és `Release evidence` required, törlés/force push tiltva). A `production` branch védelme továbbra is külön igazolandó.
+
+## Frissített baseline – 2026-09-28, 22:30 CEST körül
+
+Az időközben lezárt PR-ok után a GitHub `main` HEAD `4ce6f60f280f10a6a23569059ce1ea63c5b8d9d5`. A Vercel Dashboard read-only deployment listájában a production projekt és a staging projekt legutóbbi `main`-ből készült Production target deploymentje egyaránt ehhez a SHA-hoz tartozik és READY. A `main` utolsó öt merge-e a #241 kiinduló commitja után történt; a #242 ága ezeket konfliktus nélkül átveszi, de a korábbi UAT és baseline bizonyítékok a későbbi release-hez újra ellenőrizendők. A staging és production adatbázis-migrációk állapota ettől nem bizonyított. Az aktiváláskori baseline-t közvetlenül a beállításmódosítás előtt ismételten mérni kell.
 
 
 ## Független review utáni kötelező kapuk – 2026-09-28

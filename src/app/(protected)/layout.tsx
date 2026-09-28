@@ -6,26 +6,22 @@ import { MobileAppNav } from "./mobile-app-nav";
 
 export default async function ProtectedLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const profile = await requireActiveProfile();
-  const displayName = `${profile.last_name} ${profile.first_name}`.trim();
-
   return (
     <main>
       <nav className="desktop-app-nav">
         <Link href="/foglalasok"><strong>Foglalási naptár</strong></Link>
         <Link href="/foglalasaim">Foglalásaim</Link>
         <Link href="/adataim">Adataim</Link>
-        <span>{displayName}</span>
         {profile.role === "admin" ? <Link href="/admin/felhasznalok">Felhasználók</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/helyisegek">Helyiségek</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/dijszabas">Díjszabás</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/beallitasok">Beállítások</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/havi-orak">Havi órák</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/lemondasok">Lemondások</Link> : null}
-        {profile.role === "admin" ? <Link href="/admin/migracio">Migráció</Link> : null}
         <form action={logout}><button type="submit">Kijelentkezés</button></form>
       </nav>
 
-      <MobileAppNav displayName={displayName} isAdmin={profile.role === "admin"} />
+      <MobileAppNav isAdmin={profile.role === "admin"} />
       {children}
     </main>
   );
