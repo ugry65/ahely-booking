@@ -26,7 +26,7 @@ A jelenlegi éles deployment addig változatlan marad, amíg a projektgazda kül
 6. A workflow pontos megerősítő szöveget kérjen: `DEPLOY-PRODUCTION`.
 7. A workflow a ténylegesen létrehozott `Production – ahely-booking` GitHub Environment alatt fusson, kizárólag `main` dispatch esetén, `ugry65` actorral.
 8. Release előtt ellenőrizze:
-   - a megadott SHA létezik és a `main` történetének része;
+   - a megadott SHA a `main` aktuális HEAD-je, így későbbi merge nem kerülheti meg a staging UAT-ot;
    - a production Vercel project ID pontosan `prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo`;
    - a production Supabase project ref pontosan `yasrmxwjojepessivhmc`;
    - a production site URL pontosan `https://foglalas.a-hely.com`;
@@ -66,7 +66,7 @@ A token jogosultsága a Vercel team/project elérését biztosítja; a GitHub En
 ## Release és rollback operátori jegyzőkönyv
 
 1. Jegyezd fel a kiinduló production deployment ID-t, Git SHA-t, a `main` SHA-t és a production/staging deployment queue állapotát. Az aktiválás alatt `main` merge stop.
-2. A `main` release SHA legyen teljes 40 karakter, CI PASS. A staging Vercel projekt production targetje ugyanezt a SHA-t `main` refből READY állapotban futtassa; az UAT issue/PR URL-je a SHA-t és deployment ID-t tartalmazza.
+2. A `main` release SHA legyen teljes 40 karakter, CI PASS, és a release ellenőrzésekor is egyezzen a `main` HEAD-del. A staging Vercel projekt production targetje ugyanezt a SHA-t `main` refből READY állapotban futtassa; az UAT issue/PR URL-je a SHA-t és deployment ID-t tartalmazza. Az UAT és a release között a `main` befagyasztandó; új merge után ismételt staging ellenőrzés szükséges.
 3. A workflow `dry-run` módban a fenti azonosságokat és a productionből lekért runtime környezetet ellenőrzi. Ha secret/reviewer vagy scope hiányzik, NO-GO. `deploy` mód jelenleg szándékosan leáll.
 4. Külön jóváhagyott aktiválás után a `production` release branch csak a korábbi production SHA-ról, majd fast-forward útvonalon mozoghat. Production branch ruleset és Vercel Branch Tracking átállítás szükséges; a jelenlegi production deploymentnek az átállás után is azonosnak kell maradnia.
 5. Egy jóváhagyott release esetén a workflow summaryban rögzítendő: actor, release SHA, UAT URL, staging deployment ID, előző production deployment ID, új production deployment ID, URL és READY állapot, utána `/api/health` smoke. Ennek aktív végrehajtó lépése külön review és aktiválás nélkül nem kerülhet be.
