@@ -6,9 +6,9 @@ import { useEffect, useRef } from "react";
 
 import { logout } from "@/app/(auth)/actions";
 
-type Props = { displayName: string; isAdmin: boolean };
+type Props = { isAdmin: boolean };
 
-export function MobileAppNav({ displayName, isAdmin }: Props) {
+export function MobileAppNav({ isAdmin }: Props) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   const pathname = usePathname();
   function closeMenu() { if (menuRef.current) menuRef.current.open = false; }
@@ -20,7 +20,6 @@ export function MobileAppNav({ displayName, isAdmin }: Props) {
       <details className="mobile-app-menu" ref={menuRef}>
         <summary aria-label="Menü megnyitása">☰</summary>
         <div className="mobile-app-menu-panel">
-          <p className="muted">{displayName}</p>
           <Link href="/foglalasok" onClick={closeMenu}>Foglalási naptár</Link>
           <Link href="/foglalasaim" onClick={closeMenu}>Foglalásaim</Link>
           <Link href="/adataim" onClick={closeMenu}>Adataim</Link>
