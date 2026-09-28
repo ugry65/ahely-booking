@@ -90,3 +90,23 @@ Read-only ellenőrzés alapján a jelenleg futó production deployment Git SHA-j
 Ez legyen a kezdeti `production` release branch létrehozási pontja. A branch létrehozása előtt újra ellenőrizni kell, hogy a production deployment nem változott.
 
 GitHub ellenőrzés szerint a `main` jelenleg `protected: false`, repository ruleset nincs. A release-isoláció részeként legalább a `production` branch közvetlen véletlen módosítását meg kell akadályozni; a `main` védelmét külön repository-governance hardeningként szintén be kell vezetni úgy, hogy a meglévő PR/CI folyamatot ne törje el.
+
+
+## Független review utáni kötelező kapuk – 2026-09-28
+
+A production Branch Tracking átállítása **NO-GO**, amíg az alábbiak nincsenek igazolva:
+
+1. `main` branch protection/ruleset: PR kötelező, szükséges CI checkek kötelezők, force-push és törlés tiltott.
+2. GitHub production environment: Required reviewers ténylegesen aktív, deployment branch/tag policy explicit és ellenőrzött; feature ágról módosított workflow nem férhet hozzá production secretekhez.
+3. Production Vercel Preview/Development env scope audit: production Supabase/service-role/DB/SMTP/cron secret nem lehet preview scope-ban.
+4. Vercel team role/token audit: production promote/redeploy megkerülési út minimalizálva.
+5. Production DB deploy workflow release SHA-hoz kötése; DB és app release nem csúszhat eltérő commitokra.
+6. Staging evidence: a release SHA staging deploymentje READY és az UAT jóváhagyás SHA-hoz kötött.
+7. Production identity guard ne csak kézi címkéket hasonlítson: a tényleges URL/kulcs/projekt összerendelést is ellenőrizze, ahol biztonságosan lehetséges.
+8. Rehearsal production secret nélkül igazolja a branch tracking, branch-push→Vercel deployment és rollback viselkedést.
+9. Átállási ablakban main freeze és deployment-queue ellenőrzés.
+10. A `production` branch csak fast-forward release-t engedjen; force push normál release-ben tilos.
+
+### Cron-konfigurációs eltérés
+
+Repo-ellenőrzés szerint a `vercel.json` négy `/api/internal/production-health` cront ütemez, miközben a `main` fában ilyen Next.js route nincs. A dokumentált és létező publikus health kontraktus a `/api/health`. Emiatt a #240 jelenlegi változata nem tekinthető véglegesnek: a booking-email-worker cron eltávolítása mellett a hibás/felesleges production-health cronokat külön döntéssel rendezni kell. Production Cron Jobs globális kapcsolóját ettől függetlenül nem kapcsoljuk ki ellenőrizetlenül.
