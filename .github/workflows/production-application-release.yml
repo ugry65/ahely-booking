@@ -172,5 +172,5 @@ jobs:
         if: ${{ inputs.mode == 'deploy' }}
         run: |
           echo "Deploy mode is intentionally fail-closed while issue #241 activation prerequisites are incomplete." >&2
-          echo "Required before enabling deployment: dedicated production branch protection, Vercel Production Branch Tracking main -> production, GitHub production reviewer verification, and controlled dry-run evidence." >&2
+          echo "Required before enabling deployment: dedicated production branch protection, Vercel Production Branch Tracking main -> production, scoped release token, and controlled dry-run evidence." >&2
           exit 1
