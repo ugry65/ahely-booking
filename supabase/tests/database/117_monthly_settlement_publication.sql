@@ -91,6 +91,8 @@ select is(
 insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat)
 values ('00000000-0000-0000-0000-000000000272',
   '11000000-0000-0000-0000-000000000002', true, true);
+update public.profiles set can_repeat_bookings = true
+where id = '00000000-0000-0000-0000-000000000272';
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select throws_ok(
