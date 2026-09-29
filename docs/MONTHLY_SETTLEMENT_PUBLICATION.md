@@ -41,4 +41,8 @@ Az első verzió nem mutat becslést, befizetést, tartozást, fizetési státus
 
 ## Forrásdokumentumok státusza
 
-A repositoryban megtalálható funkcionális specifikáció fájlja v1.0, a projektkontextus pedig korábbi, kötelező havi lezárást nem előíró üzleti állapotot is tartalmaz. Az „AI újraimplementálási specifikáció” aktuális példánya a vizsgált repository-ágban nem található. Ezért a lezárási és publikálási szabály forrása a 2026-09-29-i fejlesztési követelmény és az abban elfogadott cutoff-alapú lezárhatóság; a hiányzó specifikáció nem helyettesíthető kitalált tartalommal.
+A jóváhagyott FS v1.0 és az `A-Hely_Foglalasi_Rendszer_AI_Ujraimplementalasi_Specifikacio_2026-09-04.md` elérhető ChatGPT projektfájlként; az AI-specifikáció nincs verziózva a repositoryban. Ellenőriztük az AI-specifikáció foglalási módosítás/24 órás lemondás, időbeli díjszabás, immutable revision, audit és fail-closed előírásait. A későbbi, 2026-09-29-i explicit feature-követelmény szűkíti a régi FS aktuális becslésre, befizetésre és kötelező havi lezárás hiányára vonatkozó részeit. A lezárás szabadon választható admin művelet, de a usernek kizárólag publikált revision jelenhet meg.
+
+A `20260829145720_allow_past_booking_creation.sql` alapján normál user is létrehozhat múltbeli bookingot. Emiatt a 24 órás módosítási/lemondási határidő lejárta önmagában nem védené a lezárt snapshotot: publikálás után normál user nem hozhat létre, módosíthat vagy mondhat le az adott hónap elszámolását érintő bookingot. A backend trigger ezt a lezárt hónap alapján kényszeríti ki; admin korrekció új auditált revisiont hoz létre. Pontosan a cutoff pillanatában a meglévő `clock_timestamp() > start_at - cutoff` guard szerint a lemondás még megengedett, ezért a zárást ez a booking még blokkolja.
+
+Staging deployment blokkoló: [2026-09-29-i migration history audit](STAGING_MIGRATION_HISTORY_AUDIT_2026-09-29.md). A feature migration stagingre még nem került.
