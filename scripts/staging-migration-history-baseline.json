@@ -1,0 +1,646 @@
+{
+  "staging_project_ref": "fvwapntzhavhgazeflri",
+  "baseline_recorded_at": "2026-09-29",
+  "applied": [
+    {
+      "version": "202608160001",
+      "name": "initial_core",
+      "statements_md5": "df77c89c4d9467718d91f837b87b960c"
+    },
+    {
+      "version": "202608160002",
+      "name": "auth_profiles_rls",
+      "statements_md5": "cb7f064014b23436eddab6b64c40530f"
+    },
+    {
+      "version": "202608170001",
+      "name": "create_booking_rpc",
+      "statements_md5": "1fe9e2d0219c0f3c7e30370e62b4ea38"
+    },
+    {
+      "version": "202608170002",
+      "name": "cancel_booking_rpc",
+      "statements_md5": "ddc30e69c38c9576187b6a639974be3d"
+    },
+    {
+      "version": "202608170003",
+      "name": "unify_booking_validation",
+      "statements_md5": "c1a6d0661aa84ce26f9cc2034150f365"
+    },
+    {
+      "version": "202608170004",
+      "name": "room_access_admin",
+      "statements_md5": "403d22a12f2a4249651b3a477357b1a5"
+    },
+    {
+      "version": "202608170005",
+      "name": "booking_visibility",
+      "statements_md5": "f7fff9aee88fff955bab64cdf84b22d9"
+    },
+    {
+      "version": "202608170006",
+      "name": "unify_effective_room_access",
+      "statements_md5": "f7e38b222a464767fd5430047ce26b4f"
+    },
+    {
+      "version": "202608170007",
+      "name": "create_recurring_booking_rpc",
+      "statements_md5": "ffe9b7fe50f95271559584f67935f64f"
+    },
+    {
+      "version": "202608170008",
+      "name": "calendar_ui_support",
+      "statements_md5": "b3e070fc59fb9a64b2952e33044a5960"
+    },
+    {
+      "version": "202608170009",
+      "name": "my_bookings_read_model",
+      "statements_md5": "2310d109985a929a89d846e8c901b40f"
+    },
+    {
+      "version": "202608180001",
+      "name": "recurring_booking_ui_support",
+      "statements_md5": "62a25570b9e135ad6ba199ec17e8a745"
+    },
+    {
+      "version": "202608180002",
+      "name": "room_access_admin_ui",
+      "statements_md5": "d54fb02fa302d22659c70ae010f2ef73"
+    },
+    {
+      "version": "202608180003",
+      "name": "monthly_hours_export",
+      "statements_md5": "ded2522798afb2ff2a30e5699afd3256"
+    },
+    {
+      "version": "202608180004",
+      "name": "service_role_uat_bootstrap_grants",
+      "statements_md5": "8d59044a834aae484019f6178295f2e5"
+    },
+    {
+      "version": "20260821054450",
+      "name": "repeat_booking_business_rules",
+      "statements_md5": "1edf580f529919725359368b6b526abd"
+    },
+    {
+      "version": "20260821060345",
+      "name": "calendar_booking_actions",
+      "statements_md5": "4fa0f957fba70bb161987f9be90db174"
+    },
+    {
+      "version": "20260821060408",
+      "name": "series_training_room_update_guard",
+      "statements_md5": "72694bc55ca5f27477464b3a686287d5"
+    },
+    {
+      "version": "20260821062518",
+      "name": "calendar_management_read_model",
+      "statements_md5": "3e3da40cdd01f09f9557d1dbb84cfc10"
+    },
+    {
+      "version": "20260821111306",
+      "name": "user_billing_admin",
+      "statements_md5": "e3a8aa306f04113e8580092bcb13d1d9"
+    },
+    {
+      "version": "20260821111328",
+      "name": "global_booking_name_visibility",
+      "statements_md5": "282169e362c83c9ac73959faaf9e4fad"
+    },
+    {
+      "version": "20260821111357",
+      "name": "required_first_login_profile",
+      "statements_md5": "7cc49f825acf6101c9eb92f7b705e183"
+    },
+    {
+      "version": "20260821111421",
+      "name": "admin_profile_billing_name",
+      "statements_md5": "a4700798d518da09149f62704c921e81"
+    },
+    {
+      "version": "20260822101208",
+      "name": "remove_closed_calendar_exceptions",
+      "statements_md5": "a52730c10422709fe006631d733ca14c"
+    },
+    {
+      "version": "20260822111732",
+      "name": "complete_room_catalog",
+      "statements_md5": "14dd04383d42e9f57e7371b193c8b74a"
+    },
+    {
+      "version": "20260822112119",
+      "name": "normalize_staging_room_ids",
+      "statements_md5": "42f3701365fc1979774094ecc75c7591"
+    },
+    {
+      "version": "20260822112314",
+      "name": "booking_title",
+      "statements_md5": "2a853a4505e3f6895a6b73045e2feb9b"
+    },
+    {
+      "version": "20260822113459",
+      "name": "update_own_profile_data",
+      "statements_md5": "0b7219bf116b2992eb124543ae468506"
+    },
+    {
+      "version": "20260822124120",
+      "name": "booking_title_compatibility",
+      "statements_md5": "f80b35a0151de35b45dd68888dbd9a00"
+    },
+    {
+      "version": "20260822131638",
+      "name": "remove_ambiguous_booking_overloads",
+      "statements_md5": "b351e151aad5de1909d2f28020d7bbea"
+    },
+    {
+      "version": "20260822131657",
+      "name": "admin_booking_audit_reports",
+      "statements_md5": "575f34e17cd08f9d03da5d479b082adb"
+    },
+    {
+      "version": "20260822150301",
+      "name": "restore_legacy_booking_rpc_contracts",
+      "statements_md5": "b7beb2cffe5a7b2a7df0ab8262d17432"
+    },
+    {
+      "version": "20260822150316",
+      "name": "preserve_legacy_booking_side_effects",
+      "statements_md5": "8faab86c03520bc1ab14e9c4137e5b19"
+    },
+    {
+      "version": "20260822150327",
+      "name": "preserve_legacy_create_validation_contract",
+      "statements_md5": "6ec163375ea44e83a21c313f5d9dd456"
+    },
+    {
+      "version": "20260822150851",
+      "name": "harden_update_own_profile_data_grants",
+      "statements_md5": "a34a0afc01da07a0dfc0bf9a5f032635"
+    },
+    {
+      "version": "20260822154855",
+      "name": "room_group_business_model",
+      "statements_md5": "17db051b539947fe77bf86a98c30de2e"
+    },
+    {
+      "version": "20260822161722",
+      "name": "admin_user_role_guard",
+      "statements_md5": "d5539c1c6ee93fabe2cdaa09a5de4d11"
+    },
+    {
+      "version": "20260822161744",
+      "name": "stable_user_calendar_colors",
+      "statements_md5": "f0b9030f2c43885a4ddab9232d8f7907"
+    },
+    {
+      "version": "20260822174747",
+      "name": "user_level_repeat_permission",
+      "statements_md5": "e718c4ba098ec79bfd74f4bcd864afa5"
+    },
+    {
+      "version": "20260822182757",
+      "name": "remove_direct_repeat_promotion_trigger",
+      "statements_md5": "bc00e201185a40d3879fa9a90751942b"
+    },
+    {
+      "version": "20260822191437",
+      "name": "profile_repeat_select_grant",
+      "statements_md5": "64412f4e77c887898693f757f9be23df"
+    },
+    {
+      "version": "20260822200005",
+      "name": "admin_advance_booking_limits",
+      "statements_md5": "37b4d5ab0715e19429523eb43982975d"
+    },
+    {
+      "version": "20260822201228",
+      "name": "202608220020_recurring_series_max_span",
+      "statements_md5": "c4aa429ee05358f29e7be9b0a84b71ac"
+    },
+    {
+      "version": "202608250001",
+      "name": "user_pricing_policies",
+      "statements_md5": "0089f5415308f3294b9eff6524103a80"
+    },
+    {
+      "version": "202608250002",
+      "name": "monthly_pricing_engine",
+      "statements_md5": "f1cc6d29d11930f203631c2ba5596ab2"
+    },
+    {
+      "version": "202608250003",
+      "name": "admin_monthly_pricing_summary",
+      "statements_md5": "ad20f3e9641fd1fe38c1529a884e344b"
+    },
+    {
+      "version": "202608250004",
+      "name": "settlement_snapshot",
+      "statements_md5": "1ba1abe27f03ebffe062d6fd0a2f3472"
+    },
+    {
+      "version": "202608250005",
+      "name": "admin_settlement_status",
+      "statements_md5": "c13fb4bbe0c75425f807e9c20c550433"
+    },
+    {
+      "version": "202608250006",
+      "name": "training_group_booking_rate",
+      "statements_md5": "2d5f91264a9958bc6083447657579da9"
+    },
+    {
+      "version": "202608250007",
+      "name": "training_group_series_rate",
+      "statements_md5": "1b257ae58e5bb786b35037507585ca0e"
+    },
+    {
+      "version": "202608250008",
+      "name": "payment_management",
+      "statements_md5": "38052062bd622af2b4a49d56767020c5"
+    },
+    {
+      "version": "202608250009",
+      "name": "payment_history",
+      "statements_md5": "68823b0e0da9d82a6984b14894e14718"
+    },
+    {
+      "version": "202608250010",
+      "name": "harden_payment_idempotency",
+      "statements_md5": "2bc0cee5d5873711d0be4f46595edb09"
+    },
+    {
+      "version": "202608250011",
+      "name": "monthly_booking_detail_title",
+      "statements_md5": "c7c25f0552c48216a8851ed88d054a04"
+    },
+    {
+      "version": "202608250012",
+      "name": "atomic_training_group_rate_creation",
+      "statements_md5": "4768afacc5e9836965bd67b2e62d8057"
+    },
+    {
+      "version": "202608250013",
+      "name": "security_hardening_internal_helpers",
+      "statements_md5": "ffa287fecf54b96f654ec751bf1a8cba"
+    },
+    {
+      "version": "202608250014",
+      "name": "fixed_user_pricing_admin",
+      "statements_md5": "c626e8fbc1d980aae32747fe7a54477b"
+    },
+    {
+      "version": "202608250015",
+      "name": "harden_pricing_configuration_api",
+      "statements_md5": "a80fc374c303549dee6e49d9ba15948f"
+    },
+    {
+      "version": "202608260001",
+      "name": "harden_pricing_policy_rpc",
+      "statements_md5": "93452f8b7a8adcd72967e4e438675dac"
+    },
+    {
+      "version": "202608260002",
+      "name": "harden_settlement_booking_line_immutability",
+      "statements_md5": "eafde0f9fb7e61286ac2ba8a24bc8178"
+    },
+    {
+      "version": "20260826205749",
+      "name": "protect_closed_settlement_line_inserts",
+      "statements_md5": "66e3cf628913689c6838673d8b2dcf65"
+    },
+    {
+      "version": "20260829145720",
+      "name": "allow_past_booking_creation",
+      "statements_md5": "95594ea89bb71f5fcd506e1e81042534"
+    },
+    {
+      "version": "20260830183000",
+      "name": "booking_update_cutoff_guard",
+      "statements_md5": "9825b43d5428752f4f1b732d531f061f"
+    },
+    {
+      "version": "202609030001",
+      "name": "booking_email_outbox",
+      "statements_md5": "0f71fb308774574500692218b348691a"
+    },
+    {
+      "version": "202609030002",
+      "name": "enqueue_booking_emails_from_audit",
+      "statements_md5": "eeeee13e7866897e484f8b3c8bbb4419"
+    },
+    {
+      "version": "20260903185410",
+      "name": "booking_email_delivery_monitor",
+      "statements_md5": "d5d8f50dcf97e2005f15c3ed9e11c0b4"
+    },
+    {
+      "version": "202609040001",
+      "name": "first_login_password_change",
+      "statements_md5": "34b95d97c4caeec440d1e5b302862468"
+    },
+    {
+      "version": "202609050001",
+      "name": "admin_temporary_password",
+      "statements_md5": "2695810fe45f74a5fad9de6f817474b2"
+    },
+    {
+      "version": "202609050002",
+      "name": "precise_password_change_audit",
+      "statements_md5": "28f25960f0d1ed20f93d16d4ebb43834"
+    },
+    {
+      "version": "20260909182529",
+      "name": "allbooked_staging_import",
+      "statements_md5": "f0a136fabf5f2ff6242671bdc71fc32d"
+    },
+    {
+      "version": "20260921193000",
+      "name": "booking_email_bridge_safe_warning",
+      "statements_md5": "6d451250c853a601627fc3730bff4d94"
+    },
+    {
+      "version": "20260923171023",
+      "name": "admin_pricing_and_booking_rate_override",
+      "statements_md5": "c2c9f82660585c5ca342202974129b81"
+    },
+    {
+      "version": "20260924080123",
+      "name": "preserve_legacy_training_booking_rate",
+      "statements_md5": "e1c9ea432c4782233cc1acd4cff2dcd8"
+    },
+    {
+      "version": "20260924181855",
+      "name": "allbooked_preserve_booking_notes",
+      "statements_md5": "d22a1cffb9d950531f259c4b528a2f23"
+    },
+    {
+      "version": "20260925095053",
+      "name": "booking_email_recurring_summary",
+      "statements_md5": "f2c2e7bc4bc19d79d8d1ebdf18fcf342"
+    },
+    {
+      "version": "20260926093250",
+      "name": "move_btree_gist_out_of_public",
+      "statements_md5": "ae843fe2de9974a9df7fb2de90c8664d"
+    },
+    {
+      "version": "20260927094918",
+      "name": "multi_customer_allbooked_batch",
+      "statements_md5": "9fa24a42bb4f6299a337b5177cdbeec1"
+    },
+    {
+      "version": "20260927103201",
+      "name": "staging_clear_calendar_before_multi_user_uat_final",
+      "statements_md5": "f27592b4e40bf3a32cb259ae64ffbadc"
+    },
+    {
+      "version": "20260927103212",
+      "name": "verify_staging_calendar_empty_before_multi_user_uat",
+      "statements_md5": "58a32ff2c9e83875d50b8bdbf0a22e35"
+    },
+    {
+      "version": "20260927125819",
+      "name": "harden_allbooked_auth_compensation",
+      "statements_md5": "2f1af35d991b9df723293a3b17408950"
+    },
+    {
+      "version": "20260927153341",
+      "name": "allow_retroactive_pricing",
+      "statements_md5": "e1a5a2c40060adcad7896112aef11eeb"
+    },
+    {
+      "version": "20260927162837",
+      "name": "admin_user_email_change",
+      "statements_md5": "d3904b6342201a5ad54a8b738d8ad4e4"
+    },
+    {
+      "version": "20260927162955",
+      "name": "monthly_summary_pricing_breakdown",
+      "statements_md5": "cdc9e59b35107f0e2a9d6f8d290335cd"
+    },
+    {
+      "version": "20260927163032",
+      "name": "allow_retroactive_user_hourly_rate",
+      "statements_md5": "d53f99e9bf3f379548789a5621e4658a"
+    },
+    {
+      "version": "20260927171944",
+      "name": "email_finalize_accept_auth_profile_sync",
+      "statements_md5": "26f3e35c63d1efa700550ef1613d418c"
+    },
+    {
+      "version": "20260927180020",
+      "name": "email_change_explicit_actor",
+      "statements_md5": "6b4730449228bc70cca0c84379efd910"
+    },
+    {
+      "version": "20260927182632",
+      "name": "restore_future_only_global_pricing",
+      "statements_md5": "896059c02f1da934cb31f02aeb31c76d"
+    },
+    {
+      "version": "20260928091003",
+      "name": "system_health_check_from_20260917100000",
+      "statements_md5": "44a77deb144591761eefdc8a967b0769"
+    },
+    {
+      "version": "20260928143742",
+      "name": "user_calendar_color_self_service",
+      "statements_md5": "90e3fa456566007e6e4cbec811c327a9"
+    },
+    {
+      "version": "20260928144805",
+      "name": "allow_own_calendar_color_read",
+      "statements_md5": "d077777cdd2ec6d558af7d992c64f9b3"
+    },
+    {
+      "version": "20260929181222",
+      "name": "retire_historical_allbooked_rpcs",
+      "statements_md5": "629b12e59034b8e8bcc73462451d4d3f"
+    }
+  ],
+  "excluded_local": [
+    {
+      "file": "202608210002_calendar_booking_actions.sql",
+      "sha256": "e5c0bb893a5a9a135fcb339f74237ad443a3193f54120e7eb235d9c2e4cee8c5"
+    },
+    {
+      "file": "202608210003_series_training_room_update_guard.sql",
+      "sha256": "5b67d5c55f7f3abd4c54d0dc55a42b76ccc546c4f54fea269f89fa12eb58121c"
+    },
+    {
+      "file": "202608210004_calendar_management_read_model.sql",
+      "sha256": "fc7c3708815fbe010401d65e71cfb93fb6cee1440ca5926efad3304184763f39"
+    },
+    {
+      "file": "202608210005_user_billing_admin.sql",
+      "sha256": "40e380932ffc4398f9c0d87eee33f8b8bb126cae4621a345b8ea0a0f60e2f3c2"
+    },
+    {
+      "file": "202608210006_global_booking_name_visibility.sql",
+      "sha256": "573d6d2f7fa236c8ee3c85003ec3faf75ac80c5b26688be8bacff84453d90c0f"
+    },
+    {
+      "file": "202608210007_required_first_login_profile.sql",
+      "sha256": "6032064ec14b50c6e510e3acc143ad39e0c0d4fac743d56f91c91a27dc11f558"
+    },
+    {
+      "file": "202608210008_admin_profile_billing_name.sql",
+      "sha256": "5d9acfb67c2ad03402c46526e57944ec70b3a00257c5eb6860e0cb6ab361129d"
+    },
+    {
+      "file": "202608220001_remove_closed_calendar_exceptions.sql",
+      "sha256": "649572722aba852ffe1e117a0e5736924bfc92a7b47de8e8ed0e7596db4bcf12"
+    },
+    {
+      "file": "202608220002_complete_room_catalog.sql",
+      "sha256": "974f1e15aff9482c3be025b2bfb98d19e93f791a084f93b2806a802b8209cecc"
+    },
+    {
+      "file": "202608220003_normalize_staging_room_ids.sql",
+      "sha256": "b054859e0d9f9808efbed528228270e25bc608ac2554579706eb7c52816ebb3b"
+    },
+    {
+      "file": "202608220004_booking_title.sql",
+      "sha256": "2c4bd5e5d2abe8a1e4c2b8f3152e65fd4a36d4f09767446876335ee843828190"
+    },
+    {
+      "file": "202608220005_update_own_profile_data.sql",
+      "sha256": "792d331b82d9dfd7cccb7df1fe088f77ec7d5af8cf0f1621f4e7494d39f0ec33"
+    },
+    {
+      "file": "202608220006_booking_title_compatibility.sql",
+      "sha256": "d62c31fca9d7facd8da8a630584aa326ec902966f1c5fc80c6ce6428cbc93e5f"
+    },
+    {
+      "file": "202608220007_remove_ambiguous_booking_overloads.sql",
+      "sha256": "fbda6b65ddccaea23a534ebb5348fe86c6655cceb34214928c72df5b4bbec527"
+    },
+    {
+      "file": "202608220008_admin_booking_audit_reports.sql",
+      "sha256": "739fa175688186bab406c92a1cd830c21595b3778091b29682df007ca0b091cf"
+    },
+    {
+      "file": "202608220009_restore_legacy_booking_rpc_contracts.sql",
+      "sha256": "0b0fa8de6e39ac9784c5765c527b1cd0d3cb5315725552398e6c8936166cc239"
+    },
+    {
+      "file": "202608220010_preserve_legacy_booking_side_effects.sql",
+      "sha256": "a70219b2ae431bdfde69ade97c5cbf52b3023b617d7c96607a40add98cf8e99c"
+    },
+    {
+      "file": "202608220011_preserve_legacy_create_validation_contract.sql",
+      "sha256": "443deb489be2f82ddfff296f142ef93f76aa886c5e89a6efd06c1c038dd772f3"
+    },
+    {
+      "file": "202608220012_harden_update_own_profile_data_grants.sql",
+      "sha256": "35ad5062c9b3ea7bc08025e69aba80d06d832208fa70eda6d361beb5ae00ede0"
+    },
+    {
+      "file": "202608220013_room_group_business_model.sql",
+      "sha256": "9dd9770c5526a20fb31853bd7e6bf07174b5a2d4311a4706137eedb0096df6bf"
+    },
+    {
+      "file": "202608220014_admin_user_role_guard.sql",
+      "sha256": "858c4a9b401779f060470e23723dc50eda9b229c1dbb4f8092a427abf384fbc4"
+    },
+    {
+      "file": "202608220015_stable_user_calendar_colors.sql",
+      "sha256": "e5fd7be117a1d201efdcd396582674626b67a4fde1bc433a1c9b43e42c76171f"
+    },
+    {
+      "file": "202608220016_user_level_repeat_permission.sql",
+      "sha256": "bd8d7a3509f45c190eb1de670e68f59615b41ee53cdc61861a7d2b2fef95574e"
+    },
+    {
+      "file": "202608220017_remove_direct_repeat_promotion_trigger.sql",
+      "sha256": "c7abefa5da5d30de6183084bc8893729f8780a588d198e31cd576e386e292f58"
+    },
+    {
+      "file": "202608220018_profile_repeat_select_grant.sql",
+      "sha256": "d701afccf25f8f30b51aa9752afcfbecc865551cbf5471e833afeceda9812543"
+    },
+    {
+      "file": "202608220019_admin_advance_booking_limits.sql",
+      "sha256": "5044edc7be38227295e4957a906df5635a955695fbf6aacf9c66c15bbb659682"
+    },
+    {
+      "file": "202608220020_recurring_series_max_span.sql",
+      "sha256": "66a3bcda3422341f79d74721c5b66dd0bad9a13d162569f9555c1e3b7346adb5"
+    },
+    {
+      "file": "20260914095042_generic_allbooked_customer_import.sql",
+      "sha256": "98a87ac8b5b8f71d9476594fd09c8e704eb86dd726ad1a830411a8c758cc2d60"
+    },
+    {
+      "file": "20260914120000_retire_legacy_papp_import_rpcs.sql",
+      "sha256": "5bebaadd71682f98d2d25c51f312dbebb3214d68d6af5ee884836580c8424cad"
+    },
+    {
+      "file": "20260917100000_system_health_check.sql",
+      "sha256": "f60fde7707c434cfee4ca1f21621d8e3c8072b6cead8c7565f06599722d6c8cf"
+    },
+    {
+      "file": "20260922160000_admin_pricing_and_booking_rate_override.sql",
+      "sha256": "89ba3104d15517709f2ff16077e37b46056582fe1d0ba587cf5c5ef1456a9887"
+    },
+    {
+      "file": "20260924183000_allbooked_preserve_booking_notes.sql",
+      "sha256": "4447cb448bd3605ef3ab2040f4183baac288e449efac7ebc24a837fed92a8228"
+    },
+    {
+      "file": "20260925100000_booking_email_recurring_summary.sql",
+      "sha256": "378e76d7b26bd9d38b1ed5cacea3c8d76dcb89a18f890187c77160f9cce26889"
+    },
+    {
+      "file": "20260925143000_retire_empty_legacy_training_rate.sql",
+      "sha256": "8682f55630099469346be99d8b4d3402f5c58dfd370031e8ea875a6831f18fc5"
+    },
+    {
+      "file": "20260926103000_move_btree_gist_out_of_public.sql",
+      "sha256": "98831c33172d2d0cc6cda61564420f943339a4be5ecae379a4d684c708c5e3e5"
+    },
+    {
+      "file": "20260927120000_multi_customer_allbooked_batch.sql",
+      "sha256": "7b3255f458f00cb7717d2ef91aad3bf2743fcc5599508f0230e4765282ea084e"
+    },
+    {
+      "file": "20260927124500_harden_allbooked_auth_compensation.sql",
+      "sha256": "23d80801dd47f86028d601986c5717fbe8dcc0a254b1ef9f0a353ed45baa38ee"
+    },
+    {
+      "file": "20260927190000_admin_user_email_change.sql",
+      "sha256": "63a546a4d54f7e2d379de2f243a74bce0ead33a2f4619a0edfacafc59d164239"
+    },
+    {
+      "file": "20260927193000_monthly_summary_pricing_breakdown.sql",
+      "sha256": "0f5f05ad22c60b3f88ebab72293366274b7a861422f34438e74b92796b473a91"
+    },
+    {
+      "file": "20260927194000_allow_retroactive_user_hourly_rate.sql",
+      "sha256": "13965a88ef35013e7ce2ce98f120bd59545b4118a2abb86bbe381fac3ed63069"
+    },
+    {
+      "file": "20260927201500_email_finalize_accept_auth_profile_sync.sql",
+      "sha256": "0f26ec104ee11c083116cb928575bfe38b96025122da1341e40890679b1ae53a"
+    },
+    {
+      "file": "20260927210000_email_change_explicit_actor.sql",
+      "sha256": "4b6ddce1e2fc1be4a5441d8f16eca7b4da03a47f405f0f514163cd187c44b9fd"
+    },
+    {
+      "file": "20260927213000_restore_future_only_global_pricing.sql",
+      "sha256": "a179cb9a6177f47efdabb0c0c7e779862a409b980e92d50b1331ad7867cb2dd0"
+    },
+    {
+      "file": "20260928162000_user_calendar_color_self_service.sql",
+      "sha256": "54bc14e60abe896957afa22a1ff8a41fb02b4d084bda51ce3aefb9574eb6745a"
+    },
+    {
+      "file": "20260928165000_allow_own_calendar_color_read.sql",
+      "sha256": "588863556079f7c8d8ff57835b7d558b103bfd2f6fd31367a63dd20c1b0a3b6b"
+    }
+  ],
+  "approved_out_of_order": {
+    "20260929155816_monthly_settlement_publication.sql": "b07196efde0fc45fc5edabbea175a72e106dae9065efd425cb3f9b602b095bd9"
+  }
+}
