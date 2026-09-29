@@ -7,7 +7,7 @@ import { BookingManagement, type BookableRoom, type MyBooking } from "./booking-
 import styles from "./my-bookings.module.css";
 
 type View = "day" | "month" | "list";
-type LatestSettlement = { settlement_month: string; total_minutes: number; calculated_due_huf: number; closed_at: string; revision_id: string; revision_number: number };
+type LatestSettlement = { settlement_month: string; total_minutes: number | string; calculated_due_huf: number | string; closed_at: string; revision_id: string; revision_number: number };
 function paramValue(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function viewFromParam(value: string | undefined): View { return value === "day" || value === "list" ? value : "month"; }
 function myBookingsUrl(view: View, date: string, bookingId?: string) { const params = new URLSearchParams({ view, date }); if (bookingId) params.set("booking", bookingId); return `/foglalasaim?${params.toString()}`; }
@@ -45,8 +45,8 @@ export default async function MyBookingsPage({ searchParams }: { searchParams: P
     {settlementResult.error ? <p className="message error" role="alert">A lezárt havi elszámolás betöltése nem sikerült.</p> : settlement ? <article className="card wide-card stack" aria-labelledby="latest-settlement-title">
       <div><p className="eyebrow">Végleges havi elszámolás</p><h2 id="latest-settlement-title">{new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", month: "long", year: "numeric" }).format(new Date(`${settlement.settlement_month}T12:00:00Z`))} elszámolás</h2></div>
       <dl className="monthly-close-summary">
-        <div><dt>Elszámolt órák</dt><dd>{(settlement.total_minutes / 60).toLocaleString("hu-HU", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} óra</dd></div>
-        <div><dt>Fizetendő</dt><dd>{settlement.calculated_due_huf.toLocaleString("hu-HU")} Ft</dd></div>
+        <div><dt>Elszámolt órák</dt><dd>{(Number(settlement.total_minutes) / 60).toLocaleString("hu-HU", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} óra</dd></div>
+        <div><dt>Fizetendő</dt><dd>{Number(settlement.calculated_due_huf).toLocaleString("hu-HU")} Ft</dd></div>
       </dl>
       <p className="muted">Lezárva: {new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(settlement.closed_at))}</p>
     </article> : null}
