@@ -25,7 +25,7 @@ A URI-ban szereplő adatbázis-jelszó nem kerülhet issue-ba, PR-ba, repository
 
 `.github/workflows/staging-database-deploy.yml`
 
-A workflow PR-en automatikusan, kizárólag **dry-run** módban is fut. Kézzel (`workflow_dispatch`) két mód választható:
+A workflow a staging DB-secret védelme érdekében kizárólag kézzel (`workflow_dispatch`), áttekintett branchről indítható. Két mód választható:
 
 1. `dry-run` — a staging projektref ellenőrzése, a tényleges remote version/name/SQL-hash history összevetése a `scripts/staging-migration-history-baseline.json` manifesttel, majd a `scripts/staging-migration-projection.py` ideiglenes projekciójában `supabase db push --dry-run`. Nem módosít staging sémát vagy historyt.
 2. `deploy` — ugyanaz a preflight, majd csak explicit kézi választás esetén a jóváhagyott új repository migrationök alkalmazása.
