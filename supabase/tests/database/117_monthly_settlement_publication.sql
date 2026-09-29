@@ -1,6 +1,7 @@
 begin;
 
 select plan(28);
+select set_config('test.settlement_month', (date_trunc('month', timezone('Europe/Budapest', now())) - interval '1 month')::date::text, true);
 
 select has_table('public', 'monthly_settlement_periods', 'A havi publikálási esemény önálló, változtathatatlan rekord');
 select has_function('public', 'admin_monthly_settlement_close_preview', array['date'], 'Az admin lezárás előnézete elérhető');
@@ -19,19 +20,19 @@ update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-00
 insert into public.bookings(id, room_id, user_id, created_by, start_at, end_at, use_type, status, idempotency_key)
 select '41000000-0000-0000-0000-000000000271'::uuid, '11000000-0000-0000-0000-000000000002'::uuid,
   '00000000-0000-0000-0000-000000000272'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
-  timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
-  timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '07:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '08:00'),
   'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid()
 union all
 select '41000000-0000-0000-0000-000000000272'::uuid, '11000000-0000-0000-0000-000000000001'::uuid,
   '00000000-0000-0000-0000-000000000273'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
-  timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
-  timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '07:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '08:00'),
   'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid();
 
 select is(
   public.monthly_settlement_cutoff_blockers(
-    date_trunc('month', timezone('Europe/Budapest', now()))::date,
+    current_setting('test.settlement_month')::date,
     (select start_at - interval '24 hours' from public.bookings where id = '41000000-0000-0000-0000-000000000271'::uuid)
   ),
   1::bigint,
@@ -39,8 +40,8 @@ select is(
 );
 select is(
   public.monthly_settlement_cutoff_blockers(
-    date_trunc('month', timezone('Europe/Budapest', now()))::date,
-    timezone('Europe/Budapest', ((date_trunc('month', timezone('Europe/Budapest', now())) + interval '1 month')::date - 1) + time '23:45')
+    current_setting('test.settlement_month')::date,
+    timezone('Europe/Budapest', (current_setting('test.settlement_month')::date + interval '1 month' - interval '1 day')::date + time '23:45')
   ),
   0::bigint,
   'A hónap utolsó napjának végére minden korábbi foglalás lezárhatóvá válik'
@@ -50,7 +51,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select is((select count(*) from public.list_my_latest_closed_monthly_settlement()), 0::bigint, 'Lezárás előtt a user nem kap végleges pénzügyi összeget');
 select throws_ok(
-  $$select * from public.admin_close_monthly_settlement_period(date_trunc('month', timezone('Europe/Budapest', now()))::date)$$,
+  $$select * from public.admin_close_monthly_settlement_period(current_setting('test.settlement_month')::date)$$,
   '42501', null, 'Normál user nem zárhat le hónapot'
 );
 select throws_ok(
@@ -62,16 +63,16 @@ reset role;
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271'::uuid, true);
 select is(
-  (select can_close from public.admin_monthly_settlement_close_preview(date_trunc('month', timezone('Europe/Budapest', now()))::date)),
+  (select can_close from public.admin_monthly_settlement_close_preview(current_setting('test.settlement_month')::date)),
   true,
   'Az aktuális hónap lezárható, ha nincs még módosítható foglalás'
 );
 select lives_ok(
-  $$select * from public.admin_close_monthly_settlement_period(date_trunc('month', timezone('Europe/Budapest', now()))::date)$$,
+  $$select * from public.admin_close_monthly_settlement_period(current_setting('test.settlement_month')::date)$$,
   'Admin lezárhatja az aktuális hónapot, nem kell megvárnia a következő hónapot'
 );
 select throws_ok(
-  $$select * from public.admin_close_monthly_settlement_period(date_trunc('month', timezone('Europe/Budapest', now()))::date)$$,
+  $$select * from public.admin_close_monthly_settlement_period(current_setting('test.settlement_month')::date)$$,
   'P0001', 'Ez a hónap már le van zárva.', 'Az ismételt zárás nem hoz létre új pénzügyi állapotot'
 );
 select throws_ok(
@@ -80,7 +81,7 @@ select throws_ok(
 );
 reset role;
 select is(
-  (select count(*) from public.monthly_settlement_periods where settlement_month = date_trunc('month', timezone('Europe/Budapest', now()))::date),
+  (select count(*) from public.monthly_settlement_periods where settlement_month = current_setting('test.settlement_month')::date),
   1::bigint,
   'Ismételt lezárási kísérlet után csak egy hónapzárási pénzügyi állapot marad'
 );
