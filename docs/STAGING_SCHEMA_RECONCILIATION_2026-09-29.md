@@ -1,6 +1,6 @@
-# Staging schema reconciliation – read-only megállási pont (2026-09-29)
+# Staging schema reconciliation (2026-09-29)
 
-Állapot: **blokkolt, staging írás nem történt**. A havi elszámolás PR #257 migrationje nem része ennek a referencia-sémának és stagingre nem került.
+Állapot: **az előre mutató reconciliation stagingen végrehajtva és ellenőrizve**; a PR #257 feature migration szintén külön, valós history-bejegyzéssel került stagingre. Production nem változott. Az alábbi első összevetés és megállási pont a DDL **előtti** bizonyíték, ezért történeti állapotként olvasandó.
 
 ## Módszer és bizonyíték
 
@@ -42,3 +42,15 @@ A `20260914120000_retire_legacy_papp_import_rpcs.sql` külön vizsgálata: a há
 ## Folytatás feltétele
 
 Az egyszer használatos staging UAT migrationök történeti bejegyzéseit meg kell őrizni; SQL-jüket tilos újrajátszani. A `20260914095042` objektumainak célállapotjára van [bizonyítékokra épülő döntési terv](STAGING_HISTORICAL_ALLBOOKED_RPC_DECISION_2026-09-29.md), de staging DDL előtt a projektgazda kifejezett jóváhagyása szükséges. Ezután előre mutató, verziózott, adatmegőrző DDL-lel korrigálható a séma, majd új leltár-összevetés és DB-tesztek után kezelhető a **valós** history anélkül, hogy a hiányos történeti migrationt alkalmazottnak jelölnénk. Addig sem a staging migration baseline, sem a PR #257 feature migration staging deployja nem kész.
+
+## Végrehajtási eredmény
+
+A projektgazda jóváhagyása után az izolált [reconciliation CI](https://github.com/ugry65/ahely-booking/actions/runs/36609801967) üres adatbázist épített a repository migrationjeiből, majd a Supabase CLI-val generált forward SQL-lel a pgTAP teszteket és schema lintet PASS eredménnyel futtatta. A közvetlen staging pre-check a fenti 90 history-rekordot, három fennmaradt legacy Papp RPC-t (0 normál PostgreSQL-függőség), két hiányzó történeti RPC-t és `active,cancelled` enumot erősítette meg. Az aktuális generic import és kompenzációs RPC MD5-je változatlanul `f9535a617dae29705a24742dec0249ec` és `b05d74bf7c3eac1d1ff32bb4dc967f27`.
+
+Az új, ténylegesen alkalmazott `20260929181222_retire_historical_allbooked_rpcs.sql` csak a `voided` enumértéket adta hozzá, és az öt történeti RPC-t törölte `CASCADE` nélkül. A staging post-checken mind az öt hiányzik, a két megtartott RPC definíciója változatlan, a history 91 valós sor. A `20260914095042` és `20260914120000` továbbra sincs appliednek jelölve.
+
+Az új izolált referencia-leltár 943 objektum; staging a reconciliation után 950. A hét többlet a korábban dokumentált adatfüggő Training-rate ág: oszlop, constraint, trigger és két függvény a grantjeikkel. A 12 azonos nevű függvény nyers MD5-je a korábban ellenőrzött formázás/komment/alias eltérés; a 34 relation-grant nyers eltérést a PG15/PG17 `MAINTAIN` bit okozza. Az enum, index, policy és relation csoport teljes fingerprintje egyezik. A [teljes DB teszt és schema lint](https://github.com/ugry65/ahely-booking/actions/runs/36610472741), valamint az alkalmazásellenőrzés PASS.
+
+A [védett staging workflow száraz futása](https://github.com/ugry65/ahely-booking/actions/runs/36611163975) pontosan a 91 tényleges version/name/SQL-hash sort ellenőrizte, ideiglenes CLI-projekciót épített, és `pending: []`, `Remote database is up to date` eredményt adott. A két egyszer használatos UAT migrationnek a historyban kötelező szerepelnie; ha hiányozna, a workflow a push előtt leállna, és a projekciós fájljaik önmagukban is hibával megszakítanák a replayt. A történeti SQL és a staging history megmaradt.
+
+A PR #257 `monthly_settlement_publication` DDL-je ezt követően önálló migrationként került stagingre, tényleges verziója `20260929182024`; a repository feature fájlja ehhez lett igazítva. A külön időszaktábla üres és RLS-sel védett; a négy pénzügyi tábla közvetlen anon/authenticated SELECT joga nincs meg. A baseline manifest 92 valós history-sort tartalmaz. A funkcionális UAT és a két draft PR végleges összevezetése külön release-kapu.
