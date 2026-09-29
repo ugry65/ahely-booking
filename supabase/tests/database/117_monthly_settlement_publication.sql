@@ -26,8 +26,8 @@ select '41000000-0000-0000-0000-000000000271'::uuid, '11000000-0000-0000-0000-00
 union all
 select '41000000-0000-0000-0000-000000000272'::uuid, '11000000-0000-0000-0000-000000000001'::uuid,
   '00000000-0000-0000-0000-000000000273'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
-  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '07:00'),
-  timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 1 + time '08:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date - 1 + time '07:00'),
+  timezone('Europe/Budapest', current_setting('test.settlement_month')::date - 1 + time '08:00'),
   'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid();
 
 select is(
@@ -48,7 +48,7 @@ select is(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select is((select count(*) from public.list_my_latest_closed_monthly_settlement()), 0::bigint, 'Lezárás előtt a user nem kap végleges pénzügyi összeget');
 select throws_ok(
   $$select * from public.admin_close_monthly_settlement_period(current_setting('test.settlement_month')::date)$$,
@@ -61,7 +61,7 @@ select throws_ok(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271', true);
 select is(
   (select can_close from public.admin_monthly_settlement_close_preview(current_setting('test.settlement_month')::date)),
   true,
@@ -93,7 +93,7 @@ select set_config('test.published_user_a_due', (
   where settlement.user_id = '00000000-0000-0000-0000-000000000272'::uuid
 ), true);
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select is(
   (select count(*) from public.list_my_latest_closed_monthly_settlement()),
   1::bigint,
@@ -106,14 +106,14 @@ select is(
 );
 reset role;
 set local role service_role;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select throws_ok(
   $$update public.bookings set status = 'cancelled' where id = '41000000-0000-0000-0000-000000000271'::uuid$$,
   '42501', null, 'Lezárt hónap foglalását még privilegizált API szerepkör sem írhatja normál userként'
 );
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select is(
   (select count(*) from public.list_my_latest_closed_monthly_settlement()),
   1::bigint,
@@ -127,7 +127,7 @@ select is((select count(*) from public.list_my_latest_closed_monthly_settlement(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271', true);
 select lives_ok(
   $$select * from public.admin_correct_historical_booking_rate('41000000-0000-0000-0000-000000000271'::uuid,4100,'Tesztelt admin korrekció',gen_random_uuid())$$,
   'Admin indoklással új korrekciós revisiont hozhat létre'
@@ -162,7 +162,7 @@ select lives_ok(
   'Admin a lezárás után is lemondhat foglalást, auditindokkal új revision készül'
 );
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
 select is(
   (select calculated_due_huf from public.list_my_latest_closed_monthly_settlement()),
   0::bigint,
