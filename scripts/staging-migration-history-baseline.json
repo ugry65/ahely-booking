@@ -456,6 +456,11 @@
       "version": "20260929181222",
       "name": "retire_historical_allbooked_rpcs",
       "statements_md5": "629b12e59034b8e8bcc73462451d4d3f"
+    },
+    {
+      "version": "20260929182024",
+      "name": "monthly_settlement_publication",
+      "statements_md5": "cb564e18d4aa51b344d6b9935294b6f2"
     }
   ],
   "excluded_local": [
