@@ -1,12 +1,6 @@
 name: Staging database deploy
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/staging-database-deploy.yml"
-      - "scripts/staging-migration-projection.py"
-      - "scripts/staging-migration-history-baseline.json"
-      - "supabase/migrations/**"
   workflow_dispatch:
     inputs:
       mode:
