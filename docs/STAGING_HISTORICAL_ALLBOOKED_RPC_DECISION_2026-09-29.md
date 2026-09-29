@@ -1,0 +1,57 @@
+# A `20260914095042` történeti objektumainak életciklusa – döntési javaslat
+
+Állapot: **elemzés és terv; staging DDL, history-módosítás és adatírás nem történt**. A projektgazda 2026-09-29-i pontosítása szerint az AllBooked→saját rendszer üzleti migrációja lezárt. A történeti SQL és auditbizonyíték megmarad.
+
+## Eredet és időrend
+
+| Időpont / forrás | Bizonyíték és szerep |
+| --- | --- |
+| 2026-09-14, [commit `8a2d08b`](https://github.com/ugry65/ahely-booking/commit/8a2d08b1923a4524a1cea6abd6731d3e8c909ea0), [PR #163](https://github.com/ugry65/ahely-booking/pull/163) | Ugyanabban a commitban jött létre a `20260914095042_generic_allbooked_customer_import.sql`, a két RPC, a `voided` státusz, a külön Papp-visszavonó route és a `110_generic_allbooked_customer_import.sql` pgTAP. Cél: együgyfeles import, a 21 foglalásos próba auditált kivezetése és Auth/profile kompenzáció. |
+| 2026-09-18-i történeti runbook; később [#209 cleanup dokumentum](PRODUCTION_PRE_CUTOVER_BOOKING_CLEANUP_209.md) | A próbaimport visszavonását elvégezték, később a voidolt 21 próbarekord fizikai eltávolítását külön, auditmegőrző pre-cutover művelet írta le. Ez történeti bizonyíték; productiont e vizsgálatban nem kérdeztük le. |
+| 2026-09-26, [commit `bc11adc`](https://github.com/ugry65/ahely-booking/commit/bc11adcaeeb77ab9b78092d403f8df263926fde7), [PR #215](https://github.com/ugry65/ahely-booking/pull/215) | A Papp próba-visszavonás UI-gombja és fetch hívása eltűnt. A route és a DB RPC a repositoryban megmaradt. |
+| 2026-09-27, [PR #227](https://github.com/ugry65/ahely-booking/pull/227) | A többfelhasználós import hibakezeléséhez új `admin_cleanup_failed_allbooked_auth_profile(uuid,uuid,text)` került be jóval több üzletiadat-guarddal. A jelenlegi API-route ezt hívja, nem a 2026-09-14-i rollback RPC-t. |
+| 2026-09-28, [commit `3bf0036`](https://github.com/ugry65/ahely-booking/commit/3bf0036aae019641f69b05f09a33be0f9fe866ef), [#249](https://github.com/ugry65/ahely-booking/pull/249) | A lezárt migráció menüpontja kikerült a desktop és mobil navigációból. Az `/admin/migracio` oldal és az általános import API technikailag még létezik és közvetlen URL-lel admin számára elérhető. |
+
+## Teljes aktuális hivatkozáskeresés
+
+A repository teljes `src/`, `supabase/`, `docs/`, projektkontextus és teszt fájljain keresés:
+
+| Objektum | Alkalmazás / route / server action | Teszt | Migration / dokumentáció |
+| --- | --- | --- | --- |
+| `admin_void_papp_dalma_test_import(uuid,text,uuid)` | **Egyetlen hívó:** `src/app/api/internal/void-papp-dalma-test-import/route.ts`. Az UI-ból nincs rá fetch vagy link; server action hívó nincs. | `src/lib/allbooked-migration-ui.test.ts` a route meglétét várja; `supabase/tests/database/110_generic_allbooked_customer_import.sql` a jogosultságot és a 21 booking státuszváltozását teszteli. | Definíció és grant kizárólag `20260914095042`; történeti említés: `docs/ALLBOOKED_CUSTOMER_MIGRATION.md`, `docs/MIGRATION_SOURCE_OF_TRUTH_RECOVERY_200.md`, `docs/PRODUCTION_PRE_CUTOVER_BOOKING_CLEANUP_209.md`. |
+| `admin_rollback_empty_allbooked_profile(uuid,uuid,text)` | **Nincs jelenlegi alkalmazáskód/API-route/server action hívó.** A jelenlegi többfelhasználós route az erősebb `admin_cleanup_failed_allbooked_auth_profile` RPC-t hívja. | `110_generic_allbooked_customer_import.sql` történeti kompenzációs tesztesete. | Definíció és grant kizárólag `20260914095042`; későbbi dokumentáció már az új kompenzációs modellt írja le. |
+| `voided` enumérték | Nincs jelenlegi TS/runtime status-író vagy külön kezelő. Az `src/lib/allbooked-migration.ts` csak történeti fingerprint-kommentet tartalmaz. | `110_generic_allbooked_customer_import.sql` a próba 21 soros voidolását teszteli. | A `booking_status` enumhoz kizárólag `20260914095042` adja hozzá. A booking read modellek és pénzügyi számítás az `active` sorokat használják; az admin cancellation riport `active/cancelled` sorokat számol. A régi cleanup auditja JSON-ban őrzi a `voided` állapotot. |
+
+### A még létező Papp route
+
+A `POST /api/internal/void-papp-dalma-test-import` útvonal közvetlen HTTP-hívással elérhető a kódot futtató alkalmazáson, de nincs hozzá UI. A `requireAdmin()` aktív profilhoz és admin szerephez köt; az `isProductionMigrationTarget()` egyszerre követeli a production Supabase project refet, a Vercel `production` környezetet és a `main` Git refet; az exact `REMOVE-PAPP-DALMA-TEST-DATA` szöveget is kéri. A service-role Supabase klienssel hívná az RPC-t. Staging célon a production-ref guard elutasítaná, és a hiányzó RPC-ig nem jutna el. A megmaradt route nem legitim napi foglalási funkció. A shared `isProductionMigrationTarget` helper az `isApprovedCustomerMigrationTarget` részeként az általános import route-nak továbbra is kell; a Papp route kivezetésekor a helpert megtartjuk.
+
+Az RPC guardjai: exact confirmation és correlation ID; aktív admin actor; a konkrét Papp Auth/profile egyezése; pontosan 21 ledger és booking; kizárólag Forrás tér, egyéni, 2026-09-03–17., 19×60 és 2×90 perc, összesen 1320 perc; nincs sorozat, note/title, billing/settlement/payment/cancellation vagy befejezett onboarding, nincs más csoportjog. Sikeres hívás **nem törli** a 21 bookingot: az aktívakat `voided` státuszúvá teszi és bookingonként auditál, eltávolítja a próba csoporttagságot (audit), inaktiválja és telefon nélkül hagyja a profilt (audit). A feltétel eltérése teljes tranzakciós hibát ad. A projektgazda szerint az egyszeri művelet lezárult; ezért a route/RPC megtartása felesleges, írásra képes támadási felület.
+
+A régi `admin_rollback_empty_allbooked_profile` csak aktív admin actor, egyező Auth/profile e-mail és be nem fejezett onboarding mellett, booking/ledger/jog/ár/elszámolás/audit nélkül **fizikailag törölte a public.profile sort** (nem az Auth usert). Az új `admin_cleanup_failed_allbooked_auth_profile` szélesebb referenciakört véd, és ezt ténylegesen hívja az aktuális import hibakezelése. A régi változat visszaállítása gyengébb párhuzamos write path lenne.
+
+## Objektumszintű referencia ↔ staging
+
+A [sikeres izolált referencia artifact](https://github.com/ugry65/ahely-booking/actions/runs/36605545208/artifacts/11051241270) és a staging ugyanazon [inventory SQL](../scripts/schema-inventory.sql) alapján:
+
+| Objektum | Repository rebuild | Staging | Következtetés |
+| --- | --- | --- | --- |
+| `admin_void_papp_dalma_test_import` | Jelen, MD5 `fec7a52c8a77e198a0cb72582c61e632` | Hiányzik | Történeti RPC, **B**: a kívánt aktuális sémából is forward migrationnel kivezetendő. A történetét **C** dokumentációban őrizzük. |
+| `admin_rollback_empty_allbooked_profile` | Jelen, MD5 `c20899d182f35bb15d65a7de2031fefa` | Hiányzik | Új, szigorúbb RPC váltotta fel; **B**, történetét **C**-ként őrizzük. |
+| `admin_cleanup_failed_allbooked_auth_profile` | Jelen, MD5 `b05d74bf7c3eac1d1ff32bb4dc967f27` | Azonos MD5 | **A**: a jelenlegi import route hívja; megtartandó. |
+| `admin_import_allbooked_customer` | Jelen, MD5 `f9535a617dae29705a24742dec0249ec` | Azonos MD5 | A `admin_import_allbooked_batch` függvény jelenlegi függősége; a mostani reconciliation nem vezeti ki. A lezárt migrációs felület teljes kivezetése későbbi külön scope. |
+| `booking_status` | `active,cancelled,voided` | `active,cancelled` | A `voided` aktuális foglalási útvonalban nem írt státusz, de a repository kanonikus történeti adatmodelljének része. **A** kompatibilitási elemként megtartani és stagingen célzottan hozzáadni; **C** a történeti használat dokumentálása. Enumérték eltávolítása egyéb adatbázis-lineage-ekben kockázatos lenne. Stagingen jelenleg nincs `allbooked.test_booking_voided` audit-esemény. |
+| Három legacy Papp-import RPC | A `20260914120000` már eltávolította | Stagingen még jelen | **B**: stagingen kontrolláltan eltávolítandó; a jelenlegi kód nem hívja őket. |
+
+## Javasolt reconciliation, végrehajtás előtt jóváhagyással
+
+1. A Gitben megőrizzük a `20260914095042` és `20260914120000` történeti migration fájlokat változatlanul; nem futtatjuk újra a régi importot, a próba-voidot vagy a staginges UAT adatürítést.
+2. A külön technikai PR-ban előre mutató, verziózott SQL migration kerül a **kívánt végleges sémába**: `ALTER TYPE ... ADD VALUE IF NOT EXISTS 'voided'`; `DROP FUNCTION IF EXISTS` a két történeti RPC-re és a három legacy Papp-import RPC-re, `CASCADE` nélkül. Az új, erősebb kompenzációt, a generic importot, a legacy Training-rate kompatibilitást és a booking/adat/audit sorokat érintetlenül hagyja. Izolált rebuilden a történeti két RPC létrejön, majd az új migration kivezeti; stagingen a dropjuk no-op, a három legacy RPC eltűnik, és az enumérték hozzáadódik.
+3. Az alkalmazáskódból eltávolítjuk a kizárólag történeti `void-papp-dalma-test-import` route-ot; a shared production/staging target helper és az aktuális import route marad. A `110` pgTAP történeti, író teszteseteit aktuális schema/permission ellenőrzésekre cseréljük, az eredeti teszt és SQL Git historyja megmarad. A jelenlegi `114` kompenzációs regressziót megtartjuk.
+4. Még staging DDL előtt az új migration izolált rebuildjét, teljes pgTAP/app tesztet, schema lintet és read-only staging preflightot futtatunk; a 3 legacy RPC `pg_depend` countja jelenleg 0, a számlálót közvetlenül a DDL előtt ismét ellenőrizzük. A staging DDL-t csak a projektgazda külön jóváhagyása után alkalmazzuk, majd ugyanazzal a leltárral újra összevetjük a végállapotot.
+5. A **history nem kap hamis `20260914095042 applied` bejegyzést**. A két régi hiányzó RPC-ket sosem telepítjük stagingre, a `voided` értéket és a három legacy RPC eltávolítását a ténylegesen lefuttatott új migration saját verziója és SQL-je rögzíti. A 90 meglévő távoli sort, köztük a két egyszer használatos staging UAT eseményt, változatlanul megőrizzük.
+6. A staging deploy workflow a történeti remote historyt **read-only, pontos version/name/SQL-hash manifesttel** ellenőrzi. A stagingen már alkalmazott 90 történeti SQL-t csak ideiglenes CLI-projekcióban reprezentálja; a két UAT-fájl kötelező, azonnal hibázó replay-guardot kap, így ha bármely rekord hiányzik, semmi destruktív nem futhat. A projekcióba az új, Gitben verziózott migrationök kerülnek, a `db push --dry-run` kizárólag azokat mutathatja. A workflow alkalmazás előtt újraellenőrzi a historyt, és csak a jóváhagyott új SQL-t telepíti; annak tényleges végrehajtását a saját migration history sora rögzíti. A staging régi lineage-e és a repository kanonikus tiszta rebuildje dokumentáltan különböző történeti út, de ugyanarra a szükséges aktuális sémára érkezik. A jelenlegi, minden régi verzió egyezését feltételező `staging-database-deploy.yml` addig tiltva marad.
+
+**Kockázat:** a javasolt staging DDL nem töröl bookingot, settlementet, auditot, profilt vagy import-ledgert. Enumérték hozzáadása és öt RPC kivezetése a sémát módosítja; a jelenlegi foglalás létrehozás/módosítás/lemondás és díjszámítás útvonalait nem érinti. A még létező, de menüből rejtett általános migrációs UI/API nem része e kivezetésnek. Production deploy vagy DDL ebben a feladatban nem engedélyezett.
+
+Ezen a ponton staging DDL és history írás előtt meg kell állni. A terv végrehajtásához a projektgazda kifejezett jóváhagyása szükséges.
