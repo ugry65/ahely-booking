@@ -10,21 +10,21 @@ select ok(not has_table_privilege('authenticated', 'public.monthly_settlements',
 select ok(not has_table_privilege('authenticated', 'public.settlement_revisions', 'SELECT'), 'A kliens nem olvashat közvetlenül revision táblát');
 
 insert into auth.users(id, email, raw_user_meta_data) values
-  ('00000000-0000-0000-0000-000000000271', 'settlement-admin@example.invalid', '{"first_name":"Settlement","last_name":"Admin"}'),
-  ('00000000-0000-0000-0000-000000000272', 'settlement-user-a@example.invalid', '{"first_name":"Settlement","last_name":"A"}'),
-  ('00000000-0000-0000-0000-000000000273', 'settlement-user-b@example.invalid', '{"first_name":"Settlement","last_name":"B"}'),
+  ('00000000-0000-0000-0000-000000000271'::uuid, 'settlement-admin@example.invalid', '{"first_name":"Settlement","last_name":"Admin"}'),
+  ('00000000-0000-0000-0000-000000000272'::uuid, 'settlement-user-a@example.invalid', '{"first_name":"Settlement","last_name":"A"}'),
+  ('00000000-0000-0000-0000-000000000273'::uuid, 'settlement-user-b@example.invalid', '{"first_name":"Settlement","last_name":"B"}'),
   ('00000000-0000-0000-0000-000000000274', 'settlement-user-empty@example.invalid', '{"first_name":"Settlement","last_name":"Empty"}');
-update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000271';
+update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000271'::uuid;
 
 insert into public.bookings(id, room_id, user_id, created_by, start_at, end_at, use_type, status, idempotency_key)
-select '41000000-0000-0000-0000-000000000271', '11000000-0000-0000-0000-000000000002',
-  '00000000-0000-0000-0000-000000000272', '00000000-0000-0000-0000-000000000271',
+select '41000000-0000-0000-0000-000000000271'::uuid, '11000000-0000-0000-0000-000000000002'::uuid,
+  '00000000-0000-0000-0000-000000000272'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
   'individual', 'active', gen_random_uuid()
 union all
-select '41000000-0000-0000-0000-000000000272', '11000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000273', '00000000-0000-0000-0000-000000000271',
+select '41000000-0000-0000-0000-000000000272'::uuid, '11000000-0000-0000-0000-000000000001'::uuid,
+  '00000000-0000-0000-0000-000000000273'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
   'individual', 'active', gen_random_uuid();
@@ -32,7 +32,7 @@ select '41000000-0000-0000-0000-000000000272', '11000000-0000-0000-0000-00000000
 select is(
   public.monthly_settlement_cutoff_blockers(
     date_trunc('month', timezone('Europe/Budapest', now()))::date,
-    (select start_at - interval '24 hours' from public.bookings where id = '41000000-0000-0000-0000-000000000271')
+    (select start_at - interval '24 hours' from public.bookings where id = '41000000-0000-0000-0000-000000000271'::uuid)
   ),
   1::bigint,
   'Foglalás a pontos 24 órás határnál még blokkolja a lezárást'
@@ -47,7 +47,7 @@ select is(
 );
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select is((select count(*) from public.list_my_latest_closed_monthly_settlement()), 0::bigint, 'Lezárás előtt a user nem kap végleges pénzügyi összeget');
 select throws_ok(
   $$select * from public.admin_close_monthly_settlement_period(date_trunc('month', timezone('Europe/Budapest', now()))::date)$$,
@@ -60,7 +60,7 @@ select throws_ok(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271'::uuid, true);
 select is(
   (select can_close from public.admin_monthly_settlement_close_preview(date_trunc('month', timezone('Europe/Budapest', now()))::date)),
   true,
@@ -89,10 +89,10 @@ select set_config('test.published_user_a_due', (
   select revision.calculated_due_huf::text
   from public.monthly_settlements settlement
   join public.settlement_revisions revision on revision.id = settlement.closed_revision_id
-  where settlement.user_id = '00000000-0000-0000-0000-000000000272'
+  where settlement.user_id = '00000000-0000-0000-0000-000000000272'::uuid
 ), true);
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select is(
   (select count(*) from public.list_my_latest_closed_monthly_settlement()),
   1::bigint,
@@ -105,14 +105,14 @@ select is(
 );
 reset role;
 set local role service_role;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select throws_ok(
-  $$update public.bookings set status = 'cancelled' where id = '41000000-0000-0000-0000-000000000271'$$,
+  $$update public.bookings set status = 'cancelled' where id = '41000000-0000-0000-0000-000000000271'::uuid$$,
   '42501', null, 'Lezárt hónap foglalását még privilegizált API szerepkör sem írhatja normál userként'
 );
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select is(
   (select count(*) from public.list_my_latest_closed_monthly_settlement()),
   1::bigint,
@@ -126,27 +126,27 @@ select is((select count(*) from public.list_my_latest_closed_monthly_settlement(
 reset role;
 
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000271'::uuid, true);
 select lives_ok(
-  $$select * from public.admin_correct_historical_booking_rate('41000000-0000-0000-0000-000000000271',4100,'Tesztelt admin korrekció',gen_random_uuid())$$,
+  $$select * from public.admin_correct_historical_booking_rate('41000000-0000-0000-0000-000000000271'::uuid,4100,'Tesztelt admin korrekció',gen_random_uuid())$$,
   'Admin indoklással új korrekciós revisiont hozhat létre'
 );
 reset role;
 select is(
-  (select count(*) from public.settlement_revisions revision join public.monthly_settlements settlement on settlement.id = revision.settlement_id where settlement.user_id = '00000000-0000-0000-0000-000000000272'),
+  (select count(*) from public.settlement_revisions revision join public.monthly_settlements settlement on settlement.id = revision.settlement_id where settlement.user_id = '00000000-0000-0000-0000-000000000272'::uuid),
   2::bigint,
   'A régi revision megmarad, az új revision külön rekord'
 );
 select ok(
   (select revision.calculated_due_huf = 4100 and revision.revision_number = 2
    from public.monthly_settlements settlement join public.settlement_revisions revision on revision.id = settlement.closed_revision_id
-   where settlement.user_id = '00000000-0000-0000-0000-000000000272'),
+   where settlement.user_id = '00000000-0000-0000-0000-000000000272'::uuid),
   'Korrekció után az új revision lesz aktív és az új összeg jelenik meg'
 );
 select is(
   (select revision.calculated_due_huf from public.monthly_settlements settlement
    join public.settlement_revisions revision on revision.settlement_id = settlement.id
-   where settlement.user_id = '00000000-0000-0000-0000-000000000272' and revision.revision_number = 1),
+   where settlement.user_id = '00000000-0000-0000-0000-000000000272'::uuid and revision.revision_number = 1),
   current_setting('test.published_user_a_due')::bigint,
   'Korrekció után is auditálható az eredeti lezárt revision összege'
 );
@@ -157,11 +157,11 @@ select is(
 );
 select set_config('ahely.internal_settlement_correction', 'off', true);
 select lives_ok(
-  $$select public.cancel_booking_scope('41000000-0000-0000-0000-000000000271','occurrence','Admin utólagos törlés indoka',gen_random_uuid())$$,
+  $$select public.cancel_booking_scope('41000000-0000-0000-0000-000000000271'::uuid,'occurrence','Admin utólagos törlés indoka',gen_random_uuid())$$,
   'Admin a lezárás után is lemondhat foglalást, auditindokkal új revision készül'
 );
 set local role authenticated;
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272'::uuid, true);
 select is(
   (select calculated_due_huf from public.list_my_latest_closed_monthly_settlement()),
   0::bigint,
