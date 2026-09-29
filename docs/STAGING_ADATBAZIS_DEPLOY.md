@@ -1,5 +1,7 @@
 # Staging adatbázis deploy
 
+> **2026-09-29 aktuális blokk:** az alábbi korábbi bootstrap-lépések történeti leírások. A staging history 90 sora és a repository 89 fájlja jelenleg nem igazoltan ekvivalens; a legacy Papp import RPC-k a staging sémában még léteznek, miközben a helyi eltávolító migrationnek nincs távoli history sora. A két csak stagingen alkalmazott UAT migration közül az egyik adatürítő. A PR #257 migrációját és history repairt nem szabad alkalmazni a [tételes read-only audit](STAGING_MIGRATION_HISTORY_AUDIT_2026-09-29.md) feloldásáig.
+
 ## Cél
 
 A `ahely-booking-staging` Supabase projekt sémája kizárólag a GitHub repository `supabase/migrations` könyvtárából épüljön fel. Remote séma- vagy jogosultságmódosítást a Supabase Dashboard SQL/Table Editorában nem végzünk.
