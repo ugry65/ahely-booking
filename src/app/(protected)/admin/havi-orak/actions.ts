@@ -27,6 +27,16 @@ export async function createSettlementRevision(formData: FormData) {
   redirect(url(month, "uzenet", "Az auditált, változtathatatlan elszámolási revision elkészült."));
 }
 
+export async function closeMonthlySettlementPeriod(formData: FormData) {
+  await requireAdmin();
+  const month = String(formData.get("month") ?? "");
+  if (!validMonth(month)) redirect(url(month, "hiba", "Érvényes elszámolási hónapot adj meg."));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("admin_close_monthly_settlement_period", { p_month: `${month}-01` });
+  if (error) redirect(url(month, "hiba", safeMessage(error, "A havi elszámolás lezárása nem sikerült.")));
+  redirect(url(month, "uzenet", "A havi elszámolás lezárult, az auditált revisionek publikálva vannak."));
+}
+
 export async function correctHistoricalBookingRate(formData: FormData) {
   await requireAdmin();
   const month = String(formData.get("month") ?? "");

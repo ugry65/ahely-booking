@@ -92,6 +92,12 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .monthly-filter { display: grid; min-width: 0; max-width: 100%; grid-template-columns: minmax(12rem, 1fr) auto auto; gap: .75rem; align-items: end; }
 .monthly-filter > *, .monthly-filter label { min-width: 0; max-width: 100%; }
 .monthly-filter input[type="month"] { display: block; min-width: 0; max-width: 100%; inline-size: 100%; }
+.monthly-close-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 1rem; }
+.monthly-close-grid > .card { width: 100%; }
+.monthly-close-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: .75rem 1.25rem; margin: 0; }
+.monthly-close-summary > div { display: grid; gap: .2rem; }
+.monthly-close-summary dt { color: #65716a; font-size: .85rem; font-weight: 700; }
+.monthly-close-summary dd { margin: 0; font-size: 1.1rem; font-weight: 800; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: .7rem; border-bottom: 1px solid #d8d4c8; text-align: left; white-space: nowrap; }
