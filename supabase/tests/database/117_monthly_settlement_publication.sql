@@ -1,6 +1,6 @@
 begin;
 
-select plan(28);
+select plan(31);
 select set_config('test.settlement_month', (date_trunc('month', timezone('Europe/Budapest', now())) - interval '1 month')::date::text, true);
 
 select has_table('public', 'monthly_settlement_periods', 'A havi publikálási esemény önálló, változtathatatlan rekord');
@@ -85,6 +85,37 @@ select is(
   1::bigint,
   'Ismételt lezárási kísérlet után csak egy hónapzárási pénzügyi állapot marad'
 );
+
+-- Exercise the real recurring RPC after publication. abort_all must roll back
+-- the series header as well as the occurrence rejected by the booking guard.
+insert into public.user_room_permissions(user_id,room_id,can_book,can_repeat)
+values ('00000000-0000-0000-0000-000000000272',
+  '11000000-0000-0000-0000-000000000002', true, true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000272', true);
+select throws_ok(
+  format($sql$select public.create_booking_series(
+    '11000000-0000-0000-0000-000000000002',
+    '00000000-0000-0000-0000-000000000272',
+    %L::timestamptz,%L::timestamptz,'daily',null,1,'{}'::date[],
+    'abort_all','individual','Lezárt hónap regresszió',
+    '28000000-0000-0000-0000-000000000272')$sql$,
+    timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 5 + time '09:00'),
+    timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 5 + time '10:00')
+  ),
+  'P0001',
+  format('A sorozat nem hozható létre. Hibás alkalom: %s (A lezárt hónap foglalása csak auditált adminisztrátori korrekcióval módosítható.).',
+    current_setting('test.settlement_month')::date + 5),
+  'A sorozatos foglalási RPC INSERT-jét is a lezárt hónap DB guardja állítja meg'
+);
+reset role;
+select is((select count(*) from public.booking_series where idempotency_key =
+  '28000000-0000-0000-0000-000000000272'), 0::bigint,
+  'Elutasított sorozatnak nem marad részleges fejléce');
+select is((select count(*) from public.bookings where user_id =
+  '00000000-0000-0000-0000-000000000272' and
+  (start_at at time zone 'Europe/Budapest')::date = current_setting('test.settlement_month')::date + 5),
+  0::bigint, 'Elutasított sorozat nem módosítja a lezárt hónap bookingjait');
 
 select set_config('test.published_user_a_due', (
   select revision.calculated_due_huf::text

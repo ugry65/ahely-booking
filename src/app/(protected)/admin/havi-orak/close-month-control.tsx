@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { closeMonthlySettlementPeriod } from "./actions";
+
+function ConfirmCloseButton() {
+  const { pending } = useFormStatus();
+  return <button type="submit" className="danger-button" disabled={pending}>
+    {pending ? "Lezárás..." : "Lezárás megerősítése"}
+  </button>;
+}
 
 export type MonthClosePreview = {
   settlement_month: string;
@@ -59,7 +67,7 @@ export function CloseMonthControl({ preview, loadError = false }: { preview: Mon
         </dl>
         <form action={closeMonthlySettlementPeriod} className="booking-modal-actions">
           <input type="hidden" name="month" value={preview.settlement_month.slice(0, 7)} />
-          <button type="submit" className="danger-button">Lezárás megerősítése</button>
+          <ConfirmCloseButton />
           <button type="button" className="button secondary" onClick={() => setConfirming(false)}>Mégse</button>
         </form>
       </section>

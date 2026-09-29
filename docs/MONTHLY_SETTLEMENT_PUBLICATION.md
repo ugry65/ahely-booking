@@ -1,6 +1,6 @@
 # Havi elszámolás lezárása és publikálása
 
-Állapot: `feature/monthly-settlement-publication` fejlesztési ág. A staging adatbázisra történő telepítés és az UAT még hátravan.
+Állapot: `feature/monthly-settlement-publication` fejlesztési ág, PR #257. A staging migration megtörtént, a projektgazda a staging UAT-ot sikeresen elvégezte és üzletileg elfogadta. A PR #258 staging séma reconciliationje független Claude-review szerint merge blocker nélkül rendben van. A PR #257 független Claude-review-ja a pénzügyi, cutoff, korrekciós és jogosultsági működést megfelelőnek találta; egy merge blockert jelölt: hiányzott a valódi, két DB-kapcsolatos advisory-lock konkurenciateszt. Az új regressziós teszt eredményét a jelen PR CI-futása igazolja, amikor elkészül. A PR #257-et az új független follow-up review előtt nem merge-eljük; production továbbra sem módosult.
 
 ## Meglévő modell
 
@@ -37,6 +37,8 @@ Az első verzió nem mutat becslést, befizetést, tartozást, fizetési státus
 - Admin műveletek aktív admin jogosultságú RPC-k; a hónaplezárás ismétlése hibával áll meg, részleges állapot nem marad.
 - User olvasás: `list_my_latest_closed_monthly_settlement()` → `auth.uid()` → saját `closed_revision_id` → publikált hónap. Nincs paraméterezhető másik user.
 - Automatizált pgTAP tesztek: `supabase/tests/database/117_monthly_settlement_publication.sql`.
+- A `scripts/test-monthly-settlement-close-concurrency.sh` két külön `psql` kapcsolattal, `pg_stat_activity` és `pg_blocking_pids` alapján igazolt advisory-lock várakozással teszteli a két admin egyidejű zárását, a zárás alatti publikus booking INSERT-et és a lemondási írás guardját. FIFO-val tartja a záró tranzakció commitját; a várakozás felismerése után engedi el. A publikus `cancel_booking` régi alkalomnál már a 24 órás cutoff miatt elutasít, ezért az UPDATE guard párhuzamos útját normál user JWT-vel, célzottan emelt SQL-szerepkörrel ellenőrzi. A teszt kizárólag helyi DB URL-en futhat, timeout védi, és a DB runner és a Database tests CI is hívja.
+- A sorozatos foglalási RPC lezárt hónap utáni elutasítását és a budapesti tavaszi DST hónapforduló pénzügyi besorolását a `117` és `118` pgTAP fájl vizsgálja. A hónap utolsó napját a `117` helper-szintű, rögzített időpontú ellenőrzése bizonyítja; production időmockolás nem került be.
 - Alkalmazás tesztek: `pnpm test`; statikus ellenőrzés: `pnpm typecheck`; production build: `pnpm build`.
 
 ## Forrásdokumentumok státusza
@@ -45,4 +47,4 @@ A jóváhagyott FS v1.0 és az `A-Hely_Foglalasi_Rendszer_AI_Ujraimplementalasi_
 
 A `20260829145720_allow_past_booking_creation.sql` alapján normál user is létrehozhat múltbeli bookingot. Emiatt a 24 órás módosítási/lemondási határidő lejárta önmagában nem védené a lezárt snapshotot: publikálás után normál user nem hozhat létre, módosíthat vagy mondhat le az adott hónap elszámolását érintő bookingot. A backend trigger ezt a lezárt hónap alapján kényszeríti ki; admin korrekció új auditált revisiont hoz létre. Pontosan a cutoff pillanatában a meglévő `clock_timestamp() > start_at - cutoff` guard szerint a lemondás még megengedett, ezért a zárást ez a booking még blokkolja.
 
-Staging deployment blokkoló: [2026-09-29-i migration history audit](STAGING_MIGRATION_HISTORY_AUDIT_2026-09-29.md). A feature migration stagingre még nem került.
+Az [eredeti 2026-09-29-i migration history audit](STAGING_MIGRATION_HISTORY_AUDIT_2026-09-29.md) történeti pillanatképet rögzít; a későbbi staging reconciliation és feature migration már megtörtént. A mostani tesztváltozásokhoz új DB schema migration nem szükséges.

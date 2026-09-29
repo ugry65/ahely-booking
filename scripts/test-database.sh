@@ -14,6 +14,7 @@ bash ./scripts/test-booking-email-bridge-warning.sh
 ./scripts/test-booking-concurrency.sh
 ./scripts/test-booking-mutation-concurrency.sh
 bash ./scripts/test-pricing-concurrency.sh
+bash ./scripts/test-monthly-settlement-close-concurrency.sh
 bash ./scripts/test-room-access-concurrency.sh
 bash ./scripts/test-recurring-booking-concurrency.sh
 bash ./scripts/test-booking-email-outbox-concurrency.sh
