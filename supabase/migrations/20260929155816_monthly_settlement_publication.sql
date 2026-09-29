@@ -305,7 +305,8 @@ begin
     live_totals.users,
     live_totals.minutes,
     live_totals.due,
-    (select c.closed_at from closed c);
+    (select c.closed_at from closed c)
+  from live_totals;
 end;
 $$;
 
