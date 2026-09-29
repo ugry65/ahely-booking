@@ -80,7 +80,10 @@ wait_for_blocked_connection() {
         select 1 from pg_stat_activity holder cross join pg_stat_activity waiter
         where holder.application_name='ahely-close-$scenario-holder'
           and waiter.application_name='ahely-close-$scenario-waiter'
-          and waiter.wait_event_type='Lock' and waiter.wait_event='advisory'
+          and waiter.wait_event_type='Lock'
+          and (case when '$scenario'='c'
+            then waiter.wait_event in ('tuple','transactionid')
+            else waiter.wait_event='advisory' end)
           and holder.pid=any(pg_blocking_pids(waiter.pid))
       );")"
     if [[ "$blocking" == "t" ]]; then return 0; fi
@@ -168,39 +171,28 @@ start_waiter b "$user_id" "select public.create_booking('$room_id','$user_id',
 finish_race b 42501
 assert_log_contains b b.waiter.log 'lezárt hónap foglalása'
 
-# C: in a closable past month the public cancel RPC rejects at its 24h cutoff
-# before reaching bookings. To prove the trigger's cancellation write also
-# serializes, use the normal user's JWT claim even with a privileged SQL role;
-# this deliberately bypasses RLS but not the authorization in the guard.
+# C: the public cancellation RPC first waits for the booking row held by the
+# close's pricing snapshot. After commit it reads the current booking and is
+# rejected at the established 24h cutoff; neither operation leaves a partial
+# booking/revision. A separate direct write then verifies the guard itself.
 start_holder c "$month_c"
-if psql "$database_url" -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose >"$test_dir/c.rpc.log" 2>&1 <<SQL
+start_waiter c "$user_id" "select public.cancel_booking('$booking_c',
+  'Cutoff-teszt','42000000-0000-0000-0000-000000000282');"
+finish_race c P0001
+assert_log_contains c c.waiter.log 'órán belül már nem mondható le'
+if psql "$database_url" -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose >"$test_dir/c.guard.log" 2>&1 <<SQL
 begin;
 set local statement_timeout='10s';
-set local role authenticated;
-select set_config('request.jwt.claim.sub','$user_id',true);
-select public.cancel_booking('$booking_c','Cutoff-teszt','42000000-0000-0000-0000-000000000282');
-commit;
-SQL
-then
-  echo 'Hiba: a normál user múltbeli cancellation RPC-je átjutott a cutoffon.' >&2
-  exit 1
-fi
-assert_log_contains c c.rpc.log P0001
-assert_log_contains c c.rpc.log 'órán belül már nem mondható le'
-(
-  PGAPPNAME='ahely-close-c-waiter' psql "$database_url" -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose >"$test_dir/c.waiter.log" 2>&1 <<SQL
-begin;
-set local statement_timeout='20s';
-set local lock_timeout='12s';
 set local role service_role;
 select set_config('request.jwt.claim.sub','$user_id',true);
 update public.bookings set status='cancelled' where id='$booking_c';
 commit;
 SQL
-) &
-waiter_pid=$!
-wait_for_blocked_connection c
-finish_race c 42501
+then
+  echo 'Hiba: a lezárt hónap user cancellation írása átjutott a DB guardon.' >&2
+  exit 1
+fi
+assert_log_contains c c.guard.log 42501
 
 for month in "$month_a" "$month_b" "$month_c"; do
   actual="$(psql "$database_url" -X -AtF' ' -v ON_ERROR_STOP=1 -c "
