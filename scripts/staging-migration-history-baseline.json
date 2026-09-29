@@ -645,7 +645,5 @@
       "sha256": "588863556079f7c8d8ff57835b7d558b103bfd2f6fd31367a63dd20c1b0a3b6b"
     }
   ],
-  "approved_out_of_order": {
-    "20260929155816_monthly_settlement_publication.sql": "b07196efde0fc45fc5edabbea175a72e106dae9065efd425cb3f9b602b095bd9"
-  }
+  "approved_out_of_order": {}
 }
