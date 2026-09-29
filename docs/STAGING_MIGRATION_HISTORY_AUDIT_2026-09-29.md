@@ -4,7 +4,7 @@ Projekt: `fvwapntzhavhgazeflri`. Forrás: staging `supabase_migrations.schema_mi
 
 ## Következtetés
 
-90 staging migration rekord, 89 helyi fájl (az új, még nem telepített `20260929155816` fájllal együtt). 83 név szerinti egyezés; 7 távoli név helyi fájl nélkül. Az egyik különös, névként teljes helyi stemet tartalmazó sor (`20260822201228`) a `202608220020` helyi fájl jelöltje. Az azonos név önmagában nem bizonyítja a tényleges SQL azonosságát. A helyi fájl és a távoli `statements` bájtjai sokszor eltérnek (például comment/statement splitting); a táblázat az egyezést csak azonos MD5 esetén minősíti bizonyítottnak.
+A 2026-09-29-i DDL előtti pillanatkép: 90 staging migration rekord, 89 helyi fájl (akkor a még nem telepített `20260929155816` fájllal együtt). 83 név szerinti egyezés; 7 távoli név helyi fájl nélkül. Az egyik különös, névként teljes helyi stemet tartalmazó sor (`20260822201228`) a `202608220020` helyi fájl jelöltje. Az azonos név önmagában nem bizonyítja a tényleges SQL azonosságát. A helyi fájl és a távoli `statements` bájtjai sokszor eltérnek (például comment/statement splitting); a táblázat az egyezést csak azonos MD5 esetén minősíti bizonyítottnak.
 
 **A history nem rendezhető biztonságosan jelen bizonyítékkal.** A staginges adatürítő és ellenőrző lépések különálló, alkalmazott események. A hiányzó helyi migrációk egyikének eredménye ténylegesen hiányzik a sémából: a három legacy Papp-import RPC létezik, noha a `20260914120000_retire_legacy_papp_import_rpcs.sql` eltávolítaná. A teljes sémaegyezés nem igazolt. A `db push`/history repair és a feature migráció staging alkalmazása felfüggesztve.
 
@@ -28,7 +28,7 @@ Projekt: `fvwapntzhavhgazeflri`. Forrás: staging `supabase_migrations.schema_mi
 | `20260914120000_retire_legacy_papp_import_rpcs.sql` | A három eltávolítandó `admin_import_papp_dalma_allbooked`, `admin_reconcile_papp_dalma_allbooked`, `admin_rollback_empty_papp_dalma_profile` RPC mind létezik (3/3). | **Bizonyított sémaeltérés**. Appliedként jelölni valótlan lenne; tényleges alkalmazását külön kompatibilitási/security ellenőrzés előzze meg. |
 | `20260917100000_system_health_check.sql` | A függvény létezik, távoli `20260928091003` azonos célú SQL. | Valószínű átnevezés; a két migráció nem bájtszinten azonos. |
 | `20260925143000_retire_empty_legacy_training_rate.sql` | `group_hourly_rate_huf` oszlop és 4 nem-null érték; a fájl adatfüggő ága ezen adatokat őrzi. | A history hiányzik, a jelenlegi függvény és trigger teljes megfelelése még nem bizonyított; nem jelölhető appliedként. |
-| `20260929155816_monthly_settlement_publication.sql` | PR #257 új feature migration, szándékosan nincs stagingen. | Csak hitelesített history/sémaegyezés után alkalmazható. |
+| `20260929182024_monthly_settlement_publication.sql` | A vizsgálatkor még nem volt stagingen; a reconciliation után `20260929182024` valós history-verzióval alkalmaztuk. | Csak hitelesített history/sémaegyezés után alkalmazható. |
 
 A korábbi [#200 recovery](MIGRATION_SOURCE_OF_TRUTH_RECOVERY_200.md) 42 legacy értéket rögzített szeptember 25-én; a mostani read-only ellenőrzés 4-et talált. A két külön időpont számait nem szabad összemosni. A staging jelenleg 451 bookingot, 1 settlementet, 1 revisiont tartalmaz. A stagingen adatot nem töröltünk és a production környezethez nem nyúltunk.
 
@@ -136,3 +136,5 @@ A státusz bizonyítékának szintje a táblázatban: azonos MD5 = bájtszintű 
 3. A hiányzó helyi migration verziók tételes applied-vs-unapplied bizonyítása. History repair csak akkor jelölhet alkalmazottnak fájlt, ha hatását már bizonyítottan hordozza a séma; egyébként külön, előre mutató migration kell.
 
 A history hibás átcímkézése kihagyná a hiányzó DDL-t, vagy destruktív UAT SQL újrajátszásához/rossz sorrendű díjszámításhoz vezethet. Ezért a staging DB deployment és UAT jelenleg blokkolt.
+
+A fenti 90/89 számok történeti pre-reconciliation állapotot jelölnek. A stagingen az új forward reconciliation `20260929181222`, majd a PR #257 feature `20260929182024` ténylegesen lefutott; a history 92 bejegyzés. A `20260914095042` és `20260914120000` nincs appliednek jelölve. A védett dry-run és a részletes bizonyíték a [PR #258 reconciliation dokumentációban](https://github.com/ugry65/ahely-booking/blob/chore/staging-schema-reconciliation/docs/STAGING_SCHEMA_RECONCILIATION_2026-09-29.md) található.
