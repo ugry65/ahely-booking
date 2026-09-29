@@ -31,7 +31,7 @@ jobs:
       - name: Build fresh isolated reference
         run: |
           supabase db start
-          supabase db reset --no-seed
+          supabase db reset
       - name: Run database tests and schema lint
         run: |
           supabase test db
