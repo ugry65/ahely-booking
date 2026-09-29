@@ -279,7 +279,7 @@ Ez a dátumozott kiegészítés felülírja a korábbi „Nincs kötelező havi 
 - Normál user a `Foglalásaim` oldalon kizárólag a saját legutóbbi lezárt/publikált revision óraszámát és összegét láthatja. Ha nincs lezárt revision, kártya sincs. A DB RPC nem fogad user ID-t, a pénzügyi táblák kliensszerepkörtől el vannak zárva.
 - Teljes üzleti és technikai leírás: `docs/MONTHLY_SETTLEMENT_PUBLICATION.md`.
 
-Forrásstátusz: a repositoryban a specifikációként hivatkozott FS v1.0 elérhető; az aktuális „AI újraimplementálási specifikáció” példánya a 2026-09-29-i repository-vizsgálatban nem volt megtalálható. A fenti részletszabályok ezért a projektgazda 2026-09-29-i kifejezett feature-követelményére és a meglévő foglalási cutoffokra épülnek.
+Forrásstátusz: a jóváhagyott FS v1.0 és az aktuális `A-Hely_Foglalasi_Rendszer_AI_Ujraimplementalasi_Specifikacio_2026-09-04.md` a ChatGPT projektfájlok között elérhető; az utóbbi nincs verziózott fájlként ebben a repositoryban. Mindkettőt ellenőriztük a 2026-09-29-i követelménnyel és a meglévő implementációval. A korábbi FS „Nincs kötelező havi lezárás” és becslés/fizetés részleteit e funkcióban a későbbi, kifejezett projektgazdai követelmény szűkíti: kézi publikálás, kizárólag lezárt óraszám és fizetendő összeg. Az AI-specifikáció 14–15., 19–20., 34–36. és 45. fejezetének foglalási cutoff, változatlan pénzügyi snapshot, audit és fail-closed elvei továbbra is irányadók.
 
 ## Nem MVP
 - bankkártyás fizetés
