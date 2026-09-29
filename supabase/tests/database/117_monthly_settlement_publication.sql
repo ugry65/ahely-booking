@@ -1,3 +1,5 @@
+24:  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid()
+30:  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid();
 begin;
 
 select plan(28);
@@ -21,13 +23,13 @@ select '41000000-0000-0000-0000-000000000271'::uuid, '11000000-0000-0000-0000-00
   '00000000-0000-0000-0000-000000000272'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
-  'individual', 'active', gen_random_uuid()
+  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid()
 union all
 select '41000000-0000-0000-0000-000000000272'::uuid, '11000000-0000-0000-0000-000000000001'::uuid,
   '00000000-0000-0000-0000-000000000273'::uuid, '00000000-0000-0000-0000-000000000271'::uuid,
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '07:00'),
   timezone('Europe/Budapest', date_trunc('month', timezone('Europe/Budapest', now()))::date + 1 + time '08:00'),
-  'individual', 'active', gen_random_uuid();
+  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid();
 
 select is(
   public.monthly_settlement_cutoff_blockers(
