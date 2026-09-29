@@ -1,5 +1,3 @@
-24:  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid()
-30:  'individual'::public.booking_use_type, 'active'::public.booking_status, gen_random_uuid();
 begin;
 
 select plan(28);
