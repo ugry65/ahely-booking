@@ -235,4 +235,4 @@ if [[ "$remaining" != '0' ]]; then
   exit 1
 fi
 
-echo 'Havi zárás konkurenciateszt PASS: három valódi, külön psql kapcsolaton várt advisory lock; atomikus snapshot és booking állapot.'
+echo 'Havi zárás konkurenciateszt PASS: külön psql kapcsolatok; admin és booking advisory lock, publikus lemondás sorzár; atomikus snapshot és booking állapot.'
