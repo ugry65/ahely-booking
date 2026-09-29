@@ -1,7 +1,7 @@
 -- Read-only, deterministic inventory of application-owned public schema objects.
 -- One JSON object per line; no row data or secrets. Compare isolated rebuild to staging.
 with objects(kind, object_key, definition) as (
-  select 'relation', c.relname,
+  select 'relation', c.relname::text,
     concat_ws('|', c.relkind, c.relpersistence, c.relispartition,
       c.relrowsecurity, c.relforcerowsecurity,
       coalesce(array_to_string(c.reloptions, ','), ''),
