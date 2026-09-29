@@ -105,9 +105,8 @@ select throws_ok(
     timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 5 + time '09:00'),
     timezone('Europe/Budapest', current_setting('test.settlement_month')::date + 5 + time '10:00')
   ),
-  'P0001',
-  format('A sorozat nem hozható létre. Hibás alkalom: %s (A lezárt hónap foglalása csak auditált adminisztrátori korrekcióval módosítható.).',
-    current_setting('test.settlement_month')::date + 5),
+  '42501',
+  'A lezárt hónap foglalása csak auditált adminisztrátori korrekcióval módosítható.',
   'A sorozatos foglalási RPC INSERT-jét is a lezárt hónap DB guardja állítja meg'
 );
 reset role;
