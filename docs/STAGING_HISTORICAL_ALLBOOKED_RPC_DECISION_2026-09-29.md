@@ -1,6 +1,6 @@
 # A `20260914095042` történeti objektumainak életciklusa – döntési javaslat
 
-Állapot: **elemzés és terv; staging DDL, history-módosítás és adatírás nem történt**. A projektgazda 2026-09-29-i pontosítása szerint az AllBooked→saját rendszer üzleti migrációja lezárt. A történeti SQL és auditbizonyíték megmarad.
+Állapot: **a döntési terv jóváhagyva és stagingen végrehajtva**. Az alábbi vizsgálati állapot a DDL előtti bizonyíték. A projektgazda 2026-09-29-i pontosítása szerint az AllBooked→saját rendszer üzleti migrációja lezárt. A történeti SQL és auditbizonyíték megmarad.
 
 ## Eredet és időrend
 
@@ -54,4 +54,4 @@ A [sikeres izolált referencia artifact](https://github.com/ugry65/ahely-booking
 
 **Kockázat:** a javasolt staging DDL nem töröl bookingot, settlementet, auditot, profilt vagy import-ledgert. Enumérték hozzáadása és öt RPC kivezetése a sémát módosítja; a jelenlegi foglalás létrehozás/módosítás/lemondás és díjszámítás útvonalait nem érinti. A még létező, de menüből rejtett általános migrációs UI/API nem része e kivezetésnek. Production deploy vagy DDL ebben a feladatban nem engedélyezett.
 
-Ezen a ponton staging DDL és history írás előtt meg kell állni. A terv végrehajtásához a projektgazda kifejezett jóváhagyása szükséges.
+A tervet a projektgazda ezt követően kifejezetten jóváhagyta. Az izolált CI, staging pre-check, `20260929181222` forward migration, staging post-check és teljes DB/schema teszt PASS. A két hiányzó történeti RPC-t **nem** állítottuk vissza; a `20260914095042` historyja változatlanul hiányzik. Részletes végrehajtási bizonyíték: [staging schema reconciliation](STAGING_SCHEMA_RECONCILIATION_2026-09-29.md).
