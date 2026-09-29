@@ -10,7 +10,7 @@ describe("admin havi elszámolás snapshot-integráció", () => {
   const xlsxExport = read("../app/(protected)/admin/havi-orak/xlsx-export/route.ts");
   const actions = read("../app/(protected)/admin/havi-orak/actions.ts");
   const userPage = read("../app/(protected)/foglalasaim/page.tsx");
-  const migration = read("../../supabase/migrations/20260929155816_monthly_settlement_publication.sql");
+  const migration = read("../../supabase/migrations/20260929182024_monthly_settlement_publication.sql");
 
   it("a képernyő és az összesítő export ugyanazt a snapshot-aware RPC-t használja", () => {
     expect(page).toContain('rpc("admin_monthly_pricing_summary"');
