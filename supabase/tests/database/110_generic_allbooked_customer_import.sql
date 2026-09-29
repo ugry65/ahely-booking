@@ -1,6 +1,6 @@
 begin;
 
-select plan(40);
+select plan(35);
 
 select has_function('public','admin_import_allbooked_customer',array['uuid','uuid','text','text','text','text','text[]','jsonb','uuid'],'Az általános ügyfélimport függvény létezik');
 select ok(not has_function_privilege('authenticated','public.admin_import_allbooked_customer(uuid,uuid,text,text,text,text,text[],jsonb,uuid)','EXECUTE'),'Az authenticated nem hívhatja az importot');
@@ -130,62 +130,18 @@ select is((select count(*) from public.allbooked_migration_bookings where user_i
 
 set local role service_role;
 select lives_ok(
-  $$select public.admin_rollback_empty_allbooked_profile(
+  $$select public.admin_cleanup_failed_allbooked_auth_profile(
     '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000113','ugyfel-ketto@example.invalid')$$,
-  'Az üres, üzleti adat nélküli profil kompenzáló törlése sikeres'
+  'A jelenlegi kompenzáció eltávolítja az üres, üzleti adat nélküli profilt'
 );
 reset role;
-select is((select count(*) from public.profiles where id='00000000-0000-0000-0000-000000000113'),0::bigint,'A kompenzáló törlés után nem marad üres profil');
-
-select ok(not has_function_privilege('authenticated','public.admin_void_papp_dalma_test_import(uuid,text,uuid)','EXECUTE'),'Az authenticated nem vonhatja vissza a próbaimportot');
-select ok(has_function_privilege('service_role','public.admin_void_papp_dalma_test_import(uuid,text,uuid)','EXECUTE'),'A próbaimport-visszavonás service role művelet');
-
-insert into auth.users(id,email,raw_user_meta_data) values
-  ('00000000-0000-0000-0000-000000000114','pappdalma17@gmail.com','{"first_name":"Dalma","last_name":"Papp"}');
-update public.profiles set phone='+36307337981' where id='00000000-0000-0000-0000-000000000114';
-create temp table papp_trial_rows(id uuid,source_fingerprint text,start_at timestamptz,end_at timestamptz);
-insert into papp_trial_rows
-select gen_random_uuid(),encode(digest('papp-trial-' || item.i::text,'sha256'),'hex'),item.start_at,item.start_at+make_interval(mins=>item.duration_minutes)
-from (
-  select i,timestamptz '2026-09-03 06:00:00+00'+make_interval(days=>i-1) start_at,60 duration_minutes from generate_series(1,15) i
-  union all
-  select i,timestamptz '2026-09-03 08:00:00+00'+make_interval(days=>i-16),60 from generate_series(16,19) i
-  union all select 20,timestamptz '2026-09-07 08:00:00+00',90
-  union all select 21,timestamptz '2026-09-08 08:00:00+00',90
-) item;
-insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_type,status,note,booking_title,idempotency_key)
-select row.id,(select id from public.rooms where name='Forrás tér'),'00000000-0000-0000-0000-000000000114','00000000-0000-0000-0000-000000000111',row.start_at,row.end_at,'individual','active',null,null,gen_random_uuid()
-from papp_trial_rows row;
-insert into public.allbooked_migration_bookings(source_fingerprint,booking_id,user_id,imported_by)
-select source_fingerprint,id,'00000000-0000-0000-0000-000000000114','00000000-0000-0000-0000-000000000111' from papp_trial_rows;
-insert into public.access_group_members(group_id,user_id)
-values ((select id from public.access_groups where name='Forrás tér'),'00000000-0000-0000-0000-000000000114');
-
-set local role service_role;
-select lives_ok(
-  $$select public.admin_void_papp_dalma_test_import(
-    '00000000-0000-0000-0000-000000000111','REMOVE-PAPP-DALMA-TEST-DATA','11000000-0000-0000-0000-000000000007')$$,
-  'A pontosan azonosított 21 foglalásos próbaimport visszavonható'
-);
-reset role;
-select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='voided'),21::bigint,'Mind a 21 próba-foglalás voided állapotú');
-select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='active'),0::bigint,'Nem maradt aktív Papp Dalma próba-foglalás');
-select is((select count(*) from public.access_group_members where user_id='00000000-0000-0000-0000-000000000114'),0::bigint,'A próba során kiosztott csoportjog megszűnt');
-select is((select is_active::text || '|' || coalesce(phone,'—') from public.profiles where id='00000000-0000-0000-0000-000000000114'),'false|—','A próba-profil inaktív, üres újraimportállapotú');
-
-set local role service_role;
-select lives_ok(
-  $$select public.admin_import_allbooked_customer(
-    '00000000-0000-0000-0000-000000000111','00000000-0000-0000-0000-000000000114','pappdalma17@gmail.com',
-    'Dalma','Papp','+36301111111',array['Forrás tér'],
-    jsonb_build_array(jsonb_build_object('sourceFingerprint',encode(digest('papp-real-v2','sha256'),'hex'),'roomName','Forrás tér','startLocal','2026-09-03 08:00','endLocal','2026-09-03 09:00','durationMinutes',60,'bookingTitle','Valós foglalás','note',null,'useType','individual')),
-    '11000000-0000-0000-0000-000000000008')$$,
-  'A voidolt próba után Papp Dalma valós adata újramigrálható'
-);
-reset role;
-select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='active'),1::bigint,'Az újraimport pontosan egy aktív valós foglalást hozott létre');
-select is((select count(*) from public.bookings where user_id='00000000-0000-0000-0000-000000000114' and status='voided'),21::bigint,'A régi próba bizonyítéka voidolt állapotban elkülönül');
-select is((select is_active::text || '|' || phone from public.profiles where id='00000000-0000-0000-0000-000000000114'),'true|+36301111111','A valós újraimport újraaktiválja és frissíti a profilt');
+select is((select count(*) from public.profiles where id='00000000-0000-0000-0000-000000000113'),0::bigint,'Az aktuális kompenzáció után nem marad üres profil');
+select ok('voided' = any(enum_range(null::public.booking_status)::text[]),'A történeti voided státusz az adatmodell része');
+select ok(not exists (select 1 from pg_proc where oid=to_regprocedure('public.admin_void_papp_dalma_test_import(uuid,text,uuid)')),'A próba-visszavonó RPC már nincs a runtime sémában');
+select ok(not exists (select 1 from pg_proc where oid=to_regprocedure('public.admin_rollback_empty_allbooked_profile(uuid,uuid,text)')),'A régi kompenzációs RPC már nincs a runtime sémában');
+select ok(not exists (select 1 from pg_proc where oid=to_regprocedure('public.admin_import_papp_dalma_allbooked(uuid,uuid,text,jsonb,uuid)')),'A régi Papp import RPC hiányzik');
+select ok(not exists (select 1 from pg_proc where oid=to_regprocedure('public.admin_reconcile_papp_dalma_allbooked(uuid,text[])')),'A régi Papp egyeztető RPC hiányzik');
+select ok(not exists (select 1 from pg_proc where oid=to_regprocedure('public.admin_rollback_empty_papp_dalma_profile(uuid,uuid)')),'A régi Papp kompenzációs RPC hiányzik');
 
 select * from finish();
 rollback;
