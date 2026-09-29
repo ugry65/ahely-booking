@@ -54,9 +54,16 @@ from (values ('$booking_a','$month_a'),('$booking_b','$month_b'),('$booking_c','
 SQL
 
 wait_for_ready() {
-  local scenario="$1"
+  local scenario="$1" ready
   for ((attempt=0;attempt<100;attempt++)); do
-    if grep -q '^HOLDER_READY$' "$test_dir/$scenario.holder.log"; then return 0; fi
+    ready="$(psql "$database_url" -X -At -v ON_ERROR_STOP=1 -c "
+      select exists (
+        select 1 from pg_stat_activity holder join pg_locks held on held.pid=holder.pid
+        where holder.application_name='ahely-close-$scenario-holder'
+          and holder.state='idle in transaction'
+          and held.locktype='advisory' and held.granted
+      );")"
+    if [[ "$ready" == "t" ]]; then return 0; fi
     if ! kill -0 "$holder_pid" 2>/dev/null; then break; fi
     sleep 0.1
   done
@@ -93,13 +100,21 @@ start_holder() {
       printf "begin; set local statement_timeout='20s'; set local role authenticated;\n"
       printf "select set_config('request.jwt.claim.sub','%s',true);\n" "$admin_a"
       printf "select * from public.admin_close_monthly_settlement_period('%s'::date);\n" "$month"
-      printf '\\echo HOLDER_READY\n'
       IFS= read -r _ < "$test_dir/$scenario.release"
       printf 'commit;\n'
     } | PGAPPNAME="ahely-close-$scenario-holder" psql "$database_url" -X -v ON_ERROR_STOP=1
   ) >"$test_dir/$scenario.holder.log" 2>&1 &
   holder_pid=$!
   wait_for_ready "$scenario"
+}
+
+assert_log_contains() {
+  local scenario="$1" file="$2" pattern="$3"
+  if ! grep -q "$pattern" "$test_dir/$file"; then
+    echo "Hiba: $scenario: a várt hibaüzenet hiányzik: $pattern" >&2
+    cat "$test_dir/$file" >&2
+    exit 1
+  fi
 }
 
 start_waiter() {
@@ -141,7 +156,7 @@ finish_race() {
 start_holder a "$month_a"
 start_waiter a "$admin_b" "select * from public.admin_close_monthly_settlement_period('$month_a'::date);"
 finish_race a P0001
-grep -q 'Ez a hónap már le van zárva' "$test_dir/a.waiter.log"
+assert_log_contains a a.waiter.log 'Ez a hónap már le van zárva'
 
 # B: the public booking RPC reaches the bookings guard as the user and waits
 # for the first admin's period lock. Its INSERT is then rejected after commit.
@@ -151,7 +166,7 @@ start_waiter b "$user_id" "select public.create_booking('$room_id','$user_id',
   ('$month_b'::date + 5 + time '10:00') at time zone 'Europe/Budapest',
   'individual',null,'42000000-0000-0000-0000-000000000281');"
 finish_race b 42501
-grep -q 'lezárt hónap foglalása' "$test_dir/b.waiter.log"
+assert_log_contains b b.waiter.log 'lezárt hónap foglalása'
 
 # C: in a closable past month the public cancel RPC rejects at its 24h cutoff
 # before reaching bookings. To prove the trigger's cancellation write also
@@ -170,8 +185,8 @@ then
   echo 'Hiba: a normál user múltbeli cancellation RPC-je átjutott a cutoffon.' >&2
   exit 1
 fi
-grep -q 'P0001' "$test_dir/c.rpc.log"
-grep -q 'órán belül már nem mondható le' "$test_dir/c.rpc.log"
+assert_log_contains c c.rpc.log P0001
+assert_log_contains c c.rpc.log 'órán belül már nem mondható le'
 (
   PGAPPNAME='ahely-close-c-waiter' psql "$database_url" -X -v ON_ERROR_STOP=1 -v VERBOSITY=verbose >"$test_dir/c.waiter.log" 2>&1 <<SQL
 begin;
