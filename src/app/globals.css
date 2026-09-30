@@ -98,6 +98,15 @@ legend { padding: 0 .35rem; font-weight: 800; }
 .monthly-close-summary > div { display: grid; gap: .2rem; }
 .monthly-close-summary dt { color: #65716a; font-size: .85rem; font-weight: 700; }
 .monthly-close-summary dd { margin: 0; font-size: 1.1rem; font-weight: 800; }
+.monthly-correction { min-width: 8.5rem; border-top: 0; padding-top: 0; }
+.monthly-correction summary { padding: .45rem .65rem; border: 1px solid #65716a; border-radius: .5rem; background: #fff; white-space: nowrap; }
+.monthly-correction[open] { min-width: min(22rem, 70vw); padding: .65rem; border: 1px solid #d8d4c8; border-radius: .65rem; background: #f8f7f2; }
+.monthly-correction[open] summary { margin-bottom: .65rem; }
+.monthly-correction-form { display: grid; grid-template-columns: minmax(8rem, 10rem) minmax(12rem, 1fr) auto; gap: .6rem; align-items: end; }
+.monthly-correction-form label { min-width: 0; font-size: .82rem; }
+.monthly-correction-form input { min-width: 0; padding: .6rem .7rem; }
+.monthly-correction-form button { white-space: nowrap; }
+.monthly-current-rate { grid-column: 1 / -1; margin: 0; color: #65716a; font-size: .85rem; }
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: .7rem; border-bottom: 1px solid #d8d4c8; text-align: left; white-space: nowrap; }
@@ -116,7 +125,7 @@ tfoot th { font-weight: 800; }
 .user-mobile-edit { width: 100%; }
 .user-mobile-empty { margin: 0; }
 
-.monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: none; }
+.monthly-summary-list-mobile, .monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: none; }
 .report-mobile-card { display: grid; gap: .9rem; padding: 1rem; border: 1px solid #d8d4c8; border-radius: .8rem; background: #fff; }
 .report-mobile-card-heading { display: flex; align-items: start; justify-content: space-between; gap: .75rem; }
 .report-mobile-card-heading h3 { min-width: 0; margin: 0; overflow-wrap: anywhere; font-size: 1.05rem; }
@@ -182,8 +191,8 @@ tfoot th { font-weight: 800; }
   .admin-grid { grid-template-columns: 1fr; }
   .page-heading { align-items: center; text-align: center; }
   .page-heading > div { width: 100%; }
-  .monthly-detail-table-desktop, .cancellation-summary-table-desktop, .cancellation-detail-table-desktop, .pricing-table-desktop { display: none; }
-  .monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: grid; gap: .75rem; }
+  .monthly-summary-table-desktop, .monthly-detail-table-desktop, .cancellation-summary-table-desktop, .cancellation-detail-table-desktop, .pricing-table-desktop { display: none; }
+  .monthly-summary-list-mobile, .monthly-detail-list-mobile, .cancellation-summary-list-mobile, .cancellation-detail-list-mobile, .pricing-list-mobile { display: grid; gap: .75rem; }
   .report-mobile-details > div { grid-template-columns: minmax(6.75rem, 34%) minmax(0, 1fr); gap: .5rem; }
   .users-table-desktop { display: none; }
   .users-list-mobile { display: grid; gap: .75rem; }
@@ -201,7 +210,8 @@ tfoot th { font-weight: 800; }
   .booking-modal-actions { position: sticky; bottom: 0; padding-top: .6rem; background: #fff; }
   .repeat-options { padding: .75rem; }
   .calendar-help { display: none; }
-  .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row, .monthly-filter { grid-template-columns: 1fr; }
+  .admin-editor-row, .admin-editor-row.compact, .admin-access-grid, .permission-matrix-row, .permission-matrix-row.member-row, .monthly-filter, .monthly-correction-form { grid-template-columns: 1fr; }
+  .monthly-correction[open] { min-width: 0; width: 100%; }
   .billing-address-fields { grid-template-columns: 1fr; }
   .calendar-color-palette { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .calendar-color-option { font-size: .78rem; }
