@@ -42,25 +42,38 @@ jobs:
             echo "Missing repository/environment secret: SUPABASE_STAGING_DB_URL" >&2
             exit 1
           fi
+          case "$STAGING_DB_URL" in
+            *fvwapntzhavhgazeflri*) ;;
+            *) echo "Staging database URL does not identify the approved staging project" >&2; exit 1 ;;
+          esac
 
-      - name: Show migration status
+      - name: Read and pin actual staging migration history
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
-        run: supabase migration list --db-url "$STAGING_DB_URL"
+        run: |
+          if ! command -v psql >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql "$STAGING_DB_URL" -XAt -v ON_ERROR_STOP=1 -c "select coalesce(json_agg(json_build_object('version',version,'name',name,'statements_md5',md5(array_to_string(statements,E'\n'))) order by version),'[]'::json) from supabase_migrations.schema_migrations" > "$RUNNER_TEMP/staging-history.json"
+          python scripts/staging-migration-projection.py --history "$RUNNER_TEMP/staging-history.json" --output "$RUNNER_TEMP/staging-projection"
 
       - name: Preview pending migrations
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        working-directory: ${{ runner.temp }}/staging-projection
         run: supabase db push --db-url "$STAGING_DB_URL" --include-all --dry-run
 
       - name: Apply pending migrations to staging
-        if: ${{ inputs.mode == 'deploy' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'deploy' }}
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        working-directory: ${{ runner.temp }}/staging-projection
         run: supabase db push --db-url "$STAGING_DB_URL" --include-all
 
       - name: Verify migration status after deploy
-        if: ${{ inputs.mode == 'deploy' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'deploy' }}
         env:
           STAGING_DB_URL: ${{ secrets.SUPABASE_STAGING_DB_URL }}
+        working-directory: ${{ runner.temp }}/staging-projection
         run: supabase migration list --db-url "$STAGING_DB_URL"

@@ -1,0 +1,37 @@
+name: Staging schema reference inventory
+
+on:
+  pull_request:
+    paths:
+      - "scripts/schema-inventory.sql"
+      - ".github/workflows/staging-schema-inventory.yml"
+      - "supabase/migrations/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.114.0
+      - name: Rebuild isolated database from repository migrations
+        run: |
+          supabase db start
+          supabase db reset --no-seed
+      - name: Export public schema inventory
+        run: |
+          docker exec -i supabase_db_${{ github.event.repository.name }} psql -U postgres -d postgres -XAt -v ON_ERROR_STOP=1 < scripts/schema-inventory.sql > reference-schema.jsonl
+      - uses: actions/upload-artifact@v4
+        with:
+          name: isolated-reference-schema
+          path: reference-schema.jsonl
+          if-no-files-found: error
+      - name: Stop local database
+        if: always()
+        run: supabase stop

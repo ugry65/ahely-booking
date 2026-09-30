@@ -1,6 +1,6 @@
 # Production alkalmazás-release kapu (#241)
 
-**Állapot 2026-09-28:** előkészített PR; éles átállás és release **NO-GO**. A production Vercel projekt még `main`-t követ, ezért a #242 és #240 PR-t sem szabad mainbe merge-elni. Ez a dokumentum jövőbeli operátori eljárás, nem élesítési jóváhagyás.
+**Állapot 2026-09-30:** előkészített PR a #258 mainbe kerülése után; éles átállás és release **NO-GO**. A production Vercel projekt még `main`-t követ: a #258 main merge `0fe5e135a264d0d340c5087ab670e97355ff29fb` commitjához production-target Git deployment (`dpl_4N6xKuZ3rtRLCNu5HhAQ5uiuo7nk`) jött létre. Ezért a #242 és #240 PR-t sem szabad mainbe merge-elni. Ez a dokumentum jövőbeli operátori eljárás, nem élesítési jóváhagyás.
 
 ## Rövid terv
 
@@ -28,7 +28,7 @@ A check a deployment ID **alakját** ellenőrzi, annak valódi Vercel-projekt/SH
 
 A Vercel production-target build a `next.config.ts` betöltésekor a rendszer által adott project ID-t és Git refet, valamint a tényleges Supabase URL-t és `SITE_URL` értéket együtt ellenőrzi. A production projekt kizárólag `production` ággal, `yasrmxwjojepessivhmc` Supabase projekttel és `https://foglalas.a-hely.com` site URL-lel, a staging projekt kizárólag `main` ággal, `fvwapntzhavhgazeflri` projekttel és a staging URL-lel épülhet. Hiányzó vagy eltérő értéknél a build leáll. A Vercel System Environment Variables kapcsoló mindkét projekten bekapcsolt állapotúnak látszik a 2026-09-28-i read-only UI-ellenőrzésben; a tényleges éles build-változókat csak az aktiváláskor lehet igazolni. A Preview scope külön kezelendő.
 
-A két admin import/visszavonás route production Supabase refet (`yasrmxwjojepessivhmc`), Vercel production környezetet és `main` vagy `production` Git refet követel. A staging import kizárólag a staging Supabase refet (`fvwapntzhavhgazeflri`) és `main` refet fogad el. A ref önmagában nem környezetazonosság; minden feltétel együtt szükséges. A `production` ág engedése a mainen futó régi alkalmazás viselkedését nem változtatja, de az éles átállás előtt célzott staging ellenőrzés szükséges.
+Az admin AllBooked import route production Supabase refet (`yasrmxwjojepessivhmc`), Vercel production környezetet és `main` vagy `production` Git refet követel. A staging import kizárólag a staging Supabase refet (`fvwapntzhavhgazeflri`) és `main` refet fogad el. A ref önmagában nem környezetazonosság; minden feltétel együtt szükséges. A #258 a történeti `void-papp-dalma-test-import` route-ot eltávolította, és forward-only migrációval kivezette a hozzá tartozó RPC-t; a #241 integráció ezt megőrzi. A `production` ág engedése a mainen futó régi alkalmazás viselkedését nem változtatja, de az éles átállás előtt célzott staging ellenőrzés szükséges.
 
 ## Bevezetési sorrend – Imre külön jóváhagyásával
 
