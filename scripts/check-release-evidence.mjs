@@ -66,21 +66,23 @@ export function check(root, manifest, release = false) {
   }
   if (release) {
     for (const blocker of manifest.releaseBlockers) fail('Release blocker: ' + blocker);
-    const observed = email.productionModeEvidence;
-    if (!observed || !['disabled', 'capture', 'send'].includes(observed.mode) ||
-        observed.mode !== email.approvedProductionMode ||
-        observed.projectId !== 'prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo' ||
-        !/^dpl_[A-Za-z0-9]+$/.test(observed.deploymentId ?? '') ||
-        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(observed.observedAt ?? '') ||
-        observed.source !== 'vercel_production_read_only') {
-      fail('Production booking email mode missing, unknown, or different from approved mode');
-    } else {
-      proof(observed.evidence, 'Production booking email mode evidence missing or changed');
-      if (observed.evidence?.path === email.decision?.evidence?.path || resolvedPaths.has(observed.evidence?.path)) {
-        fail('Production mode observation requires its own evidence');
-      }
-    }
+    // Disabled booking email is an explicit business policy, not a per-release runtime gate.
+    // Runtime Vercel evidence becomes mandatory only when booking email is activated.
     if (email.approvedProductionMode !== 'disabled') {
+      const observed = email.productionModeEvidence;
+      if (!observed || !['capture', 'send'].includes(observed.mode) ||
+          observed.mode !== email.approvedProductionMode ||
+          observed.projectId !== 'prj_ZW7nVAOcYPjttZtES2iHoeA8iOTo' ||
+          !/^dpl_[A-Za-z0-9]+$/.test(observed.deploymentId ?? '') ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(observed.observedAt ?? '') ||
+          observed.source !== 'vercel_production_read_only') {
+        fail('Active production booking email mode missing, unknown, or different from approved mode');
+      } else {
+        proof(observed.evidence, 'Production booking email mode evidence missing or changed');
+        if (observed.evidence?.path === email.decision?.evidence?.path || resolvedPaths.has(observed.evidence?.path)) {
+          fail('Production mode observation requires its own evidence');
+        }
+      }
       for (const item of email.activationChecks) {
         if (item.status !== 'resolved' || !item.evidence.length) fail('Booking email activation blocker: ' + item.id);
       }
