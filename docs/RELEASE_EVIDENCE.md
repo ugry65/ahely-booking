@@ -70,3 +70,11 @@ A main-only vizsgálat összekeverte a „mainből hiányzik” és a „nem ké
 6. Többügyfeles import külön későbbi fejlesztés; a jelenlegi együgyfeles modell szándékos.
 
 Ez a dokumentum önmagában nem jelent teljes élesítési GO-t.
+
+## 2026-09-30: booking-email döntés és feltételes release gate (#241)
+
+A fenti, 2026-09-18-i lista és az akkori kiadási blokkok történeti állapotok. A projektgazda [2026-09-30-i döntése](BOOKING_EMAIL_BUSINESS_DECISION_2026-09-30.md) alapján a booking-email küldés **nem része a jelenlegi production szolgáltatásnak**, jóváhagyott módja `disabled`. Az Auth e-mailekre ez nem vonatkozik. Az üzleti döntés nem bizonyítja az éles Vercel környezet jelenlegi változóértékét.
+
+A `docs/release-evidence.json` 2-es verziójában a `bookingEmail.state=disabled_by_business_decision`, a döntés dátuma és Git blob SHA-val védett dokumentuma külön szerepel. A `productionModeEvidence` most `null`: előbb az adott production projekt/deployment `BOOKING_EMAIL_MODE` értékét read-only módon ellenőrizni kell. A megfigyelést titokérték nélkül, dátummal, production project ID-val, deployment ID-val és külön bizonyítékfájl blob SHA-jával kell rögzíteni. A `--release` ellenőrzés hiányzó, ismeretlen vagy eltérő módnál hibával leáll. A rögzített bizonyíték helyességét és az aktuális deploymenttel való egyezést az operátor a merge előtt külön ellenőrzi; a fájl hash-e önmagában nem élő Vercel lekérdezés.
+
+A négy eredeti booking-email blokk `bookingEmail.activationChecks` alatt, nyitott állapotban megmaradt. A #176 merge-je a Git history alapján igazolt, de a független review hiteles bizonyítékát ez a nyilvántartás nem minősíti lezártnak. `capture` vagy `send` módhoz új üzleti döntés, egyező éles módmegfigyelés és mind a négy check **külön, sértetlen bizonyítékkal** történő lezárása szükséges. Az általános alkalmazás-release a nyitott activation checkek mellett is lehetséges, ha a production mód igazoltan a jóváhagyott `disabled`. A `--release` kapu jelenleg a hiányzó éles módmegfigyelés miatt FAIL; ez nem booking-email aktiválási engedély és nem általános release GO.

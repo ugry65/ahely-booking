@@ -2,34 +2,7 @@ name: Application checks
 
 on:
   pull_request:
-    paths:
-      - "src/**"
-      - "scripts/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "tsconfig.json"
-      - "next.config.ts"
-      - "proxy.ts"
-      - ".env.example"
-      - "vercel.json"
-      - "docs/BOOKING_EMAIL_*.md"
-      - "docs/DECISION_2026-09-10_BOOKING_EMAIL_RESEND.md"
-      - "docs/BACKUP_RESTORE_*.md"
-      - "docs/ARCHITECTURE_OVERRIDE_2026-09-08_FREE_BACKUP.md"
-      - "docs/DECISION_2026-09-08_SUPABASE_FREE_AND_BACKUP_BASELINE.md"
-      - "docs/PRODUCTION_BACKUP_SCHEDULE_RELEASE_READINESS_2026-09-11.md"
-      - "docs/STAGING_ADATBAZIS_DEPLOY.md"
-      - "docs/PRODUCTION_ADATBAZIS_DEPLOY.md"
-      - "docs/STAGING_WEB_ES_UAT_BOOTSTRAP.md"
-      - "docs/IMPLEMENTATION_PLAN.md"
-      - ".github/workflows/application-checks.yml"
-      - ".github/workflows/staging-database-deploy.yml"
-      - ".github/workflows/production-database-deploy.yml"
-      - ".github/workflows/staging-uat-bootstrap.yml"
-      - ".github/workflows/production-backup-drill.yml"
-      - ".github/workflows/production-backup.yml"
-      - ".github/workflows/production-backup-retention.yml"
-      - ".github/workflows/production-restore-drill.yml"
+    # Required on every release PR, including documentation-only releases.
   push:
     branches: [main]
   workflow_dispatch:
@@ -51,6 +24,7 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: node --test scripts/test-production-release-pr.mjs
       - run: bash ./scripts/test-production-db-url-guard.sh
       - run: bash ./scripts/test-production-backup-trigger.sh
       - run: bash ./scripts/test-production-backup-drill.sh

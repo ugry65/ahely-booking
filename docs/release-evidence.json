@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "baseline": {
     "main": "bfb1f346c8b93c6e1f6184ac5892591cec3b9889",
     "staging": "c71f790e20e979898ac38f934ddb243747d008bc"
@@ -42,7 +42,7 @@
         },
         {
           "path": "src/app/api/internal/production-customer-migration-import/route.ts",
-          "sha": "cef7f5dff744b992fd9b05e5b0ab34f5ad40fb2c"
+          "sha": "c7af5c398571f26b29c1df9ecf76a5688380b356"
         },
         {
           "path": "supabase/migrations/20260914095042_generic_allbooked_customer_import.sql",
@@ -154,10 +154,44 @@
       ]
     }
   ],
-  "releaseBlockers": [
-    "Get independent security/data-integrity review and merge approval for the postmerge booking-email bridge warning PR.",
-    "Approve and verify any required staging and production database migrations separately; production booking-email migrations are not applied.",
-    "Verify live email mode and required runtime secret presence, resolve staging pending recipient backlog, and complete targeted real-provider staging UAT.",
-    "Obtain explicit project-owner approval before production email send activation."
-  ]
+  "releaseBlockers": [],
+  "bookingEmail": {
+    "state": "disabled_by_business_decision",
+    "approvedProductionMode": "disabled",
+    "decision": {
+      "date": "2026-09-30",
+      "productionServiceExcludesBookingEmail": true,
+      "evidence": {
+        "path": "docs/BOOKING_EMAIL_BUSINESS_DECISION_2026-09-30.md",
+        "sha": "6506fa5381f42f019d2c82ee83de2338e84e00dc"
+      }
+    },
+    "productionModeEvidence": null,
+    "activationChecks": [
+      {
+        "id": "bridge_review_and_merge",
+        "description": "Get independent security/data-integrity review and merge approval for the postmerge booking-email bridge warning PR. PR #176 merge is verified in Git history; independent review evidence remains to be reconciled.",
+        "status": "open",
+        "evidence": []
+      },
+      {
+        "id": "database_migrations",
+        "description": "Approve and verify any required staging and production database migrations separately; production booking-email migrations are not applied in the last documented audit.",
+        "status": "open",
+        "evidence": []
+      },
+      {
+        "id": "runtime_backlog_and_provider_uat",
+        "description": "Verify live email mode and required runtime secret presence, resolve staging pending recipient backlog, and complete targeted real-provider staging UAT.",
+        "status": "open",
+        "evidence": []
+      },
+      {
+        "id": "owner_send_approval",
+        "description": "Obtain explicit project-owner approval before production email send activation.",
+        "status": "open",
+        "evidence": []
+      }
+    ]
+  }
 }

@@ -7,6 +7,7 @@ import { BookingManagement, type BookableRoom, type MyBooking } from "./booking-
 import styles from "./my-bookings.module.css";
 
 type View = "day" | "month" | "list";
+type LatestSettlement = { settlement_month: string; total_minutes: number | string; calculated_due_huf: number | string; closed_at: string; revision_id: string; revision_number: number };
 function paramValue(value: string | string[] | undefined) { return Array.isArray(value) ? value[0] : value; }
 function viewFromParam(value: string | undefined): View { return value === "day" || value === "list" ? value : "month"; }
 function myBookingsUrl(view: View, date: string, bookingId?: string) { const params = new URLSearchParams({ view, date }); if (bookingId) params.set("booking", bookingId); return `/foglalasaim?${params.toString()}`; }
@@ -23,12 +24,14 @@ export default async function MyBookingsPage({ searchParams }: { searchParams: P
   const selectedDate = isValidCivilDate(requestedDate) ? requestedDate : today;
   const selectedBookingId = paramValue(params.booking);
   const supabase = await createClient();
-  const [bookingsResult, roomsResult] = await Promise.all([
+  const [bookingsResult, roomsResult, settlementResult] = await Promise.all([
     supabase.rpc("list_my_bookings").returns<MyBooking[]>(),
     supabase.rpc("list_bookable_rooms").returns<BookableRoom[]>(),
+    supabase.rpc("list_my_latest_closed_monthly_settlement").returns<LatestSettlement[]>(),
   ]);
   const bookings = ((bookingsResult.data ?? []) as unknown as MyBooking[]).sort((a, b) => a.start_at.localeCompare(b.start_at));
   const rooms = (roomsResult.data ?? []) as unknown as BookableRoom[];
+  const settlement = (settlementResult.data as unknown as LatestSettlement[] | null)?.[0];
   const grouped = groupBookingsByBudapestDate(bookings);
   const selectedDayBookings = grouped[selectedDate] ?? [];
   const selectedBooking = selectedBookingId ? bookings.find((booking) => booking.booking_id === selectedBookingId) : undefined;
@@ -38,6 +41,15 @@ export default async function MyBookingsPage({ searchParams }: { searchParams: P
     <header className="page-heading"><div><p className="eyebrow">Saját időpontok</p><h1>Foglalásaim</h1><p className="muted">A jövőbeli aktív foglalásaid budapesti idő szerint.</p></div><Link className="button secondary" href="/foglalasok">Naptár és új foglalás</Link></header>
     {paramValue(params.hiba) || paramValue(params.uzenet) ? <p className={`message ${paramValue(params.hiba) ? "error" : "success"}`} role="status">{paramValue(params.hiba) ?? paramValue(params.uzenet)}</p> : null}
     {bookingsResult.error || roomsResult.error ? <p className="message error" role="alert">A foglalások betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
+
+    {settlementResult.error ? <p className="message error" role="alert">A lezárt havi elszámolás betöltése nem sikerült.</p> : settlement ? <article className="card wide-card stack" aria-labelledby="latest-settlement-title">
+      <div><p className="eyebrow">Végleges havi elszámolás</p><h2 id="latest-settlement-title">{new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", month: "long", year: "numeric" }).format(new Date(`${settlement.settlement_month}T12:00:00Z`))} elszámolás</h2></div>
+      <dl className="monthly-close-summary">
+        <div><dt>Elszámolt órák</dt><dd>{(Number(settlement.total_minutes) / 60).toLocaleString("hu-HU", { minimumFractionDigits: 1, maximumFractionDigits: 2 })} óra</dd></div>
+        <div><dt>Fizetendő</dt><dd>{Number(settlement.calculated_due_huf).toLocaleString("hu-HU")} Ft</dd></div>
+      </dl>
+      <p className="muted">Lezárva: {new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(settlement.closed_at))}</p>
+    </article> : null}
 
     <div className={styles.controls}>
       <div className={styles.viewSwitch} role="navigation" aria-label="Foglalásaim nézet">

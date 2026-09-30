@@ -25,6 +25,11 @@ describe("customer migration target guard", () => {
     expect(isApprovedCustomerMigrationTarget(productionTarget)).toBe(true);
   });
 
+  it("recognizes the production release branch with the exact production database", () => {
+    expect(isProductionMigrationTarget({ ...productionTarget, gitCommitRef: "production" })).toBe(true);
+    expect(isProductionMigrationTarget({ ...stagingTarget, gitCommitRef: "production" })).toBe(false);
+  });
+
   it("recognizes the exact dedicated staging target for full migration UAT", () => {
     expect(isStagingMigrationTarget(stagingTarget)).toBe(true);
     expect(isProductionMigrationTarget(stagingTarget)).toBe(false);

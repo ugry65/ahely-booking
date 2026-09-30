@@ -268,6 +268,19 @@ A részletes technikai és regressziós checklist forrása: `docs/BOOKING_UI_UX_
 
 Nyitott, még nem lezárt UX tételek külön vannak jelölve ebben a baseline-ban; ezek fejlesztése nem ad felhatalmazást a már elfogadott elemek eltávolítására.
 
+## 2026-09-29 – Havi elszámolás admin zárása és user publikálása
+
+Ez a dátumozott kiegészítés felülírja a korábbi „Nincs kötelező havi lezárás” mondatot erre a funkcióra. A meglévő díjszámítási és revision adatmodellt kell használni; párhuzamos pénzügyi modellt nem vezetünk be.
+
+- Admin a havi órák felületen ellenőrzi a szerveroldali összesítést, majd külön megerősítéssel lezárhatja/publikálhatja a hónapot.
+- A hónap már a budapesti hónap utolsó napján lezárható, ha minden normál user foglalásmódosítási/lemondási határideje lejárt. Pontosan a 24 órás cutoff pillanatában egy booking még blokkolja a zárást; a hiányzó vagy érvénytelen cutoff-beállítás fail-closed hibát ad.
+- Sikeres lezárás egy atomikus, auditált `monthly_settlement_periods` esemény és user/hónap immutable revisionek létrehozása. A rögzített érték óraszám + fizetendő összeg; becslés, befizetés, tartozás, fizetési státusz/mód, pénzcélhely és számlázási adat nem része ennek a user-megjelenítésnek.
+- Lezárás után normál user nem módosíthatja a hónap elszámolását érintő foglalást. Admin lezárás utáni lemondásánál kötelező az auditindok és ugyanabban a tranzakcióban új revision készül. Árazási korrekció szintén indokolt új revision.
+- Normál user a `Foglalásaim` oldalon kizárólag a saját legutóbbi lezárt/publikált revision óraszámát és összegét láthatja. Ha nincs lezárt revision, kártya sincs. A DB RPC nem fogad user ID-t, a pénzügyi táblák kliensszerepkörtől el vannak zárva.
+- Teljes üzleti és technikai leírás: `docs/MONTHLY_SETTLEMENT_PUBLICATION.md`.
+
+Forrásstátusz: a jóváhagyott FS v1.0 és az aktuális `A-Hely_Foglalasi_Rendszer_AI_Ujraimplementalasi_Specifikacio_2026-09-04.md` a ChatGPT projektfájlok között elérhető; az utóbbi nincs verziózott fájlként ebben a repositoryban. Mindkettőt ellenőriztük a 2026-09-29-i követelménnyel és a meglévő implementációval. A korábbi FS „Nincs kötelező havi lezárás” és becslés/fizetés részleteit e funkcióban a későbbi, kifejezett projektgazdai követelmény szűkíti: kézi publikálás, kizárólag lezárt óraszám és fizetendő összeg. Az AI-specifikáció 14–15., 19–20., 34–36. és 45. fejezetének foglalási cutoff, változatlan pénzügyi snapshot, audit és fail-closed elvei továbbra is irányadók.
+
 ## Nem MVP
 - bankkártyás fizetés
 - SSO/SAML

@@ -10,6 +10,8 @@ A staging és production elkülönül. Production adatbázis-migráció, booking
 
 Aktuális bizonyítékok és státusz: `docs/RELEASE_EVIDENCE.md`, `docs/UAT_FUTASI_JEGYZOKONYV.md`, `docs/BOOKING_EMAIL_PRODUCTION_READINESS.md`.
 
+**2026-09-29 – Issue #257:** a havi settlement publication funkció külön `feature/monthly-settlement-publication` ágon készül; DB-migráció, admin lezárás előnézettel, Foglalásaim saját snapshot kártya, pgTAP tesztek és staging UAT következik. Ez a státusz nem jelent production változtatást vagy production jóváhagyást. Részletek: `docs/MONTHLY_SETTLEMENT_PUBLICATION.md`.
+
 ## Kötelező források
 
 - `docs/TECHNIKAI_ARCHITEKTURA_ES_ADATMODELL.md`

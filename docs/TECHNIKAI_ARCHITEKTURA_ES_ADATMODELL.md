@@ -92,9 +92,10 @@ Az aktuális havi dashboard számítható nézet. A pénzügyi visszakövethető
 - A foglalásszintű admin óradíj felülírja a user- és központi szabályt; az egyedi fix user-díj felülírja a központi sávot és a Tréningterem csoportos alapdíját.
 - A Tréningterem csoportos használata külön tétel, nem növeli a normál sávos óraszámot.
 - A `settlement_revisions` minden végleges számítás összesített, megőrzött pillanatképe. A `settlement_booking_lines` ehhez a revisionhöz kötve tárolja a foglalást, percet, alkalmazott díjforrást, óradíjat, összeget és a szabály hivatkozását.
-- Korrekció nem írja át nyomtalanul a múltat: külön `settlement_adjustments` rekord készül kötelező indokkal.
+- Korrekció nem írja át nyomtalanul a múltat: új immutable `settlement_revisions` és booking line-ok készülnek kötelező admin indokkal és auditnaplóval. A korábbi revision megmarad, az aktív lezárt revision pointer az újra lép.
 - A befizetés külön entitás; a fizetendő és a tényleges pénzbeérkezés nem keverhető.
-- Nincs kötelező havi lezárás. Az admin végleges számítása immutable revisiont és booking line-okat készít; utólagos korrekció új, indokolt és auditált revision, ezért a korábbi állapot és az export forrása reprodukálható.
+- 2026-09-29-től a havi lezárás admin által, userenkénti revisionekből induló, atomikus publikálás. A hónap a naptári utolsó napján is lezárható, ha egyetlen érintett aktív booking sem módosítható normál userként a meglévő cutoff alapján; a részletes szabályt a [`MONTHLY_SETTLEMENT_PUBLICATION.md`](MONTHLY_SETTLEMENT_PUBLICATION.md) dokumentum rögzíti.
+- A `monthly_settlement_periods` csak a hónap lezárási eseményét, felelősét, időpontját és összesített ellenőrző adatait tárolja; a pénzügyi modell változatlanul a `monthly_settlements` / `settlement_revisions` / `settlement_booking_lines` hármas.
 
 ## 7. Logikai adatmodell
 

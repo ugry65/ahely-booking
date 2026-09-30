@@ -10,8 +10,11 @@ on:
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-pricing-concurrency.sh"
+      - "scripts/test-monthly-settlement-close-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
+      - "scripts/test-pricing-concurrency.sh"
+      - "scripts/test-monthly-settlement-close-concurrency.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
       - "scripts/test-booking-email-bridge-warning.sh"
   push:
@@ -70,6 +73,9 @@ jobs:
 
       - name: Run concurrent pricing administration test
         run: bash ./scripts/test-pricing-concurrency.sh
+
+      - name: Run concurrent monthly settlement close regression
+        run: bash ./scripts/test-monthly-settlement-close-concurrency.sh
 
       - name: Run concurrent room access administration tests
         run: bash ./scripts/test-room-access-concurrency.sh
