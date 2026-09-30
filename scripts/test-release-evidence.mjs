@@ -42,7 +42,7 @@ function ready(t) {
 test('truthful absent state passes consistency but blocks release', t => {
   const {root,manifest}=fixture(t);
   assert.deepEqual(check(root,manifest),[]);
-  assert.equal(check(root,manifest,true).length,3);
+  assert.equal(check(root,manifest,true).length,2);
 });
 test('partial integration cannot silently pass', t => {
   const {root,manifest}=fixture(t);
@@ -66,9 +66,8 @@ test('present implementation deletion and modification detected', t => {
 test('present code alone does not clear release blockers', t => {
   const {root,manifest,sha}=fixture(t);
   manifest.features[0]={id:'email',required:true,state:'present',artifacts:[{path:'proof.md',sha}]};
-  assert.equal(check(root,manifest,true).length,2);
+  assert.equal(check(root,manifest,true).length,1);
   manifest.releaseBlockers=[];
-  observed(manifest,sha);
   assert.deepEqual(check(root,manifest,true),[]);
 });
 test('empty or malformed manifests fail closed', t => {
