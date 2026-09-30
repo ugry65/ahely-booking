@@ -87,11 +87,23 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     <section className="card wide-card stack">
       <h2>Elszámolási összesítés</h2>
       <p className="muted">A Snapshot állapot a legutóbbi immutable revisiont mutatja. Korrekciókor új revision készül; a korábbi nem íródik át.</p>
-      <div className="table-scroll"><table>
+      <div className="monthly-summary-table-desktop table-scroll"><table>
         <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Összes óra</th><th>Óradíj</th><th>Fizetendő</th><th>Állapot</th><th>Művelet</th></tr></thead>
         <tbody>{rows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{hours(row.total_hours)}</td><td>{appliedHourlyRatesText(row)}</td><td>{huf(row.calculated_due_huf)}</td><td>{published ? `Lezárt · revision #${row.revision_number}` : row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td>{canRevise ? <details className="monthly-correction"><summary>{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot készítése"}</summary><form action={createSettlementRevision} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><label>Indok<input name="reason" maxLength={300} required placeholder="Miért szükséges az új revision?" aria-label={`${row.user_name} revision indoka`} /></label><button type="submit">{row.pricing_state === "snapshot" ? "Új revision készítése" : "Snapshot készítése"}</button></form></details> : <span className="muted">A hónap még nyitott</span>}</td></tr>; })}</tbody>
         <tfoot><tr><th colSpan={2}>Kijelölt hónapok mindösszesen</th><th>{hours(totalHours)}</th><th>—</th><th>{huf(totalDue)}</th><th colSpan={2}></th></tr></tfoot>
       </table></div>
+      <div className="monthly-summary-list-mobile" aria-label="Elszámolási összesítés mobil nézete">
+        {rows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <article className="report-mobile-card" key={`summary-${row.month}-${row.user_id}`}>
+          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.month}</span></div>
+          <dl className="report-mobile-details">
+            <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
+            <div><dt>Óradíj</dt><dd>{appliedHourlyRatesText(row)}</dd></div>
+            <div><dt>Fizetendő</dt><dd><strong>{huf(row.calculated_due_huf)}</strong></dd></div>
+            <div><dt>Állapot</dt><dd>{published ? `Lezárt · revision #${row.revision_number}` : row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</dd></div>
+          </dl>
+          {canRevise ? <details className="monthly-correction"><summary>{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot készítése"}</summary><form action={createSettlementRevision} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><label>Indok<input name="reason" maxLength={300} required placeholder="Miért szükséges az új revision?" aria-label={`${row.user_name} revision indoka`} /></label><button type="submit">{row.pricing_state === "snapshot" ? "Új revision készítése" : "Snapshot készítése"}</button></form></details> : <span className="muted">A hónap még nyitott</span>}
+        </article>; })}
+      </div>
       {rows.length ? null : <p className="muted">A kijelölt hónapokban nincs elszámolható aktív foglalás.</p>}
     </section>
 
