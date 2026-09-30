@@ -37,7 +37,6 @@ function ready(t) {
   const {manifest,sha}=result;
   manifest.features[0]={id:'email',required:true,state:'present',artifacts:[{path:'proof.md',sha}]};
   manifest.releaseBlockers=[];
-  observed(manifest,sha);
   return result;
 }
 test('truthful absent state passes consistency but blocks release', t => {
@@ -120,12 +119,15 @@ test('D: active mode requires four individually resolved checks with intact evid
   manifest.bookingEmail.activationChecks[0].evidence[0].sha='0'.repeat(40);
   assert.match(check(root,manifest,true).join('\n'),/Activation evidence missing or changed/);
 });
-test('E: missing, unknown and mismatched production modes fail closed', t => {
+test('E: disabled mode does not require per-release Vercel runtime evidence', t => {
   const {root,manifest}=ready(t);
-  for (const mode of [null, 'unexpected', 'capture']) {
-    manifest.bookingEmail.productionModeEvidence.mode=mode;
-    assert.match(check(root,manifest,true).join('\n'),/Production booking email mode missing, unknown, or different/);
-  }
   manifest.bookingEmail.productionModeEvidence=null;
-  assert.match(check(root,manifest,true).join('\n'),/Production booking email mode missing, unknown, or different/);
+  assert.deepEqual(check(root,manifest,true),[]);
+});
+test('F: active mode still requires matching Vercel runtime evidence', t => {
+  const {root,manifest}=ready(t);
+  manifest.bookingEmail.state='activation_approved';
+  manifest.bookingEmail.approvedProductionMode='send';
+  manifest.bookingEmail.decision.productionServiceExcludesBookingEmail=false;
+  assert.match(check(root,manifest,true).join('\n'),/Active production booking email mode missing, unknown, or different/);
 });
