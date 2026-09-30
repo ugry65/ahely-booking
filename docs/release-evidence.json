@@ -163,7 +163,7 @@
       "productionServiceExcludesBookingEmail": true,
       "evidence": {
         "path": "docs/BOOKING_EMAIL_BUSINESS_DECISION_2026-09-30.md",
-        "sha": "ff34fd61cace86934582cdcee6930525bddaaffa"
+        "sha": "6506fa5381f42f019d2c82ee83de2338e84e00dc"
       }
     },
     "productionModeEvidence": null,
