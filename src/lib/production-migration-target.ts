@@ -24,7 +24,7 @@ export function isProductionMigrationTarget({
   return (
     projectRefFromUrl(supabaseUrl) === PRODUCTION_PROJECT_REF &&
     vercelEnvironment === "production" &&
-    gitCommitRef === "main"
+    (gitCommitRef === "main" || gitCommitRef === "production")
   );
 }
 

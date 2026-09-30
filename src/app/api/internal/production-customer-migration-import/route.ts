@@ -22,7 +22,7 @@ function assertApprovedMigrationTarget() {
     vercelEnvironment: process.env.VERCEL_ENV,
     gitCommitRef: process.env.VERCEL_GIT_COMMIT_REF,
   })) {
-    throw new Error("Az író AllBooked import kizárólag a dedikált staging vagy production main környezetben engedélyezett.");
+    throw new Error("Az író AllBooked import kizárólag a dedikált staging vagy production környezetben engedélyezett.");
   }
 }
 
