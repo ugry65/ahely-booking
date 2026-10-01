@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appliedHourlyRatesText, csvCell, decimalComma, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
+import { appliedHourlyRatesText, csvCell, decimalComma, groupOccasionalBookingDetails, isOccasionalBookerName, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
 
 describe("monthly hours export", () => {
   it("csak érvényes YYYY-MM hónapot fogad el", () => {
@@ -49,6 +49,21 @@ describe("monthly hours export", () => {
     )).toEqual([
       { booking_id: "b1", room_name: "2.Szoba", booking_title: "Kliens neve" },
       { booking_id: "b2", room_name: "3.Szoba", booking_title: null },
+    ]);
+  });
+  it("felismeri a két technikai alkalmi foglalót", () => {
+    expect(isOccasionalBookerName("Alkalmi Egyéni")).toBe(true);
+    expect(isOccasionalBookerName("  alkalmi   csoport ")).toBe(true);
+    expect(isOccasionalBookerName("Kiss Anna")).toBe(false);
+  });
+  it("booking_title szerint összevonja az alkalmi ügyfelek óráit és összegeit", () => {
+    expect(groupOccasionalBookingDetails([
+      { booking_title: "Szoke kathrin", total_hours: "1.00", amount_huf: 4000 },
+      { booking_title: "  Szoke   Kathrin ", total_hours: "1.50", amount_huf: 6000 },
+      { booking_title: "Nagy Péter", total_hours: "2.00", amount_huf: 8000 },
+    ])).toEqual([
+      { customer_name: "Nagy Péter", total_hours: 2, calculated_due_huf: 8000 },
+      { customer_name: "Szoke kathrin", total_hours: 2.5, calculated_due_huf: 10000 },
     ]);
   });
 });
