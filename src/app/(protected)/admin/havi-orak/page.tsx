@@ -128,7 +128,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       </table></div>
       <div className="monthly-detail-list-mobile" aria-label="Tételes aktív foglalások mobil nézete">
         {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
-          <div className="report-mobile-card-heading"><h3>{occasionalBookerLabel(row.user_name, row.email)}</h3><span>{row.month}</span></div>
+          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.month}</span></div>
           <dl className="report-mobile-details">
             <div><dt>Dátum</dt><dd>{row.booking_date}</dd></div>
             <div><dt>Helyiség</dt><dd>{row.room_name}</dd></div>
