@@ -140,7 +140,40 @@ export function occasionalBookerLabel(name: string, email?: string): string {
 }
 
 function normalizedOccasionalCustomerName(name: string | null): string {
-  return (name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
+  return (name ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("hu-HU")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "");
+}
+
+function editDistance(a: string, b: string): number {
+  const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i += 1) {
+    let diagonal = previous[0];
+    previous[0] = i;
+    for (let j = 1; j <= b.length; j += 1) {
+      const above = previous[j];
+      previous[j] = Math.min(
+        previous[j] + 1,
+        previous[j - 1] + 1,
+        diagonal + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      diagonal = above;
+    }
+  }
+  return previous[b.length];
+}
+
+function sameOccasionalCustomer(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (a.length < 12 || b.length < 12) return false;
+  const aParts = a.split(" ");
+  const bParts = b.split(" ");
+  if (aParts.length !== bParts.length) return false;
+  if (!aParts.some((part, index) => part === bParts[index])) return false;
+  return editDistance(a, b) <= 1;
 }
 
 export function groupOccasionalBookingDetails(
@@ -150,7 +183,8 @@ export function groupOccasionalBookingDetails(
   for (const row of rows) {
     const key = normalizedOccasionalCustomerName(row.booking_title);
     const displayName = (row.booking_title ?? "").trim().replace(/\s+/g, " ") || "Név nélküli foglalás";
-    const current = grouped.get(key);
+    const matchedKey = [...grouped.keys()].find((existingKey) => sameOccasionalCustomer(existingKey, key));
+    const current = matchedKey ? grouped.get(matchedKey) : undefined;
     if (current) {
       current.total_hours += Number(row.total_hours);
       current.calculated_due_huf += Number(row.amount_huf);
