@@ -1,6 +1,6 @@
 begin;
 
-select plan(76);
+select plan(77);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -62,6 +62,7 @@ select is((select calculated_due_huf from public.calculate_monthly_pricing('0000
 
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,840,true))),2500::bigint,'Vegyes 15 órás havi határ még 2 500 Ft');
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,870,true))),1900::bigint,'Vegyes 15,5 órás havi terhelés már 1 900 Ft');
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,3540,true))),1900::bigint,'Vegyes pontos 60 órás havi határ még 1 900 Ft');
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,3570,true))),1700::bigint,'Vegyes 60,5 órás havi terhelés 1 700 Ft');
 
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',60)),2500::bigint,'Normál booking központi sávos díjat kap');
