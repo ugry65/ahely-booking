@@ -54,7 +54,10 @@ describe("monthly hours export", () => {
   it("felismeri a két technikai alkalmi foglalót", () => {
     expect(isOccasionalBookerName("Alkalmi Egyéni")).toBe(true);
     expect(isOccasionalBookerName("  alkalmi   csoport ")).toBe(true);
-    expect(isOccasionalBookerName("Kiss Anna")).toBe(false);\n    expect(isOccasionalBookerName("Csoport A.", "alkalmifoglalas@gmail.com")).toBe(true);\n    expect(occasionalBookerLabel("Csoport A.", "alkalmifoglalas@gmail.com")).toBe("Alkalmi Csoport");\n    expect(occasionalBookerLabel("Teszt", "ujtanacsadas2018@gmail.com")).toBe("Alkalmi Egyéni");
+    expect(isOccasionalBookerName("Kiss Anna")).toBe(false);
+    expect(isOccasionalBookerName("Csoport A.", "alkalmifoglalas@gmail.com")).toBe(true);
+    expect(occasionalBookerLabel("Csoport A.", "alkalmifoglalas@gmail.com")).toBe("Alkalmi Csoport");
+    expect(occasionalBookerLabel("Teszt", "ujtanacsadas2018@gmail.com")).toBe("Alkalmi Egyéni");
   });
   it("booking_title szerint összevonja az alkalmi ügyfelek óráit és összegeit", () => {
     expect(groupOccasionalBookingDetails([
