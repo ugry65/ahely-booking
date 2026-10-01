@@ -120,7 +120,7 @@ export type OccasionalMonthlyCustomer = {
   calculated_due_huf: number;
 };
 
-export function isOccasionalBookerName(name: string): boolean {
+export function occasionalBookerKind(name: string, email?: string): "individual" | "group" | null {\n  const normalizedEmail = (email ?? "").trim().toLocaleLowerCase("hu-HU");\n  if (normalizedEmail === "alkalmifoglalas@gmail.com") return "group";\n  if (normalizedEmail === "ujtanacsadas2018@gmail.com") return "individual";
   const normalized = name.trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
   return normalized === "alkalmi egyéni" || normalized === "alkalmi csoport";
 }
