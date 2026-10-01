@@ -1,6 +1,6 @@
 begin;
 
-select plan(77);
+select plan(78);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -59,6 +59,10 @@ select is((select special_minutes from public.calculate_monthly_pricing('0000000
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000188',public.month_normal_minutes('00000000-0000-0000-0000-000000000187','2035-10-01'))),1900::bigint,'A 17 órás összes havi terhelés a normál tételt 1 900 Ft-os sávba teszi');
 select is((select rate_source::text||':'||hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000189',public.month_normal_minutes('00000000-0000-0000-0000-000000000187','2035-10-01'))),'training_room:5000','A Tréningterem csoportos tétel saját 5 000 Ft-os díja változatlan');
 select is((select calculated_due_huf from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000187','2035-10-01')),47800::bigint,'12×1 900 + 5×5 000 = 47 800 Ft');
+select is((select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+  '00000000-0000-0000-0000-000000000187','11000000-0000-0000-0000-000000000002',
+  '2035-10-12 07:00+02','2035-10-12 08:00+02','individual',null,null
+)),'central_tier:1900','Az admin díjelőnézet is beleszámítja a Tréningterem csoportos órákat a havi sávba');
 
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,840,true))),2500::bigint,'Vegyes 15 órás havi határ még 2 500 Ft');
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,870,true))),1900::bigint,'Vegyes 15,5 órás havi terhelés már 1 900 Ft');
