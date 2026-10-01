@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, selectedMonths, mergeBookingTitles, groupOccasionalBookingDetails, isOccasionalBookerName, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
+import { monthStart, selectedMonths, mergeBookingTitles, groupOccasionalBookingDetails, isOccasionalBookerName, occasionalBookerLabel, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
@@ -60,8 +60,8 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     for (const row of enriched) details.push({ ...row, month });
   }
 
-  const regularRows = rows.filter((row) => !isOccasionalBookerName(row.user_name));
-  const occasionalRows = rows.filter((row) => isOccasionalBookerName(row.user_name));
+  const regularRows = rows.filter((row) => !isOccasionalBookerName(row.user_name, row.email));
+  const occasionalRows = rows.filter((row) => isOccasionalBookerName(row.user_name, row.email));
   const occasionalSummaries = occasionalRows.map((row) => ({
     row,
     customers: groupOccasionalBookingDetails(details.filter((detail) => detail.month === row.month && detail.user_id === row.user_id)),
@@ -100,7 +100,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       </table></div>
       <div className="monthly-summary-list-mobile" aria-label="Elszámolási összesítés mobil nézete">
         {regularRows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <article className="report-mobile-card" key={`summary-${row.month}-${row.user_id}`}>
-          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.month}</span></div>
+          <div className="report-mobile-card-heading"><h3>{occasionalBookerLabel(row.user_name, row.email)}</h3><span>{row.month}</span></div>
           <dl className="report-mobile-details">
             <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
             <div><dt>Óradíj</dt><dd>{appliedHourlyRatesText(row)}</dd></div>
