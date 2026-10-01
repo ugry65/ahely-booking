@@ -112,3 +112,41 @@ export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
+
+
+export type OccasionalMonthlyCustomer = {
+  customer_name: string;
+  total_hours: number;
+  calculated_due_huf: number;
+};
+
+export function isOccasionalBookerName(name: string): boolean {
+  const normalized = name.trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
+  return normalized === "alkalmi egyéni" || normalized === "alkalmi csoport";
+}
+
+function normalizedOccasionalCustomerName(name: string | null): string {
+  return (name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
+}
+
+export function groupOccasionalBookingDetails(
+  rows: Pick<MonthlyBookingDetailWithMonth, "booking_title" | "total_hours" | "amount_huf">[],
+): OccasionalMonthlyCustomer[] {
+  const grouped = new Map<string, OccasionalMonthlyCustomer>();
+  for (const row of rows) {
+    const key = normalizedOccasionalCustomerName(row.booking_title);
+    const displayName = (row.booking_title ?? "").trim().replace(/\s+/g, " ") || "Név nélküli foglalás";
+    const current = grouped.get(key);
+    if (current) {
+      current.total_hours += Number(row.total_hours);
+      current.calculated_due_huf += Number(row.amount_huf);
+    } else {
+      grouped.set(key, {
+        customer_name: displayName,
+        total_hours: Number(row.total_hours),
+        calculated_due_huf: Number(row.amount_huf),
+      });
+    }
+  }
+  return [...grouped.values()].sort((a, b) => a.customer_name.localeCompare(b.customer_name, "hu"));
+}
