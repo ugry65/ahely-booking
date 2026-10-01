@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appliedHourlyRatesText, csvCell, decimalComma, groupOccasionalBookingDetails, isOccasionalBookerName, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
+import { appliedHourlyRatesText, csvCell, decimalComma, groupOccasionalBookingDetails, isOccasionalBookerName, occasionalBookerLabel, mergeBookingTitles, monthStart, monthlyDetailsCsv, monthlyHoursCsv, selectedMonths, validMonth } from "./monthly-hours";
 
 describe("monthly hours export", () => {
   it("csak érvényes YYYY-MM hónapot fogad el", () => {
@@ -54,7 +54,7 @@ describe("monthly hours export", () => {
   it("felismeri a két technikai alkalmi foglalót", () => {
     expect(isOccasionalBookerName("Alkalmi Egyéni")).toBe(true);
     expect(isOccasionalBookerName("  alkalmi   csoport ")).toBe(true);
-    expect(isOccasionalBookerName("Kiss Anna")).toBe(false);
+    expect(isOccasionalBookerName("Kiss Anna")).toBe(false);\n    expect(isOccasionalBookerName("Csoport A.", "alkalmifoglalas@gmail.com")).toBe(true);\n    expect(occasionalBookerLabel("Csoport A.", "alkalmifoglalas@gmail.com")).toBe("Alkalmi Csoport");\n    expect(occasionalBookerLabel("Teszt", "ujtanacsadas2018@gmail.com")).toBe("Alkalmi Egyéni");
   });
   it("booking_title szerint összevonja az alkalmi ügyfelek óráit és összegeit", () => {
     expect(groupOccasionalBookingDetails([
