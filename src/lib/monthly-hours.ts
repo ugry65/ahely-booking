@@ -112,3 +112,55 @@ export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
+
+
+export type OccasionalMonthlyCustomer = {
+  customer_name: string;
+  total_hours: number;
+  calculated_due_huf: number;
+};
+
+export function occasionalBookerKind(name: string, email?: string): "individual" | "group" | null {
+  const normalizedEmail = (email ?? "").trim().toLocaleLowerCase("hu-HU");
+  if (normalizedEmail === "alkalmifoglalas@gmail.com") return "group";
+  if (normalizedEmail === "ujtanacsadas2018@gmail.com") return "individual";
+  const normalized = name.trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
+  if (normalized === "alkalmi egyéni") return "individual";
+  if (normalized === "alkalmi csoport") return "group";
+  return null;
+}
+
+export function isOccasionalBookerName(name: string, email?: string): boolean {
+  return occasionalBookerKind(name, email) !== null;
+}
+
+export function occasionalBookerLabel(name: string, email?: string): string {
+  const kind = occasionalBookerKind(name, email);
+  return kind === "individual" ? "Alkalmi Egyéni" : kind === "group" ? "Alkalmi Csoport" : name;
+}
+
+function normalizedOccasionalCustomerName(name: string | null): string {
+  return (name ?? "").trim().replace(/\s+/g, " ").toLocaleLowerCase("hu-HU");
+}
+
+export function groupOccasionalBookingDetails(
+  rows: Pick<MonthlyBookingDetailWithMonth, "booking_title" | "total_hours" | "amount_huf">[],
+): OccasionalMonthlyCustomer[] {
+  const grouped = new Map<string, OccasionalMonthlyCustomer>();
+  for (const row of rows) {
+    const key = normalizedOccasionalCustomerName(row.booking_title);
+    const displayName = (row.booking_title ?? "").trim().replace(/\s+/g, " ") || "Név nélküli foglalás";
+    const current = grouped.get(key);
+    if (current) {
+      current.total_hours += Number(row.total_hours);
+      current.calculated_due_huf += Number(row.amount_huf);
+    } else {
+      grouped.set(key, {
+        customer_name: displayName,
+        total_hours: Number(row.total_hours),
+        calculated_due_huf: Number(row.amount_huf),
+      });
+    }
+  }
+  return [...grouped.values()].sort((a, b) => a.customer_name.localeCompare(b.customer_name, "hu"));
+}

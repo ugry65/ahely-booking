@@ -223,3 +223,13 @@ tfoot th { font-weight: 800; }
 .migration-import-card input { width: 100%; }
 .import-readiness { padding: .8rem 1rem; border: 1px solid #d4d9d6; border-radius: .6rem; background: #f7f8f7; }
 .import-readiness p { margin: .25rem 0; }
+
+.monthly-occasional-details > summary { cursor: pointer; }
+.monthly-occasional-breakdown { display: grid; gap: .4rem; margin-top: .65rem; min-width: 28rem; }
+.monthly-occasional-customer { display: grid; grid-template-columns: minmax(10rem,1fr) 7rem 8rem; gap: .75rem; align-items: baseline; padding: .45rem .6rem; border-radius: .5rem; background: var(--surface-muted, #f6f7f8); }
+.monthly-occasional-customer > :nth-child(2), .monthly-occasional-customer > :nth-child(3) { text-align: right; }
+@media (max-width: 720px) {
+  .monthly-occasional-breakdown { min-width: 0; }
+  .monthly-occasional-customer { grid-template-columns: 1fr auto; }
+  .monthly-occasional-customer > :first-child { grid-column: 1 / -1; }
+}

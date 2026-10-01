@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, selectedMonths, mergeBookingTitles, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
+import { monthStart, selectedMonths, mergeBookingTitles, groupOccasionalBookingDetails, isOccasionalBookerName, occasionalBookerLabel, appliedHourlyRatesText, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
@@ -60,6 +60,12 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     for (const row of enriched) details.push({ ...row, month });
   }
 
+  const regularRows = rows.filter((row) => !isOccasionalBookerName(row.user_name, row.email));
+  const occasionalRows = rows.filter((row) => isOccasionalBookerName(row.user_name, row.email));
+  const occasionalSummaries = occasionalRows.map((row) => ({
+    row,
+    customers: groupOccasionalBookingDetails(details.filter((detail) => detail.month === row.month && detail.user_id === row.user_id)),
+  }));
   const totalHours = rows.reduce((sum, row) => sum + Number(row.total_hours), 0);
   const totalDue = rows.reduce((sum, row) => sum + Number(row.calculated_due_huf), 0);
   const currentMonth = currentBudapestMonth();
@@ -89,12 +95,13 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       <p className="muted">A Snapshot állapot a legutóbbi immutable revisiont mutatja. Korrekciókor új revision készül; a korábbi nem íródik át.</p>
       <div className="monthly-summary-table-desktop table-scroll"><table>
         <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Összes óra</th><th>Óradíj</th><th>Fizetendő</th><th>Állapot</th><th>Művelet</th></tr></thead>
-        <tbody>{rows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{hours(row.total_hours)}</td><td>{appliedHourlyRatesText(row)}</td><td>{huf(row.calculated_due_huf)}</td><td>{published ? `Lezárt · revision #${row.revision_number}` : row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td>{canRevise ? <details className="monthly-correction"><summary>{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot készítése"}</summary><form action={createSettlementRevision} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><label>Indok<input name="reason" maxLength={300} required placeholder="Miért szükséges az új revision?" aria-label={`${row.user_name} revision indoka`} /></label><button type="submit">{row.pricing_state === "snapshot" ? "Új revision készítése" : "Snapshot készítése"}</button></form></details> : <span className="muted">A hónap még nyitott</span>}</td></tr>; })}</tbody>
+        <tbody>{regularRows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <tr key={`${row.month}-${row.user_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{hours(row.total_hours)}</td><td>{appliedHourlyRatesText(row)}</td><td>{huf(row.calculated_due_huf)}</td><td>{published ? `Lezárt · revision #${row.revision_number}` : row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td>{canRevise ? <details className="monthly-correction"><summary>{row.pricing_state === "snapshot" ? "Új revision" : "Snapshot készítése"}</summary><form action={createSettlementRevision} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="userId" value={row.user_id} /><label>Indok<input name="reason" maxLength={300} required placeholder="Miért szükséges az új revision?" aria-label={`${row.user_name} revision indoka`} /></label><button type="submit">{row.pricing_state === "snapshot" ? "Új revision készítése" : "Snapshot készítése"}</button></form></details> : <span className="muted">A hónap még nyitott</span>}</td></tr>; })}</tbody>
+        {occasionalSummaries.map(({ row, customers }) => { const published = publishedMonths.has(row.month); return <tbody className="monthly-occasional-group" key={`occasional-${row.month}-${row.user_id}`}><tr className="monthly-occasional-total"><td>{row.month}</td><td><strong>{occasionalBookerLabel(row.user_name, row.email)}</strong></td><td><strong>{hours(row.total_hours)}</strong></td><td>—</td><td><strong>{huf(row.calculated_due_huf)}</strong></td><td>{published ? `Lezárt · revision #${row.revision_number}` : row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</td><td><span className="muted">Összesen</span></td></tr>{customers.map((customer) => <tr className="monthly-occasional-child" key={`${row.month}-${row.user_id}-${customer.customer_name.toLocaleLowerCase("hu-HU")}`}><td></td><td>{customer.customer_name}</td><td>{hours(customer.total_hours)}</td><td>{customer.total_hours ? huf(Math.round(customer.calculated_due_huf / customer.total_hours)) : "—"}</td><td>{huf(customer.calculated_due_huf)}</td><td></td><td></td></tr>)}</tbody>; })}
         <tfoot><tr><th colSpan={2}>Kijelölt hónapok mindösszesen</th><th>{hours(totalHours)}</th><th>—</th><th>{huf(totalDue)}</th><th colSpan={2}></th></tr></tfoot>
       </table></div>
       <div className="monthly-summary-list-mobile" aria-label="Elszámolási összesítés mobil nézete">
-        {rows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <article className="report-mobile-card" key={`summary-${row.month}-${row.user_id}`}>
-          <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.month}</span></div>
+        {regularRows.map((row) => { const published = publishedMonths.has(row.month); const canRevise = row.month < currentMonth || published; return <article className="report-mobile-card" key={`summary-${row.month}-${row.user_id}`}>
+          <div className="report-mobile-card-heading"><h3>{occasionalBookerLabel(row.user_name, row.email)}</h3><span>{row.month}</span></div>
           <dl className="report-mobile-details">
             <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
             <div><dt>Óradíj</dt><dd>{appliedHourlyRatesText(row)}</dd></div>
