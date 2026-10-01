@@ -1,6 +1,6 @@
 begin;
 
-select plan(67);
+select plan(78);
 
 select has_column('public','bookings','hourly_rate_override_huf','A foglalásszintű óradíj-felülírás tárolható');
 select has_column('public','settlement_booking_lines','rate_source','A settlement sor megőrzi az alkalmazott árforrást');
@@ -31,7 +31,8 @@ insert into auth.users(id,email,raw_user_meta_data) values
  ('00000000-0000-0000-0000-000000000183','pricing-training@example.invalid','{"first_name":"Training","last_name":"User"}'),
  ('00000000-0000-0000-0000-000000000184','pricing-fixed@example.invalid','{"first_name":"Fixed","last_name":"User"}'),
  ('00000000-0000-0000-0000-000000000185','pricing-booking@example.invalid','{"first_name":"Booking","last_name":"User"}'),
- ('00000000-0000-0000-0000-000000000186','pricing-retro@example.invalid','{"first_name":"Retro","last_name":"User"}');
+ ('00000000-0000-0000-0000-000000000186','pricing-retro@example.invalid','{"first_name":"Retro","last_name":"User"}'),
+ ('00000000-0000-0000-0000-000000000187','pricing-mixed-tier@example.invalid','{"first_name":"Mixed","last_name":"Tier"}');
 update public.profiles set role='admin' where id='00000000-0000-0000-0000-000000000181';
 
 insert into public.user_price_overrides(user_id,hourly_rate_huf,valid_from,reason,created_by) values
@@ -45,6 +46,24 @@ insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_ty
  ('41000000-0000-0000-0000-000000000184','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000185','00000000-0000-0000-0000-000000000181','2035-10-08 07:00+02','2035-10-08 08:00+02','group','active',gen_random_uuid(),4100,'00000000-0000-0000-0000-000000000181',now(),'Teszt booking felülírás'),
  ('41000000-0000-0000-0000-000000000186','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000184','00000000-0000-0000-0000-000000000181','2035-11-08 07:00+02','2035-11-08 08:00+02','group','active',gen_random_uuid(),null,null,null,null),
  ('41000000-0000-0000-0000-000000000187','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000182','00000000-0000-0000-0000-000000000181','2035-11-09 07:00+02','2035-11-09 08:00+02','individual','active',gen_random_uuid(),null,null,null,null);
+
+-- #261: a havi központi sáv alapja az összes aktív elszámolandó óra,
+-- beleértve a Tréningterem csoportos foglalásait is.
+insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key,hourly_rate_override_huf,hourly_rate_override_set_by,hourly_rate_override_set_at,hourly_rate_override_reason) values
+ ('41000000-0000-0000-0000-000000000188','11000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000187','00000000-0000-0000-0000-000000000181','2035-10-10 07:00+02','2035-10-10 19:00+02','individual','active',gen_random_uuid(),null,null,null,null),
+ ('41000000-0000-0000-0000-000000000189','11000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000187','00000000-0000-0000-0000-000000000181','2035-10-11 07:00+02','2035-10-11 12:00+02','group','active',gen_random_uuid(),null,null,null,null);
+
+select is(public.month_normal_minutes('00000000-0000-0000-0000-000000000187','2035-10-01'),1020,'12 óra normál + 5 óra Tréningterem csoportos = 17 óra havi díjsáv-alap');
+select is((select normal_minutes from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000187','2035-10-01')),720,'A riport normál óraszáma továbbra is külön 12 óra');
+select is((select special_minutes from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000187','2035-10-01')),300,'A riport Tréningterem csoportos óraszáma továbbra is külön 5 óra');
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000188',public.month_normal_minutes('00000000-0000-0000-0000-000000000187','2035-10-01'))),1900::bigint,'A 17 órás összes havi terhelés a normál tételt 1 900 Ft-os sávba teszi');
+select is((select rate_source::text||':'||hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000189',public.month_normal_minutes('00000000-0000-0000-0000-000000000187','2035-10-01'))),'training_room:5000','A Tréningterem csoportos tétel saját 5 000 Ft-os díja változatlan');
+select is((select calculated_due_huf from public.calculate_monthly_pricing('00000000-0000-0000-0000-000000000187','2035-10-01')),47800::bigint,'12×1 900 + 5×5 000 = 47 800 Ft');
+
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,840,true))),2500::bigint,'Vegyes 15 órás havi határ még 2 500 Ft');
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,870,true))),1900::bigint,'Vegyes 15,5 órás havi terhelés már 1 900 Ft');
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,3540,true))),1900::bigint,'Vegyes pontos 60 órás havi határ még 1 900 Ft');
+select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',public.month_normal_minutes('00000000-0000-0000-0000-000000000182','2035-10-01',null,3570,true))),1700::bigint,'Vegyes 60,5 órás havi terhelés 1 700 Ft');
 
 select is((select hourly_rate_huf from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000181',60)),2500::bigint,'Normál booking központi sávos díjat kap');
 select is((select rate_source::text from public.resolve_booking_applied_rate('41000000-0000-0000-0000-000000000182',0)),'training_room','A Tréningterem csoportos booking alapdíjforrást kap');
@@ -70,6 +89,11 @@ select throws_ok(
 );
 
 select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000181',true);
+select is((select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
+  '00000000-0000-0000-0000-000000000187','11000000-0000-0000-0000-000000000002',
+  '2035-10-12 07:00+02','2035-10-12 08:00+02','individual',null,null
+)),'central_tier:1900','Az admin díjelőnézet is beleszámítja a Tréningterem csoportos órákat a havi sávba');
+
 select is(
   (select rate_source::text||':'||hourly_rate_huf from public.admin_pricing_quote(
     '00000000-0000-0000-0000-000000000182','11000000-0000-0000-0000-000000000002',

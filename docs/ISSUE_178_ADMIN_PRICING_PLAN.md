@@ -44,8 +44,7 @@ A normál havi sáv nem progresszív: a havi normál foglalási összperc egyetl
 sávot választ, és az automatikus központi díjas foglalások erre az óradíjra
 számolódnak. A foglalás- vagy user-szintű felülírással árazott normál
 foglalások percei is beleszámítanak a havi sáv meghatározásába, de saját
-óradíjukon számolódnak. A Tréningterem csoportos percei nem növelik a normál
-sávos összpercet.
+óradíjukon számolódnak. **2026-10-01-i felülíró üzleti döntés (#261):** a havi központi díjsáv alapja a felhasználó adott havi összes aktív elszámolandó perce, ezért a Tréningterem csoportos percei is beleszámítanak a sávhatárba. A Tréningterem csoportos tétel ettől továbbra is a saját speciális díján számolódik; a teljes havi óraszám csak a normál központi díjas tételek sávjának kiválasztását befolyásolja.
 
 Az óradíj és az időtartam külön adat. A tétel összege:
 
