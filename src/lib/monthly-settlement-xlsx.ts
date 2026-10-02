@@ -82,7 +82,7 @@ function cellXml(cell: Cell, row: number, col: number) {
 }
 
 export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): Uint8Array {
-  const header: Cell[] = ["Hónap", "Felhasználó", "Összes óra", "Óradíj", "Fizetendő", "Állapot", "Revision"].map((value) => ({ value, style: 1 }));
+  const header: Cell[] = ["Hónap", "Felhasználó", "Összes óra", "Óradíj", "Fizetendő"].map((value) => ({ value, style: 1 }));
   const exportRows = monthlySummaryExportRows(rows, details);
   const data: Cell[][] = exportRows.map((row) => [
     { value: row.month },
@@ -90,14 +90,12 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: Mo
     { value: row.total_hours, style: 2 },
     { value: row.hourly_rate_text || "—" },
     { value: row.calculated_due_huf, style: 3 },
-    { value: row.pricing_state_text },
-    { value: row.revision_number ?? "" },
   ]);
   const totalHours = rows.reduce((sum, row) => sum + Number(row.total_hours), 0);
   const totalDue = rows.reduce((sum, row) => sum + Number(row.calculated_due_huf), 0);
   const total: Cell[] = [
     { value: "Kijelölt hónapok mindösszesen", style: 1 }, { value: "", style: 1 },
-    { value: totalHours, style: 4 }, { value: "", style: 1 }, { value: totalDue, style: 5 }, { value: "", style: 1 }, { value: "", style: 1 },
+    { value: totalHours, style: 4 }, { value: "", style: 1 }, { value: totalDue, style: 5 },
   ];
   const allRows = [header, ...data, total];
   const sheetRows = allRows.map((cells, index) =>
@@ -108,8 +106,8 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: Mo
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>
 <col min="1" max="1" width="12" customWidth="1"/><col min="2" max="2" width="28" customWidth="1"/>
 <col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="22" customWidth="1"/>
-<col min="5" max="5" width="16" customWidth="1"/><col min="6" max="6" width="18" customWidth="1"/><col min="7" max="7" width="12" customWidth="1"/>
-</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:G${Math.max(1, exportRows.length + 1)}"/></worksheet>`;
+<col min="5" max="5" width="16" customWidth="1"/>
+</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:E${Math.max(1, exportRows.length + 1)}"/></worksheet>`;
 
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
