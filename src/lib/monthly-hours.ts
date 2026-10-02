@@ -144,11 +144,11 @@ export function monthlySummaryExportRows(
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): string {
   const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
   const lines = [header.map(csvCell).join(";")];
-  for (const row of rows) {
+  for (const row of monthlySummaryExportRows(rows, details)) {
     lines.push([
-      row.month, row.user_name, decimalComma(row.total_hours), appliedHourlyRates(row).join(" / "), decimalComma(row.normal_minutes / 60),
-      decimalComma(row.special_minutes / 60), String(row.calculated_due_huf),
-      row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet", row.revision_number ? String(row.revision_number) : "",
+      row.month, row.user_name, decimalComma(row.total_hours), row.hourly_rate_text.replace(/ Ft$/, ""), decimalComma(row.normal_hours),
+      decimalComma(row.special_hours), String(row.calculated_due_huf), row.pricing_state_text,
+      row.revision_number ? String(row.revision_number) : "",
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
