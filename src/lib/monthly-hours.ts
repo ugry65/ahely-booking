@@ -146,7 +146,7 @@ export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyB
   const lines = [header.map(csvCell).join(";")];
   for (const row of monthlySummaryExportRows(rows, details)) {
     lines.push([
-      row.month, row.user_name, decimalComma(row.total_hours), row.hourly_rate_text.replace(/ Ft$/, ""), decimalComma(row.normal_hours),
+      row.month, row.user_name, decimalComma(row.total_hours), row.hourly_rate_text.replaceAll(" ", "").replace(/Ft$/, ""), decimalComma(row.normal_hours),
       decimalComma(row.special_hours), String(row.calculated_due_huf), row.pricing_state_text,
       row.revision_number ? String(row.revision_number) : "",
     ].map(csvCell).join(";"));
