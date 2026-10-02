@@ -88,9 +88,9 @@ A napi, heti, kétheti és havi dátumgenerálás az `Europe/Budapest` helyi fal
 
 Az aktuális havi dashboard számítható nézet. A pénzügyi visszakövethetőséghez viszont minden alkalmazott díj pillanatképe megőrzendő.
 
-- A normál, sávos órák havi összegét userenként össze kell adni; a kiválasztott sáv díja az összes normál órára érvényes.
+- A központi havi sáv kiválasztásának alapja userenként az adott hónap összes aktív elszámolandó órája, beleértve a Tréningterem csoportos órákat is. A kiválasztott központi sáv díja a központi sáv szerint árazott normál tételekre érvényes; a Tréningterem csoportos tétel saját speciális díja ettől nem változik.
 - A foglalásszintű admin óradíj felülírja a user- és központi szabályt; az egyedi fix user-díj felülírja a központi sávot és a Tréningterem csoportos alapdíját.
-- A Tréningterem csoportos használata külön tétel, nem növeli a normál sávos óraszámot.
+- A Tréningterem csoportos használata külön árazott tétel, de az órái beleszámítanak a központi havi sáv kiválasztási alapjába. Ez a 2026-10-01-i üzleti helyesbítés felülírja a korábbi normal-only sáv-alap leírást.
 - A `settlement_revisions` minden végleges számítás összesített, megőrzött pillanatképe. A `settlement_booking_lines` ehhez a revisionhöz kötve tárolja a foglalást, percet, alkalmazott díjforrást, óradíjat, összeget és a szabály hivatkozását.
 - Korrekció nem írja át nyomtalanul a múltat: új immutable `settlement_revisions` és booking line-ok készülnek kötelező admin indokkal és auditnaplóval. A korábbi revision megmarad, az aktív lezárt revision pointer az újra lép.
 - A befizetés külön entitás; a fizetendő és a tényleges pénzbeérkezés nem keverhető.
