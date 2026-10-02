@@ -69,7 +69,6 @@ describe("monthly hours export", () => {
       { customer_name: "Szoke kathrin", total_hours: 2.5, calculated_due_huf: 10000 },
     ]);
   });
-});
   it("az összesítő export az alkalmi technikai user alatt ügyfelenként is megbont", () => {
     const rows = [{
       month: "2026-09", user_id: "occasional", user_name: "Alkalmi Csoport", email: "alkalmifoglalas@gmail.com",
@@ -79,11 +78,11 @@ describe("monthly hours export", () => {
     }];
     const details = [
       { month: "2026-09", booking_id: "b1", user_id: "occasional", user_name: "Alkalmi Csoport", booking_date: "2026-09-01", room_name: "Tréningterem", booking_title: "Szabó Julianna pilács", start_time: "08:00:00", end_time: "18:00:00", total_minutes: 600, total_hours: "10.00", rate_source: "training_room" as const, hourly_rate_huf: 5000, amount_huf: 50000, pricing_state: "snapshot" as const, revision_number: 1 },
-      { month: "2026-09", booking_id: "b2", user_id: "occasional", user_name: "Alkalmi Csoport", booking_date: "2026-09-02", room_name: "Tréningterem", booking_title: "Szabo Julianna pilacs", start_time: "08:00:00", end_time: "20:00:00", total_minutes: 1200, total_hours: "20.00", rate_source: "training_room" as const, hourly_rate_huf: 5000, amount_huf: 100000, pricing_state: "snapshot" as const, revision_number: 1 },
+      { month: "2026-09", booking_id: "b2", user_id: "occasional", user_name: "Alkalmi Csoport", booking_date: "2026-09-02", room_name: "Tréningterem", booking_title: "Szabo Julianna pilacsx", start_time: "08:00:00", end_time: "20:00:00", total_minutes: 1200, total_hours: "20.00", rate_source: "training_room" as const, hourly_rate_huf: 5000, amount_huf: 100000, pricing_state: "snapshot" as const, revision_number: 1 },
     ];
     const csv = monthlyHoursCsv(rows, details);
     expect(csv).toContain('"2026-09";"Alkalmi Csoport";"30,00"');
     expect(csv).toContain('"2026-09";"Szabó Julianna pilács";"30,00";"5000"');
     expect((csv.match(/Szabó Julianna pilács/g) ?? [])).toHaveLength(1);
   });
-
+});
