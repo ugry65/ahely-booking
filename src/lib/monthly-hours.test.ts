@@ -82,8 +82,8 @@ describe("monthly hours export", () => {
     ];
     const csv = monthlyHoursCsv(rows, details);
     expect(csv).toContain('"2026-09";"Alkalmi Csoport";"30,00"');
-    expect(csv).toContain('"2026-09";"Szabó Julianna pilács";"10,00";"5000"');
-    expect(csv).toContain('"2026-09";"Szabó Julianna pilácsx";"20,00";"5000"');
+    expect(csv).toContain('"2026-09";"Szabó Julianna pilács";"10,00";"5 000"');
+    expect(csv).toContain('"2026-09";"Szabó Julianna pilácsx";"20,00";"5 000"');
     expect(csv).toContain('"2026-09";"Alkalmi Csoport";"30,00"');
   });
 });
