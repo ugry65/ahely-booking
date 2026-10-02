@@ -8,7 +8,8 @@ export async function GET(request: Request) {
   const fallback = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit" }).format(new Date());
   const months = selectedMonths(url.searchParams.get("honapok") ?? url.searchParams.get("honap") ?? undefined, fallback);
   const supabase = await createClient();
-  const rows: MonthlyHoursWithMonth[] = [];\n  const details: MonthlyBookingDetailWithMonth[] = [];
+  const rows: MonthlyHoursWithMonth[] = [];
+  const details: MonthlyBookingDetailWithMonth[] = [];
 
   for (const month of months) {
     const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
