@@ -39,7 +39,7 @@ Változatlanul kötelező:
 ## Booking e-mail
 Üzleti döntés: booking create/update/cancel e-mail jelenleg nem része az aktív production szolgáltatásnak; kívánt mód `BOOKING_EMAIL_MODE=disabled`. A Supabase Auth jelszóbeállítás/jelszó-visszaállítás e-mail ettől külön rendszer.
 A worker/outbox kód megmarad későbbi aktiválhatóság miatt. Aktiválás előtt backlog/címzett, provider és runtime konfiguráció külön ellenőrzendő.
-Nyitott technikai takarítás: #239 — a percenkénti booking-email worker cron eltávolítása a `vercel.json`-ból. A jelenlegi mainben a cron még szerepel, ezért ezt nem szabad késznek dokumentálni.
+A percenkénti booking-email worker cron #274-ben eltávolítva a `vercel.json`-ból; a négy production-health cron változatlan. A worker/outbox kód megmaradt.
 
 ## Tudatosan nyitva hagyott backlog
 - #238: password recovery URL/template contract hibajegy. Lezárás előtt aktuális staging/production állapotot végponttól végpontig újra kell igazolni; a ticket jelenleg nyitott.
