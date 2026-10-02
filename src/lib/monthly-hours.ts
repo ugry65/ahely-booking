@@ -86,7 +86,62 @@ export function appliedHourlyRatesText(row: Pick<MonthlyHoursRow, "pricing_break
   return rates.length ? rates.map((rate) => String(rate).replace(/\B(?=(\d{3})+(?!\d))/g, " ")).join(" / ") + " Ft" : "—";
 }
 
-export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[]): string {
+
+export type MonthlySummaryExportRow = {
+  month: string;
+  user_name: string;
+  total_hours: number;
+  hourly_rate_text: string;
+  normal_hours: number;
+  special_hours: number;
+  calculated_due_huf: number;
+  pricing_state_text: string;
+  revision_number: number | null;
+  is_child: boolean;
+};
+
+export function monthlySummaryExportRows(
+  rows: MonthlyHoursWithMonth[],
+  details: MonthlyBookingDetailWithMonth[],
+): MonthlySummaryExportRow[] {
+  const output: MonthlySummaryExportRow[] = [];
+  for (const row of rows) {
+    const occasional = isOccasionalBookerName(row.user_name, row.email);
+    output.push({
+      month: row.month,
+      user_name: occasional ? occasionalBookerLabel(row.user_name, row.email) : row.user_name,
+      total_hours: Number(row.total_hours),
+      hourly_rate_text: occasional ? "" : appliedHourlyRates(row).join(" / "),
+      normal_hours: row.normal_minutes / 60,
+      special_hours: row.special_minutes / 60,
+      calculated_due_huf: Number(row.calculated_due_huf),
+      pricing_state_text: row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet",
+      revision_number: row.revision_number,
+      is_child: false,
+    });
+    if (!occasional) continue;
+    const customers = groupOccasionalBookingDetails(
+      details.filter((detail) => detail.month === row.month && detail.user_id === row.user_id),
+    );
+    for (const customer of customers) {
+      output.push({
+        month: row.month,
+        user_name: customer.customer_name,
+        total_hours: customer.total_hours,
+        hourly_rate_text: customer.total_hours ? String(Math.round(customer.calculated_due_huf / customer.total_hours)) : "",
+        normal_hours: 0,
+        special_hours: 0,
+        calculated_due_huf: customer.calculated_due_huf,
+        pricing_state_text: "",
+        revision_number: null,
+        is_child: true,
+      });
+    }
+  }
+  return output;
+}
+
+export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): string {
   const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
