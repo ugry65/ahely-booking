@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/auth";
-import { monthStart, selectedMonths, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
+import { mergeBookingTitles, monthStart, selectedMonths, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth, type MonthlyHoursRow, type MonthlyHoursWithMonth } from "@/lib/monthly-hours";
 import { monthlySettlementXlsx } from "@/lib/monthly-settlement-xlsx";
 import { createClient } from "@/lib/supabase/server";
 
@@ -10,6 +10,7 @@ export async function GET(request: Request) {
   const months = selectedMonths(url.searchParams.get("honapok") ?? url.searchParams.get("honap") ?? undefined, fallback);
   const supabase = await createClient();
   const rows: MonthlyHoursWithMonth[] = [];
+  const details: MonthlyBookingDetailWithMonth[] = [];
 
   for (const month of months) {
     const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
