@@ -88,7 +88,7 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: Mo
     { value: row.month },
     { value: row.is_child ? "  " + row.user_name : row.user_name },
     { value: row.total_hours, style: 2 },
-    { value: row.hourly_rate_text ? row.hourly_rate_text.replace(/\\B(?=(\\d{3})+(?!\\d))/g, " ") + " Ft" : "—" },
+    { value: row.hourly_rate_text || "—" },
     { value: row.calculated_due_huf, style: 3 },
     { value: row.pricing_state_text },
     { value: row.revision_number ?? "" },
