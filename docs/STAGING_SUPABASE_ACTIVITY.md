@@ -82,12 +82,49 @@ A meglévő Healthchecks.io fiókban külön `A-Hely staging activity` monitor:
 - Staging HTTP smoke: 200, database ok, Cache-Control no-store.
 - Lokális célzott tesztek 14/14 PASS; meglévő alkalmazás unit tesztek 215/215 PASS,
   typecheck PASS; release-evidence --release PASS (nem production deploy-engedély).
-- Merge/CI/manual run/új deployment bizonyíték az issue/PR-ban rögzítendő.
+Az alábbi bevezetési jegyzőkönyv a merge utáni végleges eredményeket rögzíti.
+
+## Bevezetési jegyzőkönyv – 2026-10-08
+
+**Implementáció és kézi működésellenőrzés kész; a megfigyelési kapuk még nyitottak.**
+
+- Implementáció: [PR #283](https://github.com/ugry65/ahely-booking/pull/283), mainbe merge-elve.
+  Bevezetett main SHA: `035345fde6f646e1b75930171f57b4904faaf3c2`.
+- Staging Vercel deployment: `dpl_6eWAJQCM9NJmjr1gS4kbtr58wkfz`, READY,
+  a fenti main SHA-val. Merge utáni staging HTTP smoke: 200, database ok, no-store.
+- [Kézi Actions futás #37793493333](https://github.com/ugry65/ahely-booking/actions/runs/37793493333):
+  main / workflow_dispatch, 2026-10-08 16:33:50–16:34:20 Europe/Budapest;
+  offline tesztjob és élő staging job SUCCESS. Napló: `Staging database activity probe passed.`
+- Tesztek: célzott 14/14 és alkalmazás 215/215 PASS; typecheck és
+  release-evidence ellenőrzés PASS. PR és main CI application-checks /
+  evidence-consistency PASS; a PR-en az élő staging job szándékosan nem fut.
+- Kódreview és javítások dokumentálva a PR-ben. Ez saját kódreview volt;
+  független Claude-review nem történt. Foglalási, pénzügyi vagy jogosultsági kód nem változott.
+- A külön staging Healthchecks monitoron kontrollált `/fail` → sikerping teszt
+  Down → Up eseményt eredményezett. A teszt nem állította le az alkalmazást vagy a DB-t.
+  Az email integráció bekapcsolva; postaládába érkezés még nem igazolt.
+- Production ref a bevezetés után is
+  `c0c7158f86946fffc1801eec348e27aa908cf56a`; production alkalmazás,
+  DB, workflow és environment nem módosult. Az új probe csak a meglévő,
+  üzleti adatot nem író RPC-t hívja; üzleti adatot módosító műveletet nem végeztünk.
+- [Issue #282](https://github.com/ugry65/ahely-booking/issues/282) nyitva marad
+  a következő ellenőrzések bizonyítékának rögzítésére.
+
+### Még ellenőrizendő
+
+1. Az első tényleges scheduled futás: bevezetéskor még nem volt megfigyelhető;
+   a következő tervezett időpont 2026-10-08 21:17 Europe/Budapest.
+2. Healthchecks hiba-/helyreállítási értesítés tényleges megérkezése
+   a `backupahely@gmail.com` postaládába.
+3. Legalább hét teljes nap automatikus működés és Supabase státusz megfigyelése.
+   A szüneteltetés elkerülése előre nem garantálható.
 
 ## Legalább hétnapos megfigyelés
 
-A bevezetési kézi siker és első scheduled siker után számítsunk hét teljes napot;
-legkorábbi felülvizsgálat 2026-10-15, ha a bevezetés 2026-10-08-án kész.
+A bevezetési kézi siker és első scheduled siker után számítsunk hét teljes napot.
+Ha az első scheduled siker 2026-10-08 21:17-kor történik, a legkorábbi
+hétnapos felülvizsgálat 2026-10-15 21:17 után esedékes (Europe/Budapest).
+Későbbi első siker esetén a felülvizsgálat időpontja is későbbre kerül.
 Az issue maradjon nyitva az ellenőrzéshez.
 
 Ellenőrizni kell: napi négy Actions futás eredménye/hiányai; monitor pingtörténet
