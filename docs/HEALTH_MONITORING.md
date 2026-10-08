@@ -93,3 +93,7 @@ A backup schedule és a négy heartbeat monitor külön rendszer a Supabase heal
 A backup workflow mai, kézi ellenőrzés alapján a 12:52, 16:36 és 19:52 időpontú futások sikeresek voltak. A négy heartbeat monitor végső állapot- és riasztási bizonyítéka még külön rögzítendő.
 
 A korábbi backup release-readiness dokumentum történeti állapotot rögzít, ezért megőrzendő. Az ott szereplő production schedule-aktiválási kapu továbbra is külön kezelendő, és production environment változót nem módosítunk automatikusan.
+
+## Staging aktivitásellenőrzés – 2026-10-08
+
+Külön, napi négyszeri staging workflow a meglévő publikus health RPC-t használja. Külön staging heartbeat jelzi a DB/API hibát és a kimaradt futást; a production monitorok változatlanok. Aktuális staging runbook és korlátok: [STAGING_SUPABASE_ACTIVITY.md](STAGING_SUPABASE_ACTIVITY.md), issue #282. A korábbi production táblázat történeti állapot, nem új staging bizonyíték.
