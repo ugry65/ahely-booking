@@ -23,6 +23,7 @@ export function MobileAppNav({ isAdmin }: Props) {
           <Link href="/foglalasok" onClick={closeMenu}>Foglalási naptár</Link>
           <Link href="/foglalasaim" onClick={closeMenu}>Foglalásaim</Link>
           <Link href="/adataim" onClick={closeMenu}>Adataim</Link>
+          {isAdmin ? <Link href="/admin/szobafoglaltsag" onClick={closeMenu}>Szobafoglaltság</Link> : null}
           {isAdmin ? <Link href="/admin/felhasznalok" onClick={closeMenu}>Felhasználók</Link> : null}
           {isAdmin ? <Link href="/admin/helyisegek" onClick={closeMenu}>Helyiségek</Link> : null}
           {isAdmin ? <Link href="/admin/dijszabas" onClick={closeMenu}>Díjszabás</Link> : null}

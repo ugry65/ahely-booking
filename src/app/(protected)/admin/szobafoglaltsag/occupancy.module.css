@@ -1,0 +1,26 @@
+.page { min-width: 0; }
+.filters { padding: 1.25rem; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 1rem; }
+.presets, .resultHeading { display: flex; align-items: center; flex-wrap: wrap; gap: .65rem; }
+.resultHeading { justify-content: space-between; }
+.presets button { padding: .5rem .75rem; }
+.roomSet { border: 1px solid #d8d4c8; border-radius: .5rem; padding: 1rem; min-width: 0; }
+.rooms { display: flex; flex-wrap: wrap; gap: .7rem 1.2rem; margin-top: .75rem; }
+.rooms label, .check { display: flex; align-items: center; gap: .5rem; }
+.tableScroll { overflow-x: auto; }
+.tableScroll table { min-width: 800px; }
+.mobileList { display: none; }
+.mobileBooking { display: grid; gap: .3rem; border-bottom: 1px solid #d8d4c8; padding: .85rem 0; overflow-wrap: anywhere; }
+.roomWeek h3 { margin-bottom: .6rem; }
+.weekScroll { overflow: auto; max-height: 580px; border: 1px solid #d8d4c8; border-radius: .5rem; }
+.weekGrid { display: grid; grid-template-columns: 60px repeat(7,minmax(135px,1fr)); min-width: 1005px; position: relative; }
+.corner, .dayHeading { position: sticky; top: 0; z-index: 3; background: #f2f4ef; border-bottom: 1px solid #d8d4c8; padding: .6rem .4rem; font-size: .8rem; }
+.corner { left: 0; z-index: 5; }
+.timeAxis { position: sticky; left: 0; z-index: 2; background: #f2f4ef; font-size: .75rem; border-right: 1px solid #cdd4cc; }
+.timeAxis span { position: absolute; left: .35rem; }
+.dayColumn { position: relative; border-right: 1px solid #d8d4c8; background: repeating-linear-gradient(to bottom,#fff 0px,#fff 23px,#e8ede6 23px,#e8ede6 24px,#fff 24px,#fff 47px,#cdd4cc 47px,#cdd4cc 48px); }
+.outside { background: #e9e9e5; padding: .5rem; font-size: .8rem; }
+.block { position: absolute; left: 3px; right: 3px; background: #dcebe2; border: 1px solid #6c927a; border-left: 4px solid #32664b; border-radius: .3rem; padding: .15rem .3rem; display: flex; flex-direction: column; overflow: hidden; font-size: .75rem; line-height: 1.25; overflow-wrap: anywhere; }
+.freeList { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: .75rem; }
+.freeList li { display: grid; gap: .2rem; padding: .75rem; background: #f0f7ef; border: 1px solid #c8dbc4; border-radius: .5rem; }
+@media(max-width:640px) { .fields { grid-template-columns: 1fr; } .tableScroll { display: none; } .mobileList { display: grid; } .page :global(.card) { padding: 1rem; } }
