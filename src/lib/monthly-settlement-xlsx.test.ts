@@ -15,6 +15,8 @@ describe("monthly settlement XLSX export", () => {
     expect(raw).toContain("Óradíj");
     expect(raw).toContain("2 500 / 5 000 Ft");
     expect(raw).toContain("Kijelölt hónapok mindösszesen");
+    expect(raw).not.toContain("Állapot");
+    expect(raw).not.toContain("Revision");
     expect(raw).toContain('formatCode="#,##0 &quot;Ft&quot;"');
   });
 

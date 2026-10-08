@@ -142,27 +142,25 @@ export function monthlySummaryExportRows(
 }
 
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): string {
-  const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft", "Állapot", "Revision"];
+  const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of monthlySummaryExportRows(rows, details)) {
     lines.push([
       row.month, row.user_name, decimalComma(row.total_hours), row.hourly_rate_text.replaceAll(" ", "").replace(/Ft$/, ""), decimalComma(row.normal_hours),
-      decimalComma(row.special_hours), String(row.calculated_due_huf), row.pricing_state_text,
-      row.revision_number ? String(row.revision_number) : "",
+      decimalComma(row.special_hours), String(row.calculated_due_huf),
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
 }
 
 export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string {
-  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Foglalás címe", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft", "Állapot", "Revision"];
+  const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Foglalás címe", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft"];
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
       row.month, row.user_name, row.booking_date, row.room_name, row.booking_title ?? "",
       row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours), row.rate_source,
-      String(row.hourly_rate_huf), String(row.amount_huf), row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet",
-      row.revision_number ? String(row.revision_number) : "",
+      String(row.hourly_rate_huf), String(row.amount_huf),
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;

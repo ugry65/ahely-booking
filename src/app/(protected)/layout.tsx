@@ -12,6 +12,7 @@ export default async function ProtectedLayout({ children }: Readonly<{ children:
         <Link href="/foglalasok"><strong>Foglalási naptár</strong></Link>
         <Link href="/foglalasaim">Foglalásaim</Link>
         <Link href="/adataim">Adataim</Link>
+        {profile.role === "admin" ? <Link href="/admin/szobafoglaltsag">Szobafoglaltság</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/felhasznalok">Felhasználók</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/helyisegek">Helyiségek</Link> : null}
         {profile.role === "admin" ? <Link href="/admin/dijszabas">Díjszabás</Link> : null}

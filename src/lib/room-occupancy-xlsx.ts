@@ -1,4 +1,4 @@
-import { monthlySummaryExportRows, type MonthlyBookingDetailWithMonth, type MonthlyHoursWithMonth } from "./monthly-hours";
+import { dateLabel, type OccupancyBooking } from "./room-occupancy";
 
 const encoder = new TextEncoder();
 
@@ -81,23 +81,10 @@ function cellXml(cell: Cell, row: number, col: number) {
   return `<c r="${ref}" t="inlineStr"${style}><is><t xml:space="preserve">${xml(cell.value)}</t></is></c>`;
 }
 
-export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): Uint8Array {
-  const header: Cell[] = ["Hónap", "Felhasználó", "Összes óra", "Óradíj", "Fizetendő"].map((value) => ({ value, style: 1 }));
-  const exportRows = monthlySummaryExportRows(rows, details);
-  const data: Cell[][] = exportRows.map((row) => [
-    { value: row.month },
-    { value: row.is_child ? "  " + row.user_name : row.user_name },
-    { value: row.total_hours, style: 2 },
-    { value: row.hourly_rate_text || "—" },
-    { value: row.calculated_due_huf, style: 3 },
-  ]);
-  const totalHours = rows.reduce((sum, row) => sum + Number(row.total_hours), 0);
-  const totalDue = rows.reduce((sum, row) => sum + Number(row.calculated_due_huf), 0);
-  const total: Cell[] = [
-    { value: "Kijelölt hónapok mindösszesen", style: 1 }, { value: "", style: 1 },
-    { value: totalHours, style: 4 }, { value: "", style: 1 }, { value: totalDue, style: 5 },
-  ];
-  const allRows = [header, ...data, total];
+export function roomOccupancyXlsx(bookings: OccupancyBooking[]): Uint8Array {
+  const header: Cell[] = ["Dátum / nap", "Kezdés", "Befejezés", "Szoba", "Foglaló", "Megnevezés", "Állapot"].map(value => ({value, style: 1}));
+  const data: Cell[][] = bookings.map(b => [dateLabel(b.booking_date,true), b.start_time.slice(0,5), b.end_time.slice(0,5), b.room_name, b.user_name, b.booking_title ?? "", b.status === "active" ? "Aktív" : "Törölt"].map(value => ({value})));
+  const allRows = [header, ...data];
   const sheetRows = allRows.map((cells, index) =>
     `<row r="${index + 1}">${cells.map((cell, col) => cellXml(cell, index + 1, col)).join("")}</row>`
   ).join("");
@@ -106,8 +93,8 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: Mo
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>
 <col min="1" max="1" width="12" customWidth="1"/><col min="2" max="2" width="28" customWidth="1"/>
 <col min="3" max="3" width="14" customWidth="1"/><col min="4" max="4" width="22" customWidth="1"/>
-<col min="5" max="5" width="16" customWidth="1"/>
-</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:E${Math.max(1, exportRows.length + 1)}"/></worksheet>`;
+<col min="5" max="7" width="28" customWidth="1"/>
+</cols><sheetData>${sheetRows}</sheetData><autoFilter ref="A1:G${Math.max(1, bookings.length + 1)}"/></worksheet>`;
 
   const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
@@ -122,7 +109,7 @@ export function monthlySettlementXlsx(rows: MonthlyHoursWithMonth[], details: Mo
   return zip([
     { name: "[Content_Types].xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
     { name: "_rels/.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
-    { name: "xl/workbook.xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Elszámolási összesítés" sheetId="1" r:id="rId1"/></sheets></workbook>` },
+    { name: "xl/workbook.xml", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Szobafoglaltság" sheetId="1" r:id="rId1"/></sheets></workbook>` },
     { name: "xl/_rels/workbook.xml.rels", content: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
     { name: "xl/styles.xml", content: styles },
     { name: "xl/worksheets/sheet1.xml", content: sheet },
