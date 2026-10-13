@@ -20,10 +20,10 @@ describe("monthly/list user interface",()=>{
     if(!process.env.ROOM_CALENDAR_PREVIEW)return;
     const root=process.env.ROOM_CALENDAR_PREVIEW;
     mkdirSync(root,{recursive:true});
-    const css=readFileSync("src/app/globals.css","utf8")+readFileSync("src/app/(protected)/foglalasok/room-calendar.module.css","utf8");
-    for(const [name,params] of Object.entries({month:{},list:{view:"list",kind:"free",from:"2026-10-13",to:"2026-10-31"}})) {
+    const css=["src/app/globals.css","src/app/skedda-mobile.css","src/app/(protected)/foglalasok/calendar-booking-actions.css","src/app/(protected)/foglalasok/room-calendar.module.css"].map(path=>readFileSync(path,"utf8")).join("\n");
+    for(const [name,params] of Object.entries({month:{},list:{view:"list",kind:"free",from:"2026-10-13",to:"2026-10-31"},bookings:{view:"list",kind:"bookings",from:"2026-10-13",to:"2026-10-31"}})) {
       const markup=await html(params);
-      writeFileSync(`${root}/${name}.html`,`<!doctype html><html lang="hu"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A-Hely teszt megjelenés</title><style>${css}</style><main>${markup}</main></html>`);
+      writeFileSync(`${root}/${name}.html`,`<!doctype html><html lang="hu"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A-Hely teszt megjelenés</title><style>${css}</style><main><nav class="desktop-app-nav" aria-label="Főmenü"><a href="/foglalasok">Foglalási naptár</a><a href="/foglalasaim">Foglalásaim</a><a href="/adataim">Adataim</a></nav>${markup}</main></html>`);
     }
   });
 });

@@ -43,7 +43,7 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
     <header className={styles.heading}><div><p className="eyebrow">Foglalási naptár</p><h1>{room.room_name}</h1><p className="muted">Foglaltság és egybefüggő szabad időszakok</p></div>
       <nav aria-label="Naptárnézet" className={styles.tabs}><Link className="button secondary" href={`/foglalasok?datum=${filter.date}&room=${room.room_id}`}>Napi</Link><Link className="button secondary" aria-current={filter.view === "month" ? "page" : undefined} href={roomCalendarUrl(filter,{view:"month",date:filter.view === "list" ? filter.from : filter.date})}>Havi</Link><Link className="button secondary" aria-current={filter.view === "list" ? "page" : undefined} href={roomCalendarUrl(filter,{view:"list"})}>Lista</Link></nav>
     </header>
-    <form key={roomCalendarUrl(filter)} method="get" className={`card ${styles.filters}`}>
+    <form key={roomCalendarUrl(filter)} method="get" className={`card wide-card ${styles.filters}`}>
       <input type="hidden" name="view" value={filter.view}/><input type="hidden" name="datum" value={filter.date}/>
       <label>Szoba<select name="room" defaultValue={room.room_id}>{data.rooms.map(r=><option value={r.room_id} key={r.room_id}>{r.room_name}</option>)}</select></label>
       {filter.view === "month" ? <label>Hónap<input type="month" name="month" defaultValue={filter.date.slice(0,7)} required/></label> : null}
@@ -57,7 +57,7 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
     </form>
     {limit !== null ? <p className="muted">Ebben a szobában legfeljebb {limit} napra előre foglalhatsz. Távolabbi időpontok foglaltságát is megtekintheted.</p> : null}
     {filter.view === "month" ? <>
-      <section className={`card ${styles.month}`}>
+      <section className={`card wide-card ${styles.month}`}>
         <div className={styles.heading}><h2>{civilDateLabel(filter.date,{year:"numeric",month:"long"})}</h2><nav className={styles.tabs} aria-label="Hónap választása"><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,-1)})}>← Előző</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:today})}>Ma</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,1)})}>Következő →</Link></nav></div>
         <p className="muted">A sáv {timeLabel(data.opening.start)}–{timeLabel(data.opening.end)} között: zöld = szabad, sötét = foglalt. Koppints egy napra a részletekhez.</p>
         <div className={styles.grid}>{["H","K","Sze","Cs","P","Szo","V"].map(d=><div className={styles.weekday} key={d}>{d}</div>)}
@@ -73,11 +73,11 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
           })}
         </div>
       </section>
-      <section className="card stack" aria-label="Kiválasztott nap részletei"><div className={styles.heading}><h2>{dateLabel(filter.date)}</h2><Link className="button secondary" href={`/foglalasok?datum=${filter.date}&room=${room.room_id}`}>Napi naptár</Link></div>
+      <section className="card wide-card stack" aria-label="Kiválasztott nap részletei"><div className={styles.heading}><h2>{dateLabel(filter.date)}</h2><Link className="button secondary" href={`/foglalasok?datum=${filter.date}&room=${room.room_id}`}>Napi naptár</Link></div>
         <h3>Foglalások</h3>{selectedBookings.length?selectedBookings.map(b=><article className={styles.row} key={b.booking_id}><strong>{interval(b)}</strong><span>{owner(b)}{b.booking_title?` · ${b.booking_title}`:""}</span></article>):<p className="muted">Erre a napra nincs foglalás.</p>}
         <h3>Megfelelő szabad időpontok</h3>{selectedGaps.length?selectedGaps.map(slotRow):<p className="muted">Nincs a keresési feltételeknek megfelelő szabad időszak.</p>}
       </section>
-    </> : <section className="card stack"><div className={styles.heading}><h2>{filter.kind === "free"?"Szabad időpontok":"Foglalások"}</h2><span className="muted">{resultCount} találat</span></div><p className="muted">{dateLabel(filter.from)} – {dateLabel(filter.to)}</p>
+    </> : <section className="card wide-card stack"><div className={styles.heading}><h2>{filter.kind === "free"?"Szabad időpontok":"Foglalások"}</h2><span className="muted">{resultCount} találat</span></div><p className="muted">{dateLabel(filter.from)} – {dateLabel(filter.to)}</p>
       {filter.kind === "free" ? gaps.slice(fromRow,fromRow+100).map(slotRow) : listBookings.slice(fromRow,fromRow+100).map(b=><article className={styles.row} key={b.booking_id}><div><strong>{dateLabel(budapestDateFromIso(b.start_at))}</strong><p>{interval(b)} · {owner(b)}</p>{b.booking_title?<span>{b.booking_title}</span>:null}</div><Link className="button secondary" href={`/foglalasok?datum=${budapestDateFromIso(b.start_at)}&room=${room.room_id}`}>Napi naptár</Link></article>)}
       {!resultCount?<p className="muted">A megadott feltételekkel nincs találat.</p>:null}
       {pages>1?<nav className={styles.tabs} aria-label="Találati oldalak">{page>1?<Link href={`${roomCalendarUrl(filter)}&page=${page-1}`}>← Előző</Link>:null}<span>{page}. / {pages}. oldal</span>{page<pages?<Link href={`${roomCalendarUrl(filter)}&page=${page+1}`}>Következő →</Link>:null}</nav>:null}

@@ -1,4 +1,4 @@
-.page { width:100%; max-width:1200px; margin:auto; padding-bottom:2rem; }
+.page { min-width:0; padding-bottom:2rem; }
 .heading { display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; }
 .heading h1,.heading h2,.row p { margin:0; }
 .tabs { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
