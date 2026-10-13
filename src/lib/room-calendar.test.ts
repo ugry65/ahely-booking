@@ -1,0 +1,28 @@
+import { describe, expect, it } from "vitest";
+import { advanceLimit, freeRoomSlots, localPeriod, parseBookingPreset, parseRoomCalendarFilter, periodChunks, slotBookingLink, validateCalendarBookings, type RoomCalendarBooking } from "./room-calendar";
+import { budapestLocalToIso } from "./booking-form";
+const roomId = "10000000-0000-0000-0000-000000000001";
+const room = { room_id: roomId, room_name: "Teszt szoba", is_training_room: false, display_order: 1 };
+const opening = {start:420,end:1320};
+const filter = (patch: Record<string,string | undefined> = {}) => parseRoomCalendarFilter({view:"list",room:roomId,from:"2026-10-13",to:"2026-10-13",...patch},"2026-10-13");
+function booking(start: string, end: string, id = start): RoomCalendarBooking { return {booking_id:id,room_id:roomId,room_name:"Teszt",start_at:budapestLocalToIso("2026-10-13",start)!,end_at:budapestLocalToIso("2026-10-13",end)!,use_type:"individual",is_own:false,booker_display_name:null,booking_title:null,booker_color:null}; }
+describe("room calendar periods and availability",()=>{
+  it("limits month to its real days, even in leap years",()=>{expect(parseRoomCalendarFilter({view:"month",datum:"2028-02-29"},"2026-10-13")).toMatchObject({from:"2028-02-01",to:"2028-02-29"});});
+  it.each([{from:"2026-02-30"},{from:"2026-10-14",to:"2026-10-13"},{from:"2026-01-01",to:"2027-01-02"},{room:"bad"},{start:"13:15"},{duration:"30"},{weekday:"8"}])("rejects invalid filter %j",patch=>{expect(()=>filter(patch)).toThrow();});
+  it("jumps directly to a chosen month and retains selected day if unchanged",()=>{expect(parseRoomCalendarFilter({view:"month",datum:"2026-10-13",month:"2027-02"},"2026-10-13").date).toBe("2027-02-01");expect(parseRoomCalendarFilter({view:"month",datum:"2026-10-13",month:"2026-10"},"2026-10-13").date).toBe("2026-10-13");});
+  it("splits a full year into contiguous bounded RPC intervals",()=>{const chunks=periodChunks("2026-01-01","2026-12-31");expect(chunks).toHaveLength(12);expect(chunks[0]).toEqual({from:"2026-01-01",to:"2026-01-31"});expect(chunks.at(-1)?.to).toBe("2026-12-31");expect(chunks[1].from).toBe("2026-02-01");});
+  it("respects Budapest DST day boundaries",()=>{expect(localPeriod("2026-10-25","2026-10-25")).toEqual({p_start_at:"2026-10-24T22:00:00.000Z",p_end_at:"2026-10-25T23:00:00.000Z"});});
+  it("includes fully empty days",()=>{expect(freeRoomSlots([],filter(),opening)).toEqual([{date:"2026-10-13",start:420,end:1320}]);});
+  it("subtracts every owner, merges touching/overlapping bookings and ignores other rooms",()=>{const rows=[booking("14:00","15:00"),booking("15:00","16:00"),booking("15:30","17:00"),{...booking("17:00","19:00","other"),room_id:"other"}];expect(freeRoomSlots(rows,filter({start:"14:00",end:"20:00",duration:"120"}),opening)).toEqual([{date:"2026-10-13",start:1020,end:1200}]);});
+  it("does not combine separate short gaps",()=>{expect(freeRoomSlots([booking("15:00","16:00"),booking("17:00","18:00")],filter({start:"14:00",end:"19:00",duration:"120"}),opening)).toEqual([]);});
+  it("clips free intervals to opening hours",()=>{expect(freeRoomSlots([],filter(),{start:600,end:1080})).toEqual([{date:"2026-10-13",start:600,end:1080}]);});
+  it("selects only matching weekdays including Sunday zero",()=>{expect(freeRoomSlots([],filter({from:"2026-10-12",to:"2026-10-18",weekday:"0"}),opening).map(s=>s.date)).toEqual(["2026-10-18"]);});
+  it("detects partial/corrupt, duplicate and wrong-room data",()=>{expect(()=>validateCalendarBookings([booking("14:00","15:00"),booking("14:00","15:00")],roomId)).toThrow();expect(()=>validateCalendarBookings([{...booking("14:00","15:00"),room_id:"other"}],roomId)).toThrow();expect(()=>validateCalendarBookings([{...booking("14:00","15:00"),end_at:"bad"}],roomId)).toThrow();});
+});
+describe("booking handoff preserves existing rules",()=>{
+  it("uses user override and the lower training-room cap, admin unrestricted",()=>{expect(advanceLimit("user",room,90,10,180)).toBe(180);expect(advanceLimit("user",{...room,is_training_room:true},90,10,5)).toBe(5);expect(advanceLimit("admin",room,90,10,null)).toBeNull();});
+  it("allows the exact advance day and disables the next",()=>{const slot={date:"2026-10-23",start:840,end:1080};expect(slotBookingLink(roomId,slot,120,"2026-10-13",10).href).toContain("new=1");expect(slotBookingLink(roomId,{...slot,date:"2026-10-24"},120,"2026-10-13",10).href).toBeNull();});
+  it("proposes only future half-hour starts today",()=>{const now=new Date("2026-10-13T12:00:00Z");expect(slotBookingLink(roomId,{date:"2026-10-13",start:840,end:1080},120,"2026-10-13",90,now).href).toContain("start=14%3A30");});
+  it("disables past and too-short remaining slots",()=>{const now=new Date("2026-10-13T14:45:00Z");expect(slotBookingLink(roomId,{date:"2026-10-13",start:840,end:1020},60,"2026-10-13",90,now).href).toBeNull();expect(slotBookingLink(roomId,{date:"2026-10-12",start:840,end:1080},60,"2026-10-13",null,now).href).toBeNull();});
+  it("prefills only an authorized room and valid one-hour interval",()=>{expect(parseBookingPreset({new:"1",room:roomId,start:"14:00",end:"16:00"},[room])).toEqual({roomId,startTime:"14:00",endTime:"16:00"});expect(parseBookingPreset({new:"1",room:"other",start:"14:00",end:"16:00"},[room])).toBeUndefined();expect(parseBookingPreset({new:"1",room:roomId,start:"14:00",end:"14:30"},[room])).toBeUndefined();});
+});
