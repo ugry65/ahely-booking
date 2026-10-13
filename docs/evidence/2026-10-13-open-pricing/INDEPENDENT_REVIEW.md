@@ -19,3 +19,11 @@ Canonical fájl: `20261001193000_monthly_tier_include_training_group.sql`, prove
 A reviewer előírása: kizárólag az actual row hozzáadása és a canonical fájl hash-pinnelt excluded_local mappingje; minden régi rekord/hash megőrzése; guard algoritmus változatlan; nincs remote history repair vagy régi SQL replay. Új projectionben kizárólag az új #295 migration lehet pending.
 
 Follow-up review: **reconciliation diff APPROVE, nincs blocker**. A reviewer önállóan ellenőrizte a 92 történeti rekord/hash változatlanságát, az új actual row/canonical mappinget, a változatlan algoritmust, az EOF javítást és a diff-check PASS-t. Root projection:93 applied, kizárólag20261013205742 pending. A #296 staging APPROVE a kizárólag manifest/bizonyíték kiegészítéssel fennmarad; pontos-HEAD CI szükséges.
+
+## Single-migration API út külön review-ja
+
+Reviewer: a Supabase apply_migration kizárólag egy exact reviewed SQL/project alkalmazására **elfogadható alternatíva, nincs új blocker**. Normál configured tool-jogosultság; valódi approval/permission elutasítás nem kerülhető meg. Root nem kért és nem kapott ilyen elutasítást. A bulk history-push nem történt, a guard algoritmusa és a távoli történeti sorok változatlanok.
+
+550e2ad pontos-HEAD CI application/evidence/database/isolated-reference SUCCESS az alkalmazás előtt. Közvetlen project/history előellenőrzés: staging fvwapntzhavhgazeflri,93 sor byte-pontosan a read-only pinned listával egyezik; projection onlynewpending. Alkalmazás után actual20261013214532 stored SQL byte-exact, mindkét élő RPC prosrc/signature/ACL/search_path igazolt. Az új actual row és canonical SHA256 mapping a dokumentációs utókövetésben pinelve;94 applied/pending=[].
+
+Final pin/documentation review: **APPROVE, nincs blocker**, base5e78ca0. A reviewer önállóan ellenőrizte a négyfájlos utókövetést, mind a93korábbi applied/exclusion változatlanságát, az actual version/name/MD5 és canonical SHA256 egyezését, a változatlan guard/SQL/appkódot és a diff-check PASS-t. A bejelentkezett UAT továbbra is külön, hátralévő felhasználói ellenőrzés.

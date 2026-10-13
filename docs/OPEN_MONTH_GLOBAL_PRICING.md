@@ -4,7 +4,17 @@
 
 2026-10-13: nyitott hónapban a hónap első napjától lehessen díjszabást beállítani (október 13-án október 1-től). Implementációs engedély: „Módosítsd”. Az aktuális budapesti hónapra valósul meg; korábbi nyitott hónap globális átárazása nem része a scope-nak. Production csak külön elfogadás/GO után.
 
-Állapot: implementált feature ág, #296; az eredeti feature HEAD pontos CI-je és a külön engedélyezett független reviewer staging APPROVE-ja igazolt. A staging baseline timestamp-mapping reconciliationje is függetlenül APPROVE. Staging DB-migráció/stabil telepítés még nincs; a metaadat/bizonyíték frissítés pontos-HEAD CI-je következik. Review: [INDEPENDENT_REVIEW.md](evidence/2026-10-13-open-pricing/INDEPENDENT_REVIEW.md).
+Állapot: #296 mainbe merge-elve, staging DB és stabil webalkalmazás telepítve, technikai átadás kész. Projektgazdai bejelentkezett UAT/elfogadás következik; production kiadás nincs. Review: [INDEPENDENT_REVIEW.md](evidence/2026-10-13-open-pricing/INDEPENDENT_REVIEW.md).
+
+## Staging átadás – 2026-10-13
+
+- Implementáció main SHA `5e78ca06afddc009c076b65f0d3d6036ec692043` (#296). Merge előtti HEAD550e2ad összes CI-je SUCCESS; migration/page az eredetileg reviewed576b23c blobokkal egyezik.
+- Staging READY deployment `dpl_31f6cA8BCTrtGxCnFiN4Bqg1eNuf`, pontos main SHA/ref és stabil alias ellenőrizve. Kipróbálás: https://ahely-booking-staging-web.vercel.app/admin/dijszabas.
+- Supabase staging `fvwapntzhavhgazeflri`: actual migration `20261013214532 / allow_current_open_month_global_pricing`, stored SQL bájtszinten egyezik a canonical20261013205742 fájllal; MD5 `c39cffa328a78960f9cca30b398333d7`, canonical SHA256 `87d98c68245966d9381a769b56f697302aa4911386519e8b9f08f9934d439b3e`.
+- Mindkét élő RPC body/szignatúra/SECURITY DEFINER/üres search_path/anon tiltás/authenticated grant pontos. A 93 korábbi history rekord változatlan, egy valós új applied row hozzáadva; nincs history-repair. Friss pin/projection:94 applied, pending=[]; a CLI dry-run nem történt, az ellenőrzés read-only history-pinnelt single-migration API preflight volt.
+- A migration előtt/után tariffa/special_rate/revision/booking_line darabszámok és teljes sorhash-ek egyeznek; booking darabszám452 változatlan. Nem állítottunk be új valódi díjat vagy zártunk üzleti hónapot. Securityadvisor baseline számai változatlanok (a meglévő deny-by-default RLS/guarded RPC és Auth figyelmeztetések nem új regressziók).
+- Health HTTP200 / ok=true / database=ok; admin/dijszabas bejelentkezés nélkül307→/belepes. Új deployment error/fatal aggregált lekérdezés nem adott találatot. Ez nem bejelentkezett UI-UAT.
+- Production ág változatlan SHA `e15ac2330c76840a673bf55fea5a8c7301682fff`; production DB-migráció, konfiguráció- vagy üzleti adatírás nem történt. Külön élesítési GO szükséges.
 
 ## Működés
 
