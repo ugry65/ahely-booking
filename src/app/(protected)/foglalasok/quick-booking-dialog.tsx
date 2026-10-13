@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { createBooking } from "./actions";
 import { createRecurringBooking } from "./ismetlod/actions";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
+import type { BookingPreset } from "@/lib/room-calendar";
 import type { BookableRoom } from "./calendar-booking-grid";
 import { BookingTimeFields } from "./booking-time-fields";
 import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
@@ -19,9 +20,9 @@ function timeOptions() {
   });
 }
 
-export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string }) {
-  const [open, setOpen] = useState(false);
-  const [selectedRoomId, setSelectedRoomId] = useState("");
+export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, today, bookingUsers = [], currentUserId, preset }: { rooms: BookableRoom[]; repeatableRoomIds: string[]; selectedDate: string; today: string; bookingUsers?: BookingUser[]; currentUserId?: string; preset?: BookingPreset }) {
+  const [open, setOpen] = useState(Boolean(preset));
+  const [selectedRoomId, setSelectedRoomId] = useState(preset?.roomId ?? "");
   const [repeatFrequency, setRepeatFrequency] = useState<RepeatFrequency>("none");
   const idempotencyKey = useMemo(() => crypto.randomUUID(), [open, repeatFrequency]);
   const selectedRoom = rooms.find((room) => room.room_id === selectedRoomId);
@@ -63,7 +64,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
                 </select>
               </label>
               <label>Dátum<input name="date" type="date" required defaultValue={selectedDate} min={today} /></label>
-              <BookingTimeFields options={timeOptions()} initialStartTime="09:00" initialEndTime="10:00" />
+              <BookingTimeFields options={timeOptions()} initialStartTime={preset?.startTime ?? "09:00"} initialEndTime={preset?.endTime ?? "10:00"} />
 
               <label>Ismétlődés
                 <select name="frequency" value={repeatFrequency} onChange={(event) => setRepeatFrequency(event.target.value as RepeatFrequency)} disabled={!canRepeat}>

@@ -6,6 +6,8 @@ import { CalendarBookingGrid, type BookableRoom, type CalendarBooking } from "./
 import { MobileDateStrip } from "./mobile-date-strip";
 import { QuickBookingDialog, type BookingUser } from "./quick-booking-dialog";
 import "./calendar-booking-actions.css";
+import { RoomCalendarView } from "./room-calendar-view";
+import { parseBookingPreset } from "@/lib/room-calendar";
 
 type BaseCalendarBooking = Omit<CalendarBooking, "note" | "series_id" | "updated_at" | "can_manage" | "user_id" | "hourly_rate_override_huf" | "hourly_rate_override_reason">;
 type CalendarBookingManagement = Pick<CalendarBooking, "booking_id" | "note" | "booking_title" | "series_id" | "updated_at" | "can_manage" | "user_id" | "hourly_rate_override_huf" | "hourly_rate_override_reason">;
@@ -19,6 +21,7 @@ function dateTitle(date: string) { return new Intl.DateTimeFormat("hu-HU", { tim
 export default async function BookingsPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const profile = await requireActiveProfile();
   const params = await searchParams;
+  if (params.view === "month" || params.view === "list") return <RoomCalendarView params={params} />;
   const today = budapestToday();
   const selectedDate = params.datum && isValidDate(params.datum) ? params.datum : today;
   const dayStart = budapestLocalToIso(selectedDate, "00:00");
@@ -56,6 +59,11 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
 
   return (
     <section className="booking-page stack">
+      <nav aria-label="Naptárnézet" style={{display:"flex",gap:".4rem",flexWrap:"wrap"}}>
+        <Link className="button secondary" aria-current="page" href={`/foglalasok?datum=${selectedDate}`}>Napi</Link>
+        <Link className="button secondary" href={`/foglalasok?view=month&datum=${selectedDate}${params.room ? `&room=${encodeURIComponent(params.room)}` : ""}`}>Havi</Link>
+        <Link className="button secondary" href={`/foglalasok?view=list&datum=${selectedDate}${params.room ? `&room=${encodeURIComponent(params.room)}` : ""}`}>Lista</Link>
+      </nav>
       <MobileDateStrip selectedDate={selectedDate} />
       <header className="desktop-calendar-header" aria-label="Naptár vezérlők">
         <div style={{ display: "flex", alignItems: "center", gap: ".65rem", flexWrap: "wrap" }}>
@@ -73,7 +81,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: Pro
         </form>
       </header>
 
-      {rooms.length ? <QuickBookingDialog rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} bookingUsers={bookingUsers} currentUserId={profile.id} /> : null}
+      {rooms.length ? <QuickBookingDialog key={`${selectedDate}-${params.room ?? ""}-${params.start ?? ""}-${params.end ?? ""}-${params.new ?? ""}`} preset={parseBookingPreset(params, rooms)} rooms={rooms} repeatableRoomIds={repeatableRoomIds} selectedDate={selectedDate} today={today} bookingUsers={bookingUsers} currentUserId={profile.id} /> : null}
       {params.hiba || params.uzenet ? <p className={`message ${params.hiba ? "error" : "success"}`} role="status">{params.hiba ?? params.uzenet}</p> : null}
       {roomsResult.error || bookingsResult.error || managementResult.error || repeatableRoomsResult.error || usersResult.error ? <p className="message error" role="alert">A naptár betöltése nem sikerült. Kérlek, frissítsd az oldalt.</p> : null}
       {rooms.length ? <CalendarBookingGrid rooms={rooms} bookings={bookings} selectedDate={selectedDate} repeatableRoomIds={repeatableRoomIds} bookingUsers={bookingUsers} currentUserId={profile.id} /> : <div className="calendar-card empty-state"><h2>Nincs foglalható helyiséged</h2><p className="muted">Kérj jogosultságot az A-Hely adminisztrátorától.</p></div>}
