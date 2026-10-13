@@ -53,3 +53,9 @@ Visszaállítás: a korábbi staging deployment ismét használható; DB-rollbac
 - Server component havi/lista/hibás adat/üres jogosultsági katalógus render tesztek PASS, szintetikus adatokkal. Ez nem valódi, bejelentkezett mobil böngészős UAT.
 - A staging webhely megnyitása a belépési oldalt mutatta; aktív staging munkamenet nélkül a bejelentkezett UI-UAT nem igazolt. A helyi render-fixture cloud böngészőből nem érhető el. A kézi projektgazdai kipróbálás és elfogadás ezért külön lépés marad.
 - Staging környezeti cél `NEXT_PUBLIC_SUPABASE_URL=https://fvwapntzhavhgazeflri.supabase.co` élő read-only ellenőrzéssel igazolva. Secret érték nem került dokumentumba/repóba.
+
+## Staging kiadási útvonal egyeztetése
+
+A `src/lib/vercel-deployment-identity.ts` őre a stabil staging projektben kizárólag `main` refet fogad el. A feature-ág preview buildje READY (`dpl_DjsBzFjvDZfYtyUQN9PdtpVz4KUd`, SHA `d523e0df043f00e6b80e584ed1c2fd255b788d66`); a közvetlen feature → staging production-target kérés (`dpl_AxMMZFfjUwZ3VCqS2xt2B3eoiazg`) ezért helyesen ERROR lett. A korábbi stabil staging egészséges maradt (health 200, database=ok).
+
+A védelmet nem módosítjuk és preview alias-promócióval sem kerüljük meg. A #290 PR CI-kapui (application-checks/evidence-consistency) és kódellenőrzése után a változtatás mainbe kerül, ami kizárólag a külön staging stabil alkalmazását frissíti. Ezt a staging megvalósítási engedély szükséges részeként kezeljük. A production branch külön és változatlan; a felhasználói kipróbálás után külön production release PR és jóváhagyás szükséges.
