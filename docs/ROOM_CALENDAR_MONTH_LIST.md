@@ -11,7 +11,7 @@ Foglalási naptár → **Napi / Havi / Lista**. Normál felhasználók és admin
 
 - Havi: egy jogosult szoba, választható hónap vagy előző/következő hónap. Hétfő–vasárnap, minden tényleges naptári nap; a hónapon kívüli napok nem mutatnak szabad időt.
 - Napi foglaltsági sáv: aktuális nyitvatartás, zöld szabad / sötét foglalt; szöveges foglalásszám és megfelelő szabad intervallum is látható. A szín nem az egyetlen információhordozó.
-- Nap kiválasztásakor az adott nap foglalásai és a megfelelő szabad idősávok jelennek meg. A foglalási cím csak a meglévő naptár RPC által engedélyezett körben látszik.
+- A havi naptárban egy napra kattintva közvetlenül az adott nap foglalási naptára nyílik meg (2026-10-13-i projektgazdai pontosítás). A dátum és a kiválasztott szoba a napi nézet URL-jében megmarad. A havi oldal kezdeti napösszefoglalója külön továbbra is látható. A foglalási cím csak a meglévő naptár RPC által engedélyezett körben látszik.
 - Lista: Foglalások vagy Szabad időpontok. Dátumtartomány maximum 366 nap; opcionális hét napja, idősáv, legalább 1 órás időtartam félórás lépésekben.
 - A keresési idősáv/időtartam csak a szabad időkre vonatkozik; a foglalások listája és a napi foglaltsági sáv minden aktív foglalást mutat. A hét napja mindkét listát szűri.
 - Az üres napok teljes szabad sávként megjelennek. Különálló rövid időablakokat nem adunk össze egybefüggő időként.
@@ -78,3 +78,14 @@ node scripts/check-room-calendar-layout.mjs /tmp/room-calendar-layout
 ```
 
 Teljes Vitest 282/282, typecheck PASS. A #291 production PR draft és szüneteltetett marad, amíg a javított staging buildet a projektgazda el nem fogadja. A korábbi staging UAT nincs elfogadottnak jelölve; production nem változik.
+
+
+## Hónap-/napválasztó átfedés és napi navigáció – 2026-10-13
+
+Projektgazdai képernyőképes visszajelzés: a Hónap és Hét napja mezők egymásra csúsznak. A teljes szélességű szöveges magyarázat ugyanabban az auto-fit gridben tartotta nyitva az üres oszlopokat, és a natív hónapmezőnek nem volt minden szélességen min-width/max-width korlátja.
+
+A tényleges szűrőmezők külön filterFields gridet kaptak; a magyarázat ezen kívül marad. Desktopon 220px-es minimális oszlopszélesség, minden controlnál min-width:0/max-width:100%; mobilon két rugalmas oszlop. A desktop oldal saját, scoped .page.stack szabálya oldalsó helyet hagy a klasszikus függőleges görgetősávnak, így nem jelenik meg a képernyőképen látott vízszintes túllógás. Globális CSS és napi naptár változatlan.
+
+Kifejezett új UX-kérés: havi nézetben a napra kattintás rögtön a napi foglalási naptárt nyissa. Minden naplink most /foglalasok?datum=YYYY-MM-DD&room=UUID, view=month nélkül; a havi súgó ehhez igazodik. Ez nem foglaláslétrehozás és nem módosítja a jogosultságokat.
+
+Ellenőrzés: Vitest 283/283 (új közvetlen napi navigáció render-regresszió); TypeScript PASS. Offline browser layout/navigáció: havi/foglalási lista/szabadidő-lista × 1920/1366/1280/1024/768/390/320px × normál/stabil scrollbar-gutter, magyar browser locale; 42/42 PASS. Minden input/select/button saját mezőhatáron belül, mezőpárok nem fedik egymást, nincs vízszintes túllógás. A DOM-ban minden havi naplink a megfelelő napi route-ra mutat. Ez szintetikus server render/CSS/DOM ellenőrzés, nem élő bejelentkezett staging UAT. A korábbi fixture a napi navigáció ellenőrzésén FAIL lett. A #291 draft a javított staging felhasználói elfogadásáig; production továbbra sem változik.
