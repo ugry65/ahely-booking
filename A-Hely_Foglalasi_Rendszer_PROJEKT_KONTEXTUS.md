@@ -310,3 +310,5 @@ Az új fejlesztési beszélgetés első feladata:
 5. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben.
 
 Ez a fájl legyen a projekt tartós kontextusfájlja, és a fejlesztés során verziózni kell.
+> **2026-10-13 – Nyitott aktuális hónap díjszabása (#295/#296):** projektgazdai módosítási engedéllyel készül a központi és Tréningterem-díj aktuális hónap első napi kezdődátuma (október 13 → október 1). Feature ág és draft PR, helyi application ellenőrzések sikeresek; DB CI és kötelező független pénzügyi/security review folyamatban/hiányzik. Staging migration és stabil telepítés még nincs; production változatlan. Scope és biztonsági/tesztkapuk: [docs/OPEN_MONTH_GLOBAL_PRICING.md](docs/OPEN_MONTH_GLOBAL_PRICING.md).
+
