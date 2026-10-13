@@ -30,7 +30,7 @@ A tarifa-specifikus advisory lock után a setter megszerzi a hónapzáró RPC á
 - `admin/dijszabas/page.test.tsx`: mindkét dátummező, admin RPC, lezárt hónap, fail-closed állapot.
 - `116_global_pricing_future_only.sql`: történeti fájlnév, új pgTAP policy. Valódi close RPC, újraszámolás, egyedi díjprioritás, későbbi verzió megőrzése, snapshot hash, negatív/jogosultsági tesztek, audit rollback.
 - `test-open-month-pricing-concurrency.sh`: csak localhost DB, külön psql kapcsolatok, pg_stat_activity/pg_blocking_pids alapú igazolt várakozás, mindkét sorrend és mindkét setter. A DB runner/CI végén fut, mert publikálja a lokális fixture hónapot. A korábbi race-ek jövőbeli fixture bookingjai miatt kizárólag a close tranzakcióban 31 napos cutoffot használ, majd az eredeti értéket ugyanazon tranzakció commitja előtt visszaállítja; ezt külön ellenőrzi. Ez teszt setup, nem üzleti cutoff-változás.
-- Helyi ellenőrzés: 296/296 Vitest, typecheck, Next.js build, diff-check és release-evidence --release PASS.
+- Helyi ellenőrzés a dátumhoz tartozó díjelőtöltéssel együtt: 297/297 Vitest, typecheck, Next.js build, diff-check és release-evidence --release PASS. A form az alapértelmezett kezdődátumra érvényes tarifát tölti elő, nem egy későbbi ütemezett változást.
 - DB CI eredmény még nincs rögzítve. Helyi Docker/psql nem áll rendelkezésre. Élő staging UAT nincs igazolva.
 
 ## Független review

@@ -35,6 +35,19 @@ describe("pricing date UI", () => {
     expect(markup.match(/min="2026-11-01"/g)).toHaveLength(2);
     expect(markup).toContain("Az aktuális hónap már lezárt");
   });
+  it("prefills the default date's rates instead of copying a later scheduled change", async () => {
+    m.rpc.mockImplementation(async (name: string) => name === "admin_list_pricing_rules"
+      ? { data: [
+        { rule_type: "central_tier", rule_id: "next", min_minutes: 60, max_minutes: 900, hourly_rate_huf: 3100, valid_from: "2026-11-01", valid_to: null },
+        { rule_type: "central_tier", rule_id: "current", min_minutes: 60, max_minutes: 900, hourly_rate_huf: 2700, valid_from: "2026-10-01", valid_to: "2026-10-31" },
+        { rule_type: "training_room", rule_id: "training-next", room_name: "Tréningterem", hourly_rate_huf: 6800, valid_from: "2026-11-01", valid_to: null },
+        { rule_type: "training_room", rule_id: "training-current", room_name: "Tréningterem", hourly_rate_huf: 6000, valid_from: "2026-10-01", valid_to: "2026-10-31" },
+      ], error: null }
+      : { data: [{ settlement_month: "2026-10-01", already_closed: false }], error: null });
+    const markup = await html();
+    expect(markup).toContain('name="rate1To15" value="2700"');
+    expect(markup).toContain('name="hourlyRate" value="6000"');
+  });
   it.each([
     { data: null, error: { message: "RPC failed" } },
     { data: [], error: null },
