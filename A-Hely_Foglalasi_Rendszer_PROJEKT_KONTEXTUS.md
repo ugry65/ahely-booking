@@ -310,3 +310,4 @@ Az új fejlesztési beszélgetés első feladata:
 5. új fejlesztés előtt ellenőrizni, hogy az nem okoz-e regressziót a baseline-ban rögzített működésben.
 
 Ez a fájl legyen a projekt tartós kontextusfájlja, és a fejlesztés során verziózni kell.
+> **2026-10-13 – Nyitott aktuális hónap díjszabása (#295/#296):** aktuális hónap első napi kezdődátum (október 13 → október 1) staging fejlesztésre engedélyezve. Feature CI:297 application és791 pgTAP teszt, concurrency PASS. Külön engedélyezett független reviewer staging APPROVE, történeti staging timestamp-mapping reconciliation APPROVE; a biztonsági guard nem változik. A metaadat/bizonyíték pontos-HEAD CI-je és staging telepítés következik. Production változatlan, új production GO nincs. Részletek: [docs/OPEN_MONTH_GLOBAL_PRICING.md](docs/OPEN_MONTH_GLOBAL_PRICING.md).
