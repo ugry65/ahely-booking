@@ -45,6 +45,7 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
     </header>
     <form key={roomCalendarUrl(filter)} method="get" className={`card wide-card ${styles.filters}`}>
       <input type="hidden" name="view" value={filter.view}/><input type="hidden" name="datum" value={filter.date}/>
+      <div className={styles.filterFields}>
       <label>Szoba<select name="room" defaultValue={room.room_id}>{data.rooms.map(r=><option value={r.room_id} key={r.room_id}>{r.room_name}</option>)}</select></label>
       {filter.view === "month" ? <label>Hónap<input type="month" name="month" defaultValue={filter.date.slice(0,7)} required/></label> : null}
       {filter.view === "list" ? <><label>Dátumtól<input type="date" name="from" defaultValue={filter.from} required/></label><label>Dátumig<input type="date" name="to" defaultValue={filter.to} required/></label><label>Lista tartalma<select name="kind" defaultValue={filter.kind}><option value="bookings">Foglalások</option><option value="free">Szabad időpontok</option></select></label></> : <input type="hidden" name="kind" value={filter.kind}/>}
@@ -53,19 +54,20 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
       <label>Eddig<input name="end" type="time" step="1800" min="07:00" max="22:00" defaultValue={timeLabel(filter.end)} required/></label>
       <label>Legalább ennyi idő<select name="duration" defaultValue={filter.duration}>{Array.from({length:29},(_,i)=>60+i*30).map(m=><option key={m} value={m}>{(m/60).toLocaleString("hu-HU")} óra</option>)}</select></label>
       <button type="submit">Mutasd</button>
+      </div>
       <p className={`muted ${styles.full}`}>Az idősáv és az időtartam a szabad időpontokat szűri. A foglaltsági sáv minden foglalást mutat.</p>
     </form>
     {limit !== null ? <p className="muted">Ebben a szobában legfeljebb {limit} napra előre foglalhatsz. Távolabbi időpontok foglaltságát is megtekintheted.</p> : null}
     {filter.view === "month" ? <>
       <section className={`card wide-card ${styles.month}`}>
         <div className={styles.heading}><h2>{civilDateLabel(filter.date,{year:"numeric",month:"long"})}</h2><nav className={styles.tabs} aria-label="Hónap választása"><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,-1)})}>← Előző</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:today})}>Ma</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,1)})}>Következő →</Link></nav></div>
-        <p className="muted">A sáv {timeLabel(data.opening.start)}–{timeLabel(data.opening.end)} között: zöld = szabad, sötét = foglalt. Koppints egy napra a részletekhez.</p>
+        <p className="muted">A sáv {timeLabel(data.opening.start)}–{timeLabel(data.opening.end)} között: zöld = szabad, sötét = foglalt. Koppints egy napra az adott nap foglalási naptárához.</p>
         <div className={styles.grid}>{["H","K","Sze","Cs","P","Szo","V"].map(d=><div className={styles.weekday} key={d}>{d}</div>)}
           {monthGrid(filter.date).map(date=>{
             if (date.slice(0,7)!==filter.date.slice(0,7)) return <div className={styles.outside} key={date}>{Number(date.slice(8))}</div>;
             const bookings=grouped[date] ?? [], free=gapsByDate.get(date) ?? [];
             const matchesDay=!filter.weekday || String(new Date(`${date}T12:00:00Z`).getUTCDay())===filter.weekday;
-            return <Link key={date} className={`${styles.day} ${date===filter.date?styles.selected:""} ${date===today?styles.today:""}`} href={roomCalendarUrl(filter,{date})} aria-label={`${dateLabel(date)}, ${bookings.length} foglalás, ${free.length} megfelelő szabad időszak`} aria-current={date===filter.date?"date":undefined}>
+            return <Link key={date} className={`${styles.day} ${date===filter.date?styles.selected:""} ${date===today?styles.today:""}`} href={`/foglalasok?datum=${date}&room=${room.room_id}`} aria-label={`${dateLabel(date)}, ${bookings.length} foglalás, ${free.length} megfelelő szabad időszak`} aria-current={date===filter.date?"date":undefined}>
               <strong>{Number(date.slice(8))}</strong><div className={styles.bar} aria-hidden="true">{bookings.map(b=>{const m=bookingMinutes(b); const start=Math.max(m.start,data.opening.start),end=Math.min(m.end,data.opening.end); return end>start?<span key={b.booking_id} style={{left:`${100*(start-data.opening.start)/(data.opening.end-data.opening.start)}%`,width:`${100*(end-start)/(data.opening.end-data.opening.start)}%`}}/>:null;})}</div>
               <small className="muted">{bookings.length} foglalás</small>
               <small className={styles.free}>{!matchesDay?"Másik nap":free.length?`${timeLabel(free[0].start)}–${timeLabel(free[0].end)}`:"Nincs találat"}</small>{free.length>1?<small className={styles.more}>+{free.length-1} szabad sáv</small>:null}
