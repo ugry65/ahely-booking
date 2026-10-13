@@ -59,3 +59,22 @@ Visszaállítás: a korábbi staging deployment ismét használható; DB-rollbac
 A `src/lib/vercel-deployment-identity.ts` őre a stabil staging projektben kizárólag `main` refet fogad el. A feature-ág preview buildje READY (`dpl_DjsBzFjvDZfYtyUQN9PdtpVz4KUd`, SHA `d523e0df043f00e6b80e584ed1c2fd255b788d66`); a közvetlen feature → staging production-target kérés (`dpl_AxMMZFfjUwZ3VCqS2xt2B3eoiazg`) ezért helyesen ERROR lett. A korábbi stabil staging egészséges maradt (health 200, database=ok).
 
 A védelmet nem módosítjuk és preview alias-promócióval sem kerüljük meg. A #290 PR CI-kapui (application-checks/evidence-consistency) és kódellenőrzése után a változtatás mainbe kerül, ami kizárólag a külön staging stabil alkalmazását frissíti. Ezt a staging megvalósítási engedély szükséges részeként kezeljük. A production branch külön és változatlan; a felhasználói kipróbálás után külön production release PR és jóváhagyás szükséges.
+
+## Laptopos megjelenési javítás – 2026-10-13, projektgazdai staging visszajelzés
+
+A projektgazda laptopos képernyőképe alapján a havi és listanézet tartalma 480px széles kártyákba szorult, nagy üres helyet hagyva a képernyőn. Ez nem a mobil breakpoint bekapcsolása volt: az új kártyák örökölték az általános `.card { width: min(100%, 30rem) }` szabályt. Az új oldal 1200px-es max-width és margin:auto beállítása a meglévő desktop széles oldalelrendezéssel is ütközött.
+
+Javítás: a szűrő, havi naptár, napi részletek és listák a már meglévő `wide-card` osztályt kapják. A külön `.page` max-width/margin szabálya megszűnik; a széles desktop és mobil külső elrendezést a meglévő, regresszióvédett közös CSS biztosítja. Globális CSS, napi naptár, adatbetöltés, jogosultság és üzleti logika nem változik.
+
+Új offline böngészős regressziós ellenőrzés: `scripts/check-room-calendar-layout.mjs`. A valódi server component szintetikus adatokkal renderelt HTML-jét és a tényleges global/mobile/calendar/module CSS-t méri, főmenüvel. Havi, szabadidő-lista és foglalási lista; 1920/1366/1024/768/390/320px; teljes szélesség, képernyőhatárok és vízszintes túllógás ellenőrzése. 18/18 PASS. 1366px-nél a kártyák 1322px, 1920px-nél 1876px, 390px-nél 358px szélesek. A régi CSS/markup visszaállításával ugyanez az ellenőrzés a 480px-es szélesség miatt FAIL lett, tehát a teszt ténylegesen érzékeli az eredeti hibát. Ez offline browser-layout teszt, nem bejelentkezett élő staging UAT.
+
+Futtatás (telepített Playwright/Chromium szükséges; nincs új alkalmazásfüggőség):
+
+```sh
+ROOM_CALENDAR_PREVIEW=/tmp/room-calendar-layout pnpm test
+# Alapesetben a telepített playwright csomagot/böngészőt használja.
+# Más telepítésnél ROOM_LAYOUT_PLAYWRIGHT_MODULE és ROOM_LAYOUT_BROWSER adható meg.
+node scripts/check-room-calendar-layout.mjs /tmp/room-calendar-layout
+```
+
+Teljes Vitest 282/282, typecheck PASS. A #291 production PR draft és szüneteltetett marad, amíg a javított staging buildet a projektgazda el nem fogadja. A korábbi staging UAT nincs elfogadottnak jelölve; production nem változik.
