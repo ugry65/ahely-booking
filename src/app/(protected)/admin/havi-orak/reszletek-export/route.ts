@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth";
 import { mergeBookingTitles, monthStart, monthlyDetailsCsv, selectedMonths, type MonthlyActiveBookingTitle, type MonthlyBookingDetail, type MonthlyBookingDetailWithMonth } from "@/lib/monthly-hours";
 import { createClient } from "@/lib/supabase/server";
+import { mergeBookingPaymentTotals, type BookingPaymentTotal } from "@/lib/booking-payments";
 
 export async function GET(request: Request) {
   await requireAdmin();
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
 
   for (const month of months) {
     const [pricingResponse, titleResponse] = await Promise.all([
-      supabase.rpc("admin_monthly_pricing_details", {
+      supabase.rpc("admin_payment_pricing_details", {
         p_month: monthStart(month)!, p_user_id: userId,
       }),
       supabase.rpc("admin_monthly_active_booking_details", {
@@ -27,7 +28,9 @@ export async function GET(request: Request) {
       (pricingResponse.data ?? []) as unknown as Omit<MonthlyBookingDetail, "booking_title">[],
       (titleResponse.data ?? []) as unknown as MonthlyActiveBookingTitle[],
     );
-    for (const row of enriched) rows.push({ ...row, month });
+    const totals = await supabase.rpc("admin_booking_payment_totals", { p_month: monthStart(month)! });
+    if (totals.error) return new Response("A befizetések nem tölthetők be. Hiányos export nem készül.", { status: 500 });
+    for (const row of mergeBookingPaymentTotals(enriched, (totals.data ?? []) as BookingPaymentTotal[])) rows.push({ ...row, month });
   }
 
   const csv = monthlyDetailsCsv(rows);

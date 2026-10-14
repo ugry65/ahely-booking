@@ -8,6 +8,7 @@ import { CALENDAR_CLOSE_MINUTE, CALENDAR_OPEN_MINUTE, calendarMinuteToTime, norm
 import { BookingTimeFields } from "./booking-time-fields";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
+import Link from "next/link";
 
 export type BookableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 export type CalendarBooking = {
@@ -16,7 +17,7 @@ export type CalendarBooking = {
   booking_title: string | null; note: string | null; series_id: string | null; updated_at: string | null; can_manage: boolean;
   user_id: string | null; hourly_rate_override_huf: number | null; hourly_rate_override_reason: string | null;
 };
-type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string };
+type Props = { rooms: BookableRoom[]; bookings: CalendarBooking[]; selectedDate: string; repeatableRoomIds: string[]; bookingUsers?: Array<{ id: string; name: string; email: string }>; currentUserId?: string; isAdmin?: boolean };
 type TouchGesture = { roomId: string; pointerId: number; startX: number; startY: number; startScrollY: number; anchorMinute: number; active: boolean; element: HTMLDivElement };
 type RepeatFrequency = "none" | "daily" | "weekly" | "biweekly" | "monthly";
 type BookingScope = "occurrence" | "following" | "series";
@@ -40,7 +41,7 @@ function timeOptions() {
   return values;
 }
 
-export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds, bookingUsers = [], currentUserId }: Props) {
+export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableRoomIds, bookingUsers = [], currentUserId, isAdmin = false }: Props) {
   const [selection, setSelection] = useState<CalendarSelection | null>(null);
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [dialogRoomId, setDialogRoomId] = useState("");
@@ -150,7 +151,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
 
     {selection && selectedRoom && !sourceBooking && selectionActionHost ? createPortal(<div className="selection-action-bar" aria-live="polite"><span style={{ fontWeight: 700 }}>{selectedRoom.room_name} · {calendarMinuteToTime(selection.startMinute)}–{calendarMinuteToTime(selection.endMinute)}</span><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button><button type="button" onClick={() => setBookingDialogOpen(true)}>Foglalás</button></div>, selectionActionHost) : null}
 
-    {menuBooking ? <div className="booking-action-backdrop" onClick={() => setMenuBooking(null)}><div className="booking-action-popover" role="menu" aria-label="Foglalási műveletek" onClick={(event) => event.stopPropagation()}><button type="button" className="booking-action-item" onClick={() => requestEdit(menuBooking)}>✎ Szerkesztés</button><button type="button" className="booking-action-item" onClick={() => duplicateBooking(menuBooking)}>⧉ Duplikálás</button><button type="button" className="booking-action-item danger-action" onClick={() => requestCancel(menuBooking)}>⌫ Törlés</button></div></div> : null}
+    {menuBooking ? <div className="booking-action-backdrop" onClick={() => setMenuBooking(null)}><div className="booking-action-popover" role="menu" aria-label="Foglalási műveletek" onClick={(event) => event.stopPropagation()}><button type="button" className="booking-action-item" onClick={() => requestEdit(menuBooking)}>✎ Szerkesztés</button><button type="button" className="booking-action-item" onClick={() => duplicateBooking(menuBooking)}>⧉ Duplikálás</button><button type="button" className="booking-action-item danger-action" onClick={() => requestCancel(menuBooking)}>⌫ Törlés</button>{isAdmin ? <Link className="booking-action-item" href={`/admin/befizetesek/${menuBooking.booking_id}`}>Befizetések</Link> : null}</div></div> : null}
 
     {scopePrompt ? <div className="booking-modal-backdrop" role="dialog" aria-modal="true" aria-label="Sorozat hatókörének kiválasztása"><section className="card stack booking-modal-card scope-choice-card"><div className="booking-modal-heading"><div><p className="eyebrow">Ismétlődő foglalás</p><h2>{scopePrompt.kind === "edit" ? "Mit szeretnél szerkeszteni?" : "Mit szeretnél törölni?"}</h2></div><button type="button" className="button secondary" onClick={() => setScopePrompt(null)}>×</button></div><button type="button" className="button secondary scope-choice" onClick={() => chooseScope("occurrence")}>Csak ezt az alkalmat</button><button type="button" className="button secondary scope-choice" onClick={() => chooseScope("following")}>Ezt és az ezt követő alkalmakat</button><button type="button" className="button secondary scope-choice" onClick={() => chooseScope("series")}>A teljes sorozatot</button><p className="muted form-help">A már lezajlott alkalmak történeti adatai nem módosulnak és nem törlődnek.</p></section></div> : null}
 
