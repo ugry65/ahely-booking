@@ -6,6 +6,8 @@ on:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
+      - "scripts/test-booking-payment-concurrency.sh"
+      - "scripts/test-historical-booking-correction-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -24,6 +26,8 @@ on:
       - "supabase/**"
       - ".github/workflows/database-tests.yml"
       - "scripts/test-database.sh"
+      - "scripts/test-booking-payment-concurrency.sh"
+      - "scripts/test-historical-booking-correction-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -96,6 +100,12 @@ jobs:
 
       - name: Run concurrent booking email outbox claim test
         run: bash ./scripts/test-booking-email-outbox-concurrency.sh
+
+      - name: Run concurrent booking payment ledger tests
+        run: bash ./scripts/test-booking-payment-concurrency.sh
+
+      - name: Run historical booking correction concurrency tests
+        run: bash ./scripts/test-historical-booking-correction-concurrency.sh
 
       # This publishes the isolated current-month fixtures, so it must run
       # after all tests that still create current-month bookings.

@@ -1,6 +1,6 @@
 {
   "staging_project_ref": "fvwapntzhavhgazeflri",
-  "baseline_recorded_at": "2026-10-13",
+  "baseline_recorded_at": "2026-10-14T21:19:00Z",
   "applied": [
     {
       "version": "202608160001",
@@ -471,6 +471,16 @@
       "version": "20261013214532",
       "name": "allow_current_open_month_global_pricing",
       "statements_md5": "c39cffa328a78960f9cca30b398333d7"
+    },
+    {
+      "version": "20261014172144",
+      "name": "booking_payments",
+      "statements_md5": "2f72b1361b6973cf500303c08ecec0f0"
+    },
+    {
+      "version": "20261014211856",
+      "name": "admin_open_month_booking_correction",
+      "statements_md5": "a11ce7ccceb4d31f8303c338817ec5f7"
     }
   ],
   "excluded_local": [
@@ -661,6 +671,14 @@
     {
       "file": "20261013205742_allow_current_open_month_global_pricing.sql",
       "sha256": "87d98c68245966d9381a769b56f697302aa4911386519e8b9f08f9934d439b3e"
+    },
+    {
+      "file": "20261014165936_booking_payments.sql",
+      "sha256": "3de17bbab2514d2c812465effa30a0036026409429a6ebc16d80a60c8d2eff98"
+    },
+    {
+      "file": "20261014205348_admin_open_month_booking_correction.sql",
+      "sha256": "2f3c15277d6670d7c3e89f53154dc5db9b5d20c444576f4bdd703844cdadcad9"
     }
   ],
   "approved_out_of_order": {}

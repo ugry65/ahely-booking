@@ -13,18 +13,18 @@ describe("admin havi elszámolás snapshot-integráció", () => {
   const migration = read("../../supabase/migrations/20260929182024_monthly_settlement_publication.sql");
 
   it("a képernyő és az összesítő export ugyanazt a snapshot-aware RPC-t használja", () => {
-    expect(page).toContain('rpc("admin_monthly_pricing_summary"');
-    expect(summaryExport).toContain('rpc("admin_monthly_pricing_summary"');
+    expect(page).toContain('rpc("admin_payment_pricing_summary"');
+    expect(summaryExport).toContain('rpc("admin_payment_pricing_summary"');
     expect(page).not.toContain("admin_monthly_booking_hours");
     expect(summaryExport).not.toContain("admin_monthly_booking_hours");
-    expect(xlsxExport).toContain('rpc("admin_monthly_pricing_summary"');
+    expect(xlsxExport).toContain('rpc("admin_payment_pricing_summary"');
     expect(xlsxExport).not.toContain("admin_monthly_booking_hours");
     expect(page).toContain("Összesítő Excel");
   });
 
   it("a képernyő és a tételes export ugyanazt a snapshot-aware részletező RPC-t használja", () => {
-    expect(page).toContain('rpc("admin_monthly_pricing_details"');
-    expect(detailExport).toContain('rpc("admin_monthly_pricing_details"');
+    expect(page).toContain('rpc("admin_payment_pricing_details"');
+    expect(detailExport).toContain('rpc("admin_payment_pricing_details"');
   });
 
   it("az admin felület auditált revisiont készítő tranzakcióhoz van bekötve", () => {

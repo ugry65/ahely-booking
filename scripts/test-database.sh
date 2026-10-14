@@ -18,5 +18,7 @@ bash ./scripts/test-monthly-settlement-close-concurrency.sh
 bash ./scripts/test-room-access-concurrency.sh
 bash ./scripts/test-recurring-booking-concurrency.sh
 bash ./scripts/test-booking-email-outbox-concurrency.sh
+bash ./scripts/test-booking-payment-concurrency.sh
+bash ./scripts/test-historical-booking-correction-concurrency.sh
 bash ./scripts/test-open-month-pricing-concurrency.sh
 supabase db lint --level warning

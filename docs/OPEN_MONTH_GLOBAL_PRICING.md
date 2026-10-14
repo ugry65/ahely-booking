@@ -4,7 +4,20 @@
 
 2026-10-13: nyitott hónapban a hónap első napjától lehessen díjszabást beállítani (október 13-án október 1-től). Implementációs engedély: „Módosítsd”. Az aktuális budapesti hónapra valósul meg; korábbi nyitott hónap globális átárazása nem része a scope-nak. Production csak külön elfogadás/GO után.
 
-Állapot: #296 mainbe merge-elve, staging DB és stabil webalkalmazás telepítve, technikai átadás kész. Projektgazdai bejelentkezett UAT/elfogadás következik; production kiadás nincs. Review: [INDEPENDENT_REVIEW.md](evidence/2026-10-13-open-pricing/INDEPENDENT_REVIEW.md).
+Állapot: projektgazdai staging elfogadás és production GO után 2026-10-14-én élesítve (#298). A staging átadás és független review alább történeti bizonyítékként megmarad. Review: [INDEPENDENT_REVIEW.md](evidence/2026-10-13-open-pricing/INDEPENDENT_REVIEW.md).
+
+## Production kiadás – 2026-10-14
+
+- Imre 12:58 Europe/Budapest: „Rendben van , telepít hetes az éles rendszerbe”. Ez a staging felhasználói elfogadása és kifejezett élesítési GO; nem új saját tételes bejelentkezett UI-UAT.
+- Elfogadott main/staging SHA `fcdc57eaad6a69e230402c0224ce078743572919`, staging READY `dpl_5KVWocUV74Nr5ZGxovbUEeuZe3f4`. Release [#298](https://github.com/ugry65/ahely-booking/pull/298) normál main → production merge. Production SHA `710f875a668ba3d87747ba227e29a82488754c4b`; merge tree byte-pontosan az elfogadott main tree-je.
+- Production deployment `dpl_79CW8kmFYdMW1KwdtdKCaAcAyLhr`: READY, production target/ref/pontos SHA és `foglalas.a-hely.com` alias igazolt. Használat: https://foglalas.a-hely.com/admin/dijszabas.
+- Production Supabase `yasrmxwjojepessivhmc`: csak az egyetlen reviewed SQL migration API-val alkalmazva; actual version `20261014110645`, name `allow_current_open_month_global_pricing`, stored SQL byte-exact, MD5 `c39cffa328a78960f9cca30b398333d7`. Canonical local20261013205742 SHA256 `87d98c68245966d9381a769b56f697302aa4911386519e8b9f08f9934d439b3e`. Staging actual version eltér, de SQL azonos. Nincs bulk push, régi migration replay, remote history repair vagy CLI dry-run állítás.
+- Production preflight: mindkét régi RPC bodyja byte-pontosan a canonical future-only forrás; grant/search_path/szignatúra várt. Post-check: mindkét új body exact reviewed SQL, SECURITY DEFINER/üres search_path; anon execute=false, authenticated/service_role=true, szignatúra változatlan. Mind a90korábbi historysor változatlan,91actual applied row.
+- Tarifa/special_rate/revision/booking_line sorhash és darabszám előtte/utána egyezik:6/2/63/883. Nem állítottunk be új díjat vagy zártunk üzleti hónapot. Production október nyitott; a UI close-preview RPC return contractja megfelelő. Securityadvisor baseline számai változatlanok.
+- Friss release PR CI Production release gate/application-checks/evidence-consistency/database-tests SUCCESS. Helyi297 Vitest/typecheck/release-evidence --release PASS; az elfogadott SQL-hez791 pgTAP és concurrency PASS. Legutóbb megfigyelt sikeres production backup job115573789035 (2026-10-13 22:32 UTC) artifactját mindkét független célhelyen read-back ellenőrizte; ez nem új restore-drill.
+- Éles health HTTP200 / ok=true / database=ok, védett admin route307→belepes; új deployment error/fatal aggregáció nem adott találatot. Ez technikai smoke, nem saját bejelentkezett UI-UAT.
+- BOOKING_EMAIL_MODE=disabled és production Supabase URL frissen ellenőrizve; config nem változott. SITE_URL sensitive értékét az API nem adja vissza; a változatlan identity guard az új sikeres production buildben validálta a cél-konfigurációt.
+- Visszaállítható alkalmazás baseline: SHA `e15ac2330c76840a673bf55fea5a8c7301682fff`, deployment `dpl_EwQ9jFw25ooiXbAU7egAroSBcJBG`. Szükség esetén a korábbi RPC-definíció csak külön forward rollback migrációval állítható vissza; üzleti adatok visszatöltése nem szükséges. Visszaállítás nem történt.
 
 ## Staging átadás – 2026-10-13
 
