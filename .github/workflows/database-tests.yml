@@ -11,6 +11,7 @@ on:
       - "scripts/test-admin-role-guard-concurrency.sh"
       - "scripts/test-pricing-concurrency.sh"
       - "scripts/test-monthly-settlement-close-concurrency.sh"
+      - "scripts/test-open-month-pricing-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
       - "scripts/test-pricing-concurrency.sh"
@@ -26,6 +27,7 @@ on:
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
+      - "scripts/test-open-month-pricing-concurrency.sh"
       - "scripts/test-calendar-color-concurrency.sh"
       - "scripts/test-repeat-permission-concurrency.sh"
       - "scripts/test-booking-email-outbox-concurrency.sh"
@@ -94,6 +96,11 @@ jobs:
 
       - name: Run concurrent booking email outbox claim test
         run: bash ./scripts/test-booking-email-outbox-concurrency.sh
+
+      # This publishes the isolated current-month fixtures, so it must run
+      # after all tests that still create current-month bookings.
+      - name: Run open-month pricing and settlement close concurrency test
+        run: bash ./scripts/test-open-month-pricing-concurrency.sh
 
       - name: Lint database schema
         run: supabase db lint --level warning

@@ -1,9 +1,23 @@
 # Szobánkénti havi és listanézet – #289
 
 Döntés: 2026-10-13, projektgazda: „Keszitsd el a staging rendszeren és jóváhagyás után aktivaljuk”.
-Állapot: fejlesztési ág / staging átadás előkészítése. Production engedély nincs.
+Állapot: projektgazdai jóváhagyással élesítve 2026-10-13-án (#291). A baseline/ág alább az eredeti fejlesztés történeti kiindulópontja.
 Baseline main: `b311ca66187589c6b72986d2ef57e529078dcb13` (#288).
 Ág: `feature/room-month-list`.
+
+## Éles kiadás – 2026-10-13
+
+Projektgazdai elfogadás és GO: „mehet az éles rendszerbe” (17:32 Europe/Budapest). Ez felhasználói elfogadás, nem saját tételes bejelentkezett UI-UAT.
+
+- Implementáció és javítások: #290, #292, #293; elfogadott main/staging SHA `b2e0c0f954a7609db753927d3e696be095e69c49`, staging READY `dpl_7i8mJfnUX1F4eTBYbkF5VBjJiPJo`.
+- Production release [#291](https://github.com/ugry65/ahely-booking/pull/291) normál main → production merge; SHA `e15ac2330c76840a673bf55fea5a8c7301682fff`. A release fa megegyezik az elfogadott main fával.
+- Production deployment `dpl_EwQ9jFw25ooiXbAU7egAroSBcJBG`: READY, production ref, pontos SHA és `foglalas.a-hely.com` alias igazolt. Élő rendszer: https://foglalas.a-hely.com.
+- Friss production health HTTP 200, ok=true, database=ok; havi/lista védett route bejelentkezés nélkül 307 → /belepes. Indulás utáni error/fatal aggregált loglekérdezés nem adott találatot.
+- Legutóbbi Production release gate, application-checks és evidence-consistency SUCCESS; release-evidence --release PASS. Implementációhoz 283/283 Vitest, TypeScript és Next.js build PASS. Offline Chromium layout/naplink ellenőrzés 3 nézet × 7 szélesség × 2 scrollbar mód = 42/42 PASS; ez nem élő bejelentkezett UI-UAT.
+- Nincs migráció, üzleti adatírás vagy konfigurációmódosítás. Booking e-mail mód disabled; production Supabase URL ellenőrizve. SITE_URL sensitive értéke API-ból nem olvasható; a változatlan deployment identity guard az új sikeres buildben is érvényesült.
+- Visszaállítási baseline: production SHA `a29e5ae0134bc39b7999b0dd9ac912f30a872bde`, korábbi READY deployment `dpl_6yvQXemtjAQAy2CJQRvd6EUoAyxD`; migráció-visszaállítás nem szükséges.
+
+A további staging/engedély-hiány bejegyzések történeti előkészítési állapotot rögzítenek; a fenti éles kiadás az aktuális.
 
 ## Használat
 

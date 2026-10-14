@@ -1,6 +1,6 @@
 {
   "staging_project_ref": "fvwapntzhavhgazeflri",
-  "baseline_recorded_at": "2026-09-29",
+  "baseline_recorded_at": "2026-10-13",
   "applied": [
     {
       "version": "202608160001",
@@ -461,6 +461,16 @@
       "version": "20260929182024",
       "name": "monthly_settlement_publication",
       "statements_md5": "cb564e18d4aa51b344d6b9935294b6f2"
+    },
+    {
+      "version": "20261001174547",
+      "name": "monthly_tier_include_training_group",
+      "statements_md5": "a6b67fa9034780b300d8dc66d4bb4db8"
+    },
+    {
+      "version": "20261013214532",
+      "name": "allow_current_open_month_global_pricing",
+      "statements_md5": "c39cffa328a78960f9cca30b398333d7"
     }
   ],
   "excluded_local": [
@@ -643,6 +653,14 @@
     {
       "file": "20260928165000_allow_own_calendar_color_read.sql",
       "sha256": "588863556079f7c8d8ff57835b7d558b103bfd2f6fd31367a63dd20c1b0a3b6b"
+    },
+    {
+      "file": "20261001193000_monthly_tier_include_training_group.sql",
+      "sha256": "88d5052606f3f19f817af03b4f3477047d26599396c17a9db80cafc982818aa5"
+    },
+    {
+      "file": "20261013205742_allow_current_open_month_global_pricing.sql",
+      "sha256": "87d98c68245966d9381a769b56f697302aa4911386519e8b9f08f9934d439b3e"
     }
   ],
   "approved_out_of_order": {}
