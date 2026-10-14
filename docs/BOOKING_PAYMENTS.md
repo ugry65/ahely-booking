@@ -47,8 +47,34 @@ Számlázás/kiküldés és a felhasználói végleges havi kártya most nem vá
 
 ## Ellenőrzés és kiadás
 
-Helyi typecheck és Vitest első futás: PASS, 305 teszt. Új pgTAP-regresszió
-és független review folyamatban; staging DB migráció még nincs alkalmazva.
-A pénzügyi írást csak a végleges jelölt CI/review PASS után telepítjük.
-Staging: `fvwapntzhavhgazeflri`, web: ahely-booking-staging-web.
-Production adatbázis/ág/konfiguráció módosítása tilos külön jóváhagyás nélkül.
+Helyi typecheck és Vitest: PASS, 306 teszt. Feature jelölt:
+`03b0c6b4df2c464feedb2f7d9955e6bd24c8feda`, PR #300. Független review
+APPROVE: [INDEPENDENT_REVIEW.md](evidence/2026-10-14-booking-payments/INDEPENDENT_REVIEW.md).
+Application run38605440626, evidence run38605440535, isolated-reference
+run38605440512 és DB run38605440586 SUCCESS. DB job115994988514:
+48 pgTAP fájl / 822 teszt és teljes concurrency suite PASS, az új
+snapshot/befizetés mindkét sorrend és void/havi writer teszttel együtt.
+
+## Staging átadás – 2026-10-14
+
+- #300 main merge: `fd434a7d04ceabbd5304b7745ddefd09f89ab4d1`.
+- Staging Vercel `prj_LzVgZgZBCAj4zA64YoYED3XkLGKW`, READY
+  `dpl_4vvd283VjdmUsneamCuENukcGJby`, pontos main SHA és stabil alias igazolt.
+- Használat: https://ahely-booking-staging-web.vercel.app/admin/havi-orak
+- Supabase kizárólag staging `fvwapntzhavhgazeflri`. Projection guard94
+  byte-exact történeti sor, kizárólag az új migration pending. Reviewed SQL
+  egy normál apply_migration hívással alkalmazva; actual `20261014172144`,
+  név `booking_payments`, MD5 `2f72b1361b6973cf500303c08ecec0f0`.
+  Canonical SHA256 `3de17bbab2514d2c812465effa30a0036026409429a6ebc16d80a60c8d2eff98`.
+  A94régi historysor változatlan; új pin95. Nincs replay/history repair.
+- Nyolc új publikus RPC SECURITY DEFINER/üres search_path, authenticated execute,
+  anon-tiltás ellenőrizve; belül aktív admin szükséges. payment_voids RLS+ACL tiltás.
+- Staging transactional smoke: izolált fixture booking, receipt1000,
+  booking-context/monthly balance1000, void után0 PASS. Minden fixture rollback.
+- Üzleti adat változatlan: 452 booking,0 payment,12 settlement,14 revision,
+  174 line. A pénzügyi snapshotok teljes sorhash-e egyezik;0void maradt.
+- Health HTTP200 ok/databaseok, admin route307→belepes; indulás utáni runtime
+  error aggregáció üres. Ez technikai smoke, nem bejelentkezett böngészős UI-UAT.
+- Advisor: deny-by-default RLS INFO31→32, guarded definer WARN74→82 a nyolc
+  admin RPC miatt; Auth figyelmeztetések változatlanok. Nincs új nem várt jelzés.
+- Production ág/DB/konfiguráció/e-mail mód nem módosult. Élesítés külön GO után.
