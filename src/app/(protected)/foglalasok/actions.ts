@@ -70,12 +70,20 @@ export async function updateCalendarBooking(formData: FormData) {
     p_idempotency_key: parsed.value.idempotencyKey,
     p_booking_title: parsed.value.bookingTitle,
   };
-  const { error } = profile.role === "admin"
+  const historical = profile.role === "admin" && formData.get("historicalCorrection") === "true";
+  const correctionReason = String(formData.get("correctionReason") ?? "").trim();
+  if (historical && (scope !== "occurrence" || !correctionReason || correctionReason.length > 300)) redirect(resultUrl(parsed.value.date, "hiba", "A múltbeli korrekcióhoz egyetlen alkalom és kötelező indok szükséges."));
+  const { p_scope: historicalScope, ...singleParameters } = parameters;
+  void historicalScope;
+  const { error } = historical
+    ? await supabase.rpc("admin_correct_open_month_booking", { ...singleParameters, p_reason: correctionReason })
+    : profile.role === "admin"
     ? await supabase.rpc("admin_update_booking_scope_with_pricing", { ...parameters, p_apply_rate_override: pricing.apply, p_hourly_rate_override_huf: pricing.rate, p_override_reason: pricing.reason })
     : await supabase.rpc("update_booking_scope", parameters);
   if (error) redirect(resultUrl(parsed.value.date, "hiba", safeRpcMessage(error, "A foglalás módosítása nem sikerült. Frissítsd az oldalt és próbáld újra.")));
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
-  redirect(resultUrl(parsed.value.date, "uzenet", scope === "occurrence" ? "A foglalás módosítása sikerült." : "A sorozat érintett alkalmai módosultak."));
+  revalidatePath("/admin/havi-orak");
+  redirect(resultUrl(parsed.value.date, "uzenet", historical ? "A múltbeli foglalás auditált korrekciója elkészült. A havi egyenleg frissült." : scope === "occurrence" ? "A foglalás módosítása sikerült." : "A sorozat érintett alkalmai módosultak."));
 }
 
 export async function cancelCalendarBooking(formData: FormData) {

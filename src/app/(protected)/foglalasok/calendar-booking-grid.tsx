@@ -9,6 +9,7 @@ import { BookingTimeFields } from "./booking-time-fields";
 import { RecurringExceptionCalendar } from "./ismetlod/recurring-exception-calendar";
 import { AdminBookingPricingFields } from "./admin-booking-pricing-fields";
 import Link from "next/link";
+import { isHistoricalAdminEdit } from "@/lib/historical-booking-correction";
 
 export type BookableRoom = { room_id: string; room_name: string; is_training_room: boolean; display_order: number };
 export type CalendarBooking = {
@@ -116,7 +117,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   function setSelectionFromBooking(booking: CalendarBooking) { setSelection(selectionFromBookingInterval(booking.room_id, localMinute(booking.start_at), localMinute(booking.end_at))); setDialogRoomId(booking.room_id); setRepeatFrequency("none"); setSourceBooking(booking); }
   function duplicateBooking(booking: CalendarBooking) { setMenuBooking(null); setSelectionFromBooking(booking); setDialogMode("duplicate"); setBookingDialogOpen(true); }
   function editBooking(booking: CalendarBooking, scope: BookingScope) { setMenuBooking(null); setScopePrompt(null); setSelectionFromBooking(booking); setEditScope(scope); setDialogMode("edit"); setBookingDialogOpen(true); }
-  function requestEdit(booking: CalendarBooking) { setMenuBooking(null); if (booking.series_id) setScopePrompt({ kind: "edit", booking }); else editBooking(booking, "occurrence"); }
+  function requestEdit(booking: CalendarBooking) { setMenuBooking(null); if (booking.series_id && !isHistoricalAdminEdit(isAdmin, "edit", booking.start_at)) setScopePrompt({ kind: "edit", booking }); else editBooking(booking, "occurrence"); }
   function requestCancel(booking: CalendarBooking) { setMenuBooking(null); if (booking.series_id) setScopePrompt({ kind: "cancel", booking }); else setCancelTarget({ booking, scope: "occurrence" }); }
   function chooseScope(scope: BookingScope) { if (!scopePrompt) return; if (scopePrompt.kind === "edit") editBooking(scopePrompt.booking, scope); else { setCancelTarget({ booking: scopePrompt.booking, scope }); setScopePrompt(null); } }
 
@@ -126,6 +127,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
   const canRepeat = dialogRoom ? repeatableRoomIds.includes(dialogRoom.room_id) : false;
   const formAction = dialogMode === "edit" ? updateCalendarBooking : repeatFrequency === "none" ? createBooking : createRecurringBooking;
   const modalTitle = dialogMode === "edit" ? "Foglalás szerkesztése" : dialogMode === "duplicate" ? "Foglalás duplikálása" : "Foglalás";
+  const historicalEdit = isHistoricalAdminEdit(isAdmin, dialogMode, sourceBooking?.start_at);
   const roomMinWidth = rooms.length >= 11 ? "8rem" : "8.75rem";
 
   return <div className="calendar-workspace stack">
@@ -158,6 +160,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
     {selection && selectedRoom && bookingDialogOpen ? <div role="dialog" aria-modal="true" aria-labelledby="selection-booking-title" className="booking-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) clearSelection(); }}><section className="card stack booking-modal-card"><div className="booking-modal-heading"><div><p className="eyebrow">{dialogMode === "edit" ? "Meglévő időpont" : dialogMode === "duplicate" ? "Másolat" : "Új időpont"}</p><h2 id="selection-booking-title">{modalTitle}</h2></div><button type="button" className="button secondary" onClick={clearSelection} aria-label="Bezárás">×</button></div>
       <form key={`${dialogMode}-${sourceBooking?.booking_id ?? "new"}-${editScope}`} action={formAction} className="stack">
         <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
+        {historicalEdit ? <><input type="hidden" name="historicalCorrection" value="true" /><p className="message">Múltbeli admin korrekció. Csak ez az alkalom módosulhat, és csak nyitott hónapban. A rögzített befizetés és az egyedi óradíj megmarad.</p><label>Korrekció indoka<textarea name="correctionReason" required maxLength={300} rows={2} placeholder="Például: egy órával kevesebbet használták a helyiséget." /></label></> : null}
         {dialogMode === "edit" && sourceBooking ? <><input type="hidden" name="bookingId" value={sourceBooking.booking_id} /><input type="hidden" name="expectedUpdatedAt" value={sourceBooking.updated_at ?? ""} /><input type="hidden" name="scope" value={editScope} /></> : null}
         {dialogMode !== "edit" && bookingUsers.length ? <label>Felhasználó<select name="targetUserId" defaultValue={sourceBooking?.user_id ?? currentUserId ?? bookingUsers[0]?.id} required>{bookingUsers.map((user) => <option key={user.id} value={user.id}>{user.name} · {user.email}</option>)}</select><span className="muted form-help">Adminisztrátorként kiválaszthatod, kinek a nevében jön létre a foglalás.</span></label> : null}
         <label>Helyiség<select name="roomId" value={dialogRoomId || selection.roomId} onChange={(event) => { setDialogRoomId(event.target.value); setRepeatFrequency("none"); }} required>{rooms.map((room) => <option key={room.room_id} value={room.room_id}>{room.room_name}</option>)}</select></label>
@@ -169,7 +172,7 @@ export function CalendarBookingGrid({ rooms, bookings, selectedDate, repeatableR
         <label>Foglalás címe<input name="bookingTitle" maxLength={100} defaultValue={sourceBooking?.booking_title ?? ""} placeholder="Opcionális" /></label>
         <span className="muted form-help">A címet csak a foglalás tulajdonosa és az adminisztrátorok láthatják.</span>
         <label>Megjegyzés<textarea name="note" maxLength={1000} rows={3} defaultValue={sourceBooking?.note ?? ""} placeholder="Opcionális" /></label>
-        {bookingUsers.length ? <AdminBookingPricingFields defaultUserId={sourceBooking?.user_id ?? currentUserId ?? bookingUsers[0].id} bookingId={dialogMode === "edit" ? sourceBooking?.booking_id : null} existingOverride={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_huf : null} existingReason={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_reason : null} allowOverride={dialogMode !== "edit" || editScope === "occurrence"} /> : null}
+        {bookingUsers.length ? <AdminBookingPricingFields defaultUserId={sourceBooking?.user_id ?? currentUserId ?? bookingUsers[0].id} bookingId={dialogMode === "edit" ? sourceBooking?.booking_id : null} existingOverride={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_huf : null} existingReason={dialogMode === "edit" ? sourceBooking?.hourly_rate_override_reason : null} readOnlyMessage={historicalEdit ? "Múltbeli korrekciónál a foglalásszintű egyedi óradíj változatlan marad." : undefined} allowOverride={!historicalEdit && (dialogMode !== "edit" || editScope === "occurrence")} /> : null}
         {dialogMode === "edit" && sourceBooking?.series_id ? <p className="message">Hatókör: {editScope === "occurrence" ? "csak ez az alkalom" : editScope === "following" ? "ez és a következő alkalmak" : "teljes jövőbeli sorozat"}.</p> : null}
         <div className="booking-modal-actions"><button type="submit">{dialogMode === "edit" ? "Módosítás mentése" : repeatFrequency === "none" ? "Foglalás mentése" : "Sorozat létrehozása"}</button><button type="button" className="button secondary" onClick={clearSelection}>Mégse</button></div>
         <p className="muted form-help">A mentéskor a backend újra ellenőrzi a jogosultságot, az előrefoglalási limitet és az ütközést.</p>
