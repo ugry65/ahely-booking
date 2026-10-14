@@ -16,7 +16,8 @@ export type MonthlyHoursRow = {
   revision_number: number | null;
 };
 
-export type MonthlyHoursWithMonth = MonthlyHoursRow & { month: string };
+export type PaymentExportFields = { paid_huf?: number | string; remaining_huf?: number | string; overpaid_huf?: number | string; payment_status_text?: string };
+export type MonthlyHoursWithMonth = MonthlyHoursRow & PaymentExportFields & { month: string };
 
 export type MonthlyBookingDetail = {
   booking_id: string;
@@ -36,7 +37,7 @@ export type MonthlyBookingDetail = {
   revision_number: number | null;
 };
 
-export type MonthlyBookingDetailWithMonth = MonthlyBookingDetail & { month: string };
+export type MonthlyBookingDetailWithMonth = MonthlyBookingDetail & PaymentExportFields & { month: string };
 
 export type MonthlyActiveBookingTitle = {
   booking_id: string;
@@ -87,7 +88,7 @@ export function appliedHourlyRatesText(row: Pick<MonthlyHoursRow, "pricing_break
 }
 
 
-export type MonthlySummaryExportRow = {
+export type MonthlySummaryExportRow = PaymentExportFields & {
   month: string;
   user_name: string;
   total_hours: number;
@@ -118,6 +119,10 @@ export function monthlySummaryExportRows(
       pricing_state_text: row.pricing_state === "snapshot" ? "Snapshot" : "Élő előnézet",
       revision_number: row.revision_number,
       is_child: false,
+      paid_huf: row.paid_huf,
+      remaining_huf: row.remaining_huf,
+      overpaid_huf: row.overpaid_huf,
+      payment_status_text: row.payment_status_text,
     });
     if (!occasional) continue;
     const customers = groupOccasionalBookingDetails(
@@ -143,11 +148,14 @@ export function monthlySummaryExportRows(
 
 export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyBookingDetailWithMonth[] = []): string {
   const header = ["Hónap", "Felhasználó", "Összes óra", "Óradíj Ft", "Normál óra", "Tréningterem csoportos óra", "Fizetendő Ft"];
+  const payments = rows.some((row) => row.paid_huf !== undefined);
+  if (payments) header.push("Befizetve Ft", "Még fizetendő Ft", "Túlfizetés Ft", "Fizetési állapot");
   const lines = [header.map(csvCell).join(";")];
   for (const row of monthlySummaryExportRows(rows, details)) {
     lines.push([
       row.month, row.user_name, decimalComma(row.total_hours), row.hourly_rate_text.replaceAll(" ", "").replace(/Ft$/, ""), decimalComma(row.normal_hours),
       decimalComma(row.special_hours), String(row.calculated_due_huf),
+      ...(payments ? [row.paid_huf === undefined ? "" : String(row.paid_huf), row.remaining_huf === undefined ? "" : String(row.remaining_huf), row.overpaid_huf === undefined ? "" : String(row.overpaid_huf), row.payment_status_text ?? ""] : []),
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;
@@ -155,12 +163,15 @@ export function monthlyHoursCsv(rows: MonthlyHoursWithMonth[], details: MonthlyB
 
 export function monthlyDetailsCsv(rows: MonthlyBookingDetailWithMonth[]): string {
   const header = ["Hónap", "Felhasználó", "Dátum", "Helyiség", "Foglalás címe", "Mettől", "Meddig", "Óra", "Árforrás", "Óradíj Ft", "Összeg Ft"];
+  const payments = rows.some((row) => row.paid_huf !== undefined);
+  if (payments) header.push("Befizetve Ft", "Még fizetendő Ft", "Túlfizetés Ft", "Fizetési állapot");
   const lines = [header.map(csvCell).join(";")];
   for (const row of rows) {
     lines.push([
       row.month, row.user_name, row.booking_date, row.room_name, row.booking_title ?? "",
       row.start_time.slice(0, 5), row.end_time.slice(0, 5), decimalComma(row.total_hours), row.rate_source,
       String(row.hourly_rate_huf), String(row.amount_huf),
+      ...(payments ? [String(row.paid_huf ?? ""), String(row.remaining_huf ?? ""), String(row.overpaid_huf ?? ""), row.payment_status_text ?? ""] : []),
     ].map(csvCell).join(";"));
   }
   return `\uFEFF${lines.join("\r\n")}\r\n`;

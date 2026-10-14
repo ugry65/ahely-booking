@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
 import { CloseMonthControl, type MonthClosePreview } from "./close-month-control";
+import { PaymentOverview } from "./payment-overview";
 
 function currentBudapestMonth() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit" }).format(new Date());
@@ -32,7 +33,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   const rows: MonthlyHoursWithMonth[] = [];
   let summaryError = false;
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
+    const response = await supabase.rpc("admin_payment_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
     if (response.error) summaryError = true;
     for (const row of (response.data ?? []) as unknown as MonthlyHoursRow[]) rows.push({ ...row, month });
   }
@@ -45,7 +46,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   let detailsError = false;
   for (const month of months) {
     const [pricingResponse, titleResponse] = await Promise.all([
-      supabase.rpc("admin_monthly_pricing_details", {
+      supabase.rpc("admin_payment_pricing_details", {
         p_month: monthStart(month)!, p_user_id: selectedUserId,
       }),
       supabase.rpc("admin_monthly_active_booking_details", {
@@ -82,6 +83,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       <div className="monthly-filter"><button>Megjelenítés</button><a className="button secondary" href={`/admin/havi-orak/export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő CSV</a><a className="button secondary" href={`/admin/havi-orak/xlsx-export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő Excel</a></div>
     </form>
 
+    <PaymentOverview months={months} />
     <section className="stack" aria-label="Havi elszámolás lezárása">
       <div><p className="eyebrow">Publikálás</p><h2>Hónap lezárása</h2><p className="muted">Csak akkor zárható le, ha a normál felhasználók már nem tudják a hónap foglalásait módosítani vagy lemondani.</p></div>
       <div className="monthly-close-grid">{closePreviews.map(({ month, preview, error }) => preview
@@ -125,7 +127,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       {detailsError ? <p className="message error" role="alert">A tételes foglalások betöltése nem sikerült teljes körűen. Az adatokat ne használd ellenőrzésre, amíg a hiba fennáll.</p> : null}
       <div className="monthly-detail-table-desktop table-scroll"><table>
         <thead><tr><th>Hónap</th><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Foglalás címe</th><th>Idő</th><th>Óra</th><th>Árforrás</th><th>Óradíj</th><th>Összeg</th><th>Korrekció</th></tr></thead>
-        <tbody>{details.map((row) => <tr key={`${row.month}-${row.booking_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{row.booking_title || "—"}</td><td>{time(row.start_time)}–{time(row.end_time)}</td><td>{hours(row.total_hours)}</td><td>{rateSourceLabel[row.rate_source]}</td><td>{huf(row.hourly_rate_huf)}</td><td>{huf(row.amount_huf)}</td><td>{row.month < currentMonth || publishedMonths.has(row.month) ? <details className="monthly-correction"><summary>Korrekció</summary><form action={correctHistoricalBookingRate} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="bookingId" value={row.booking_id} /><p className="monthly-current-rate">Jelenlegi óradíj: <strong>{huf(row.hourly_rate_huf)}/óra</strong></p><label>Új óradíj (Ft/óra)<input name="hourlyRate" type="number" min="0" step="1" required defaultValue={row.hourly_rate_huf} aria-label="Új óradíj forint per óra" /></label><label>Korrekció indoka<input name="reason" maxLength={300} required placeholder="Miért módosítod az óradíjat?" aria-label="Korrekció indoka" /></label><button type="submit">Korrekció mentése + új revision</button></form></details> : <span className="muted">—</span>}</td></tr>)}</tbody>
+        <tbody>{details.map((row) => <tr key={`${row.month}-${row.booking_id}`}><td>{row.month}</td><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{row.booking_title || "—"}</td><td>{time(row.start_time)}–{time(row.end_time)}</td><td>{hours(row.total_hours)}</td><td>{rateSourceLabel[row.rate_source]}</td><td>{huf(row.hourly_rate_huf)}</td><td>{huf(row.amount_huf)}</td><td><Link href={`/admin/befizetesek/${row.booking_id}`}>Befizetések</Link>{row.month < currentMonth || publishedMonths.has(row.month) ? <details className="monthly-correction"><summary>Korrekció</summary><form action={correctHistoricalBookingRate} className="monthly-correction-form"><input type="hidden" name="month" value={row.month} /><input type="hidden" name="bookingId" value={row.booking_id} /><p className="monthly-current-rate">Jelenlegi óradíj: <strong>{huf(row.hourly_rate_huf)}/óra</strong></p><label>Új óradíj (Ft/óra)<input name="hourlyRate" type="number" min="0" step="1" required defaultValue={row.hourly_rate_huf} aria-label="Új óradíj forint per óra" /></label><label>Korrekció indoka<input name="reason" maxLength={300} required placeholder="Miért módosítod az óradíjat?" aria-label="Korrekció indoka" /></label><button type="submit">Korrekció mentése + új revision</button></form></details> : <span className="muted">—</span>}</td></tr>)}</tbody>
       </table></div>
       <div className="monthly-detail-list-mobile" aria-label="Tételes aktív foglalások mobil nézete">
         {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
@@ -138,6 +140,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
             <div><dt>Összes óra</dt><dd>{hours(row.total_hours)}</dd></div>
             <div><dt>Óradíj</dt><dd>{huf(row.hourly_rate_huf)} · {rateSourceLabel[row.rate_source]}</dd></div>
             <div><dt>Összeg</dt><dd>{huf(row.amount_huf)}</dd></div>
+            <div><dt>Befizetések</dt><dd><Link href={`/admin/befizetesek/${row.booking_id}`}>Befizetés rögzítése / megtekintése</Link></dd></div>
             <div><dt>Állapot</dt><dd>{row.pricing_state === "snapshot" ? `Snapshot #${row.revision_number}` : "Élő előnézet"}</dd></div>
           </dl>
         </article>)}
