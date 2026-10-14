@@ -13,6 +13,11 @@ describe("booking payments", () => {
   it("does not turn missing financial data into an unpaid state", () => {
     expect(() => mergePaymentBalances([{user_id:"u"}],[])).toThrow("Hiányos");
   });
+  it("uses financial payable including adjustments for exported balance", () => {
+    const [row]=mergePaymentBalances([{user_id:"u",calculated_due_huf:2700}],[{user_id:"u",user_name:"Test",due_huf:3000,paid_huf:1000,remaining_huf:2000,overpaid_huf:0}]);
+    expect(row.calculated_due_huf).toBe(3000);
+    expect(row.calculated_due_huf-Number(row.paid_huf)).toBe(row.remaining_huf);
+  });
   it("matches booking totals by ID, not position or title", () => {
     const rows=mergeBookingPaymentTotals([{booking_id:"a",amount_huf:2700},{booking_id:"b",amount_huf:2700}],[{booking_id:"b",paid_huf:"1000"}]);
     expect(rows[0].payment_status_text).toBe("Nincs fizetve");

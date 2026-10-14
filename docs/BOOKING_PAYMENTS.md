@@ -18,6 +18,11 @@ nyilvántartása szükséges a változó havi díjsáv és a részfizetés miatt
   Ez nem tényleges pénzvisszafizetés. Javítást új, helyes rögzítés követhet.
 - Havi befizetési összesítés: havi díj, befizetve, fennmaradó, túlfizetés,
   fizetési állapot. Nyitott hónapban előzetes; lezárt hónapban snapshot díj.
+- A havi adminnézet és export közös új read-modelt használ: a nyitott hónap
+  mindig élő adat, a lezárt hónap az aktív lezárt revision. A korábbi, lezárás
+  előtti draft revision megmarad a történetben, de nem fedheti el az új foglalást.
+- Az összesítő export fizetendője a pénzügyi korrekciókat is tartalmazza;
+  a részletes foglalási sorok továbbra is a foglalások díját mutatják.
 - Összesítő CSV/Excel és részletes CSV pénzügyi oszlopokkal bővül.
   A korábbi revision/elszámolási állapot exportoszlopok nem térnek vissza.
 

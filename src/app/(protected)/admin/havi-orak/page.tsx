@@ -33,7 +33,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   const rows: MonthlyHoursWithMonth[] = [];
   let summaryError = false;
   for (const month of months) {
-    const response = await supabase.rpc("admin_monthly_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
+    const response = await supabase.rpc("admin_payment_pricing_summary", { p_month: monthStart(month)! }).returns<MonthlyHoursRow[]>();
     if (response.error) summaryError = true;
     for (const row of (response.data ?? []) as unknown as MonthlyHoursRow[]) rows.push({ ...row, month });
   }
@@ -46,7 +46,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
   let detailsError = false;
   for (const month of months) {
     const [pricingResponse, titleResponse] = await Promise.all([
-      supabase.rpc("admin_monthly_pricing_details", {
+      supabase.rpc("admin_payment_pricing_details", {
         p_month: monthStart(month)!, p_user_id: selectedUserId,
       }),
       supabase.rpc("admin_monthly_active_booking_details", {
