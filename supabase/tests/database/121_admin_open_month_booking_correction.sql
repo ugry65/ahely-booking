@@ -44,8 +44,8 @@ set local role authenticated;
 select throws_ok($$select pg_temp.correct(gen_random_uuid(),'Overlap rejected',7)$$,'P0001',null,'Existing exclusion constraint enforced');
 select is((select amount_huf from public.admin_booking_payment_context('41000000-0000-0000-0000-000000000401')),16000::bigint,'Rejected correction fully rolls back');
 reset role;
-insert into public.booking_series(id,owner_user_id,created_by,frequency,starts_on,occurrence_count,conflict_policy,room_id,start_time,end_time)
-values('61000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000402','00000000-0000-0000-0000-000000000401','weekly',current_setting('test.correct_month')::date,2,'abort_all','11000000-0000-0000-0000-000000000002','08:00','17:00');
+insert into public.booking_series(id,owner_user_id,created_by,frequency,starts_on,occurrence_count,conflict_policy,room_id,local_start_time,duration_minutes,idempotency_key,request_payload)
+values('61000000-0000-0000-0000-000000000401','00000000-0000-0000-0000-000000000402','00000000-0000-0000-0000-000000000401','weekly',current_setting('test.correct_month')::date,2,'abort_all','11000000-0000-0000-0000-000000000002','08:00',540,gen_random_uuid(),'{}'::jsonb);
 update public.bookings set series_id='61000000-0000-0000-0000-000000000401' where id='41000000-0000-0000-0000-000000000401';
 insert into public.bookings(id,room_id,user_id,created_by,series_id,start_at,end_at,use_type,status,idempotency_key)
 values('41000000-0000-0000-0000-000000000402','11000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-000000000402','00000000-0000-0000-0000-000000000401','61000000-0000-0000-0000-000000000401',
