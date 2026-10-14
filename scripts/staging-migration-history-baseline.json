@@ -1,6 +1,6 @@
 {
   "staging_project_ref": "fvwapntzhavhgazeflri",
-  "baseline_recorded_at": "2026-10-14T17:24:00Z",
+  "baseline_recorded_at": "2026-10-14T21:19:00Z",
   "applied": [
     {
       "version": "202608160001",
@@ -476,6 +476,11 @@
       "version": "20261014172144",
       "name": "booking_payments",
       "statements_md5": "2f72b1361b6973cf500303c08ecec0f0"
+    },
+    {
+      "version": "20261014211856",
+      "name": "admin_open_month_booking_correction",
+      "statements_md5": "a11ce7ccceb4d31f8303c338817ec5f7"
     }
   ],
   "excluded_local": [
@@ -670,6 +675,10 @@
     {
       "file": "20261014165936_booking_payments.sql",
       "sha256": "3de17bbab2514d2c812465effa30a0036026409429a6ebc16d80a60c8d2eff98"
+    },
+    {
+      "file": "20261014205348_admin_open_month_booking_correction.sql",
+      "sha256": "2f3c15277d6670d7c3e89f53154dc5db9b5d20c444576f4bdd703844cdadcad9"
     }
   ],
   "approved_out_of_order": {}
