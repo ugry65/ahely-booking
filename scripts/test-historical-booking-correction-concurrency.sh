@@ -11,7 +11,18 @@ readonly booking_id="41000000-0000-0000-0000-000000000405"
 readonly room_id="11000000-0000-0000-0000-000000000009"
 test_dir="$(mktemp -d)"
 pids=()
-cleanup() { for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done; rm -rf "$test_dir"; }
+cleanup() {
+  local result=$?
+  if (( result != 0 )); then
+    for log in "$test_dir"/*.log; do
+      [[ -f "$log" ]] || continue
+      printf 'Concurrency session: %s\n' "${log##*/}" >&2
+      cat "$log" >&2
+    done
+  fi
+  for pid in "${pids[@]}"; do kill "$pid" 2>/dev/null || true; done
+  rm -rf "$test_dir"
+}
 trap cleanup EXIT
 month="$(psql "$database_url" -XAt -v ON_ERROR_STOP=1 -c "select (date_trunc('month',timezone('Europe/Budapest',now()))-interval '7 months')::date")"
 psql "$database_url" -X -v ON_ERROR_STOP=1 <<SQL >/dev/null
@@ -97,7 +108,7 @@ printf 'release\n' > "$test_dir/historical-correct-holder.release"
 wait "$holder_pid"; wait "$waiter_pid"
 # Correction first: closure sees corrected 6-hour booking, then rolls back.
 start_holder historical-before-close-holder "$(correction_sql 11 'Close race')"
-start_waiter historical-close-waiter "select * from public.admin_close_monthly_settlement_period('$month');select duration_minutes from public.settlement_booking_lines sl join public.monthly_settlements ms on ms.closed_revision_id=sl.settlement_revision_id where ms.user_id='$user_id' and ms.settlement_month='$month' and sl.booking_id='$booking_id';" rollback
+start_waiter historical-close-waiter "select * from public.admin_close_monthly_settlement_period('$month');reset role;select duration_minutes from public.settlement_booking_lines sl join public.monthly_settlements ms on ms.closed_revision_id=sl.settlement_revision_id where ms.user_id='$user_id' and ms.settlement_month='$month' and sl.booking_id='$booking_id';" rollback
 wait_for_state historical-before-close-holder historical-close-waiter
 printf 'release\n' > "$test_dir/historical-before-close-holder.release"
 wait "$holder_pid"; wait "$waiter_pid"
