@@ -141,6 +141,11 @@ tfoot th { font-weight: 800; }
 .booking-modal-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .booking-modal-heading h2 { margin: .15rem 0 .35rem; }
 .booking-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.partial-cancellation-parts { max-height: 20rem; overflow-y: auto; gap: .35rem; }
+.partial-cancellation-choice { display: flex; align-items: center; justify-content: flex-start; gap: .65rem; min-height: 2.75rem; padding: .5rem; border-radius: .4rem; cursor: pointer; }
+.partial-cancellation-choice input[type="checkbox"] { flex: 0 0 auto; width: 1.15rem; height: 1.15rem; margin: 0; accent-color: #235c43; }
+.partial-cancellation-choice:has(input:checked) { background: #e8f1eb; }
+.partial-cancellation-choice:has(input:focus-visible) { outline: 2px solid #235c43; outline-offset: 1px; }
 .calendar-help { margin: 0; }
 
 .calendar-color-palette { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; }

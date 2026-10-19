@@ -1,12 +1,12 @@
 export type CancellationRange = { start: string; end: string };
 
-/** Hour-sized choices anchored to the existing booking, including a trailing half hour. */
-export function bookingHourParts(start: string, end: string): CancellationRange[] {
+/** Half-hour choices match the booking grid and allow 90-minute cancellations. */
+export function bookingCancellationParts(start: string, end: string): CancellationRange[] {
   const a = Date.parse(start), b = Date.parse(end);
   if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a || b - a > 86400000) return [];
   const result: CancellationRange[] = [];
-  for (let cursor = a; cursor < b; cursor += 3600000) {
-    result.push({ start: new Date(cursor).toISOString(), end: new Date(Math.min(cursor + 3600000, b)).toISOString() });
+  for (let cursor = a; cursor < b; cursor += 1800000) {
+    result.push({ start: new Date(cursor).toISOString(), end: new Date(Math.min(cursor + 1800000, b)).toISOString() });
   }
   return result;
 }

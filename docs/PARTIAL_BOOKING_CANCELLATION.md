@@ -7,6 +7,16 @@ megmaradó8–10/12–15 előnézete. Több különálló kijelölés is egy tra
 
 Állapot: stagingre telepítve, projektgazdai kipróbálásra átadva. Production GO nincs.
 
+### Kijelölési javítás – 2026-10-19
+
+A laptopos visszajelzés alapján a jelölő és az időszak közös, vízszintes,
+teljes sorában kattintható címkét kap. A kijelölés 30 perces részekből áll:
+10:00–11:30 lemondása három egymást követő félóra kijelölése. Az előnézetben
+8:00–15:00 blokk esetén 8:00–10:00 és 11:30–15:00 marad. A legalább 60 perces
+megmaradó foglalások és a szerveroldali határidő ellenőrzése változatlan.
+A hosszú lista a modálon belül görgethető, a jelölők billentyűzettel is kezelhetők.
+Ez UI-javítás; nincs új adatbázis-migráció vagy pénzügyi változás.
+
 ## Biztonsági modell
 
 Eredeti booking ID az első megmaradó résznél marad; további részek flat
@@ -20,7 +30,7 @@ Owner és Budapest hónap csoporton belül nem változhat. Másolat nem örökö
 
 Időrács/minimum DB-beállításból; 60 percnél rövidebb maradék nem jön létre.
 Egy utolsó félórás rész lemondása akkor megengedett, ha a megmaradó rész eléri
-a minimumot. Alapórás UI a meglévő kezdésből indul, a végső félórát külön jelzi.
+a minimumot. A UI a meglévő kezdéstől félórás részeket kínál fel.
 Backend az összes range tartalmazását/grid/finite/rendet/cutoffot ellenőrzi.
 Lezárt vagy legacy részlegesen lezárt hónap nem bontható fel adminként sem.
 
