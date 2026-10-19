@@ -1,6 +1,6 @@
 export type PaymentBalance = { paid_huf: number | string; remaining_huf: number | string; overpaid_huf: number | string };
 export type MonthlyPaymentBalance = PaymentBalance & { user_id: string; user_name: string; due_huf: number | string };
-export type BookingPaymentTotal = { booking_id: string; paid_huf: number | string };
+export type BookingPaymentTotal = { booking_id: string; paid_huf: number | string; payment_group_id?: string | null; group_due_huf?: number | string; group_paid_huf?: number | string; is_group_anchor?: boolean };
 
 export function paymentBalance(due: number, paid: number): PaymentBalance {
   return { paid_huf: paid, remaining_huf: Math.max(due - paid, 0), overpaid_huf: Math.max(paid - due, 0) };
@@ -19,9 +19,16 @@ export function mergePaymentBalances<T extends { user_id: string }>(rows: T[], b
   });
 }
 export function mergeBookingPaymentTotals<T extends { booking_id: string; amount_huf: number }>(rows: T[], totals: BookingPaymentTotal[]) {
-  const byBooking = new Map(totals.map((total) => [total.booking_id, Number(total.paid_huf)]));
+  const byBooking = new Map(totals.map((total) => [total.booking_id, total]));
   return rows.map((row) => {
-    const balance = paymentBalance(Number(row.amount_huf), byBooking.get(row.booking_id) ?? 0);
+    const total = byBooking.get(row.booking_id);
+    if (total?.payment_group_id) {
+      const group = paymentBalance(Number(total.group_due_huf), Number(total.group_paid_huf));
+      const anchor = total.is_group_anchor === true;
+      return { ...row, paid_huf: Number(total.paid_huf), remaining_huf: anchor ? Number(group.remaining_huf) : 0, overpaid_huf: anchor ? Number(group.overpaid_huf) : 0,
+        payment_status_text: `Közös foglaláscsoport ${total.payment_group_id.slice(0,8)}: ${paymentLabel(group)}` };
+    }
+    const balance = paymentBalance(Number(row.amount_huf), Number(total?.paid_huf ?? 0));
     return { ...row, ...balance, payment_status_text: paymentLabel(balance) };
   });
 }
