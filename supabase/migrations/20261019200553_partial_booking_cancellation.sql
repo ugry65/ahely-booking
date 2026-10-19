@@ -112,14 +112,6 @@ begin
   v_root:=coalesce(v_initial.root_booking_id,v_initial.id);
   perform pg_advisory_xact_lock(hashtextextended('booking-fragment:'||v_root::text,0));
   perform pg_advisory_xact_lock(hashtextextended(v_initial.room_id::text,0));
-  begin
-    insert into public.booking_operation_requests(actor_user_id,idempotency_key,operation,booking_id,request_payload)
-      values(v_actor.id,p_idempotency_key,'update',p_booking_id,v_payload||jsonb_build_object('transaction_id',txid_current()::text));
-  exception when unique_violation then
-    select * into v_req from public.booking_operation_requests where actor_user_id=v_actor.id and idempotency_key=p_idempotency_key;
-    if v_req.request_payload-'transaction_id'=v_payload and v_req.result_payload is not null then return array(select jsonb_array_elements_text(v_req.result_payload->'booking_ids')::uuid); end if;
-    raise exception 'A kérésazonosító már más művelethez tartozik.' using errcode='P0001';
-  end;
   -- Legacy series cancellation locks chronological rows, not UUID order.
   -- Never wait holding one fragment lock while requesting another: abort the
   -- whole operation cleanly if either row is busy, instead of forming a cycle.
@@ -127,6 +119,14 @@ begin
     perform 1 from public.bookings b where b.id in(v_root,p_booking_id) order by b.id for no key update nowait;
   exception when lock_not_available then
     raise exception 'A foglalás másik műveletben módosul. Frissítsd az oldalt, majd próbáld újra.' using errcode='P0001';
+  end;
+  begin
+    insert into public.booking_operation_requests(actor_user_id,idempotency_key,operation,booking_id,request_payload)
+      values(v_actor.id,p_idempotency_key,'update',p_booking_id,v_payload||jsonb_build_object('transaction_id',txid_current()::text));
+  exception when unique_violation then
+    select * into v_req from public.booking_operation_requests where actor_user_id=v_actor.id and idempotency_key=p_idempotency_key;
+    if v_req.request_payload-'transaction_id'=v_payload and v_req.result_payload is not null then return array(select jsonb_array_elements_text(v_req.result_payload->'booking_ids')::uuid); end if;
+    raise exception 'A kérésazonosító már más művelethez tartozik.' using errcode='P0001';
   end;
   select * into v_before from public.bookings where id=p_booking_id;
   if v_before.status<>'active' or v_before.updated_at is distinct from p_expected_updated_at or v_before.room_id<>v_initial.room_id

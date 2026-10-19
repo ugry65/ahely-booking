@@ -64,5 +64,32 @@ select lives_ok($$select public.admin_record_booking_payment('41000000-0000-0000
 select lives_ok($$select public.admin_record_booking_payment('41000000-0000-0000-0000-000000000501',14000,current_date,'cash','cash_register',null,'51000000-0000-0000-0000-000000000501')$$,'Original receipt replay survives fragmentation and root cancellation');
 reset role;
 select is((select count(*) from public.payments),2::bigint,'No copied or reassigned receipts');
+select set_config('test.parts_child_version',(select updated_at::text from public.bookings where id=current_setting('test.parts_child')::uuid),true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000502',true);
+select lives_ok($$select pg_temp.parts('51000000-0000-0000-0000-000000000504','13:00','14:00',current_setting('test.parts_child')::uuid,current_setting('test.parts_child_version')::timestamptz)$$,'A surviving child can be split again');
+reset role;
+select is((select count(*) from public.bookings where root_booking_id='41000000-0000-0000-0000-000000000501'),2::bigint,'Repeated split keeps a flat root, not a chain');
+select is((select count(*) from public.bookings b join public.bookings r on r.id=b.root_booking_id where r.root_booking_id is not null),0::bigint,'No nested root chain');
+insert into public.bookings(id,room_id,user_id,created_by,start_at,end_at,use_type,status,idempotency_key)
+values('41000000-0000-0000-0000-000000000504','11000000-0000-0000-0000-000000000003','00000000-0000-0000-0000-000000000502','00000000-0000-0000-0000-000000000501',
+timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '08:00'),timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '15:00'),'individual','active',gen_random_uuid());
+select set_config('test.parts_multi_version',(select updated_at::text from public.bookings where id='41000000-0000-0000-0000-000000000504'),true);
+set local role authenticated;
+select lives_ok($$select public.cancel_booking_parts('41000000-0000-0000-0000-000000000504',current_setting('test.parts_multi_version')::timestamptz,
+jsonb_build_array(jsonb_build_object('start',timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '10:00'),'end',timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '11:00')),
+jsonb_build_object('start',timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '13:00'),'end',timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '14:00'))),null,gen_random_uuid())$$,'Disconnected selected hours cancel atomically');
+reset role;
+select is((select count(*) from public.bookings where id='41000000-0000-0000-0000-000000000504' or root_booking_id='41000000-0000-0000-0000-000000000504'),3::bigint,'Multiple selection leaves exactly three fragments');
+select ok(public.monthly_settlement_cutoff_blockers(current_setting('test.parts_month')::date,
+timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '14:00')-make_interval(hours=>(select (value#>>'{}')::integer from public.app_settings where key='cancellation_cutoff_hours')))>=1,'Exact latest-removable cutoff still blocks month close');
+select is(public.monthly_settlement_cutoff_blockers(current_setting('test.parts_month')::date,
+timezone('Europe/Budapest',current_setting('test.parts_date')::date+time '14:00')-make_interval(hours=>(select (value#>>'{}')::integer from public.app_settings where key='cancellation_cutoff_hours'))+interval '1 second'),0::bigint,'Close unblocks only after final valid selected start expires');
+insert into public.monthly_settlement_periods(settlement_month,closed_at,closed_by,participant_count,total_minutes,total_due_huf,snapshot_hash,correlation_id)
+values(current_setting('test.parts_month')::date,now(),'00000000-0000-0000-0000-000000000501',0,0,0,'fixture',gen_random_uuid());
+select set_config('test.parts_child_version',(select updated_at::text from public.bookings where id=current_setting('test.parts_child')::uuid),true);
+set local role authenticated;
+select throws_ok($$select pg_temp.parts(gen_random_uuid(),'12:00','13:00',current_setting('test.parts_child')::uuid,current_setting('test.parts_child_version')::timestamptz)$$,'42501',null,'Closed month refuses partial cancellation');
+reset role;
 select * from finish();
 rollback;
