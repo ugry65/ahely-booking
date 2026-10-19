@@ -81,10 +81,10 @@ export default async function CancellationsPage({ searchParams }: { searchParams
       {detailsResponse.error ? <p className="message error" role="alert">A tételes lemondások betöltése nem sikerült.</p> : null}
       <div className="cancellation-detail-table-desktop table-scroll"><table>
         <thead><tr><th>Felhasználó</th><th>Dátum</th><th>Helyiség</th><th>Mettől</th><th>Meddig</th><th>Óra</th><th>Lemondás ideje</th><th>Mennyivel előtte</th><th>Lemondta</th><th>Indok</th></tr></thead>
-        <tbody>{details.map((row) => <tr key={row.booking_id}><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.cancelled_hours)}</td><td>{cancellationTimestamp(row.cancelled_at)}</td><td>{leadTimeLabel(row.minutes_before_start)}</td><td>{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</td><td>{row.cancellation_reason ?? "–"}</td></tr>)}</tbody>
+        <tbody>{details.map((row) => <tr key={`${row.booking_id}-${row.cancelled_at}-${row.start_time}-${row.end_time}`}><td>{row.user_name}</td><td>{row.booking_date}</td><td>{row.room_name}</td><td>{time(row.start_time)}</td><td>{time(row.end_time)}</td><td>{hours(row.cancelled_hours)}</td><td>{cancellationTimestamp(row.cancelled_at)}</td><td>{leadTimeLabel(row.minutes_before_start)}</td><td>{row.cancelled_by_user ? `${row.cancelled_by_name} (user)` : `${row.cancelled_by_name} (admin)`}</td><td>{row.cancellation_reason ?? "–"}</td></tr>)}</tbody>
       </table></div>
       <div className="cancellation-detail-list-mobile" aria-label="Tételes lemondások mobil nézete">
-        {details.map((row) => <article className="report-mobile-card" key={row.booking_id}>
+        {details.map((row) => <article className="report-mobile-card" key={`${row.booking_id}-${row.cancelled_at}-${row.start_time}-${row.end_time}`}>
           <div className="report-mobile-card-heading"><h3>{row.user_name}</h3><span>{row.booking_date}</span></div>
           <dl className="report-mobile-details">
             <div><dt>Helyiség</dt><dd>{row.room_name}</dd></div>

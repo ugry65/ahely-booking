@@ -104,3 +104,22 @@ export async function cancelCalendarBooking(formData: FormData) {
   revalidatePath("/foglalasok"); revalidatePath("/foglalasaim");
   redirect(resultUrl(date, "uzenet", scope === "occurrence" ? "A foglalást sikeresen törölted." : "A sorozat érintett alkalmait sikeresen törölted."));
 }
+
+export async function cancelCalendarBookingParts(formData: FormData) {
+  await requireActiveProfile();
+  const date = String(formData.get("date") ?? "") || null;
+  const bookingId = String(formData.get("bookingId") ?? "");
+  const expectedUpdatedAt = String(formData.get("expectedUpdatedAt") ?? "");
+  const idempotencyKey = String(formData.get("idempotencyKey") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+  const raw = String(formData.get("ranges") ?? "");
+  if (!UUID_PATTERN.test(bookingId) || !UUID_PATTERN.test(idempotencyKey) || !Number.isFinite(Date.parse(expectedUpdatedAt)) || reason.length > 500 || raw.length > 10000 || formData.get("confirm")!=="yes") redirect(resultUrl(date,"hiba","Érvénytelen vagy meg nem erősített lemondási kérés."));
+  let ranges: unknown;
+  try { ranges = JSON.parse(raw); } catch { redirect(resultUrl(date,"hiba","Érvénytelen időszak.")); }
+  if (!Array.isArray(ranges) || ranges.length < 1 || ranges.length > 48 || ranges.some(r => !r || typeof r.start !== "string" || typeof r.end !== "string" || !Number.isFinite(Date.parse(r.start)) || !Number.isFinite(Date.parse(r.end)))) redirect(resultUrl(date,"hiba","Jelöld ki a lemondandó órákat."));
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("cancel_booking_parts", { p_booking_id: bookingId, p_expected_updated_at: expectedUpdatedAt, p_ranges: ranges, p_reason: reason || null, p_idempotency_key: idempotencyKey });
+  if (error) redirect(resultUrl(date,"hiba",safeRpcMessage(error,"A részleges lemondás nem sikerült. Frissítsd az oldalt és próbáld újra.")));
+  revalidatePath("/foglalasok"); revalidatePath("/foglalasaim"); revalidatePath("/admin/havi-orak"); revalidatePath("/admin/befizetesek");
+  redirect(resultUrl(date,"uzenet","A kijelölt időszakok lemondása sikerült. A többi időpont és a befizetés megmaradt."));
+}
