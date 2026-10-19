@@ -5,7 +5,9 @@ Példa: ma09:00, holnap08–15, lemondandó10–12. A cutoff a kivett rész kezd
 nem a teljes tömb08:00 kezdete. Óránkénti kijelölés, megerősítés előtt a
 megmaradó8–10/12–15 előnézete. Több különálló kijelölés is egy tranzakció.
 
-Állapot: stagingre telepítve, projektgazdai kipróbálásra átadva. Production GO nincs.
+Állapot: projektgazda elfogadta, productionre kiadva #312-ben 2026-10-19-én.
+Részletes bizonyíték: [production kiadás](PARTIAL_BOOKING_CANCELLATION_PRODUCTION_2026-10-19.md).
+Az alábbi staging rész eredeti dátumozott előzmény, a korábbi GO-hiány történeti.
 
 ### Kijelölési javítás – 2026-10-19
 
