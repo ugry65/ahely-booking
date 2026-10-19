@@ -20,7 +20,6 @@ export function PartialCancellationDialog({ booking, date, onClose }: { booking:
       <fieldset className="partial-cancellation-parts"><legend>Lemondandó időszakok · 30 perces részek</legend>{parts.map((part,i) => <label className="partial-cancellation-choice" key={part.start}><input type="checkbox" checked={selected.includes(i)} onChange={e => { setSelected(old => e.target.checked ? [...old,i] : old.filter(n => n!==i)); setKey(crypto.randomUUID()); }}/><span>{time(part.start)}–{time(part.end)}</span></label>)}</fieldset>
       <div role="status" aria-live="polite">{preview.ok ? <><strong>Megmarad:</strong>{preview.remaining.length ? <ul>{preview.remaining.map(r => <li key={r.start}>{time(r.start)}–{time(r.end)}</li>)}</ul> : <p>Semmi: a teljes kiválasztott foglalás lemondásra kerül.</p>}</> : <p>{preview.error}</p>}</div>
       <p className="muted">A befizetés az eredeti foglaláscsoporthoz kapcsolva megmarad, a havi díj és egyenleg újraszámolódik.</p>
-      <label>Indok<textarea name="reason" maxLength={500} rows={2}/></label>
       <label className="partial-cancellation-choice"><input type="checkbox" name="confirm" value="yes" required/><span>Ellenőriztem a lemondandó és a megmaradó időszakokat.</span></label>
       <div className="booking-modal-actions"><button type="submit" className="danger-button" disabled={!preview.ok || !booking.updated_at}>Kijelölt órák lemondása</button><button type="button" className="button secondary" onClick={onClose}>Mégse</button></div>
     </form>
