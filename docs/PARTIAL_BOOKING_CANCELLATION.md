@@ -25,7 +25,9 @@ Backend az összes range tartalmazását/grid/finite/rendet/cutoffot ellenőrzi.
 Lezárt vagy legacy részlegesen lezárt hónap nem bontható fel adminként sem.
 
 Root-group advisory → room advisory → ledger FK → sorted root/selected
-NO KEY UPDATE → period advisory → closure/cutoff recheck. Payload-normalizált
+NO KEY UPDATE NOWAIT → period advisory → closure/cutoff recheck. A NOWAIT
+részenként zároló régi sorozatműveletnél holtpont helyett teljes rollbacket és
+újrapróbálható üzenetet ad. Payload-normalizált
 idempotencia és optimista updated_at; eredeti cutoff csak az új privát ledger
 folyamatban, transaction_id és pontos booking verzió mellett enged kivételt.
 Ütközésvédelem DB exclusion; pénzügyi/snapshot sor fizikailag nem törlődik.

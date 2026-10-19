@@ -120,7 +120,14 @@ begin
     if v_req.request_payload-'transaction_id'=v_payload and v_req.result_payload is not null then return array(select jsonb_array_elements_text(v_req.result_payload->'booking_ids')::uuid); end if;
     raise exception 'A kérésazonosító már más művelethez tartozik.' using errcode='P0001';
   end;
-  perform 1 from public.bookings b where b.id in(v_root,p_booking_id) order by b.id for no key update;
+  -- Legacy series cancellation locks chronological rows, not UUID order.
+  -- Never wait holding one fragment lock while requesting another: abort the
+  -- whole operation cleanly if either row is busy, instead of forming a cycle.
+  begin
+    perform 1 from public.bookings b where b.id in(v_root,p_booking_id) order by b.id for no key update nowait;
+  exception when lock_not_available then
+    raise exception 'A foglalás másik műveletben módosul. Frissítsd az oldalt, majd próbáld újra.' using errcode='P0001';
+  end;
   select * into v_before from public.bookings where id=p_booking_id;
   if v_before.status<>'active' or v_before.updated_at is distinct from p_expected_updated_at or v_before.room_id<>v_initial.room_id
     or v_before.start_at<>v_initial.start_at then raise exception 'A foglalás időközben módosult. Frissítsd az oldalt.' using errcode='P0001'; end if;
