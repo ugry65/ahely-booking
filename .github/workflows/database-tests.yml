@@ -8,6 +8,7 @@ on:
       - "scripts/test-database.sh"
       - "scripts/test-booking-payment-concurrency.sh"
       - "scripts/test-historical-booking-correction-concurrency.sh"
+      - "scripts/test-partial-booking-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -28,6 +29,7 @@ on:
       - "scripts/test-database.sh"
       - "scripts/test-booking-payment-concurrency.sh"
       - "scripts/test-historical-booking-correction-concurrency.sh"
+      - "scripts/test-partial-booking-concurrency.sh"
       - "scripts/test-room-access-concurrency.sh"
       - "scripts/test-recurring-booking-concurrency.sh"
       - "scripts/test-admin-role-guard-concurrency.sh"
@@ -106,6 +108,9 @@ jobs:
 
       - name: Run historical booking correction concurrency tests
         run: bash ./scripts/test-historical-booking-correction-concurrency.sh
+
+      - name: Run partial booking cancellation concurrency tests
+        run: bash ./scripts/test-partial-booking-concurrency.sh
 
       # This publishes the isolated current-month fixtures, so it must run
       # after all tests that still create current-month bookings.
