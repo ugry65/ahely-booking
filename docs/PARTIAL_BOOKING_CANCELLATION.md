@@ -17,6 +17,10 @@ megmaradó foglalások és a szerveroldali határidő ellenőrzése változatlan
 A hosszú lista a modálon belül görgethető, a jelölők billentyűzettel is kezelhetők.
 Ez UI-javítás; nincs új adatbázis-migráció vagy pénzügyi változás.
 
+Az Órák lemondása menüpont csak 60 percnél hosszabb foglalásnál jelenik meg.
+Egyórás foglalásnál a Törlés érhető el, mert részleges lemondás után nem maradna
+meg a legalább 60 perces minimum. Másfél órás foglalásból félóra lemondható.
+
 ## Biztonsági modell
 
 Eredeti booking ID az első megmaradó résznél marad; további részek flat
