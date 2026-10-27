@@ -100,13 +100,13 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       <div className="monthly-filter"><button>Megjelenítés</button><a className="button secondary" href={`/admin/havi-orak/export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő CSV</a><a className="button secondary" href={`/admin/havi-orak/xlsx-export?honapok=${encodeURIComponent(monthQuery)}`}>Összesítő Excel</a></div>
     </form>
 
-    <PaymentOverview months={months} />
     <section className="stack" aria-label="Havi elszámolás lezárása">
       <div><p className="eyebrow">Publikálás</p><h2>Hónap lezárása</h2><p className="muted">Csak akkor zárható le, ha a normál felhasználók már nem tudják a hónap foglalásait módosítani vagy lemondani.</p></div>
       <div className="monthly-close-grid">{closePreviews.map(({ month, preview, error }) => preview
         ? <CloseMonthControl key={month} preview={preview} loadError={error} paymentSummary={paymentByMonth.get(month)} />
         : <article className="card" key={month}><h3>{month} elszámolása</h3><p className="message error" role="alert">{error ? "A lezárási előnézet betöltése nem sikerült." : "Ehhez a hónaphoz nem érkezett előnézet."}</p></article>)}</div>
     </section>
+    <PaymentOverview months={months} />
 
     {summaryError ? <p className="message error" role="alert">A havi óraszám betöltése nem sikerült teljes körűen. Az adatokat ne használd elszámolásra, amíg a hiba fennáll.</p> : null}
     <section className="card wide-card stack">
