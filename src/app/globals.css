@@ -238,3 +238,17 @@ tfoot th { font-weight: 800; }
   .monthly-occasional-customer { grid-template-columns: 1fr auto; }
   .monthly-occasional-customer > :first-child { grid-column: 1 / -1; }
 }
+
+/* Havi zárás: három pénzügyi mutató mobilon is egy sorban. */
+.monthly-close-financial-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.monthly-close-financial-summary dt { font-size: clamp(.65rem, 2.4vw, .85rem); overflow-wrap: anywhere; }
+.monthly-close-financial-summary dd { font-size: clamp(.72rem, 2.7vw, 1.1rem); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+
+/* Laptop: compact, aligned metric groups; mobile keeps its existing three-column finance row. */
+@media (min-width: 721px) {
+  .monthly-close-grid > .card { max-width: 100%; }
+  .monthly-close-booking-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 34rem; }
+  .monthly-close-financial-summary { max-width: 54rem; gap: 1.5rem; padding: 1rem 1.25rem; background: var(--surface-muted, #f6f7f8); border-radius: .75rem; }
+  .monthly-close-financial-summary dt { font-size: .85rem; }
+  .monthly-close-financial-summary dd { font-size: clamp(1rem, 1.5vw, 1.3rem); }
+}
