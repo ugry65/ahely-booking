@@ -6,6 +6,7 @@ import { MonthMultiSelect } from "./month-multi-select";
 import { correctHistoricalBookingRate, createSettlementRevision } from "./actions";
 import { CloseMonthControl, type MonthClosePreview } from "./close-month-control";
 import { PaymentOverview } from "./payment-overview";
+import type { MonthlyPaymentBalance } from "@/lib/booking-payments";
 
 function currentBudapestMonth() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Budapest", year: "numeric", month: "2-digit" }).format(new Date());
@@ -28,6 +29,22 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     const data = response.data as unknown as MonthClosePreview[] | null;
     return { month, preview: data?.[0] ?? null, error: Boolean(response.error) };
   }));
+  const paymentSummaries = await Promise.all(months.map(async (month) => {
+    const response = await supabase.rpc("admin_monthly_booking_payment_summary", { p_month: monthStart(month)! });
+    if (response.error || !response.data) return { month, summary: null };
+    const paymentRows = response.data as MonthlyPaymentBalance[];
+    const summary = paymentRows.reduce((acc, row) => {
+      const due = Number(row.due_huf);
+      const paid = Number(row.paid_huf);
+      const remaining = Number(row.remaining_huf);
+      const overpaid = Number(row.overpaid_huf);
+      if (![due, paid, remaining, overpaid].every(Number.isFinite)) return null;
+      if (!acc) return null;
+      return { total: acc.total + due, paid: acc.paid + Math.min(paid, due), remaining: acc.remaining + remaining, overpaid: acc.overpaid + overpaid };
+    }, { total: 0, paid: 0, remaining: 0, overpaid: 0 } as { total: number; paid: number; remaining: number; overpaid: number } | null);
+    return { month, summary };
+  }));
+  const paymentByMonth = new Map(paymentSummaries.map(({ month, summary }) => [month, summary]));
   const publishedMonths = new Set(closePreviews.filter((item) => item.preview?.already_closed).map((item) => item.month));
 
   const rows: MonthlyHoursWithMonth[] = [];
@@ -87,7 +104,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
     <section className="stack" aria-label="Havi elszámolás lezárása">
       <div><p className="eyebrow">Publikálás</p><h2>Hónap lezárása</h2><p className="muted">Csak akkor zárható le, ha a normál felhasználók már nem tudják a hónap foglalásait módosítani vagy lemondani.</p></div>
       <div className="monthly-close-grid">{closePreviews.map(({ month, preview, error }) => preview
-        ? <CloseMonthControl key={month} preview={preview} loadError={error} />
+        ? <CloseMonthControl key={month} preview={preview} loadError={error} paymentSummary={paymentByMonth.get(month)} />
         : <article className="card" key={month}><h3>{month} elszámolása</h3><p className="message error" role="alert">{error ? "A lezárási előnézet betöltése nem sikerült." : "Ehhez a hónaphoz nem érkezett előnézet."}</p></article>)}</div>
     </section>
 
