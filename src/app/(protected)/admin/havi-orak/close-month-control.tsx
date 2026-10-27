@@ -34,7 +34,7 @@ function formatMonth(value: string) {
   return new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", year: "numeric", month: "long" }).format(new Date(`${value}T12:00:00+02:00`));
 }
 
-export function CloseMonthControl({ preview, loadError = false }: { preview: MonthClosePreview; loadError?: boolean }) {
+export function CloseMonthControl({ preview, loadError = false, paymentSummary }: { preview: MonthClosePreview; loadError?: boolean; paymentSummary?: { paid: number; remaining: number; total: number; overpaid: number } | null }) {
   const [confirming, setConfirming] = useState(false);
   const monthLabel = formatMonth(preview.settlement_month);
   const closedDate = preview.closed_at ? new Intl.DateTimeFormat("hu-HU", {
@@ -47,8 +47,16 @@ export function CloseMonthControl({ preview, loadError = false }: { preview: Mon
       <dl className="monthly-close-summary">
         <div><dt>Érintett felhasználók</dt><dd>{preview.participant_count}</dd></div>
         <div><dt>Elszámolt órák</dt><dd>{formatHours(preview.total_minutes)}</dd></div>
-        <div><dt>Fizetendő összesen</dt><dd>{formatHuf(preview.total_due_huf)}</dd></div>
+        
       </dl>
+      {paymentSummary ? <>
+        <dl className="monthly-close-summary monthly-close-financial-summary">
+          <div><dt>Fizetendő</dt><dd>{formatHuf(paymentSummary.remaining)}</dd></div>
+          <div><dt>Fizetett</dt><dd>{formatHuf(paymentSummary.paid)}</dd></div>
+          <div><dt>Teljes havi díj</dt><dd>{formatHuf(paymentSummary.total)}</dd></div>
+        </dl>
+        {paymentSummary.overpaid > 0 ? <p className="muted">Túlfizetés külön nyilvántartva: {formatHuf(paymentSummary.overpaid)}. A teljes havi díj nem tartalmazza a túlfizetést.</p> : null}
+      </> : <p className="message error" role="alert">A befizetési összesítés nem érhető el; a pénzügyi értékek nem jeleníthetők meg megbízhatóan.</p>}
       {preview.already_closed ? <p className="message success">Lezárva: {closedDate ?? "időpont nem érhető el"}. A korrekció új revisiont hoz létre.</p>
         : Number(preview.blocked_booking_count) > 0 ? <p className="message">A hónap még nem zárható le: {preview.blocked_booking_count} aktív foglalás a normál user szabályai szerint még módosítható vagy lemondható.</p>
         : !preview.can_close ? <p className="message">Ez a hónap jelenleg nem zárható le.</p>
