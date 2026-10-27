@@ -238,3 +238,8 @@ tfoot th { font-weight: 800; }
   .monthly-occasional-customer { grid-template-columns: 1fr auto; }
   .monthly-occasional-customer > :first-child { grid-column: 1 / -1; }
 }
+
+/* Havi zárás: három pénzügyi mutató mobilon is egy sorban. */
+.monthly-close-financial-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.monthly-close-financial-summary dt { font-size: clamp(.65rem, 2.4vw, .85rem); overflow-wrap: anywhere; }
+.monthly-close-financial-summary dd { font-size: clamp(.72rem, 2.7vw, 1.1rem); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
