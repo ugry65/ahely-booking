@@ -42,6 +42,7 @@ export default async function MonthlyHoursPage({ searchParams }: { searchParams:
       if (!acc) return null;
       return { total: acc.total + due, paid: acc.paid + Math.min(paid, due), remaining: acc.remaining + remaining, overpaid: acc.overpaid + overpaid };
     }, { total: 0, paid: 0, remaining: 0, overpaid: 0 } as { total: number; paid: number; remaining: number; overpaid: number } | null);
+    if (summary && summary.total !== summary.paid + summary.remaining) return { month, summary: null };
     return { month, summary };
   }));
   const paymentByMonth = new Map(paymentSummaries.map(({ month, summary }) => [month, summary]));
