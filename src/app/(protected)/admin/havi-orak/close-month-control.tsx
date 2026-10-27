@@ -44,10 +44,9 @@ export function CloseMonthControl({ preview, loadError = false, paymentSummary }
   return <article className="card stack" aria-labelledby={`close-${preview.settlement_month}`}>
     <div><p className="eyebrow">Havi publikálás</p><h3 id={`close-${preview.settlement_month}`}>{monthLabel} elszámolása</h3></div>
     {loadError ? <p className="message error" role="alert">A lezárás előnézete nem tölthető be. Így a hónap nem zárható le.</p> : <>
-      <dl className="monthly-close-summary">
+      <dl className="monthly-close-summary monthly-close-booking-summary">
         <div><dt>Érintett felhasználók</dt><dd>{preview.participant_count}</dd></div>
         <div><dt>Elszámolt órák</dt><dd>{formatHours(preview.total_minutes)}</dd></div>
-        
       </dl>
       {paymentSummary ? <>
         <dl className="monthly-close-summary monthly-close-financial-summary">
