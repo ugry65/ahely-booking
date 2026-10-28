@@ -56,3 +56,19 @@ if python3 scripts/lib/prepare-supabase-restore-data.py --input "$work/in.sql" -
 fi
 
 echo "restore data compatibility tests PASS"
+
+# The production failure contained a non-empty Auth expiry column. It must
+# fail on the old target and survive byte-for-byte on a compatible target.
+cat >"$work/token.sql" <<'EOF'
+COPY auth.one_time_tokens (id, expires_at) FROM stdin;
+1	2026-10-28 19:00:00+00
+\.
+EOF
+printf 'auth.one_time_tokens|id\n' >"$work/old-auth.txt"
+if python3 scripts/lib/prepare-supabase-restore-data.py --input "$work/token.sql" --output "$work/token-old.sql" --target-columns "$work/old-auth.txt"; then
+  echo "Expected non-empty expiry data to fail on old Auth schema" >&2
+  exit 1
+fi
+printf 'auth.one_time_tokens|id,expires_at\n' >"$work/new-auth.txt"
+python3 scripts/lib/prepare-supabase-restore-data.py --input "$work/token.sql" --output "$work/token-new.sql" --target-columns "$work/new-auth.txt"
+cmp "$work/token.sql" "$work/token-new.sql"
