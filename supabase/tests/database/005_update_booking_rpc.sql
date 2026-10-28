@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(21);
 
 select has_function(
   'public',
@@ -340,6 +340,63 @@ select ok(
   ),
   'A sikertelen módosítások nem hagytak részleges állapotot'
 );
+
+
+-- Tréningterem csoportos módosítás: 180. nap engedett, 181. nap tiltott.
+insert into public.user_room_permissions(user_id, room_id, can_book)
+values ('00000000-0000-0000-0000-000000000062', '11000000-0000-0000-0000-000000000001', true);
+
+insert into public.bookings (
+  id, room_id, user_id, created_by, start_at, end_at, use_type, idempotency_key, updated_at
+) values (
+  '20000000-0000-0000-0000-000000000065',
+  '11000000-0000-0000-0000-000000000001',
+  '00000000-0000-0000-0000-000000000062',
+  '00000000-0000-0000-0000-000000000062',
+  (((clock_timestamp() at time zone 'Europe/Budapest')::date + 8) + time '17:00') at time zone 'Europe/Budapest',
+  (((clock_timestamp() at time zone 'Europe/Budapest')::date + 8) + time '18:00') at time zone 'Europe/Budapest',
+  'group', '18000000-0000-0000-0000-000000000065', date_trunc('second', clock_timestamp())
+);
+
+select set_config('test.training_group_updated_at',
+  (select updated_at::text from public.bookings where id = '20000000-0000-0000-0000-000000000065'), true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000062', true);
+select lives_ok(
+  format(
+    $sql$select public.update_booking(
+      '20000000-0000-0000-0000-000000000065', %L::timestamptz,
+      '11000000-0000-0000-0000-000000000001',
+      %L::timestamptz, %L::timestamptz, 'group', 'Csoportos 180. nap',
+      '19000000-0000-0000-0000-000000000069'
+    )$sql$,
+    current_setting('test.training_group_updated_at'),
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'Csoportos Tréningterem-foglalás 180. napra módosítható'
+);
+reset role;
+select set_config('test.training_group_updated_at',
+  (select updated_at::text from public.bookings where id = '20000000-0000-0000-0000-000000000065'), true);
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000062', true);
+select throws_ok(
+  format(
+    $sql$select public.update_booking(
+      '20000000-0000-0000-0000-000000000065', %L::timestamptz,
+      '11000000-0000-0000-0000-000000000001',
+      %L::timestamptz, %L::timestamptz, 'group', 'Csoportos 181. nap',
+      '19000000-0000-0000-0000-000000000070'
+    )$sql$,
+    current_setting('test.training_group_updated_at'),
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 181) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 181) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001', 'A Tréningterem legfeljebb 180 napra előre foglalható.',
+  'Csoportos Tréningterem-foglalás 181. napra nem módosítható'
+);
+reset role;
 
 select * from finish();
 rollback;

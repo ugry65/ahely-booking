@@ -88,7 +88,7 @@ export function QuickBookingDialog({ rooms, repeatableRoomIds, selectedDate, tod
               ) : null}
 
               {selectedRoom?.is_training_room ? (
-                <label>Használat<select name="useType" defaultValue="individual"><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
+                <label>Használat<select name="useType" defaultValue={preset?.useType ?? "individual"}><option value="individual">Egyéni</option><option value="group">Csoportos</option></select></label>
               ) : <input type="hidden" name="useType" value="individual" />}
 
               <label>Foglalás címe<input name="bookingTitle" maxLength={100} placeholder="Opcionális" /></label>
