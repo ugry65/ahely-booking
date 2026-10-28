@@ -11,6 +11,35 @@ permissions:
   contents: read
 
 jobs:
+  targeted-migration-cli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: targeted_migration_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+      - run: bash ./scripts/test-targeted-migration-cli.sh
+        env:
+          PGHOST: 127.0.0.1
+          PGPORT: 5432
+          PGDATABASE: targeted_migration_test
+          PGUSER: postgres
+          PGPASSWORD: isolated-test-only
+
   isolated-auth-restore-schema:
     runs-on: ubuntu-latest
     timeout-minutes: 5
