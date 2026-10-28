@@ -28,7 +28,15 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
   const selectedGaps = gapsByDate.get(filter.date) ?? [];
   function slotAction(slot: FreeSlot) {
     const action = slotBookingLink(room!.room_id, slot, filter.duration, today, limit, now);
-    return action.href ? <Link className="button secondary" href={action.href}>Foglalás</Link> : <span className={styles.limit}>{action.reason}</span>;
+    const groupAction = room!.is_training_room
+      ? slotBookingLink(room!.room_id, slot, filter.duration, today, data.profile.role === "admin" ? null : 180, now, "group")
+      : null;
+    if (!groupAction) return action.href ? <Link className="button secondary" href={action.href}>Foglalás</Link> : <span className={styles.limit}>{action.reason}</span>;
+    return <span className={styles.tabs}>
+      {action.href ? <Link className="button secondary" href={action.href}>Egyéni foglalás</Link> : null}
+      {groupAction.href ? <Link className="button secondary" href={groupAction.href}>Csoportos foglalás</Link> : null}
+      {!action.href && !groupAction.href ? <span className={styles.limit}>{groupAction.reason}</span> : null}
+    </span>;
   }
   function slotRow(slot: FreeSlot) {
     return <article className={styles.row} key={`${slot.date}-${slot.start}`}><div><strong>{dateLabel(slot.date)}</strong><p className={styles.free}>{timeLabel(slot.start)}–{timeLabel(slot.end)} szabad</p><span className="muted">{((slot.end-slot.start)/60).toLocaleString("hu-HU")} egybefüggő óra</span></div>{slotAction(slot)}</article>;
@@ -57,7 +65,7 @@ export async function RoomCalendarView({ params }: { params: Record<string, stri
       </div>
       <p className={`muted ${styles.full}`}>Az idősáv és az időtartam a szabad időpontokat szűri. A foglaltsági sáv minden foglalást mutat.</p>
     </form>
-    {limit !== null ? <p className="muted">Ebben a szobában legfeljebb {limit} napra előre foglalhatsz. Távolabbi időpontok foglaltságát is megtekintheted.</p> : null}
+    {limit !== null ? <p className="muted">{room.is_training_room ? `Tréningterem: egyéni foglalás legfeljebb ${limit} napra, csoportos foglalás 180 napra előre. ` : `Ebben a szobában legfeljebb ${limit} napra előre foglalhatsz. `}Távolabbi időpontok foglaltságát is megtekintheted.</p> : null}
     {filter.view === "month" ? <>
       <section className={`card wide-card ${styles.month}`}>
         <div className={styles.heading}><h2>{civilDateLabel(filter.date,{year:"numeric",month:"long"})}</h2><nav className={styles.tabs} aria-label="Hónap választása"><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,-1)})}>← Előző</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:today})}>Ma</Link><Link className="button secondary" href={roomCalendarUrl(filter,{date:shiftMonth(filter.date,1)})}>Következő →</Link></nav></div>
