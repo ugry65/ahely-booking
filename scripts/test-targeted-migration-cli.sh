@@ -16,7 +16,7 @@ insert into supabase_migrations.schema_migrations values (
   '20200101000000', array['create table public.existing_business(id integer primary key, amount integer not null)'], 'existing_business'
 );
 SQL
-db_url="postgresql://postgres:${PGPASSWORD:?}@127.0.0.1:${PGPORT:-5432}/targeted_migration_test"
+db_url="postgresql://postgres:${PGPASSWORD:?}@127.0.0.1:${PGPORT:-5432}/targeted_migration_test?sslmode=disable"
 supabase --workdir "$work" migration fetch --db-url "$db_url" --yes
 test -f "$work/supabase/migrations/20200101000000_existing_business.sql"
 cat > "$work/supabase/migrations/20261028151000_training_group_180_day_limit.sql" <<'SQL'
