@@ -1,6 +1,6 @@
 begin;
 
-select plan(46);
+select plan(48);
 
 select has_function(
   'public', 'create_booking_series',
@@ -477,6 +477,42 @@ select throws_ok(
   '42501', 'Ez az archivált rekord nem módosítható és nem törölhető.',
   'Az alkalomeredmény append-only'
 );
+
+-- A 180 napos csoportos egyszeri foglalás nem ad sorozatkészítési jogot.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000112', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking_series(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000112',
+      %L::timestamptz, %L::timestamptz, 'daily', null, 2, '{}',
+      'abort_all', 'group', null, '28000000-0000-0000-0000-000000000128'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 150) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 150) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001', 'Nincs ismétlődő foglalási jogosultságod ehhez a helyiséghez.',
+  'Normál user csoportos Tréningterem-sorozatot 150 napra sem készíthet'
+);
+reset role;
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000111', true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking_series(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000112',
+      %L::timestamptz, %L::timestamptz, 'daily', null, 2, '{}',
+      'abort_all', 'group', null, '28000000-0000-0000-0000-000000000129'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'Admin csoportos Tréningterem-sorozatot 180 napon túlra is készíthet'
+);
+reset role;
 
 select * from finish();
 rollback;
