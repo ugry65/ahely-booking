@@ -140,7 +140,6 @@ begin
       to_char(v_opens_at, 'HH24:MI'), to_char(v_closes_at, 'HH24:MI') using errcode = 'P0001';
   end if;
 end;
-$function$
-
+$function$;
 
 commit;
