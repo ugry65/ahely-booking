@@ -1,6 +1,6 @@
 begin;
 
-select plan(37);
+select plan(40);
 
 select has_function(
   'public',
@@ -354,6 +354,62 @@ reset role;
 update public.profiles
 set advance_booking_days_override = 120
 where id = '00000000-0000-0000-0000-000000000022';
+
+-- A csoportos 180 nap a felhasználói override-tól szándékosan független.
+update public.profiles set advance_booking_days_override = 3
+where id = '00000000-0000-0000-0000-000000000022';
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
+select lives_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'group', null,
+      '14000000-0000-0000-0000-000000000045'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'A Tréningterem csoportos 180 napját a 3 napos egyéni override nem csökkenti'
+);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000046'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 4) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 4) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A Tréningterem legfeljebb 3 napra előre foglalható.',
+  'A szigorúbb egyéni override továbbra is korlátozza az egyéni Tréningterem-foglalást'
+);
+reset role;
+update public.profiles set advance_booking_days_override = 120
+where id = '00000000-0000-0000-0000-000000000022';
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000023', true);
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000023',
+      %L::timestamptz, %L::timestamptz, 'group', null,
+      '14000000-0000-0000-0000-000000000047'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 150) + time '17:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 150) + time '18:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'Nincs foglalási jogosultságod ehhez a helyiséghez.',
+  'A csoportos 180 nap nem kerülheti meg a helyiségjogosultságot'
+);
+reset role;
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000022', true);
