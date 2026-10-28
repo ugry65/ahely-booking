@@ -142,6 +142,10 @@ restore_db_container="$(docker ps \
 # one transaction. No production connection is involved in this preflight.
 docker exec -i "$restore_db_container" \
   psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
+  < "$script_dir/lib/prepare-isolated-auth-restore.sql"
+
+docker exec -i "$restore_db_container" \
+  psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
   < "$bundle_dir/schema.sql"
 
 target_columns="$work_dir/target-columns.txt"
@@ -152,6 +156,12 @@ docker exec "$restore_db_container" psql -U supabase_admin -d postgres -X -A -t 
   cd "$restore_project"
   supabase db reset --local --no-seed
 )
+
+# Reset recreates the managed bootstrap schema. Prepare it again before the
+# real restore; target inspection and actual COPY must use the same schema.
+docker exec -i "$restore_db_container" \
+  psql -U supabase_admin -d postgres -X --single-transaction -v ON_ERROR_STOP=1 \
+  < "$script_dir/lib/prepare-isolated-auth-restore.sql"
 
 restore_data="$work_dir/restore-data.sql"
 python3 "$script_dir/lib/prepare-supabase-restore-data.py" \
