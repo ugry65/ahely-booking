@@ -1,6 +1,6 @@
 begin;
 
-select plan(33);
+select plan(37);
 
 select has_function(
   'public',
@@ -258,6 +258,66 @@ select throws_ok(
   'P0001',
   'A Tréningterem legfeljebb 10 napra előre foglalható.',
   'A Tréningterem 10 napos normál user limitje érvényes'
+);
+
+select lives_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000041'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 10) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'Tréningterem individual 10. nap engedett'
+);
+
+select lives_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'group', null,
+      '14000000-0000-0000-0000-000000000042'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 180) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'Tréningterem group 180. nap engedett'
+);
+
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'group', null,
+      '14000000-0000-0000-0000-000000000043'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 181) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 181) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A Tréningterem legfeljebb 180 napra előre foglalható.',
+  'Tréningterem group 181. nap tiltott'
+);
+
+select throws_ok(
+  format(
+    $sql$select public.create_booking(
+      '11000000-0000-0000-0000-000000000001',
+      '00000000-0000-0000-0000-000000000022',
+      %L::timestamptz, %L::timestamptz, 'individual', null,
+      '14000000-0000-0000-0000-000000000044'
+    )$sql$,
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 11) + time '15:00') at time zone 'Europe/Budapest',
+    (((clock_timestamp() at time zone 'Europe/Budapest')::date + 11) + time '16:00') at time zone 'Europe/Budapest'
+  ),
+  'P0001',
+  'A Tréningterem legfeljebb 10 napra előre foglalható.',
+  'Tréningterem individual 11. nap tiltott'
 );
 
 select throws_ok(
