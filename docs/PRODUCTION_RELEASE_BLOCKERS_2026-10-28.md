@@ -47,3 +47,9 @@ A `monthly_settlement_publication` helyi és távoli változata eltérő formáz
 5. Friss #318 main SHA/deployment/UAT és GitHub release gate, DB-first alkalmazás, majd production deploy és adatmegőrzési/smoke ellenőrzések.
 
 Bizonyítékok: [backup #197](https://github.com/ugry65/ahely-booking/actions/runs/40732025262), [drill backup #4](https://github.com/ugry65/ahely-booking/actions/runs/40732293302), [restore #8 FAIL](https://github.com/ugry65/ahely-booking/actions/runs/40732892339), [dry-run #12 FAIL](https://github.com/ugry65/ahely-booking/actions/runs/40733213275).
+
+## Kiegészítő szerkezeti összevetés – 2026-10-28
+
+A `monthly_settlement_publication` két változatát pglast 8.7 PostgreSQL SQL- és PL/pgSQL-parserrel is összevetettük. Az SQL AST-k a forráspozíciók eltávolítása és a külön vizsgált függvénytörzsek helyettesítése után azonosak. Mind a 11 PL/pgSQL-függvény AST-je azonos, ha a forrássorszámokat/formázást normalizáljuk és a helyi `v_closed_at timestamptz` deklarációt külön kezeljük. A változó helyben pontosan egyszer, kizárólag deklarációként fordul elő; a távoli változatban nincs jelen. A beágyazott SQL-ek parseres összevetése az opcionális `AS` alias-kulcsszót is kezeli; a nem önálló SQL-ként parse-olható értékadások lexikai tokenjeit változatlan literálokkal hasonlítottuk össze.
+
+Ezzel a történeti forrásszövegekben **nem találtunk végrehajtási logikabeli eltérést**: 12 bájtszinten azonos, 4 csak whitespace/komment eltérésű, 1 szerkezetileg azonos az egyetlen nem használt deklaráció kivételével. Ez nem azonos a teljes aktuális production séma auditjával, nem független review, és nem engedély a ledger automatikus átírására vagy történeti SQL újrafuttatására.
