@@ -1,20 +1,18 @@
 # Tréningterem – csoportos előrefoglalás (#316)
 
-Döntés: 2026-10-28.
+Döntés: 2026-10-28. Megerősítve a független PR #317 review után.
 
-- Normál felhasználó, Tréningterem, egyéni használat: legfeljebb 10 nap előre.
-- Normál felhasználó, Tréningterem, csoportos használat: legfeljebb 180 nap előre.
-- A 180 napos külön szabály nem szorítható az általános 90 napos előrefoglalási limit alá.
+- Normál felhasználó, Tréningterem, egyéni használat: legfeljebb 10 nap előre, a meglévő alacsonyabb felhasználói limit figyelembevételével.
+- Normál felhasználó, Tréningterem, csoportos használat: **fix 180 nap előre**.
+- A csoportos 180 napos szabály **szándékosan független** a `default_advance_booking_days`, `training_room_advance_days` és a felhasználói `advance_booking_days_override` értékétől. Ez a felhasználó által megerősített üzleti döntés, nem implementációs hiányosság.
+- Nem vezetünk be felhasználónként állítható külön Tréningterem-limitet.
 - Az admin, a többi terem, a jogosultságok, az ismétlődés és az átfedésvédelem szabályai változatlanok.
 
-A 2026-10-28-án ellenőrzött staging DB-ben a public.assert_booking_request függvény a Tréningterem mindkét használattípusára a kisebbik általános és training_room_advance_days limitet használta. A beállítások: default_advance_booking_days=90, training_room_advance_days=10.
+## Megvalósítás és ellenőrzés
 
-## Következő ellenőrzések
-
-1. A teljes aktuális FS-sel és main migrációkkal egyeztetni.
-2. A szerveroldali validációt módosítani, egyéni 10 és csoportos 180 napra; a csoportos szabály ne essen vissza 90 napra.
-3. A foglalási felület és dátumválasztó ugyanezt engedje.
-4. 10/11 és 180/181 napos határok, létrehozás/módosítás, jogosultságok és ütközés tesztelése.
-5. Független review, staging UAT, külön production GO.
-
-Státusz: csak dokumentáció; a működés még nem változott.
+- A szerveroldali `public.assert_booking_request` a használattípus alapján érvényesíti a korlátot; a közös validátor a létrehozási és módosítási útvonalakat is védi.
+- A Tréningterem naptárában külön egyéni és csoportos foglalási indítás érhető el, a megfelelő használattípus előtöltésével.
+- A 10/11 és 180/181 napos létrehozási határtesztek, valamint a naptár handoff tesztjei bekerültek.
+- A PR #317 `3312af3` commitjának négy GitHub CI folyamata sikeres (Application checks, Database tests, Release evidence, Staging schema reference inventory).
+- A független review M-1 megállapítását a fenti, megerősített üzleti döntés feloldja. A hiányzó célzott módosítási, jogosultsági és ismétlődési regressziós teszteket továbbra is pótolni kell, illetve ellenőrizni kell a projekt FS-t és a staging működést.
+- A PR nem merge-elhető és production nem telepíthető a hátralévő ellenőrzések nélkül.
