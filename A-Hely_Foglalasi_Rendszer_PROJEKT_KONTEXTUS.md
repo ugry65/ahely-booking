@@ -70,7 +70,7 @@ Az A-Hely jelenlegi AllBooked/Skedda rendszerének kiváltása saját, webalapú
 - Ütközés esetén a user dönthessen a szabad alkalmak létrehozása vagy a teljes sorozat megszakítása között.
 
 ## Tréningterem
-- Normál user max. 10 napra előre foglalhat; ez admin által állítható.
+- **Új üzleti döntés (2026-10-28, #316):** normál user Tréningterem **egyéni** használat esetén max. **10 napra**, **csoportos** használat esetén max. **180 napra** foglalhat előre. A foglalástípus szerveroldali ellenőrzése kötelező; az egyéb jogosultsági, ismétlődési és ütközésvédelmi szabályok változatlanok. A korábbi, mindkét típusra vonatkozó általános 10 napos előírást ez a döntés felülírja. **Implementáció: folyamatban, nem éles.**
 - Ismétlődő Tréningterem-foglalást csak admin hozhat létre.
 - Egyéni használat: user normál díjazása.
 - Csoportos használat: külön admin által állítható díj, jelenlegi default 5000 Ft/óra.

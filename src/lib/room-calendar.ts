@@ -13,7 +13,7 @@ export type RoomCalendarFilter = {
   kind: "bookings" | "free"; start: number; end: number; duration: number; weekday: string;
 };
 export type FreeSlot = { date: string; start: number; end: number };
-export type BookingPreset = { roomId: string; startTime: string; endTime: string };
+export type BookingPreset = { roomId: string; startTime: string; endTime: string; useType?: "individual" | "group" };
 const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const time = /^(?:[01]\d|2[0-3]):(?:00|30)$/;
 export function parseRoomCalendarFilter(params: Record<string, string | undefined>, today: string): RoomCalendarFilter {
@@ -79,20 +79,20 @@ export function advanceLimit(role: "admin" | "user", room: CalendarRoom, default
   const normal = override ?? defaults;
   return room.is_training_room ? Math.min(normal, training) : normal;
 }
-export function slotBookingLink(roomId: string, slot: FreeSlot, duration: number, today: string, limit: number | null, now = new Date()): { href: string | null; reason: string | null } {
+export function slotBookingLink(roomId: string, slot: FreeSlot, duration: number, today: string, limit: number | null, now = new Date(), useType: "individual" | "group" = "individual"): { href: string | null; reason: string | null } {
   if (limit !== null && slot.date > addDays(today, limit)) return { href: null, reason: "Az előrefoglalási határon túl" };
   const localNow = minutesFromTime(budapestTimeFromIso(now.toISOString()));
   // Only future half-hour boundaries are proposed for today's remaining free time.
   const start = slot.date === today ? Math.max(slot.start, (Math.floor(localNow / 30) + 1) * 30) : slot.start;
   if (slot.date < today || slot.end - start < duration) return { href: null, reason: "Már nem foglalható időszak" };
-  return { href: `/foglalasok?${new URLSearchParams({ datum: slot.date, room: roomId, start: timeLabel(start), end: timeLabel(start + duration), new: "1" })}`, reason: null };
+  return { href: `/foglalasok?${new URLSearchParams({ datum: slot.date, room: roomId, start: timeLabel(start), end: timeLabel(start + duration), new: "1", useType })}`, reason: null };
 }
 export function parseBookingPreset(params: Record<string, string | undefined>, rooms: CalendarRoom[]): BookingPreset | undefined {
   if (params.new !== "1" || !rooms.some(r => r.room_id === params.room)) return undefined;
   if (!time.test(params.start ?? "") || !time.test(params.end ?? "")) return undefined;
   const start = minutesFromTime(params.start!), end = minutesFromTime(params.end!);
   if (start < 420 || end > 1320 || end - start < 60) return undefined;
-  return { roomId: params.room!, startTime: params.start!, endTime: params.end! };
+  return { roomId: params.room!, startTime: params.start!, endTime: params.end!, useType: params.useType === "group" && rooms.some(r => r.room_id === params.room && r.is_training_room) ? "group" : "individual" };
 }
 export function validateCalendarBookings(bookings: RoomCalendarBooking[], roomId: string) {
   const ids = new Set<string>();

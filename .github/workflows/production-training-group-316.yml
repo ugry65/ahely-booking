@@ -1,0 +1,52 @@
+name: Targeted production training group migration
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Only migration 20261028151000
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, deploy]
+      confirmation:
+        description: 'Deploy requires PRODUCTION-20261028151000'
+        required: false
+        type: string
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: production-database-deploy
+  cancel-in-progress: false
+jobs:
+  targeted-migration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.116.0
+      - name: Verify successful backup and isolated restore evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$GITHUB_EVENT_NAME" = workflow_dispatch
+          test "$GITHUB_REF_NAME" = main
+          for id in 40732025262 40738525124; do
+            gh api "repos/$GH_REPO/actions/runs/$id" > "$RUNNER_TEMP/evidence-$id.json"
+          done
+          jq -e '.status == "completed" and .conclusion == "success" and .event == "workflow_dispatch" and .head_branch == "main" and .path == ".github/workflows/production-backup.yml"' "$RUNNER_TEMP/evidence-40732025262.json"
+          jq -e '.status == "completed" and .conclusion == "success" and .event == "workflow_dispatch" and .head_branch == "main" and .path == ".github/workflows/production-restore-drill.yml" and .head_sha == "6a05f276f50abbd6545a93af64b136443b51f3bf"' "$RUNNER_TEMP/evidence-40738525124.json"
+          for id in 40732025262 40738525124; do
+            jq -e '(.created_at | fromdateiso8601) >= (now - 21600)' "$RUNNER_TEMP/evidence-$id.json"
+          done
+      - name: Preview or apply only the approved migration
+        env:
+          PRODUCTION_DB_URL: ${{ secrets.SUPABASE_PRODUCTION_DB_URL }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+          MODE: ${{ inputs.mode }}
+        run: bash ./scripts/deploy-training-group-316.sh "$MODE"
