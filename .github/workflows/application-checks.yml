@@ -52,6 +52,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: node --test scripts/test-production-release-pr.mjs
       - run: bash ./scripts/test-production-db-url-guard.sh
+      - run: bash ./scripts/test-deploy-training-group-316.sh
       - run: bash ./scripts/test-production-backup-trigger.sh
       - run: bash ./scripts/test-production-backup-drill.sh
       - run: bash ./scripts/test-production-backup-schedule-trigger.sh
