@@ -72,7 +72,10 @@ export async function updatePassword(formData: FormData) {
   const { error } = await supabase.auth.updateUser({ password });
 
   if (error) {
-    redirect(destination("/jelszo-visszaallitas", "hiba", "A jelszó módosítása nem sikerült."));
+    const message = error.code === "same_password"
+      ? "Az új jelszó nem egyezhet meg a jelenlegi jelszavaddal. Adj meg másik jelszót."
+      : "A jelszó módosítása nem sikerült.";
+    redirect(destination("/jelszo-visszaallitas", "hiba", message));
   }
 
   if (userId) {
