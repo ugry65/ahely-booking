@@ -1,3 +1,5 @@
+> **Új read-only audit – 2026-10-29:** Az alábbi történeti reconciliation után a legacy oszlop továbbra is szükséges: ma 5 aktív foglalás nem-null díját őrzi. A közös alkalmazáskód és 10 app_settings azonos a productionnel; a legacy default trigger új foglalásoknál eltérő díjútvonalat aktiválhat. #321 kizárólag e trigger eltávolításának review-zandó terve, nincs alkalmazva; oszlop- vagy adatsortörlés nincs engedélyezve. [Aktuális státusz és audit](RELEASE_STATUS_2026-10-29.md).
+
 # Staging schema reconciliation (2026-09-29)
 
 Állapot: **az előre mutató reconciliation stagingen végrehajtva és ellenőrizve**; a PR #257 feature migration szintén külön, valós history-bejegyzéssel került stagingre. Production nem változott. Az alábbi első összevetés és megállási pont a DDL **előtti** bizonyíték, ezért történeti állapotként olvasandó.
