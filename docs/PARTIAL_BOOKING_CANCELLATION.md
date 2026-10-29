@@ -1,3 +1,5 @@
+> **Production kiadás igazolt – 2026-10-29-i dokumentációpótlás:** A #312 release már 2026-10-19-én productionbe került, végső elfogadott main `c1c3bf9`, production merge `8c1f104`. Actual production migration `20261019211049`; explicit owner UAT/GO, CI és pénzügyi rollback smoke a release PR-ban rögzítve. A #308–#311 UX-javításokkal együtt éles: félórás lemondás, egyórás menü egyszerűsítése, „Teljes foglalás törlése”, személyes indoklás nélkül. [Kiadási bizonyíték és pontos korlátok](RELEASE_STATUS_2026-10-29.md). Az alábbi staging-only állítások a korábbi átadás történeti állapotai.
+
 # Részleges lemondás – 2026-10-19
 
 Imre kifejezetten staging megvalósítást kért új és meglévő tömbös foglalásokra.

@@ -1,3 +1,5 @@
+> **Élesítési állapot – 2026-10-29:** A funkció 2026-10-28-án #318-cal productionbe került. Production SHA `caf98c8c483e4d25022e549fb2d9521e8ff1b80c`, READY `dpl_CwRSk4Mn2dUA6PLLkAneKvRfvUEP`; helyes production migration `20261028151000`. A staging azonosítóeltérése rendezett. CI: 319 Vitest/897 pgTAP, célzott dry-run/apply, mentés/restore és health/szabály-smoke sikeres. [Teljes kiadási bizonyíték](RELEASE_STATUS_2026-10-29.md). Az alábbi NO-GO és repair-leírások a kiadás előtti történeti állapotot rögzítik; **a repair lépéseket nem szabad ismét végrehajtani**.
+
 # Tréningterem – csoportos előrefoglalás (#316)
 
 Döntés: 2026-10-28. Megerősítve a független PR #317 review után.

@@ -1,3 +1,5 @@
+> **Lezárt kiadási akadályok – 2026-10-29:** A #319 javítás után a teljes izolált restore run40738525124 SUCCESS. A #320 review-zott célzott útján a dry-run run40743754476 és apply run40744050392 SUCCESS, majd #318 production release READY. Nem történt történeti replay vagy tömeges repair. Az alábbi elemzés az elhárítás előtti állapot; a legacy lint-korlátok továbbra is fennállnak. [Végső bizonyítékok](RELEASE_STATUS_2026-10-29.md).
+
 # Production release-blocker vizsgálat – 2026-10-28
 
 Kapcsolódó kiadás: #318; vizsgált main: `a8d8f2ab2004d3d5328fd71014f4b873121241c2`. Production: `yasrmxwjojepessivhmc`. Kizárólag olvasó SQL-lekérdezés és repository-összehasonlítás; nincs history repair vagy üzleti adatírás.
