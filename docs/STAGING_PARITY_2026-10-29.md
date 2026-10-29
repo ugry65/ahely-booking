@@ -89,3 +89,30 @@ version/name/SQL-MD5 baseline exactly; the only addition is the already applied
 20261028151000 with MD5 64f0ec029553a519611d1d3d3fc4e74b. The pinned snapshot
 now includes that proven row (no remote history write). Projection test returns
 remote_applied98 and exactly one pending file: the new parity migration.
+
+## Hosted staging apply – completed 2026-10-29
+
+PR #321 merged to main 755e4130877415e0e0c4a3157741939290527d1a after independent
+review and green CI (905 pgTAP assertions including actual resolver/monthly pricing).
+Dry-run #53: https://github.com/ugry65/ahely-booking/actions/runs/40866334866
+SUCCESS; exactly one pending migration, 20261029111608_retire_legacy_training_rate_default.sql.
+Apply #54: https://github.com/ugry65/ahely-booking/actions/runs/40866673358
+SUCCESS. Only the named legacy trigger was removed; no historical SQL replay.
+
+Live before/after checks:
+- All 8 checked business tables have identical row counts and full-row hashes:
+  bookings458, monthly_settlement_periods1, monthly_settlements13, payment_voids0,
+  payments1, settlement_adjustments0, settlement_booking_lines174, settlement_revisions14.
+- All 5 historical rates preserved: ca0ac0264af4283e2ee26dbdddab221f.
+- All public function bodies/signatures/ACL aggregate unchanged:
+  bf7e5826afa5fb8f0cc2b7eeb0aebb6c; resolver unchanged.
+- Original98 ledger rows unchanged: ce1d45fde3c9f3b1888524bd023d4153.
+  Total99; new ledger SQL MD5 8b05f5fc31987533bf7524e9f2e81b4c.
+- Target trigger absent. Historical column, constraints and compatibility RPCs retained.
+- Staging web READY dpl_DxCLTWwMXu3bYC63dVQFn7Dsm6Cg on main755e413.
+- Production ref remains caf98c8c483e4d25022e549fb2d9521e8ff1b80c;
+  READY deployment remains dpl_CwRSk4Mn2dUA6PLLkAneKvRfvUEP. No production write.
+
+Tariff datasets remain different as described above; this fixes automatic legacy
+rate freezing, not full numeric/schema parity. Auth password-reset end-to-end
+user completion remains separate. Earlier pending statements are historical.
