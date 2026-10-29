@@ -1,6 +1,6 @@
 {
   "staging_project_ref": "fvwapntzhavhgazeflri",
-  "baseline_recorded_at": "2026-10-19T20:29:10Z",
+  "baseline_recorded_at": "2026-10-29T11:38:00Z",
   "applied": [
     {
       "version": "202608160001",
@@ -491,6 +491,11 @@
       "version": "20261028151000",
       "name": "training_group_180_day_limit",
       "statements_md5": "64f0ec029553a519611d1d3d3fc4e74b"
+    },
+    {
+      "version": "20261029111608",
+      "name": "retire_legacy_training_rate_default",
+      "statements_md5": "8b05f5fc31987533bf7524e9f2e81b4c"
     }
   ],
   "excluded_local": [
