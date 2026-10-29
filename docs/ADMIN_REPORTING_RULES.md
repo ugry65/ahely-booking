@@ -14,6 +14,7 @@ Ez a dokumentum az A-Hely admin riportjainak elfogadott üzleti szabályait rög
 - Az összesítő admin nézet hónaponként és userenként a felhasználó nevét és az összes foglalt órát mutatja.
 - A foglalások darabszáma és az összes perc nem része az üzleti összesítőnek.
 - Az összesítő CSV legalább: `Hónap`, `Felhasználó`, `Összes óra`.
+- A Havi órák összesítő XLSX exportjának utolsó oszlopa `Kapcsolódó számla száma` (2026-10-29). A fejléc formázott és szűrhető; az alatta lévő cellák üresek, az Excelben kézzel kitölthetők. Ez az oszlop nem jelent automatikus számlapárosítást vagy rendszerbeli számlaszám-tárolást.
 - Az óraszám CSV-ben magyar decimális vesszővel kerül kiadásra, hogy a magyar Excel ne dátumként értelmezze például a `4.50` értéket.
 - Admin ellenőrzéshez ugyanazokra a kijelölt hónapokra tételes aktív foglalási lista kérhető le összes userre vagy egy kiválasztott userre.
 - A tételes aktív lista legalább: hónap, user, dátum, helyiség, kezdés, befejezés, óraszám.
