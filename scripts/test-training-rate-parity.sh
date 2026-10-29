@@ -4,6 +4,7 @@ if [ "${PGHOST:-}" != 127.0.0.1 ] || [ "${PGDATABASE:-}" != training_parity_test
   echo 'Requires disposable loopback training_parity_test database' >&2; exit 1
 fi
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cmp "$root_dir/scripts/lib/retire-legacy-training-rate-default.sql" "$root_dir/supabase/migrations/20261029111608_retire_legacy_training_rate_default.sql"
 psql -X -v ON_ERROR_STOP=1 <<'SQL'
 create table public.bookings(id integer primary key, room_id integer, use_type text,
   group_hourly_rate_huf bigint check(group_hourly_rate_huf>=0));
