@@ -57,6 +57,25 @@ talált célmigrációt blokkoló függőséget; ez nem teljes adatbázis-hibame
 nyilatkozat. A backup/restore runok ma már történeti bizonyítékok, új kiadásra
 nem használhatók automatikusan friss mentésként.
 
+## Részleges órás lemondás – korábbi hiányzó production-zárás
+
+A [#312](https://github.com/ugry65/ahely-booking/pull/312) 2026-10-19-én
+productionbe került; merge `8c1f10412167c4708ec900ccc1779351b60121a3`, elfogadott
+main `c1c3bf9674c87722ad81f0757d1745edc0134e0f`. Az elfogadott staging a #306 és
+#308–#311 végső javításait együtt tartalmazta: félórás részlemondás, a kivett rész
+kezdetére számolt cutoff, megmaradó részek előnézete, egymás mellé rendezett
+kijelölők. Egyórás foglalásnál csak teljes törlés, a menüben „Teljes foglalás
+törlése” felirat; személyes indoklás nincs. Az adminra a normál user24 órás
+cutoffja nem vonatkozik; a jogosultság és lezárt hónap védelme megmarad.
+
+A #312 PR rögzíti: explicit tulajdonosi UAT/GO, exact-head CI és886 pgTAP plusz
+concurrency PASS. Production actual migration `20261019211049`, a régi93 history
+sor változatlan. Rollback smoke: 08–15 foglalásból10–12 lemondása5 megmaradó óra;
+10000Ft díj,14000Ft befizetés, egyszer számolt export és4000Ft túlfizetés.
+A teszt fixture rollbackelve; az érintett üzleti táblák kiadás előtti/utáni
+sorhash-e/darabszáma változatlan. Ezek PR-ban rögzített történeti bizonyítékok,
+nem ma újrafuttatott tesztek. A későbbi #315/#318 a funkciót megőrzi.
+
 ## Havi elszámolási összesítő – 2026-10-27
 
 [#314](https://github.com/ugry65/ahely-booking/pull/314) a havi zárás összesítőjét
