@@ -30,6 +30,6 @@ describe("booking payments", () => {
     const xml=new TextDecoder().decode(monthlySettlementXlsx([row]));
     expect(xml).toContain("Még fizetendő");
     expect(xml).toContain("Részben fizetve");
-    expect(xml).toContain('autoFilter ref="A1:I2"');
+    expect(xml).toContain('autoFilter ref="A1:J2"');
   });
 });
