@@ -486,6 +486,11 @@
       "version": "20261019202704",
       "name": "partial_booking_cancellation",
       "statements_md5": "bd1fa03fe3c472dc56ca271c678a8d79"
+    },
+    {
+      "version": "20261028151000",
+      "name": "training_group_180_day_limit",
+      "statements_md5": "64f0ec029553a519611d1d3d3fc4e74b"
     }
   ],
   "excluded_local": [
