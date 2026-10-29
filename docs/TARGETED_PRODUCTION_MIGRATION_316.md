@@ -1,3 +1,5 @@
+> **Végrehajtva – 2026-10-28:** #320 exact head `e5f110d9d45bae81324c7cf49ee729879863f4f5` külső Claude APPROVE és zöld CI után mainbe került (`45e765a`). Valós dry-run és apply SUCCESS, majd #318 production release READY. [Teljes futási és adatmegőrzési bizonyíték](RELEASE_STATUS_2026-10-29.md). Az alábbi eljárás erre az egyszeri migrációra készült: a cél már alkalmazva, replay tiltott, a pinnelt backup/restore runok ma már nem frissek új deployhoz.
+
 # Célzott production migráció – #316
 
 ## Bizonyíték és hatókör
