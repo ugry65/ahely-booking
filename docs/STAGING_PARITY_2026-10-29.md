@@ -83,3 +83,9 @@ separate scope, never a production write.
 The earlier "Local CLI installation blocked" paragraph is historical; CLI
 migration generation has now completed. Full pgTAP CI result and live apply
 will be recorded separately. Production remains unchanged.
+
+Staging deployment projection preflight: old 97 ledger rows match the pinned
+version/name/SQL-MD5 baseline exactly; the only addition is the already applied
+20261028151000 with MD5 64f0ec029553a519611d1d3d3fc4e74b. The pinned snapshot
+now includes that proven row (no remote history write). Projection test returns
+remote_applied98 and exactly one pending file: the new parity migration.
